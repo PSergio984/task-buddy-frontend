@@ -6,7 +6,7 @@ import { useTasks } from "@/hooks/useApi"
 import { useNavigate } from "react-router-dom"
 
 export function AuditLogsPage() {
-  const { tasks } = useTasks()
+  useTasks()
   const navigate = useNavigate()
 
   return (
@@ -14,7 +14,7 @@ export function AuditLogsPage() {
       <TopNav onNewTask={() => navigate("/dashboard")} />
       
       <div className="flex flex-1">
-        <Sidebar activeFilter="" onFilterChange={() => navigate("/dashboard")} tasks={tasks} />
+        <Sidebar activeFilter="" onFilterChange={() => navigate("/dashboard")} />
         
         <main className="flex-1 p-8">
           <motion.div

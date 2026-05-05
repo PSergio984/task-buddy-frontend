@@ -119,9 +119,10 @@ export function TaskCard({
                     {tag.name}
                     <button
                       onClick={() => onDetachTag?.(task.id, tag.id)}
-                      className="ml-1 hidden rounded-full hover:bg-destructive/10 hover:text-destructive group-hover:block"
+                      aria-label={`Remove tag ${tag.name}`}
+                      className="ml-1 flex h-4 w-4 items-center justify-center rounded-full opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 focus:opacity-100 focus-visible:ring-1 focus-visible:ring-ring"
                     >
-                      <X className="h-2 w-2" />
+                      <X className="h-2.5 w-2.5" />
                     </button>
                   </span>
                 ))}
@@ -157,7 +158,8 @@ export function TaskCard({
                         variant="ghost"
                         size="sm"
                         onClick={() => onDeleteSubtask?.(subtask.id)}
-                        className="h-6 w-6 p-0 opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                        aria-label={`Delete subtask ${subtask.title}`}
+                        className="h-6 w-6 p-0 opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 focus:opacity-100 focus-visible:ring-1 focus-visible:ring-ring"
                       >
                         <Trash2 className="h-3 w-3" />
                       </Button>
@@ -175,7 +177,8 @@ export function TaskCard({
                 variant="ghost"
                 size="sm"
                 onClick={() => onEdit(task)}
-                className="h-8 w-8 p-0 text-blue-500/50 hover:bg-blue-500/10 hover:text-blue-500 transition-colors"
+                aria-label={`Edit task ${task.title}`}
+                className="h-8 w-8 p-0 text-blue-500 hover:bg-blue-500/10 transition-colors focus-visible:ring-1 focus-visible:ring-ring"
               >
                 <Edit2 className="h-4 w-4" />
               </Button>
@@ -185,7 +188,8 @@ export function TaskCard({
                 variant="ghost"
                 size="sm"
                 onClick={() => onDelete(task.id)}
-                className="h-8 w-8 p-0 text-destructive/50 hover:bg-destructive/10 hover:text-destructive transition-colors"
+                aria-label={`Delete task ${task.title}`}
+                className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 transition-colors focus-visible:ring-1 focus-visible:ring-ring"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>

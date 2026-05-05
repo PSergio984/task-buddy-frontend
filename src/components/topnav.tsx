@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useNavigate, Link } from "react-router-dom"
 import { useToast } from "@/hooks/use-toast"
+import { LogoutDialog } from "@/components/logout-dialog"
 
 export interface TopNavProps {
   onNewTask: () => void
@@ -15,6 +16,7 @@ export function TopNav({ onNewTask }: TopNavProps) {
   const { toast } = useToast()
   const navigate = useNavigate()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   const getGreeting = () => {
@@ -24,8 +26,10 @@ export function TopNav({ onNewTask }: TopNavProps) {
     return "GOOD EVENING"
   }
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    setIsLogoutDialogOpen(false)
+    setIsDropdownOpen(false)
+    await logout()
     toast({
       title: "Successfully logged out",
       description: "You have been securely signed out of your session.",
@@ -109,7 +113,7 @@ export function TopNav({ onNewTask }: TopNavProps) {
                 </Link>
                 <div className="my-1 border-t border-border" />
                 <button
-                  onClick={handleLogout}
+                  onClick={() => setIsLogoutDialogOpen(true)}
                   className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50"
                 >
                   <LogOut className="h-4 w-4" />
@@ -120,6 +124,12 @@ export function TopNav({ onNewTask }: TopNavProps) {
           </AnimatePresence>
         </div>
       </div>
+
+      <LogoutDialog 
+        open={isLogoutDialogOpen} 
+        onOpenChange={setIsLogoutDialogOpen} 
+        onConfirm={handleLogout} 
+      />
     </motion.header>
   )
 }

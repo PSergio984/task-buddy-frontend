@@ -10,7 +10,7 @@ import { Sidebar } from "@/components/sidebar"
 import { useTasks } from "@/hooks/useApi"
 import { User, KeyRound, Save, ArrowLeft, CheckCircle2, Circle } from "lucide-react"
 import { useNavigate } from "react-router-dom"
-import { sanitizeUsername, sanitizePassword } from "@/lib/auth"
+import { sanitizeUsername, sanitizePassword, validatePassword } from "@/lib/auth"
 import { useToast } from "@/hooks/use-toast"
 import axios from "axios"
 
@@ -25,9 +25,9 @@ const PASSWORD_RULES = [
 ]
 
 export function ProfilePage() {
-  const { user, token, refreshUser } = useAuth()
+  const { user, token, refreshUser, logout } = useAuth()
   const { toast } = useToast()
-  const { tasks } = useTasks()
+  useTasks()
   const navigate = useNavigate()
   
   const [newUsername, setNewUsername] = useState(user?.username || "")
@@ -56,9 +56,13 @@ export function ProfilePage() {
         variant: "success",
       })
     } catch (err: any) {
+      if (err.response?.status === 401) {
+        await logout()
+        return
+      }
       toast({
         title: "Update failed",
-        description: err.response?.data?.detail || "Failed to update username",
+        description: err.response?.data?.detail || err.message || "Failed to update username",
         variant: "destructive",
       })
     } finally {
@@ -72,6 +76,16 @@ export function ProfilePage() {
       toast({
         title: "Passwords mismatch",
         description: "The new password and confirmation password do not match.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const pwError = validatePassword(newPassword)
+    if (pwError) {
+      toast({
+        title: "Weak password",
+        description: pwError,
         variant: "destructive",
       })
       return
@@ -96,9 +110,13 @@ export function ProfilePage() {
         variant: "success",
       })
     } catch (err: any) {
+      if (err.response?.status === 401) {
+        await logout()
+        return
+      }
       toast({
         title: "Update failed",
-        description: err.response?.data?.detail || "Failed to update password",
+        description: err.response?.data?.detail || err.message || "Failed to update password",
         variant: "destructive",
       })
     } finally {
@@ -111,7 +129,7 @@ export function ProfilePage() {
       <TopNav onNewTask={() => navigate("/dashboard")} />
       
       <div className="flex flex-1">
-        <Sidebar activeFilter="" onFilterChange={() => navigate("/dashboard")} tasks={tasks} />
+        <Sidebar activeFilter="" onFilterChange={() => navigate("/dashboard")} />
         
         <main className="flex-1 p-8">
           <motion.div

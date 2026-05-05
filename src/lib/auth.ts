@@ -214,7 +214,7 @@ export function getAuthErrorMessage(error: unknown, fallback: string) {
     const data = error.response?.data
 
     if (status === 401) {
-      return "Invalid email or password."
+      return formatFirstBackendError(data) ?? "Invalid email or password."
     }
 
     if (status === 422) {

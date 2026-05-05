@@ -10,14 +10,17 @@ import { ProfilePage } from "@/pages/ProfilePage"
 import { AuditLogsPage } from "@/pages/AuditLogsPage"
 import { ProtectedRoute, PublicRoute } from "@/contexts/ProtectedRoute"
 import { useAuth } from "@/contexts/AuthContext"
-import { useCreateTask, useTasks, useStats } from "@/hooks/useApi"
+import { useCreateTask, useTasks, useStats, useUpdateTask } from "@/hooks/useApi"
 import type { Task } from "@/hooks/useApi"
 import { Toaster } from "@/components/ui/toaster"
 
 function DashboardLayout() {
   const [activeFilter, setActiveFilter] = useState<string>("all")
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [editingTask, setEditingTask] = useState<Task | null>(null)
+  
   const { createTask, loading: isCreating } = useCreateTask()
+  const { updateTask, loading: isUpdating } = useUpdateTask()
   const { tasks, refreshTasks } = useTasks(activeFilter)
   const { stats, loading: loadingStats, refreshStats } = useStats()
 
@@ -29,26 +32,43 @@ function DashboardLayout() {
     taskData: Omit<Task, "id" | "createdAt" | "updatedAt">
   ) => {
     try {
-      await createTask(taskData)
+      if (editingTask) {
+        await updateTask(editingTask.id, taskData)
+      } else {
+        await createTask(taskData)
+      }
       setIsModalOpen(false)
-      handleRefresh()
+      setEditingTask(null)
+      await handleRefresh()
     } catch (error) {
-      console.error("Failed to create task:", error)
+      console.error("Failed to save task:", error)
     }
+  }
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task)
+    setIsModalOpen(true)
+  }
+
+  const handleOpenChange = (open: boolean) => {
+    setIsModalOpen(open)
+    if (!open) setEditingTask(null)
   }
 
   return (
     <div className="flex min-h-svh flex-col bg-background">
       {/* Top Navigation */}
-      <TopNav onNewTask={() => setIsModalOpen(true)} />
+      <TopNav onNewTask={() => {
+        setEditingTask(null)
+        setIsModalOpen(true)
+      }} />
 
       {/* Main Content */}
       <div className="flex flex-1">
         {/* Sidebar — receives tasks for system overview */}
-        <Sidebar
-          activeFilter={activeFilter}
-          onFilterChange={setActiveFilter}
-          tasks={tasks}
+        <Sidebar 
+          activeFilter={activeFilter} 
+          onFilterChange={setActiveFilter} 
         />
 
         {/* Dashboard — main content area */}
@@ -57,6 +77,7 @@ function DashboardLayout() {
           activeFilter={activeFilter} 
           onFilterChange={setActiveFilter}
           onRefresh={handleRefresh}
+          onEdit={handleEditTask}
           stats={stats}
           loadingStats={loadingStats}
         />
@@ -65,9 +86,10 @@ function DashboardLayout() {
       {/* New Task Modal */}
       <NewTaskModal
         open={isModalOpen}
-        onOpenChange={setIsModalOpen}
+        onOpenChange={handleOpenChange}
         onSubmit={handleCreateTask}
-        isLoading={isCreating}
+        isLoading={isCreating || isUpdating}
+        task={editingTask}
       />
     </div>
   )

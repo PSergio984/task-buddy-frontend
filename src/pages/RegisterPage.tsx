@@ -90,9 +90,10 @@ export function RegisterPage() {
       })
       navigate("/login")
     } catch (err: any) {
+      const detail = err.response?.data?.detail || err.message || "Something went wrong. Please check your details and try again."
       toast({
         title: "Registration failed",
-        description: error || "Something went wrong. Please check your details and try again.",
+        description: detail,
         variant: "destructive",
       })
     }

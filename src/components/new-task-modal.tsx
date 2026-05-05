@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Dialog,
   DialogContent,
@@ -26,6 +26,7 @@ export interface NewTaskModalProps {
     taskData: Omit<Task, "id" | "createdAt" | "updatedAt">
   ) => Promise<void>
   isLoading: boolean
+  task?: Task | null
 }
 
 export function NewTaskModal({
@@ -33,6 +34,7 @@ export function NewTaskModal({
   onOpenChange,
   onSubmit,
   isLoading,
+  task,
 }: NewTaskModalProps) {
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
@@ -41,13 +43,30 @@ export function NewTaskModal({
     "work" | "personal" | "school" | "health" | "other"
   >("work")
   const [dueDate, setDueDate] = useState("")
+  const isEditMode = !!task
+
+  useEffect(() => {
+    if (open && task) {
+      setTitle(task.title)
+      setDescription(task.description || "")
+      setPriority(task.priority as any)
+      setCategory(task.category as any)
+      setDueDate(task.due_date ? task.due_date.split('T')[0] : "")
+    } else if (open && !task) {
+      setTitle("")
+      setDescription("")
+      setPriority("medium")
+      setCategory("work")
+      setDueDate("")
+    }
+  }, [open, task])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!title.trim()) return
 
-    const taskData: any = {
+    const taskData: Omit<Task, "id" | "createdAt" | "updatedAt"> = {
       title: title.trim(),
       description: description.trim() || undefined,
       priority,
@@ -76,10 +95,12 @@ export function NewTaskModal({
         <div className="p-6">
           <DialogHeader className="mb-6">
             <DialogTitle className="text-2xl font-bold text-foreground">
-              Create New Task
+              {isEditMode ? "Edit Task" : "Create New Task"}
             </DialogTitle>
             <DialogDescription className="text-muted-foreground font-medium">
-              Add a new task to your task list. Fill in the details below.
+              {isEditMode 
+                ? "Update your task details below." 
+                : "Add a new task to your task list. Fill in the details below."}
             </DialogDescription>
           </DialogHeader>
 
@@ -187,7 +208,9 @@ export function NewTaskModal({
                 disabled={isLoading || !title.trim()}
                 className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 transition-all"
               >
-                {isLoading ? "Creating..." : "Create Task"}
+                {isLoading 
+                  ? (isEditMode ? "Updating..." : "Creating...") 
+                  : (isEditMode ? "Update Task" : "Create Task")}
               </Button>
             </DialogFooter>
           </form>

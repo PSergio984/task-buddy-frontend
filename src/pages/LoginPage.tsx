@@ -55,9 +55,10 @@ export function LoginPage() {
       })
       navigate("/dashboard")
     } catch (err: any) {
+      const detail = err.response?.data?.detail || err.message || "Invalid credentials. Please try again."
       toast({
         title: "Authentication failed",
-        description: error || "Invalid credentials. Please try again.",
+        description: detail,
         variant: "destructive",
       })
     }

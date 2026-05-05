@@ -104,7 +104,9 @@ export function SystemOverview({ stats, loading }: { stats: StatsOverview | null
                       <div className="h-1.5 w-20 bg-muted rounded-full overflow-hidden">
                         <div 
                           className="h-full bg-accent/40" 
-                          style={{ width: `${(tag.task_count / task_stats.total_tasks) * 100}%` }}
+                          style={{ 
+                            width: `${task_stats.total_tasks > 0 ? (tag.task_count / task_stats.total_tasks) * 100 : 0}%` 
+                          }}
                         />
                       </div>
                       <span className="text-[10px] font-bold text-muted-foreground">{tag.task_count}</span>

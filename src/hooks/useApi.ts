@@ -59,7 +59,10 @@ export function useTasks(filter?: string) {
   const { token } = useAuth()
 
   const fetchTasks = useCallback(async () => {
-    if (!token) return
+    if (!token) {
+      setLoading(false)
+      return
+    }
     try {
       setLoading(true)
       let url = `${API_BASE_URL}/api/v1/tasks/`
@@ -99,7 +102,10 @@ export function useStats() {
   const { token } = useAuth()
 
   const fetchStats = useCallback(async () => {
-    if (!token) return
+    if (!token) {
+      setLoading(false)
+      return
+    }
     try {
       setLoading(true)
       const response = await axios.get(`${API_BASE_URL}/api/v1/stats/overview`, {

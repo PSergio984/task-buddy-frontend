@@ -151,16 +151,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     []
   )
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    if (token) {
+      try {
+        await axios.post(`${API_BASE_URL}/api/v1/users/logout`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      } catch (err) {
+        console.error("Backend logout failed:", err);
+      }
+    }
     setToken(null)
     setUser(null)
+    setError(null)
     localStorage.removeItem(TOKEN_STORAGE_KEY)
     localStorage.removeItem(USER_STORAGE_KEY)
-  }, [])
+  }, [token])
 
   const refreshUser = useCallback(async () => {
-    if (!token) return
+    if (!token) {
+      setUser(null)
+      setLoading(false)
+      return
+    }
+
     try {
+      setLoading(true)
       const response = await axios.get(`${API_BASE_URL}/api/v1/users/me`, {
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -169,10 +185,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(nextUser)
         localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextUser))
       }
-    } catch (err) {
-      console.error("Failed to refresh user profile:", err)
+      setError(null)
+    } catch (err: any) {
+      if (err.response?.status === 401) {
+        await logout()
+      } else {
+        setError(err.response?.data?.detail || "Failed to refresh user profile")
+      }
+    } finally {
+      setLoading(false)
     }
-  }, [token])
+  }, [token, logout])
 
   return (
     <AuthContext.Provider

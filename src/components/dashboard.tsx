@@ -1,4 +1,5 @@
 import { useCallback } from "react"
+import { useAuth } from "@/contexts/AuthContext"
 import { motion, AnimatePresence } from "framer-motion"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { TaskCard } from "@/components/task-card"
@@ -19,6 +20,7 @@ export interface DashboardProps {
   activeFilter: string
   onFilterChange: (filter: string) => void
   onRefresh: () => void
+  onEdit: (task: Task) => void
   stats: any
   loadingStats: boolean
 }
@@ -28,9 +30,11 @@ export function Dashboard({
   activeFilter,
   onFilterChange,
   onRefresh,
+  onEdit,
   stats,
   loadingStats,
 }: DashboardProps) {
+  const { logout } = useAuth()
   const { updateTask } = useUpdateTask()
   const { deleteTask } = useDeleteTask()
   const { updateSubtask } = useUpdateSubtask()
@@ -53,7 +57,11 @@ export function Dashboard({
           variant: "success",
         })
         onRefresh()
-      } catch (err) {
+      } catch (err: any) {
+        if (err.response?.status === 401) {
+          await logout()
+          return
+        }
         toast({
           title: "Action failed",
           description: "Could not update the task status. Please try again.",
@@ -75,7 +83,11 @@ export function Dashboard({
           variant: "success",
         })
         onRefresh()
-      } catch (err) {
+      } catch (err: any) {
+        if (err.response?.status === 401) {
+          await logout()
+          return
+        }
         toast({
           title: "Delete failed",
           description: "Could not delete the task. Please try again.",
@@ -212,7 +224,7 @@ export function Dashboard({
                         task={task}
                         onToggleComplete={handleToggleComplete}
                         onDelete={handleDelete}
-                        onEdit={() => {}}
+                        onEdit={onEdit}
                         onToggleSubtask={handleToggleSubtask}
                         onDeleteSubtask={handleDeleteSubtask}
                         onDetachTag={handleDetachTag}

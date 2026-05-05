@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { motion } from "framer-motion"
 import { useNavigate, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
@@ -9,18 +10,20 @@ import {
   LayoutDashboard,
   LogOut,
 } from "lucide-react"
-import type { Task } from "@/hooks/useApi"
+import { useToast } from "@/hooks/use-toast"
+import { LogoutDialog } from "@/components/logout-dialog"
 
 export interface SidebarProps {
   activeFilter: string
   onFilterChange: (filter: string) => void
-  tasks?: Task[]
 }
 
-export function Sidebar({ activeFilter, onFilterChange, tasks = [] }: SidebarProps) {
+export function Sidebar({ activeFilter, onFilterChange }: SidebarProps) {
   const { logout, user } = useAuth()
+  const { toast } = useToast()
   const navigate = useNavigate()
   const location = useLocation()
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
 
 
 
@@ -37,8 +40,14 @@ export function Sidebar({ activeFilter, onFilterChange, tasks = [] }: SidebarPro
     { path: "/audit-logs", label: "Audit Logs", icon: BarChart3 },
   ]
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    setIsLogoutDialogOpen(false)
+    await logout()
+    toast({
+      title: "Successfully logged out",
+      description: "You have been securely signed out of your session.",
+      variant: "default",
+    })
     navigate("/login")
   }
 
@@ -118,7 +127,7 @@ export function Sidebar({ activeFilter, onFilterChange, tasks = [] }: SidebarPro
           </p>
         </div>
         <motion.button
-          onClick={handleLogout}
+          onClick={() => setIsLogoutDialogOpen(true)}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           className="flex items-center justify-center gap-2 rounded-lg border border-border bg-sidebar-accent/50 px-3 py-2 text-sm font-medium text-sidebar-accent-foreground transition-colors hover:bg-sidebar-accent"
@@ -127,6 +136,12 @@ export function Sidebar({ activeFilter, onFilterChange, tasks = [] }: SidebarPro
           Logout
         </motion.button>
       </div>
+
+      <LogoutDialog 
+        open={isLogoutDialogOpen} 
+        onOpenChange={setIsLogoutDialogOpen} 
+        onConfirm={handleLogout} 
+      />
     </motion.aside>
   )
 }
