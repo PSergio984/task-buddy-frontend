@@ -1,17 +1,12 @@
-import { useState } from "react"
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
 import { Sidebar } from "@/components/sidebar"
 import { TopNav } from "@/components/topnav"
 import { Dashboard } from "@/components/dashboard"
 import { NewTaskModal } from "@/components/new-task-modal"
-import { LoginPage } from "@/pages/LoginPage"
-import { RegisterPage } from "@/pages/RegisterPage"
-import { ProtectedRoute, PublicRoute } from "@/contexts/ProtectedRoute"
-import { useAuth } from "@/contexts/AuthContext"
+import { useState } from "react"
 import { useCreateTask } from "@/hooks/useApi"
 import type { Task } from "@/hooks/useApi"
 
-function DashboardLayout() {
+export function DashboardDemo() {
   const [activeFilter, setActiveFilter] = useState<string>("all")
   const [isModalOpen, setIsModalOpen] = useState(false)
   const { createTask, loading: isCreating } = useCreateTask()
@@ -51,55 +46,3 @@ function DashboardLayout() {
     </div>
   )
 }
-
-export function App() {
-  const { token } = useAuth()
-
-  return (
-    <Router>
-      <Routes>
-        {/* Public Routes */}
-        <Route
-          path="/login"
-          element={
-            <PublicRoute>
-              <LoginPage />
-            </PublicRoute>
-          }
-        />
-        <Route
-          path="/register"
-          element={
-            <PublicRoute>
-              <RegisterPage />
-            </PublicRoute>
-          }
-        />
-
-        {/* Protected Routes */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <DashboardLayout />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/"
-          element={
-            token ? (
-              <DashboardLayout />
-            ) : (
-              <PublicRoute>
-                <LoginPage />
-              </PublicRoute>
-            )
-          }
-        />
-      </Routes>
-    </Router>
-  )
-}
-
-export default App

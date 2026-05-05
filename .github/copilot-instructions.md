@@ -22,6 +22,7 @@ Testing is not configured yet (`package.json` has no `test` script), so there is
 - `ThemeProvider` (`src/components/theme-provider.tsx`) owns theme state, persists it in `localStorage` (`storageKey: "theme"`), applies `.dark` / `.light` classes to `document.documentElement`, and supports keyboard toggle with `d`.
 - Styling is token-driven via `src/index.css` (CSS variables + `@theme inline`), with imports from `tailwindcss`, `tw-animate-css`, `shadcn/tailwind.css`, and Geist variable font.
 - UI components follow shadcn patterns in `src/components/ui/*` (e.g., `button.tsx` uses `class-variance-authority`, Radix `Slot`, and shared `cn()` helper).
+- Backend is FastAPI and is configured through Vite env vars (`.env`: `VITE_API_BASE_URL=).
 
 ## Key conventions in this codebase
 
@@ -31,6 +32,8 @@ Testing is not configured yet (`package.json` has no `test` script), so there is
 - Follow existing component style: functional components, typed props, and variant-driven styling (`cva`) for UI primitives.
 - Tailwind theme values are CSS-variable based; prefer semantic tokens (`bg-background`, `text-foreground`, etc.) over hard-coded color values.
 - Add new shadcn UI primitives with `npx shadcn@latest add <component>` (as documented in `README.md`) so components land in `src/components`.
+- For API work, treat FastAPI as the source of truth and follow its OpenAPI contract (request/response shapes, status codes, and field names) instead of frontend-invented payloads.
+- Read backend base URL from `import.meta.env.VITE_API_BASE_URL`; do not hardcode API hosts in components/helpers.
 - Existing repo-level instruction file `.github/instructions/power-apps-code-apps.instructions.md` applies to TS/React config and should be honored for future Power Apps-related additions.
 
 ## Existing assistant assets relevant to future sessions
