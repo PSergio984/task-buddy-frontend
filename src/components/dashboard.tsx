@@ -43,7 +43,7 @@ export function Dashboard({
   const { toast } = useToast()
 
   const handleToggleComplete = useCallback(
-    async (id: string) => {
+    async (id: number) => {
       const task = tasks.find((t: Task) => t.id === id)
       if (!task) return
 
@@ -74,7 +74,7 @@ export function Dashboard({
   )
 
   const handleDelete = useCallback(
-    async (id: string) => {
+    async (id: number) => {
       try {
         await deleteTask(id)
         toast({
@@ -100,7 +100,7 @@ export function Dashboard({
   )
 
   const handleToggleSubtask = useCallback(
-    async (subtaskId: string, completed: boolean) => {
+    async (subtaskId: number, completed: boolean) => {
       try {
         await updateSubtask(subtaskId, { completed })
         onRefresh()
@@ -116,7 +116,7 @@ export function Dashboard({
   )
 
   const handleDeleteSubtask = useCallback(
-    async (subtaskId: string) => {
+    async (subtaskId: number) => {
       try {
         await deleteSubtask(subtaskId)
         toast({
@@ -136,7 +136,7 @@ export function Dashboard({
   )
 
   const handleDetachTag = useCallback(
-    async (taskId: string, tagId: string) => {
+    async (taskId: number, tagId: number) => {
       try {
         await detachTag(taskId, tagId)
         onRefresh()

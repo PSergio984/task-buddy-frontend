@@ -29,7 +29,7 @@ function DashboardLayout() {
   }
 
   const handleCreateTask = async (
-    taskData: Omit<Task, "id" | "createdAt" | "updatedAt">
+    taskData: Omit<Task, "id" | "created_at" | "user_id">
   ) => {
     try {
       if (editingTask) {

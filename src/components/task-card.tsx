@@ -8,12 +8,12 @@ import { cn } from "@/lib/utils"
 
 export interface TaskCardProps {
   task: Task
-  onToggleComplete: (id: string) => void
-  onDelete: (id: string) => void
+  onToggleComplete: (id: number) => void
+  onDelete: (id: number) => void
   onEdit: (task: Task) => void
-  onToggleSubtask?: (subtaskId: string, completed: boolean) => void
-  onDeleteSubtask?: (subtaskId: string) => void
-  onDetachTag?: (taskId: string, tagId: string) => void
+  onToggleSubtask?: (subtaskId: number, completed: boolean) => void
+  onDeleteSubtask?: (subtaskId: number) => void
+  onDetachTag?: (taskId: number, tagId: number) => void
 }
 
 const priorityConfig = {

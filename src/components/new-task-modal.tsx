@@ -23,7 +23,7 @@ export interface NewTaskModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSubmit: (
-    taskData: Omit<Task, "id" | "createdAt" | "updatedAt">
+    taskData: Omit<Task, "id" | "created_at" | "user_id">
   ) => Promise<void>
   isLoading: boolean
   task?: Task | null
@@ -66,7 +66,7 @@ export function NewTaskModal({
 
     if (!title.trim()) return
 
-    const taskData: Omit<Task, "id" | "createdAt" | "updatedAt"> = {
+    const taskData: Omit<Task, "id" | "created_at" | "user_id"> = {
       title: title.trim(),
       description: description.trim() || undefined,
       priority,

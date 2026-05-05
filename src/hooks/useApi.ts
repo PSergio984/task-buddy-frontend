@@ -7,31 +7,34 @@ const API_BASE_URL =
 
 // Task types
 export interface Task {
-  id: string
+  id: number
   title: string
   description?: string
   completed: boolean
-  priority: "low" | "medium" | "high"
-  category: "work" | "personal" | "school" | "health" | "other"
+  priority?: "low" | "medium" | "high"
+  category?: "work" | "personal" | "school" | "health" | "other"
   due_date?: string
-  createdAt: string
-  updatedAt: string
+  created_at: string
+  user_id: number
   subtasks?: Subtask[]
   tags?: Tag[]
 }
 
 export interface Subtask {
-  id: string
-  task_id: string
+  id: number
+  task_id: number
   title: string
   description?: string
   completed: boolean
+  created_at: string
 }
 
 export interface Tag {
-  id: string
+  id: number
   name: string
   color?: string
+  user_id: number
+  created_at: string
 }
 
 export interface TaskStats {
@@ -134,7 +137,7 @@ export function useCreateTask() {
   const { token } = useAuth()
 
   const createTask = useCallback(
-    async (taskData: Omit<Task, "id" | "createdAt" | "updatedAt">) => {
+    async (taskData: Omit<Task, "id" | "created_at" | "user_id">) => {
       if (!token) return
       try {
         setLoading(true)
@@ -163,7 +166,7 @@ export function useUpdateTask() {
   const [error, setError] = useState<Error | null>(null)
   const { token } = useAuth()
 
-  const updateTask = useCallback(async (id: string, updates: Partial<Task>) => {
+  const updateTask = useCallback(async (id: number, updates: Partial<Task>) => {
     if (!token) return
     try {
       setLoading(true)
@@ -190,7 +193,7 @@ export function useDeleteTask() {
   const [error, setError] = useState<Error | null>(null)
   const { token } = useAuth()
 
-  const deleteTask = useCallback(async (id: string) => {
+  const deleteTask = useCallback(async (id: number) => {
     if (!token) return
     try {
       setLoading(true)
@@ -216,7 +219,7 @@ export function useUpdateSubtask() {
   const [error, setError] = useState<Error | null>(null)
   const { token } = useAuth()
 
-  const updateSubtask = useCallback(async (id: string, updates: Partial<Subtask>) => {
+  const updateSubtask = useCallback(async (id: number, updates: Partial<Subtask>) => {
     if (!token) return
     try {
       setLoading(true)
@@ -243,7 +246,7 @@ export function useDeleteSubtask() {
   const [error, setError] = useState<Error | null>(null)
   const { token } = useAuth()
 
-  const deleteSubtask = useCallback(async (id: string) => {
+  const deleteSubtask = useCallback(async (id: number) => {
     if (!token) return
     try {
       setLoading(true)
@@ -269,7 +272,7 @@ export function useDetachTag() {
   const [error, setError] = useState<Error | null>(null)
   const { token } = useAuth()
 
-  const detachTag = useCallback(async (taskId: string, tagId: string) => {
+  const detachTag = useCallback(async (taskId: number, tagId: number) => {
     if (!token) return
     try {
       setLoading(true)
@@ -295,7 +298,7 @@ export function useDeleteTag() {
   const [error, setError] = useState<Error | null>(null)
   const { token } = useAuth()
 
-  const deleteTag = useCallback(async (tagId: string) => {
+  const deleteTag = useCallback(async (tagId: number) => {
     if (!token) return
     try {
       setLoading(true)

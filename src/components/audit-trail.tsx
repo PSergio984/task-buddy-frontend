@@ -11,11 +11,13 @@ const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000"
 
 export interface AuditEntry {
-  id: string
+  id: number
   action: string
   details: string
-  createdAt: string
-  user_id: string
+  created_at: string
+  user_id: number
+  target_type: string
+  target_id?: number | null
 }
 
 export function AuditTrail({ limit = 5 }: { limit?: number }) {
@@ -156,7 +158,7 @@ export function AuditTrail({ limit = 5 }: { limit?: number }) {
                           {log.action?.replace(/_/g, " ") || "ACTIVITY"}
                         </span>
                         <span className="text-[10px] text-muted-foreground/60">
-                          {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
                       <p className="text-xs leading-relaxed text-muted-foreground line-clamp-2">
