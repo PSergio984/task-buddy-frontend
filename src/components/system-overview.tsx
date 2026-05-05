@@ -17,10 +17,10 @@ export function SystemOverview({ tasks }: SystemOverviewProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <Card className="border-slate-200 bg-white p-6">
+      <Card className="border-base-300 bg-base-100 p-6">
         {/* Header */}
         <div className="mb-6">
-          <h3 className="text-sm font-semibold tracking-widest text-slate-600 uppercase">
+          <h3 className="text-sm font-semibold tracking-widest text-base-content/60 uppercase">
             System Overview
           </h3>
         </div>
@@ -33,25 +33,28 @@ export function SystemOverview({ tasks }: SystemOverviewProps) {
             transition={{ delay: 0.2 }}
             className="text-center"
           >
-            <p className="text-brand-sidebar text-5xl font-bold">
+            <p className="text-5xl font-bold text-base-content">
               {completionPercentage}%
             </p>
-            <p className="mt-2 text-sm text-slate-500">
+            <p className="mt-2 text-sm text-base-content/50">
               {completedCount} of {tasks.length} tasks completed
             </p>
           </motion.div>
 
           {/* Progress Bar */}
           <div className="space-y-2">
-            <div className="bg-brand-muted h-3 w-full overflow-hidden rounded-full">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${completionPercentage}%` }}
-                transition={{ duration: 0.8, ease: "easeInOut" }}
-                className="bg-brand-accent h-full"
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              <progress 
+                className="progress progress-primary h-3 w-full" 
+                value={completionPercentage} 
+                max={100} 
               />
-            </div>
-            <p className="text-xs text-slate-500">
+            </motion.div>
+            <p className="text-xs text-base-content/50">
               Progress: {completedCount} completed
             </p>
           </div>
@@ -60,21 +63,21 @@ export function SystemOverview({ tasks }: SystemOverviewProps) {
           <div className="grid grid-cols-2 gap-3">
             <motion.div
               whileHover={{ scale: 1.05 }}
-              className="bg-brand-bg rounded-lg p-3 text-center"
+              className="rounded-lg bg-base-200 p-3 text-center"
             >
-              <p className="text-brand-sidebar text-2xl font-bold">
+              <p className="text-2xl font-bold text-base-content">
                 {tasks.length}
               </p>
-              <p className="text-xs text-slate-500">Total Tasks</p>
+              <p className="text-xs text-base-content/50">Total Tasks</p>
             </motion.div>
             <motion.div
               whileHover={{ scale: 1.05 }}
-              className="rounded-lg bg-green-50 p-3 text-center"
+              className="rounded-lg bg-success/10 p-3 text-center"
             >
-              <p className="text-2xl font-bold text-green-600">
+              <p className="text-2xl font-bold text-success">
                 {completedCount}
               </p>
-              <p className="text-xs text-green-600">Completed</p>
+              <p className="text-xs text-success">Completed</p>
             </motion.div>
           </div>
         </div>

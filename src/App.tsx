@@ -8,13 +8,15 @@ import { LoginPage } from "@/pages/LoginPage"
 import { RegisterPage } from "@/pages/RegisterPage"
 import { ProtectedRoute, PublicRoute } from "@/contexts/ProtectedRoute"
 import { useAuth } from "@/contexts/AuthContext"
-import { useCreateTask } from "@/hooks/useApi"
+import { useCreateTask, useTasks } from "@/hooks/useApi"
 import type { Task } from "@/hooks/useApi"
 
 function DashboardLayout() {
   const [activeFilter, setActiveFilter] = useState<string>("all")
   const [isModalOpen, setIsModalOpen] = useState(false)
   const { createTask, loading: isCreating } = useCreateTask()
+  // Fetch tasks here so both Sidebar (system overview) and Dashboard share data
+  const { tasks } = useTasks()
 
   const handleCreateTask = async (
     taskData: Omit<Task, "id" | "createdAt" | "updatedAt">
@@ -28,16 +30,20 @@ function DashboardLayout() {
   }
 
   return (
-    <div className="flex min-h-svh flex-col bg-background">
+    <div className="flex min-h-svh flex-col bg-[#F1F5F9]">
       {/* Top Navigation */}
       <TopNav onNewTask={() => setIsModalOpen(true)} />
 
       {/* Main Content */}
       <div className="flex flex-1">
-        {/* Sidebar */}
-        <Sidebar activeFilter={activeFilter} onFilterChange={setActiveFilter} />
+        {/* Sidebar — receives tasks for system overview */}
+        <Sidebar
+          activeFilter={activeFilter}
+          onFilterChange={setActiveFilter}
+          tasks={tasks}
+        />
 
-        {/* Dashboard */}
+        {/* Dashboard — main content area */}
         <Dashboard />
       </div>
 

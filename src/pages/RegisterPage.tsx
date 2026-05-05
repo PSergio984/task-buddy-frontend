@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { type FormEvent, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { motion } from "framer-motion"
 import { useAuth } from "@/contexts/AuthContext"
@@ -6,172 +6,461 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
+import {
+  ArrowRight,
+  BadgeCheck,
+  CheckCircle2,
+  Circle,
+  Eye,
+  EyeOff,
+  KeyRound,
+  Lock,
+  Mail,
+  User,
+  UserPlus,
+} from "lucide-react"
+import {
+  sanitizeEmail,
+  sanitizePassword,
+  sanitizeUsername,
+  validateEmail,
+  validatePassword,
+  validatePasswordConfirmation,
+  validateUsername,
+} from "@/lib/auth"
+
+interface PasswordRule {
+  label: string
+  test: (pw: string) => boolean
+}
+
+const PASSWORD_RULES: PasswordRule[] = [
+  { label: "At least 8 characters", test: (pw) => pw.length >= 8 },
+  { label: "One uppercase letter", test: (pw) => /[A-Z]/.test(pw) },
+  { label: "One lowercase letter", test: (pw) => /[a-z]/.test(pw) },
+  { label: "One number", test: (pw) => /\d/.test(pw) },
+  {
+    label: "One special character",
+    test: (pw) => /[^A-Za-z0-9]/.test(pw),
+  },
+]
 
 export function RegisterPage() {
+  const [username, setUsername] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
-  const [validationError, setValidationError] = useState<string | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [submitAttempted, setSubmitAttempted] = useState(false)
   const { register, loading, error } = useAuth()
   const navigate = useNavigate()
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const usernameError = validateUsername(username)
+  const emailError = validateEmail(email)
+  const passwordError = validatePassword(password)
+  const confirmPasswordError = validatePasswordConfirmation(
+    password,
+    confirmPassword
+  )
+
+  const isFormValid =
+    !usernameError && !emailError && !passwordError && !confirmPasswordError
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    setValidationError(null)
+    setSubmitAttempted(true)
 
-    if (password !== confirmPassword) {
-      setValidationError("Passwords do not match")
-      return
-    }
-
-    if (password.length < 8) {
-      setValidationError("Password must be at least 8 characters")
+    if (!isFormValid) {
       return
     }
 
     try {
-      await register(email, password)
-      navigate("/dashboard")
+      await register({
+        username: sanitizeUsername(username),
+        email: sanitizeEmail(email),
+        password: sanitizePassword(password),
+      })
+      navigate("/login")
     } catch {
       // Error is displayed from context
     }
   }
 
   return (
-    <div className="bg-brand-bg flex min-h-screen items-center justify-center">
+    <div className="flex min-h-svh items-center justify-center bg-[#F1F5F9] px-4 py-10 text-[#0F172A]">
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.3 }}
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.22, ease: "easeOut" }}
+        className="relative w-full max-w-xl"
       >
-        <Card className="w-96 border border-slate-200 bg-white p-8 shadow-lg">
-          {/* Header */}
+        <Card className="overflow-hidden border border-[#EDE9E6] bg-[#FFFFFF] p-8 shadow-md sm:p-10">
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="mb-8 text-center"
+            transition={{ duration: 0.18 }}
+            className="mb-8"
           >
-            <div className="bg-brand-sidebar mb-3 inline-block rounded-lg p-3">
-              <svg
-                className="h-6 w-6 text-white"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path d="M9 2C7.89543 2 7 2.89543 7 4V20C7 21.1046 7.89543 22 9 22H15C16.1046 22 17 21.1046 17 20V4C17 2.89543 16.1046 2 15 2H9ZM9 4H15V20H9V4Z" />
-              </svg>
+            <div className="mb-6 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div
+                  data-testid="task-buddy-icon"
+                  className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#EDE9E6] bg-[#FFFFFF] text-[#0F172A] shadow-sm"
+                >
+                  <UserPlus className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold tracking-[0.3em] text-[#0F172A] uppercase">
+                    task-buddy
+                  </p>
+                  <h1 className="mt-1 text-3xl font-semibold tracking-tight text-[#0F172A]">
+                    Create your account
+                  </h1>
+                </div>
+              </div>
+              <div className="hidden items-center gap-2 rounded-full border border-[#EDE9E6] bg-[#FFFFFF] px-3 py-1 text-xs text-[#0F172A] sm:flex">
+                <Mail className="h-3.5 w-3.5" />
+                <Lock className="h-3.5 w-3.5" />
+                <User className="h-3.5 w-3.5" />
+              </div>
             </div>
-            <h1 className="text-brand-sidebar text-2xl font-bold">
-              Task-Buddy
-            </h1>
-            <p className="mt-2 text-sm text-slate-500">Create your account</p>
+            <p className="max-w-md text-sm leading-6 text-[#0F172A]/80">
+              Create a task-buddy account with a username, email address, and
+              secure password.
+            </p>
           </motion.div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Email */}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Username Field */}
             <motion.div
-              initial={{ opacity: 0, x: -10 }}
+              initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
+              transition={{ duration: 0.16 }}
             >
-              <Label htmlFor="email" className="text-slate-700">
+              <Label
+                htmlFor="username"
+                className="text-sm font-medium text-[#0F172A]"
+              >
+                Username
+              </Label>
+              <div className="relative mt-2">
+                <UserPlus className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[#0F172A]/60" />
+                <Input
+                  id="username"
+                  name="username"
+                  type="text"
+                  autoComplete="username"
+                  inputMode="text"
+                  placeholder="your.username"
+                  value={username}
+                  aria-invalid={Boolean(
+                    (submitAttempted || username.length > 0) && usernameError
+                  )}
+                  aria-describedby={
+                    (submitAttempted || username.length > 0) && usernameError
+                      ? "register-username-error"
+                      : "register-username-help"
+                  }
+                  onBlur={() => setSubmitAttempted(true)}
+                  onChange={(e) =>
+                    setUsername(sanitizeUsername(e.target.value))
+                  }
+                  required
+                  className="h-12 border-[#EDE9E6] bg-[#FFFFFF] pl-10 text-[#0F172A] placeholder:text-[#0F172A]/45 focus-visible:ring-[#C2A388]/40"
+                />
+              </div>
+              <p
+                id="register-username-help"
+                className="mt-2 text-xs text-[#0F172A]/70"
+              >
+                3-32 characters. Letters, numbers, dots, underscores, and
+                hyphens only.
+              </p>
+              {(submitAttempted || username.length > 0) && usernameError && (
+                <p
+                  id="register-username-error"
+                  role="alert"
+                  className="mt-2 text-xs text-red-600"
+                >
+                  {usernameError}
+                </p>
+              )}
+            </motion.div>
+
+            {/* Email Field */}
+            <motion.div
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.16, delay: 0.03 }}
+            >
+              <Label
+                htmlFor="email"
+                className="text-sm font-medium text-[#0F172A]"
+              >
                 Email
               </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="mt-2 border-slate-200"
-              />
+              <div className="relative mt-2">
+                <Mail className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[#0F172A]/60" />
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  aria-invalid={Boolean(
+                    (submitAttempted || email.length > 0) && emailError
+                  )}
+                  aria-describedby={
+                    (submitAttempted || email.length > 0) && emailError
+                      ? "register-email-error"
+                      : "register-email-help"
+                  }
+                  onBlur={() => setSubmitAttempted(true)}
+                  onChange={(e) => setEmail(sanitizeEmail(e.target.value))}
+                  required
+                  className="h-12 border-[#EDE9E6] bg-[#FFFFFF] pl-10 text-[#0F172A] placeholder:text-[#0F172A]/45 focus-visible:ring-[#C2A388]/40"
+                />
+              </div>
+              <p
+                id="register-email-help"
+                className="mt-2 text-xs text-[#0F172A]/70"
+              >
+                We use this for account recovery and notifications.
+              </p>
+              {(submitAttempted || email.length > 0) && emailError && (
+                <p
+                  id="register-email-error"
+                  role="alert"
+                  className="mt-2 text-xs text-red-600"
+                >
+                  {emailError}
+                </p>
+              )}
             </motion.div>
 
-            {/* Password */}
+            {/* Password Field */}
             <motion.div
-              initial={{ opacity: 0, x: -10 }}
+              initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
+              transition={{ duration: 0.16, delay: 0.06 }}
             >
-              <Label htmlFor="password" className="text-slate-700">
+              <Label
+                htmlFor="password"
+                className="text-sm font-medium text-[#0F172A]"
+              >
                 Password
               </Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="mt-2 border-slate-200"
-              />
-              <p className="mt-1 text-xs text-slate-500">
-                Must be at least 8 characters
-              </p>
+              <div className="relative mt-2">
+                <KeyRound className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[#0F172A]/60" />
+                <Input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  placeholder="••••••••"
+                  value={password}
+                  aria-invalid={Boolean(
+                    (submitAttempted || password.length > 0) && passwordError
+                  )}
+                  aria-describedby={
+                    (submitAttempted || password.length > 0) && passwordError
+                      ? "register-password-error register-password-rules"
+                      : "register-password-rules"
+                  }
+                  onBlur={() => setSubmitAttempted(true)}
+                  onChange={(e) =>
+                    setPassword(sanitizePassword(e.target.value))
+                  }
+                  required
+                  className="h-12 border-[#EDE9E6] bg-[#FFFFFF] pl-10 pr-12 text-[#0F172A] placeholder:text-[#0F172A]/45 focus-visible:ring-[#C2A388]/40"
+                />
+                <button
+                  type="button"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute top-1/2 right-3 -translate-y-1/2 rounded p-1 text-[#0F172A]/50 transition-colors hover:text-[#0F172A]"
+                  tabIndex={0}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+
+              {/* Password Requirements Checklist */}
+              <div
+                id="register-password-rules"
+                className="mt-3 space-y-1.5"
+                role="list"
+                aria-label="Password requirements"
+              >
+                {PASSWORD_RULES.map((rule) => {
+                  const met = rule.test(password)
+                  return (
+                    <div
+                      key={rule.label}
+                      role="listitem"
+                      className="flex items-center gap-2"
+                    >
+                      {met ? (
+                        <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-green-500" />
+                      ) : (
+                        <Circle className="h-4 w-4 flex-shrink-0 text-[#0F172A]/25" />
+                      )}
+                      <span
+                        className={`text-xs transition-colors duration-150 ${
+                          met ? "text-green-600" : "text-[#0F172A]/60"
+                        }`}
+                      >
+                        {rule.label}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {(submitAttempted || password.length > 0) && passwordError && (
+                <p
+                  id="register-password-error"
+                  role="alert"
+                  className="mt-2 text-xs text-red-600"
+                >
+                  {passwordError}
+                </p>
+              )}
             </motion.div>
 
-            {/* Confirm Password */}
+            {/* Confirm Password Field */}
             <motion.div
-              initial={{ opacity: 0, x: -10 }}
+              initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4 }}
+              transition={{ duration: 0.16, delay: 0.09 }}
             >
-              <Label htmlFor="confirmPassword" className="text-slate-700">
+              <Label
+                htmlFor="confirmPassword"
+                className="text-sm font-medium text-[#0F172A]"
+              >
                 Confirm Password
               </Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="••••••••"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                className="mt-2 border-slate-200"
-              />
+              <div className="relative mt-2">
+                <BadgeCheck className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[#0F172A]/60" />
+                <Input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  aria-invalid={Boolean(
+                    (submitAttempted || confirmPassword.length > 0) &&
+                      confirmPasswordError
+                  )}
+                  aria-describedby={
+                    (submitAttempted || confirmPassword.length > 0) &&
+                    confirmPasswordError
+                      ? "register-confirm-password-error"
+                      : "register-confirm-password-help"
+                  }
+                  onBlur={() => setSubmitAttempted(true)}
+                  onChange={(e) =>
+                    setConfirmPassword(sanitizePassword(e.target.value))
+                  }
+                  required
+                  className="h-12 border-[#EDE9E6] bg-[#FFFFFF] pl-10 pr-12 text-[#0F172A] placeholder:text-[#0F172A]/45 focus-visible:ring-[#C2A388]/40"
+                />
+                <button
+                  type="button"
+                  aria-label={
+                    showConfirmPassword
+                      ? "Hide confirm password"
+                      : "Show confirm password"
+                  }
+                  onClick={() => setShowConfirmPassword((v) => !v)}
+                  className="absolute top-1/2 right-3 -translate-y-1/2 rounded p-1 text-[#0F172A]/50 transition-colors hover:text-[#0F172A]"
+                  tabIndex={0}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+              <p
+                id="register-confirm-password-help"
+                className="mt-2 text-xs text-[#0F172A]/70"
+              >
+                Re-enter the password exactly as above.
+              </p>
+              {(submitAttempted || confirmPassword.length > 0) &&
+                confirmPasswordError && (
+                  <p
+                    id="register-confirm-password-error"
+                    role="alert"
+                    className="mt-2 text-xs text-red-600"
+                  >
+                    {confirmPasswordError}
+                  </p>
+                )}
             </motion.div>
 
-            {/* Errors */}
-            {(error || validationError) && (
+            {error && (
               <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="rounded-lg bg-red-50 p-3 text-sm text-red-600"
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                role="alert"
               >
-                {error || validationError}
+                {error}
               </motion.div>
             )}
 
-            {/* Submit Button */}
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
+              transition={{ duration: 0.16, delay: 0.12 }}
             >
               <Button
                 type="submit"
-                disabled={loading}
-                className="bg-brand-sidebar w-full text-white hover:bg-slate-800"
+                disabled={loading || !isFormValid}
+                aria-label={
+                  isFormValid
+                    ? "Create your account"
+                    : "Complete the required fields"
+                }
+                className="h-12 w-full gap-2 border border-[#0F172A] bg-[#0F172A] text-[#F1F5F9] shadow-sm transition-colors duration-150 hover:bg-[#0F172A]/90 disabled:cursor-not-allowed disabled:border-[#94A3B8] disabled:bg-[#94A3B8] disabled:text-white"
               >
-                {loading ? "Creating account..." : "Create Account"}
+                {loading ? (
+                  "Creating account..."
+                ) : (
+                  <>
+                    <UserPlus className="h-4 w-4" />
+                    Create Account
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
               </Button>
             </motion.div>
           </form>
 
-          {/* Login Link */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-            className="mt-6 text-center text-sm text-slate-600"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.18, delay: 0.16 }}
+            className="mt-8 rounded-2xl border border-[#EDE9E6] bg-[#FFFFFF] px-4 py-4 text-sm text-[#0F172A]/80"
           >
             Already have an account?{" "}
             <button
+              type="button"
               onClick={() => navigate("/login")}
-              className="text-brand-accent hover:text-brand-accent font-semibold"
+              className="inline-flex items-center gap-1 font-semibold text-[#0F172A] transition-colors hover:text-[#C2A388]"
             >
               Sign in
+              <ArrowRight className="h-4 w-4" />
             </button>
           </motion.div>
         </Card>

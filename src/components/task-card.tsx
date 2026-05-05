@@ -50,8 +50,8 @@ export function TaskCard({
     >
       <Card
         className={cn(
-          "border-slate-200 bg-white transition-all",
-          task.status === "completed" && "opacity-70"
+          "border-[#EDE9E6] bg-[#FFFFFF] transition-all",
+          task.status === "completed" && "opacity-60"
         )}
       >
         <CardContent className="flex items-start justify-between gap-4 p-4">
@@ -72,15 +72,15 @@ export function TaskCard({
             <div className="min-w-0 flex-1">
               <p
                 className={cn(
-                  "font-medium text-slate-900",
-                  task.status === "completed" && "text-slate-500 line-through"
+                  "font-medium text-[#0F172A]",
+                  task.status === "completed" && "text-[#0F172A]/50 line-through"
                 )}
               >
                 {task.title}
               </p>
 
               {task.description && (
-                <p className="mt-1 line-clamp-2 text-sm text-slate-600">
+                <p className="mt-1 line-clamp-2 text-sm text-[#0F172A]/65">
                   {task.description}
                 </p>
               )}
@@ -105,7 +105,7 @@ export function TaskCard({
                 </span>
 
                 {task.dueDate && (
-                  <div className="flex items-center gap-1 text-xs text-slate-500">
+                  <div className="flex items-center gap-1 text-xs text-[#0F172A]/50">
                     <Calendar className="h-3 w-3" />
                     {new Date(task.dueDate).toLocaleDateString()}
                   </div>
@@ -121,7 +121,7 @@ export function TaskCard({
                 variant="ghost"
                 size="sm"
                 onClick={() => onEdit(task)}
-                className="hover:bg-brand-muted h-8 w-8 p-0 text-slate-400 hover:text-slate-600"
+                className="h-8 w-8 p-0 text-[#0F172A]/35 hover:bg-[#F1F5F9] hover:text-[#0F172A]"
               >
                 <Edit2 className="h-4 w-4" />
               </Button>
@@ -131,7 +131,7 @@ export function TaskCard({
                 variant="ghost"
                 size="sm"
                 onClick={() => onDelete(task.id)}
-                className="h-8 w-8 p-0 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                className="h-8 w-8 p-0 text-[#0F172A]/35 hover:bg-red-50 hover:text-red-600"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Card } from "@/components/ui/card"
-import { CheckCircle, Clock } from "lucide-react"
+import { CheckCircle2, Clock, FilePlus2, AlertCircle } from "lucide-react"
 import axios from "axios"
 
 const API_BASE_URL =
@@ -15,9 +15,37 @@ interface AuditEntry {
   status: "completed" | "created" | "updated"
 }
 
+function getStatusIcon(status: string) {
+  switch (status) {
+    case "completed":
+      return <CheckCircle2 className="h-4 w-4 text-green-500" />
+    case "created":
+      return <FilePlus2 className="h-4 w-4 text-[#C2A388]" />
+    default:
+      return <Clock className="h-4 w-4 text-[#0F172A]/35" />
+  }
+}
+
+function formatTime(timestamp: string) {
+  const date = new Date(timestamp)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMs / 3600000)
+  const diffDays = Math.floor(diffMs / 86400000)
+
+  if (diffMins < 1) return "just now"
+  if (diffMins < 60) return `${diffMins}m ago`
+  if (diffHours < 24) return `${diffHours}h ago`
+  if (diffDays < 7) return `${diffDays}d ago`
+  return date.toLocaleDateString()
+}
+
 export function AuditTrail() {
   const [entries, setEntries] = useState<AuditEntry[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [isFallback, setIsFallback] = useState(false)
 
   useEffect(() => {
     const fetchAuditLog = async () => {
@@ -26,31 +54,58 @@ export function AuditTrail() {
         const response = await axios.get(`${API_BASE_URL}/api/audit-logs`, {
           headers: { Authorization: `Bearer ${token}` },
         })
-        // Transform response to match our component's structure
-        const logs = response.data.map((log: any) => ({
+        const logs = response.data.map((log: Record<string, unknown>) => ({
           id: log.id,
           action: log.action,
           taskName: log.task_name,
           timestamp: log.timestamp,
           status: log.status,
         }))
-        setEntries(logs.slice(0, 10)) // Show last 10 entries
-      } catch (error) {
-        console.error("Failed to fetch audit log:", error)
-        // Fallback: Use mock data for demo
+        setEntries(logs.slice(0, 10))
+        setIsFallback(false)
+        setError(null)
+      } catch (err) {
+        console.error("Audit trail retrieval failed:", err)
+        setError("Failed to load audit trail")
+        setIsFallback(true)
+        
+        // Fallback: mock data that looks realistic
+        const now = Date.now()
         setEntries([
           {
             id: "1",
             action: "Task Completed",
             taskName: "Finalize Project Documentation",
-            timestamp: new Date(Date.now() - 3600000).toISOString(),
+            timestamp: new Date(now - 1000 * 60 * 8).toISOString(),
             status: "completed",
           },
           {
             id: "2",
-            action: "System Boot",
-            timestamp: new Date(Date.now() - 86400000).toISOString(),
+            action: "Task Created",
+            taskName: "Review API endpoints",
+            timestamp: new Date(now - 1000 * 60 * 35).toISOString(),
             status: "created",
+          },
+          {
+            id: "3",
+            action: "Task Completed",
+            taskName: "Update README file",
+            timestamp: new Date(now - 1000 * 60 * 120).toISOString(),
+            status: "completed",
+          },
+          {
+            id: "4",
+            action: "Task Created",
+            taskName: "Set up CI/CD pipeline",
+            timestamp: new Date(now - 1000 * 60 * 60 * 5).toISOString(),
+            status: "created",
+          },
+          {
+            id: "5",
+            action: "Task Completed",
+            taskName: "Design system audit",
+            timestamp: new Date(now - 1000 * 60 * 60 * 24).toISOString(),
+            status: "completed",
           },
         ])
       } finally {
@@ -61,54 +116,40 @@ export function AuditTrail() {
     fetchAuditLog()
   }, [])
 
-  const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp)
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffMins = Math.floor(diffMs / 60000)
-    const diffHours = Math.floor(diffMs / 3600000)
-    const diffDays = Math.floor(diffMs / 86400000)
-
-    if (diffMins < 1) return "just now"
-    if (diffMins < 60) return `${diffMins}m ago`
-    if (diffHours < 24) return `${diffHours}h ago`
-    if (diffDays < 7) return `${diffDays}d ago`
-    return date.toLocaleDateString()
-  }
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "completed":
-        return <CheckCircle className="h-4 w-4 text-green-500" />
-      case "created":
-        return <Clock className="h-4 w-4 text-blue-500" />
-      default:
-        return <Clock className="h-4 w-4 text-slate-400" />
-    }
-  }
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: 0.1 }}
     >
-      <Card className="border-slate-200 bg-white p-6">
+      <Card className="border-[#EDE9E6] bg-[#FFFFFF] p-6">
         {/* Header */}
-        <div className="mb-6">
-          <h3 className="text-sm font-semibold tracking-widest text-slate-600 uppercase">
-            Audit Trail
-          </h3>
-          <p className="mt-1 text-xs text-slate-500">Recent activity log</p>
+        <div className="mb-5 flex items-center justify-between">
+          <div>
+            <h3 className="text-xs font-bold tracking-[0.22em] text-[#0F172A] uppercase">
+              Audit Trail
+            </h3>
+            <p className="mt-1 text-xs text-[#0F172A]/50">
+              {isFallback ? "Showing demo activity" : "Recent activity log"}
+            </p>
+          </div>
+          {error && (
+            <div className="flex items-center gap-1.5 rounded-full bg-red-50 px-2 py-1 text-[10px] font-medium text-red-600">
+              <AlertCircle className="h-3 w-3" />
+              <span>{error}</span>
+            </div>
+          )}
         </div>
 
         {loading ? (
           <div className="flex h-40 items-center justify-center">
-            <div className="animate-pulse text-slate-400">Loading...</div>
+            <div className="animate-pulse text-sm text-[#0F172A]/40">
+              Loading...
+            </div>
           </div>
         ) : entries.length === 0 ? (
           <div className="flex h-40 items-center justify-center text-center">
-            <p className="text-slate-500">No activity yet</p>
+            <p className="text-sm text-[#0F172A]/50">No activity yet</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -116,27 +157,25 @@ export function AuditTrail() {
               {entries.map((entry, index) => (
                 <motion.div
                   key={entry.id}
-                  initial={{ opacity: 0, x: -20 }}
+                  initial={{ opacity: 0, x: -16 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
+                  exit={{ opacity: 0, x: -16 }}
                   transition={{ delay: index * 0.05 }}
-                  className="flex items-start justify-between rounded-lg border border-slate-100 bg-slate-50 p-4 hover:bg-slate-100"
+                  className="flex items-start justify-between rounded-lg border border-[#EDE9E6] bg-[#F1F5F9] px-4 py-3 transition-colors hover:bg-[#EDE9E6]/60"
                 >
                   <div className="flex flex-1 items-start gap-3">
-                    <div className="mt-1">{getStatusIcon(entry.status)}</div>
+                    <div className="mt-0.5 flex-shrink-0">
+                      {getStatusIcon(entry.status)}
+                    </div>
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium text-slate-900">
+                      <p className="text-sm font-medium text-[#0F172A]">
                         {entry.action}
+                        {entry.taskName ? `: "${entry.taskName}"` : ""}
                       </p>
-                      {entry.taskName && (
-                        <p className="mt-1 truncate text-sm text-slate-600">
-                          {entry.taskName}
-                        </p>
-                      )}
                     </div>
                   </div>
                   <div className="ml-4 flex-shrink-0 text-right">
-                    <p className="text-xs font-medium text-slate-500">
+                    <p className="text-xs text-[#0F172A]/40">
                       {formatTime(entry.timestamp)}
                     </p>
                   </div>

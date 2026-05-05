@@ -73,7 +73,7 @@ export function NewTaskModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="border-slate-200 bg-white sm:max-w-[425px]">
+      <DialogContent className="border-[#EDE9E6] bg-[#FFFFFF] sm:max-w-[425px]">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -81,10 +81,10 @@ export function NewTaskModal({
           transition={{ duration: 0.2 }}
         >
           <DialogHeader>
-            <DialogTitle className="text-brand-sidebar">
+            <DialogTitle className="text-[#0F172A]">
               Create New Task
             </DialogTitle>
-            <DialogDescription className="text-slate-600">
+            <DialogDescription className="text-[#0F172A]/60">
               Add a new task to your task list. Fill in the details below.
             </DialogDescription>
           </DialogHeader>
@@ -97,7 +97,7 @@ export function NewTaskModal({
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <Label htmlFor="title" className="text-slate-700">
+              <Label htmlFor="title" className="text-[#0F172A]">
                 Task Title *
               </Label>
               <Input
@@ -106,7 +106,7 @@ export function NewTaskModal({
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
-                className="border-slate-200"
+                className="border-[#EDE9E6]"
               />
             </motion.div>
 
@@ -117,7 +117,7 @@ export function NewTaskModal({
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.15 }}
             >
-              <Label htmlFor="description" className="text-slate-700">
+              <Label htmlFor="description" className="text-[#0F172A]">
                 Description
               </Label>
               <textarea
@@ -125,7 +125,7 @@ export function NewTaskModal({
                 placeholder="Enter task description (optional)"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="focus-visible:ring-brand-sidebar flex min-h-[80px] w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-base placeholder:text-slate-500 focus-visible:ring-2 focus-visible:outline-none"
+                className="flex min-h-[80px] w-full rounded-md border border-[#EDE9E6] bg-white px-3 py-2 text-base placeholder:text-[#0F172A]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C2A388]/40"
               />
             </motion.div>
 
@@ -138,7 +138,7 @@ export function NewTaskModal({
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2 }}
               >
-                <Label htmlFor="priority" className="text-slate-700">
+                <Label htmlFor="priority" className="text-[#0F172A]">
                   Priority
                 </Label>
                 <Select
@@ -147,7 +147,7 @@ export function NewTaskModal({
                     setPriority(v)
                   }
                 >
-                  <SelectTrigger id="priority" className="border-slate-200">
+                  <SelectTrigger id="priority" className="border-[#EDE9E6]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -165,7 +165,7 @@ export function NewTaskModal({
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.25 }}
               >
-                <Label htmlFor="category" className="text-slate-700">
+                <Label htmlFor="category" className="text-[#0F172A]">
                   Category
                 </Label>
                 <Select
@@ -174,7 +174,7 @@ export function NewTaskModal({
                     v: "work" | "personal" | "school" | "health" | "other"
                   ) => setCategory(v)}
                 >
-                  <SelectTrigger id="category" className="border-slate-200">
+                  <SelectTrigger id="category" className="border-[#EDE9E6]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -195,7 +195,7 @@ export function NewTaskModal({
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 }}
             >
-              <Label htmlFor="dueDate" className="text-slate-700">
+              <Label htmlFor="dueDate" className="text-[#0F172A]">
                 Due Date
               </Label>
               <Input
@@ -203,7 +203,7 @@ export function NewTaskModal({
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="border-slate-200"
+                className="border-[#EDE9E6]"
               />
             </motion.div>
 
@@ -217,14 +217,14 @@ export function NewTaskModal({
                   type="button"
                   variant="outline"
                   onClick={() => onOpenChange(false)}
-                  className="border-slate-200 text-slate-700 hover:bg-slate-50"
+                  className="border-[#EDE9E6] text-[#0F172A] hover:bg-[#F1F5F9]"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   disabled={isLoading || !title.trim()}
-                  className="bg-brand-sidebar text-white hover:bg-slate-800"
+                  className="bg-[#0F172A] text-white hover:bg-[#0F172A]/90 disabled:border-[#94A3B8] disabled:bg-[#94A3B8]"
                 >
                   {isLoading ? "Creating..." : "Create Task"}
                 </Button>
