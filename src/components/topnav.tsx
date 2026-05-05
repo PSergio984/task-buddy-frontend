@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import { useNavigate, Link } from "react-router-dom"
 import { useToast } from "@/hooks/use-toast"
 import { LogoutDialog } from "@/components/logout-dialog"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 export interface TopNavProps {
   onNewTask: () => void
@@ -79,6 +80,8 @@ export function TopNav({ onNewTask }: TopNavProps) {
             <span className="text-sm font-semibold tracking-wide">NEW TASK</span>
           </Button>
         </motion.div>
+
+        <ThemeToggle />
 
         {/* User Avatar Dropdown */}
         <div className="relative" ref={dropdownRef}>
