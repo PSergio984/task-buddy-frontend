@@ -33,7 +33,14 @@ export function DashboardDemo() {
         <Sidebar activeFilter={activeFilter} onFilterChange={setActiveFilter} />
 
         {/* Dashboard */}
-        <Dashboard />
+        <Dashboard 
+          tasks={[]} 
+          activeFilter="all" 
+          onFilterChange={() => {}} 
+          onRefresh={() => {}}
+          stats={null}
+          loadingStats={false}
+        />
       </div>
 
       {/* New Task Modal */}

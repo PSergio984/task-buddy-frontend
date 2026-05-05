@@ -13,6 +13,7 @@ import {
   validateEmail,
   validatePassword,
 } from "@/lib/auth"
+import { useToast } from "@/hooks/use-toast"
 
 export function LoginPage() {
   const [email, setEmail] = useState("")
@@ -20,6 +21,7 @@ export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [submitAttempted, setSubmitAttempted] = useState(false)
   const { login, loading, error } = useAuth()
+  const { toast } = useToast()
   const navigate = useNavigate()
 
   const emailError = validateEmail(email)
@@ -46,21 +48,30 @@ export function LoginPage() {
         username: sanitizeEmail(email),
         password: sanitizePassword(password),
       })
+      toast({
+        title: "Welcome back!",
+        description: "Successfully signed in to your dashboard.",
+        variant: "success",
+      })
       navigate("/dashboard")
-    } catch {
-      // Error is displayed from context
+    } catch (err: any) {
+      toast({
+        title: "Authentication failed",
+        description: error || "Invalid credentials. Please try again.",
+        variant: "destructive",
+      })
     }
   }
 
   return (
-    <div className="flex min-h-svh items-center justify-center bg-[#F1F5F9] px-4 py-10 text-[#0F172A]">
+    <div className="flex min-h-svh items-center justify-center bg-background px-4 py-10 text-foreground">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.22, ease: "easeOut" }}
         className="relative w-full max-w-xl"
       >
-        <Card className="overflow-hidden border border-[#EDE9E6] bg-[#FFFFFF] p-8 shadow-md sm:p-10">
+        <Card className="overflow-hidden border border-border bg-card p-8 shadow-md sm:p-10">
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -71,25 +82,25 @@ export function LoginPage() {
               <div className="flex items-center gap-3">
                 <div
                   data-testid="task-buddy-icon"
-                  className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#EDE9E6] bg-[#FFFFFF] text-[#0F172A] shadow-sm"
+                  className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-background text-foreground shadow-sm"
                 >
                   <Lock className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold tracking-[0.3em] text-[#0F172A] uppercase">
+                  <p className="text-xs font-semibold tracking-[0.3em] text-foreground uppercase">
                     task-buddy
                   </p>
-                  <h1 className="mt-1 text-3xl font-semibold tracking-tight text-[#0F172A]">
+                  <h1 className="mt-1 text-3xl font-semibold tracking-tight text-foreground">
                     Sign in to your account
                   </h1>
                 </div>
               </div>
-              <div className="hidden items-center gap-2 rounded-full border border-[#EDE9E6] bg-[#FFFFFF] px-3 py-1 text-xs text-[#0F172A] sm:flex">
+              <div className="hidden items-center gap-2 rounded-full border border-border bg-background px-3 py-1 text-xs text-foreground sm:flex">
                 <Mail className="h-3.5 w-3.5" />
                 Secure access
               </div>
             </div>
-            <p className="max-w-md text-sm leading-6 text-[#0F172A]/80">
+            <p className="max-w-md text-sm leading-6 text-muted-foreground">
               Sign in with your email address to resume your dashboard and keep
               your tasks in sync.
             </p>
@@ -104,12 +115,12 @@ export function LoginPage() {
             >
               <Label
                 htmlFor="email"
-                className="text-sm font-medium text-[#0F172A]"
+                className="text-sm font-medium text-foreground"
               >
                 Email
               </Label>
               <div className="relative mt-2">
-                <Mail className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[#0F172A]/60" />
+                <Mail className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="email"
                   name="email"
@@ -127,12 +138,12 @@ export function LoginPage() {
                   onBlur={() => setSubmitAttempted(true)}
                   onChange={(e) => setEmail(sanitizeEmail(e.target.value))}
                   required
-                  className="h-12 border-[#EDE9E6] bg-[#FFFFFF] pl-10 text-[#0F172A] placeholder:text-[#0F172A]/45 focus-visible:ring-[#C2A388]/40"
+                  className="h-12 border-border bg-background pl-10 text-foreground placeholder:text-muted-foreground/50 focus-visible:ring-ring/40"
                 />
               </div>
               <p
                 id="login-email-help"
-                className="mt-2 text-xs text-[#0F172A]/70"
+                className="mt-2 text-xs text-muted-foreground"
               >
                 Use the email address tied to your task-buddy account.
               </p>
@@ -155,12 +166,12 @@ export function LoginPage() {
             >
               <Label
                 htmlFor="password"
-                className="text-sm font-medium text-[#0F172A]"
+                className="text-sm font-medium text-foreground"
               >
                 Password
               </Label>
               <div className="relative mt-2">
-                <KeyRound className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[#0F172A]/60" />
+                <KeyRound className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="password"
                   name="password"
@@ -179,13 +190,13 @@ export function LoginPage() {
                     setPassword(sanitizePassword(e.target.value))
                   }
                   required
-                  className="h-12 border-[#EDE9E6] bg-[#FFFFFF] pl-10 pr-12 text-[#0F172A] placeholder:text-[#0F172A]/45 focus-visible:ring-[#C2A388]/40"
+                  className="h-12 border-border bg-background pl-10 pr-12 text-foreground placeholder:text-muted-foreground/50 focus-visible:ring-ring/40"
                 />
                 <button
                   type="button"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute top-1/2 right-3 -translate-y-1/2 rounded p-1 text-[#0F172A]/50 transition-colors hover:text-[#0F172A]"
+                  className="absolute top-1/2 right-3 -translate-y-1/2 rounded p-1 text-muted-foreground/60 transition-colors hover:text-foreground"
                   tabIndex={0}
                 >
                   {showPassword ? (
@@ -197,7 +208,7 @@ export function LoginPage() {
               </div>
               <p
                 id="login-password-help"
-                className="mt-2 text-xs text-[#0F172A]/70"
+                className="mt-2 text-xs text-muted-foreground"
               >
                 Passwords are sent securely and never displayed in the UI.
               </p>
@@ -232,7 +243,7 @@ export function LoginPage() {
                 type="submit"
                 disabled={loading || !isFormValid}
                 aria-label={submitLabel}
-                className="h-12 w-full gap-2 border border-[#0F172A] bg-[#0F172A] text-[#F1F5F9] shadow-sm transition-colors duration-150 hover:bg-[#0F172A]/90 disabled:cursor-not-allowed disabled:border-[#94A3B8] disabled:bg-[#94A3B8] disabled:text-white"
+                className="h-12 w-full gap-2 border border-primary bg-primary text-primary-foreground shadow-sm transition-colors duration-150 hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:border-border"
               >
                 {loading ? (
                   "Signing in..."
@@ -251,13 +262,13 @@ export function LoginPage() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.18, delay: 0.12 }}
-            className="mt-8 rounded-2xl border border-[#EDE9E6] bg-[#FFFFFF] px-4 py-4 text-sm text-[#0F172A]/80"
+            className="mt-8 rounded-2xl border border-border bg-background px-4 py-4 text-sm text-muted-foreground"
           >
             Don't have an account?{" "}
             <button
               type="button"
               onClick={() => navigate("/register")}
-              className="inline-flex items-center gap-1 font-semibold text-[#0F172A] transition-colors hover:text-[#C2A388]"
+              className="inline-flex items-center gap-1 font-semibold text-foreground transition-colors hover:text-accent"
             >
               Create your account
               <ArrowRight className="h-4 w-4" />

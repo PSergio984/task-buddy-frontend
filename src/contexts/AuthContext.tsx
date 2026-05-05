@@ -3,7 +3,6 @@ import {
   useContext,
   useState,
   useCallback,
-  useEffect,
   type ReactNode,
 } from "react"
 import axios from "axios"
@@ -30,6 +29,7 @@ interface AuthContextType {
     password: string
   }) => Promise<void>
   logout: () => void
+  refreshUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -158,9 +158,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(USER_STORAGE_KEY)
   }, [])
 
+  const refreshUser = useCallback(async () => {
+    if (!token) return
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/v1/users/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const nextUser = normalizeAuthUser(response.data)
+      if (nextUser) {
+        setUser(nextUser)
+        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextUser))
+      }
+    } catch (err) {
+      console.error("Failed to refresh user profile:", err)
+    }
+  }, [token])
+
   return (
     <AuthContext.Provider
-      value={{ user, token, loading, error, login, register, logout }}
+      value={{
+        user,
+        token,
+        loading,
+        error,
+        login,
+        register,
+        logout,
+        refreshUser,
+      }}
     >
       {children}
     </AuthContext.Provider>

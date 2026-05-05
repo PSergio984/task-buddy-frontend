@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Card } from "@/components/ui/card"
 import { CheckCircle2, Clock, FilePlus2, AlertCircle } from "lucide-react"
+import { useAuth } from "@/contexts/AuthContext"
 import axios from "axios"
 
 const API_BASE_URL =
@@ -41,7 +42,8 @@ function formatTime(timestamp: string) {
   return date.toLocaleDateString()
 }
 
-export function AuditTrail() {
+export function AuditTrail({ limit }: { limit?: number }) {
+  const { token } = useAuth()
   const [entries, setEntries] = useState<AuditEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -50,18 +52,24 @@ export function AuditTrail() {
   useEffect(() => {
     const fetchAuditLog = async () => {
       try {
-        const token = localStorage.getItem("auth_token")
-        const response = await axios.get(`${API_BASE_URL}/api/audit-logs`, {
+        const response = await axios.get(`${API_BASE_URL}/api/v1/audit/logs`, {
           headers: { Authorization: `Bearer ${token}` },
         })
-        const logs = response.data.map((log: Record<string, unknown>) => ({
-          id: log.id,
-          action: log.action,
-          taskName: log.task_name,
-          timestamp: log.timestamp,
-          status: log.status,
-        }))
-        setEntries(logs.slice(0, 10))
+        const data = Array.isArray(response.data) ? response.data : []
+        const logs = data.map((log: any) => {
+          // Map backend action to frontend status for icons
+          let status: "completed" | "created" | "updated" = "updated";
+          if (log.action === "CREATE") status = "created";
+          if (log.details?.toLowerCase().includes("completed")) status = "completed";
+
+          return {
+            id: log.id,
+            action: log.details || log.action,
+            timestamp: log.created_at,
+            status: status,
+          };
+        })
+        setEntries(limit ? logs.slice(0, limit) : logs)
         setIsFallback(false)
         setError(null)
       } catch (err) {
@@ -114,7 +122,7 @@ export function AuditTrail() {
     }
 
     fetchAuditLog()
-  }, [])
+  }, [token, limit])
 
   return (
     <motion.div
@@ -122,19 +130,19 @@ export function AuditTrail() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: 0.1 }}
     >
-      <Card className="border-[#EDE9E6] bg-[#FFFFFF] p-6">
+      <Card className="border-border bg-card p-6">
         {/* Header */}
         <div className="mb-5 flex items-center justify-between">
           <div>
-            <h3 className="text-xs font-bold tracking-[0.22em] text-[#0F172A] uppercase">
+            <h3 className="text-xs font-bold tracking-[0.22em] text-foreground uppercase">
               Audit Trail
             </h3>
-            <p className="mt-1 text-xs text-[#0F172A]/50">
+            <p className="mt-1 text-xs text-muted-foreground/60">
               {isFallback ? "Showing demo activity" : "Recent activity log"}
             </p>
           </div>
           {error && (
-            <div className="flex items-center gap-1.5 rounded-full bg-red-50 px-2 py-1 text-[10px] font-medium text-red-600">
+            <div className="flex items-center gap-1.5 rounded-full bg-destructive/10 px-2 py-1 text-[10px] font-medium text-destructive">
               <AlertCircle className="h-3 w-3" />
               <span>{error}</span>
             </div>
@@ -143,13 +151,13 @@ export function AuditTrail() {
 
         {loading ? (
           <div className="flex h-40 items-center justify-center">
-            <div className="animate-pulse text-sm text-[#0F172A]/40">
+            <div className="animate-pulse text-sm text-muted-foreground/40">
               Loading...
             </div>
           </div>
         ) : entries.length === 0 ? (
           <div className="flex h-40 items-center justify-center text-center">
-            <p className="text-sm text-[#0F172A]/50">No activity yet</p>
+            <p className="text-sm text-muted-foreground/50">No activity yet</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -161,21 +169,21 @@ export function AuditTrail() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -16 }}
                   transition={{ delay: index * 0.05 }}
-                  className="flex items-start justify-between rounded-lg border border-[#EDE9E6] bg-[#F1F5F9] px-4 py-3 transition-colors hover:bg-[#EDE9E6]/60"
+                  className="flex items-start justify-between rounded-lg border border-border bg-muted/30 px-4 py-3 transition-colors hover:bg-muted/60"
                 >
                   <div className="flex flex-1 items-start gap-3">
                     <div className="mt-0.5 flex-shrink-0">
                       {getStatusIcon(entry.status)}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-[#0F172A]">
+                      <p className="text-sm font-medium text-foreground">
                         {entry.action}
                         {entry.taskName ? `: "${entry.taskName}"` : ""}
                       </p>
                     </div>
                   </div>
                   <div className="ml-4 flex-shrink-0 text-right">
-                    <p className="text-xs text-[#0F172A]/40">
+                    <p className="text-xs text-muted-foreground/60">
                       {formatTime(entry.timestamp)}
                     </p>
                   </div>

@@ -28,6 +28,7 @@ import {
   validatePasswordConfirmation,
   validateUsername,
 } from "@/lib/auth"
+import { useToast } from "@/hooks/use-toast"
 
 interface PasswordRule {
   label: string
@@ -54,6 +55,7 @@ export function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [submitAttempted, setSubmitAttempted] = useState(false)
   const { register, loading, error } = useAuth()
+  const { toast } = useToast()
   const navigate = useNavigate()
 
   const usernameError = validateUsername(username)
@@ -81,21 +83,30 @@ export function RegisterPage() {
         email: sanitizeEmail(email),
         password: sanitizePassword(password),
       })
+      toast({
+        title: "Account created!",
+        description: "Your account has been created successfully. Please log in to continue.",
+        variant: "success",
+      })
       navigate("/login")
-    } catch {
-      // Error is displayed from context
+    } catch (err: any) {
+      toast({
+        title: "Registration failed",
+        description: error || "Something went wrong. Please check your details and try again.",
+        variant: "destructive",
+      })
     }
   }
 
   return (
-    <div className="flex min-h-svh items-center justify-center bg-[#F1F5F9] px-4 py-10 text-[#0F172A]">
+    <div className="flex min-h-svh items-center justify-center bg-background px-4 py-10 text-foreground">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.22, ease: "easeOut" }}
         className="relative w-full max-w-xl"
       >
-        <Card className="overflow-hidden border border-[#EDE9E6] bg-[#FFFFFF] p-8 shadow-md sm:p-10">
+        <Card className="overflow-hidden border border-border bg-card p-8 shadow-md sm:p-10">
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -106,26 +117,26 @@ export function RegisterPage() {
               <div className="flex items-center gap-3">
                 <div
                   data-testid="task-buddy-icon"
-                  className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#EDE9E6] bg-[#FFFFFF] text-[#0F172A] shadow-sm"
+                  className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-background text-foreground shadow-sm"
                 >
                   <UserPlus className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold tracking-[0.3em] text-[#0F172A] uppercase">
+                  <p className="text-xs font-semibold tracking-[0.3em] text-foreground uppercase">
                     task-buddy
                   </p>
-                  <h1 className="mt-1 text-3xl font-semibold tracking-tight text-[#0F172A]">
+                  <h1 className="mt-1 text-3xl font-semibold tracking-tight text-foreground">
                     Create your account
                   </h1>
                 </div>
               </div>
-              <div className="hidden items-center gap-2 rounded-full border border-[#EDE9E6] bg-[#FFFFFF] px-3 py-1 text-xs text-[#0F172A] sm:flex">
+              <div className="hidden items-center gap-2 rounded-full border border-border bg-background px-3 py-1 text-xs text-foreground sm:flex">
                 <Mail className="h-3.5 w-3.5" />
                 <Lock className="h-3.5 w-3.5" />
                 <User className="h-3.5 w-3.5" />
               </div>
             </div>
-            <p className="max-w-md text-sm leading-6 text-[#0F172A]/80">
+            <p className="max-w-md text-sm leading-6 text-muted-foreground">
               Create a task-buddy account with a username, email address, and
               secure password.
             </p>
@@ -140,12 +151,12 @@ export function RegisterPage() {
             >
               <Label
                 htmlFor="username"
-                className="text-sm font-medium text-[#0F172A]"
+                className="text-sm font-medium text-foreground"
               >
                 Username
               </Label>
               <div className="relative mt-2">
-                <UserPlus className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[#0F172A]/60" />
+                <UserPlus className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="username"
                   name="username"
@@ -167,12 +178,12 @@ export function RegisterPage() {
                     setUsername(sanitizeUsername(e.target.value))
                   }
                   required
-                  className="h-12 border-[#EDE9E6] bg-[#FFFFFF] pl-10 text-[#0F172A] placeholder:text-[#0F172A]/45 focus-visible:ring-[#C2A388]/40"
+                  className="h-12 border-border bg-background pl-10 text-foreground placeholder:text-muted-foreground/50 focus-visible:ring-ring/40"
                 />
               </div>
               <p
                 id="register-username-help"
-                className="mt-2 text-xs text-[#0F172A]/70"
+                className="mt-2 text-xs text-muted-foreground"
               >
                 3-32 characters. Letters, numbers, dots, underscores, and
                 hyphens only.
@@ -196,12 +207,12 @@ export function RegisterPage() {
             >
               <Label
                 htmlFor="email"
-                className="text-sm font-medium text-[#0F172A]"
+                className="text-sm font-medium text-foreground"
               >
                 Email
               </Label>
               <div className="relative mt-2">
-                <Mail className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[#0F172A]/60" />
+                <Mail className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="email"
                   name="email"
@@ -220,12 +231,12 @@ export function RegisterPage() {
                   onBlur={() => setSubmitAttempted(true)}
                   onChange={(e) => setEmail(sanitizeEmail(e.target.value))}
                   required
-                  className="h-12 border-[#EDE9E6] bg-[#FFFFFF] pl-10 text-[#0F172A] placeholder:text-[#0F172A]/45 focus-visible:ring-[#C2A388]/40"
+                  className="h-12 border-border bg-background pl-10 text-foreground placeholder:text-muted-foreground/50 focus-visible:ring-ring/40"
                 />
               </div>
               <p
                 id="register-email-help"
-                className="mt-2 text-xs text-[#0F172A]/70"
+                className="mt-2 text-xs text-muted-foreground"
               >
                 We use this for account recovery and notifications.
               </p>
@@ -248,12 +259,12 @@ export function RegisterPage() {
             >
               <Label
                 htmlFor="password"
-                className="text-sm font-medium text-[#0F172A]"
+                className="text-sm font-medium text-foreground"
               >
                 Password
               </Label>
               <div className="relative mt-2">
-                <KeyRound className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[#0F172A]/60" />
+                <KeyRound className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="password"
                   name="password"
@@ -274,13 +285,13 @@ export function RegisterPage() {
                     setPassword(sanitizePassword(e.target.value))
                   }
                   required
-                  className="h-12 border-[#EDE9E6] bg-[#FFFFFF] pl-10 pr-12 text-[#0F172A] placeholder:text-[#0F172A]/45 focus-visible:ring-[#C2A388]/40"
+                  className="h-12 border-border bg-background pl-10 pr-12 text-foreground placeholder:text-muted-foreground/50 focus-visible:ring-ring/40"
                 />
                 <button
                   type="button"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute top-1/2 right-3 -translate-y-1/2 rounded p-1 text-[#0F172A]/50 transition-colors hover:text-[#0F172A]"
+                  className="absolute top-1/2 right-3 -translate-y-1/2 rounded p-1 text-muted-foreground/60 transition-colors hover:text-foreground"
                   tabIndex={0}
                 >
                   {showPassword ? (
@@ -309,11 +320,11 @@ export function RegisterPage() {
                       {met ? (
                         <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-green-500" />
                       ) : (
-                        <Circle className="h-4 w-4 flex-shrink-0 text-[#0F172A]/25" />
+                        <Circle className="h-4 w-4 flex-shrink-0 text-muted-foreground/30" />
                       )}
                       <span
                         className={`text-xs transition-colors duration-150 ${
-                          met ? "text-green-600" : "text-[#0F172A]/60"
+                          met ? "text-green-600" : "text-muted-foreground"
                         }`}
                       >
                         {rule.label}
@@ -342,12 +353,12 @@ export function RegisterPage() {
             >
               <Label
                 htmlFor="confirmPassword"
-                className="text-sm font-medium text-[#0F172A]"
+                className="text-sm font-medium text-foreground"
               >
                 Confirm Password
               </Label>
               <div className="relative mt-2">
-                <BadgeCheck className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[#0F172A]/60" />
+                <BadgeCheck className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="confirmPassword"
                   name="confirmPassword"
@@ -370,7 +381,7 @@ export function RegisterPage() {
                     setConfirmPassword(sanitizePassword(e.target.value))
                   }
                   required
-                  className="h-12 border-[#EDE9E6] bg-[#FFFFFF] pl-10 pr-12 text-[#0F172A] placeholder:text-[#0F172A]/45 focus-visible:ring-[#C2A388]/40"
+                  className="h-12 border-border bg-background pl-10 pr-12 text-foreground placeholder:text-muted-foreground/50 focus-visible:ring-ring/40"
                 />
                 <button
                   type="button"
@@ -380,7 +391,7 @@ export function RegisterPage() {
                       : "Show confirm password"
                   }
                   onClick={() => setShowConfirmPassword((v) => !v)}
-                  className="absolute top-1/2 right-3 -translate-y-1/2 rounded p-1 text-[#0F172A]/50 transition-colors hover:text-[#0F172A]"
+                  className="absolute top-1/2 right-3 -translate-y-1/2 rounded p-1 text-muted-foreground/60 transition-colors hover:text-foreground"
                   tabIndex={0}
                 >
                   {showConfirmPassword ? (
@@ -392,7 +403,7 @@ export function RegisterPage() {
               </div>
               <p
                 id="register-confirm-password-help"
-                className="mt-2 text-xs text-[#0F172A]/70"
+                className="mt-2 text-xs text-muted-foreground"
               >
                 Re-enter the password exactly as above.
               </p>
@@ -432,7 +443,7 @@ export function RegisterPage() {
                     ? "Create your account"
                     : "Complete the required fields"
                 }
-                className="h-12 w-full gap-2 border border-[#0F172A] bg-[#0F172A] text-[#F1F5F9] shadow-sm transition-colors duration-150 hover:bg-[#0F172A]/90 disabled:cursor-not-allowed disabled:border-[#94A3B8] disabled:bg-[#94A3B8] disabled:text-white"
+                className="h-12 w-full gap-2 border border-primary bg-primary text-primary-foreground shadow-sm transition-colors duration-150 hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:border-border"
               >
                 {loading ? (
                   "Creating account..."
@@ -451,13 +462,13 @@ export function RegisterPage() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.18, delay: 0.16 }}
-            className="mt-8 rounded-2xl border border-[#EDE9E6] bg-[#FFFFFF] px-4 py-4 text-sm text-[#0F172A]/80"
+            className="mt-8 rounded-2xl border border-border bg-background px-4 py-4 text-sm text-muted-foreground"
           >
             Already have an account?{" "}
             <button
               type="button"
               onClick={() => navigate("/login")}
-              className="inline-flex items-center gap-1 font-semibold text-[#0F172A] transition-colors hover:text-[#C2A388]"
+              className="inline-flex items-center gap-1 font-semibold text-foreground transition-colors hover:text-accent"
             >
               Sign in
               <ArrowRight className="h-4 w-4" />

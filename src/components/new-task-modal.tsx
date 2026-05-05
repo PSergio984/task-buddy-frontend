@@ -1,5 +1,4 @@
 import { useState } from "react"
-import { motion } from "framer-motion"
 import {
   Dialog,
   DialogContent,
@@ -48,13 +47,13 @@ export function NewTaskModal({
 
     if (!title.trim()) return
 
-    const taskData: Omit<Task, "id" | "createdAt" | "updatedAt"> = {
+    const taskData: any = {
       title: title.trim(),
       description: description.trim() || undefined,
       priority,
       category,
-      dueDate: dueDate || undefined,
-      status: "pending",
+      due_date: dueDate || undefined,
+      completed: false,
     }
 
     try {
@@ -73,51 +72,34 @@ export function NewTaskModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="border-[#EDE9E6] bg-[#FFFFFF] sm:max-w-[425px]">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.2 }}
-        >
-          <DialogHeader>
-            <DialogTitle className="text-[#0F172A]">
+      <DialogContent className="sm:max-w-[425px] border-border bg-card p-0 overflow-hidden shadow-2xl">
+        <div className="p-6">
+          <DialogHeader className="mb-6">
+            <DialogTitle className="text-2xl font-bold text-foreground">
               Create New Task
             </DialogTitle>
-            <DialogDescription className="text-[#0F172A]/60">
+            <DialogDescription className="text-muted-foreground font-medium">
               Add a new task to your task list. Fill in the details below.
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Title */}
-            <motion.div
-              className="space-y-2"
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <Label htmlFor="title" className="text-[#0F172A]">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="title" className="text-sm font-semibold text-foreground">
                 Task Title *
               </Label>
               <Input
                 id="title"
-                placeholder="Enter task title"
+                placeholder="What needs to be done?"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
-                className="border-[#EDE9E6]"
+                className="h-11 border-border bg-muted/50 text-foreground placeholder:text-muted-foreground/30 focus:border-ring focus:ring-1 focus:ring-ring transition-all"
               />
-            </motion.div>
+            </div>
 
-            {/* Description */}
-            <motion.div
-              className="space-y-2"
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.15 }}
-            >
-              <Label htmlFor="description" className="text-[#0F172A]">
+            <div className="space-y-2">
+              <Label htmlFor="description" className="text-sm font-semibold text-foreground">
                 Description
               </Label>
               <textarea
@@ -125,20 +107,15 @@ export function NewTaskModal({
                 placeholder="Enter task description (optional)"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="flex min-h-[80px] w-full rounded-md border border-[#EDE9E6] bg-white px-3 py-2 text-base placeholder:text-[#0F172A]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C2A388]/40"
+                className="flex min-h-[100px] w-full rounded-lg border border-border bg-muted/50 px-3 py-2 text-foreground placeholder:text-muted-foreground/30 focus:border-ring focus:ring-1 focus:ring-ring transition-all outline-none"
               />
-            </motion.div>
+            </div>
 
             {/* Priority and Category Row */}
             <div className="grid grid-cols-2 gap-4">
               {/* Priority */}
-              <motion.div
-                className="space-y-2"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                <Label htmlFor="priority" className="text-[#0F172A]">
+              <div className="space-y-2">
+                <Label htmlFor="priority" className="text-foreground">
                   Priority
                 </Label>
                 <Select
@@ -147,7 +124,7 @@ export function NewTaskModal({
                     setPriority(v)
                   }
                 >
-                  <SelectTrigger id="priority" className="border-[#EDE9E6]">
+                  <SelectTrigger id="priority" className="h-11 border-border bg-muted/50 text-foreground">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -156,16 +133,11 @@ export function NewTaskModal({
                     <SelectItem value="high">High</SelectItem>
                   </SelectContent>
                 </Select>
-              </motion.div>
+              </div>
 
               {/* Category */}
-              <motion.div
-                className="space-y-2"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.25 }}
-              >
-                <Label htmlFor="category" className="text-[#0F172A]">
+              <div className="space-y-2">
+                <Label htmlFor="category" className="text-foreground">
                   Category
                 </Label>
                 <Select
@@ -174,7 +146,7 @@ export function NewTaskModal({
                     v: "work" | "personal" | "school" | "health" | "other"
                   ) => setCategory(v)}
                 >
-                  <SelectTrigger id="category" className="border-[#EDE9E6]">
+                  <SelectTrigger id="category" className="h-11 border-border bg-muted/50 text-foreground">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -185,17 +157,11 @@ export function NewTaskModal({
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
-              </motion.div>
+              </div>
             </div>
 
-            {/* Due Date */}
-            <motion.div
-              className="space-y-2"
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <Label htmlFor="dueDate" className="text-[#0F172A]">
+            <div className="space-y-2">
+              <Label htmlFor="dueDate" className="text-sm font-semibold text-foreground">
                 Due Date
               </Label>
               <Input
@@ -203,35 +169,29 @@ export function NewTaskModal({
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="border-[#EDE9E6]"
+                className="h-11 border-border bg-muted/50 text-foreground focus:border-ring focus:ring-1 focus:ring-ring transition-all"
               />
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.35 }}
-            >
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => onOpenChange(false)}
-                  className="border-[#EDE9E6] text-[#0F172A] hover:bg-[#F1F5F9]"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={isLoading || !title.trim()}
-                  className="bg-[#0F172A] text-white hover:bg-[#0F172A]/90 disabled:border-[#94A3B8] disabled:bg-[#94A3B8]"
-                >
-                  {isLoading ? "Creating..." : "Create Task"}
-                </Button>
-              </DialogFooter>
-            </motion.div>
+            <DialogFooter className="pt-4 mt-6 border-t border-border">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => onOpenChange(false)}
+                className="text-muted-foreground hover:text-foreground hover:bg-muted"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isLoading || !title.trim()}
+                className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 transition-all"
+              >
+                {isLoading ? "Creating..." : "Create Task"}
+              </Button>
+            </DialogFooter>
           </form>
-        </motion.div>
+        </div>
       </DialogContent>
     </Dialog>
   )

@@ -21,9 +21,18 @@
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
+  --color-success-foreground: var(--success-foreground);
+  --color-success: var(--success);
+  --color-toast-destructive-bg: var(--toast-destructive-bg);
+  --color-toast-destructive-border: var(--toast-destructive-border);
+  --color-toast-destructive-text: var(--toast-destructive-text);
+  --color-toast-success-bg: var(--toast-success-bg);
+  --color-toast-success-border: var(--toast-success-border);
+  --color-toast-success-text: var(--toast-success-text);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-destructive: var(--destructive);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
@@ -63,7 +72,10 @@
   --muted-foreground: #0f172a;
   --accent: #c2a388;
   --accent-foreground: #0f172a;
-  --destructive: #ef4444;
+  --destructive: #8b3a3a;
+  --destructive-foreground: #f1f5f9;
+  --success: #2d4f3e;
+  --success-foreground: #f1f5f9;
   --border: #ede9e6;
   --input: #ede9e6;
   --ring: #c2a388;
@@ -81,6 +93,12 @@
   --sidebar-accent-foreground: #0f172a;
   --sidebar-border: #ede9e6;
   --sidebar-ring: #c2a388;
+  --toast-destructive-bg: #fee2e2;
+  --toast-destructive-border: #fecaca;
+  --toast-destructive-text: #991b1b;
+  --toast-success-bg: #dcfce7;
+  --toast-success-border: #bbf7d0;
+  --toast-success-text: #166534;
 }
 
 .dark {
@@ -100,6 +118,9 @@
   --accent: #c2a388;
   --accent-foreground: #0f172a;
   --destructive: #ef4444;
+  --destructive-foreground: #f1f5f9;
+  --success: #34d399;
+  --success-foreground: #064e3b;
   --border: #0b1220;
   --input: #0b1220;
   --ring: #c2a388;
@@ -116,6 +137,12 @@
   --sidebar-accent-foreground: #0f172a;
   --sidebar-border: #0b1220;
   --sidebar-ring: #c2a388;
+  --toast-destructive-bg: #450a0a;
+  --toast-destructive-border: #7f1d1d;
+  --toast-destructive-text: #fecaca;
+  --toast-success-bg: #064e3b;
+  --toast-success-border: #065f46;
+  --toast-success-text: #d1fae5;
 }
 
 @layer base {

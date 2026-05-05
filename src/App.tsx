@@ -6,17 +6,24 @@ import { Dashboard } from "@/components/dashboard"
 import { NewTaskModal } from "@/components/new-task-modal"
 import { LoginPage } from "@/pages/LoginPage"
 import { RegisterPage } from "@/pages/RegisterPage"
+import { ProfilePage } from "@/pages/ProfilePage"
+import { AuditLogsPage } from "@/pages/AuditLogsPage"
 import { ProtectedRoute, PublicRoute } from "@/contexts/ProtectedRoute"
 import { useAuth } from "@/contexts/AuthContext"
-import { useCreateTask, useTasks } from "@/hooks/useApi"
+import { useCreateTask, useTasks, useStats } from "@/hooks/useApi"
 import type { Task } from "@/hooks/useApi"
+import { Toaster } from "@/components/ui/toaster"
 
 function DashboardLayout() {
   const [activeFilter, setActiveFilter] = useState<string>("all")
   const [isModalOpen, setIsModalOpen] = useState(false)
   const { createTask, loading: isCreating } = useCreateTask()
-  // Fetch tasks here so both Sidebar (system overview) and Dashboard share data
-  const { tasks } = useTasks()
+  const { tasks, refreshTasks } = useTasks(activeFilter)
+  const { stats, loading: loadingStats, refreshStats } = useStats()
+
+  const handleRefresh = async () => {
+    await Promise.all([refreshTasks(), refreshStats()])
+  }
 
   const handleCreateTask = async (
     taskData: Omit<Task, "id" | "createdAt" | "updatedAt">
@@ -24,13 +31,14 @@ function DashboardLayout() {
     try {
       await createTask(taskData)
       setIsModalOpen(false)
+      handleRefresh()
     } catch (error) {
       console.error("Failed to create task:", error)
     }
   }
 
   return (
-    <div className="flex min-h-svh flex-col bg-[#F1F5F9]">
+    <div className="flex min-h-svh flex-col bg-background">
       {/* Top Navigation */}
       <TopNav onNewTask={() => setIsModalOpen(true)} />
 
@@ -44,7 +52,14 @@ function DashboardLayout() {
         />
 
         {/* Dashboard — main content area */}
-        <Dashboard />
+        <Dashboard 
+          tasks={tasks} 
+          activeFilter={activeFilter} 
+          onFilterChange={setActiveFilter}
+          onRefresh={handleRefresh}
+          stats={stats}
+          loadingStats={loadingStats}
+        />
       </div>
 
       {/* New Task Modal */}
@@ -92,6 +107,22 @@ export function App() {
           }
         />
         <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/audit-logs"
+          element={
+            <ProtectedRoute>
+              <AuditLogsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/"
           element={
             token ? (
@@ -104,6 +135,7 @@ export function App() {
           }
         />
       </Routes>
+      <Toaster />
     </Router>
   )
 }

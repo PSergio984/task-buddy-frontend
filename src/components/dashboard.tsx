@@ -1,88 +1,160 @@
-import { useState, useCallback } from "react"
+import { useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { TaskCard } from "@/components/task-card"
 import { AuditTrail } from "@/components/audit-trail"
+import { SystemOverview } from "@/components/system-overview"
 import {
-  useTasks,
-  useCreateTask,
   useUpdateTask,
   useDeleteTask,
+  useUpdateSubtask,
+  useDeleteSubtask,
+  useDetachTag,
 } from "@/hooks/useApi"
 import type { Task } from "@/hooks/useApi"
-import { NewTaskModal } from "@/components/new-task-modal"
+import { useToast } from "@/hooks/use-toast"
 
-type TaskStatus = "all" | "pending" | "completed"
+export interface DashboardProps {
+  tasks: Task[]
+  activeFilter: string
+  onFilterChange: (filter: string) => void
+  onRefresh: () => void
+  stats: any
+  loadingStats: boolean
+}
 
-export function Dashboard() {
-  const { tasks: allTasks, loading, error } = useTasks()
-  const { createTask, loading: isCreating } = useCreateTask()
+export function Dashboard({
+  tasks,
+  activeFilter,
+  onFilterChange,
+  onRefresh,
+  stats,
+  loadingStats,
+}: DashboardProps) {
   const { updateTask } = useUpdateTask()
   const { deleteTask } = useDeleteTask()
-
-  const [activeTab, setActiveTab] = useState<TaskStatus>("all")
-  const [isModalOpen, setIsModalOpen] = useState(false)
-
-  // Filter tasks based on active tab
-  const filteredTasks = allTasks.filter((task) => {
-    if (activeTab !== "all" && task.status !== activeTab) {
-      return false
-    }
-    return true
-  })
+  const { updateSubtask } = useUpdateSubtask()
+  const { deleteSubtask } = useDeleteSubtask()
+  const { detachTag } = useDetachTag()
+  const { toast } = useToast()
 
   const handleToggleComplete = useCallback(
     async (id: string) => {
-      const task = allTasks.find((t: Task) => t.id === id)
+      const task = tasks.find((t: Task) => t.id === id)
       if (!task) return
 
       try {
         await updateTask(id, {
-          status: task.status === "completed" ? "pending" : "completed",
+          completed: !task.completed,
         })
+        toast({
+          title: !task.completed ? "Task completed!" : "Task restored",
+          description: !task.completed ? "Excellent work on completing the task." : "The task has been moved back to pending.",
+          variant: "success",
+        })
+        onRefresh()
       } catch (err) {
+        toast({
+          title: "Action failed",
+          description: "Could not update the task status. Please try again.",
+          variant: "destructive",
+        })
         console.error("Failed to update task:", err)
       }
     },
-    [allTasks, updateTask]
+    [tasks, updateTask, onRefresh, toast]
   )
 
   const handleDelete = useCallback(
     async (id: string) => {
       try {
         await deleteTask(id)
+        toast({
+          title: "Task deleted",
+          description: "The task has been permanently removed.",
+          variant: "success",
+        })
+        onRefresh()
       } catch (err) {
+        toast({
+          title: "Delete failed",
+          description: "Could not delete the task. Please try again.",
+          variant: "destructive",
+        })
         console.error("Failed to delete task:", err)
       }
     },
-    [deleteTask]
+    [deleteTask, onRefresh, toast]
   )
 
-  const handleCreateTask = async (
-    taskData: Omit<Task, "id" | "createdAt" | "updatedAt">
-  ) => {
-    try {
-      await createTask(taskData)
-    } catch (err) {
-      console.error("Failed to create task:", err)
-    }
-  }
+  const handleToggleSubtask = useCallback(
+    async (subtaskId: string, completed: boolean) => {
+      try {
+        await updateSubtask(subtaskId, { completed })
+        onRefresh()
+      } catch (err) {
+        toast({
+          title: "Update failed",
+          description: "Could not update subtask status.",
+          variant: "destructive",
+        })
+      }
+    },
+    [updateSubtask, onRefresh, toast]
+  )
+
+  const handleDeleteSubtask = useCallback(
+    async (subtaskId: string) => {
+      try {
+        await deleteSubtask(subtaskId)
+        toast({
+          title: "Subtask deleted",
+          variant: "success",
+        })
+        onRefresh()
+      } catch (err) {
+        toast({
+          title: "Delete failed",
+          description: "Could not delete subtask.",
+          variant: "destructive",
+        })
+      }
+    },
+    [deleteSubtask, onRefresh, toast]
+  )
+
+  const handleDetachTag = useCallback(
+    async (taskId: string, tagId: string) => {
+      try {
+        await detachTag(taskId, tagId)
+        onRefresh()
+      } catch (err) {
+        toast({
+          title: "Detach failed",
+          description: "Could not remove tag from task.",
+          variant: "destructive",
+        })
+      }
+    },
+    [detachTag, onRefresh, toast]
+  )
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="flex flex-1 flex-col gap-6 bg-[#F1F5F9] p-6"
+      className="flex flex-1 flex-col gap-6 bg-background p-6"
     >
-      {/* Primary: Audit Trail */}
-      <motion.div
-        initial={{ y: 16, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.1 }}
-      >
-        <AuditTrail />
-      </motion.div>
+      {/* Primary: Stats & Audit */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-1">
+          <SystemOverview stats={stats} loading={loadingStats} />
+        </div>
+        <div className="lg:col-span-2">
+          <AuditTrail limit={5} />
+        </div>
+      </div>
 
       {/* Secondary: Task Management */}
       <motion.div
@@ -91,26 +163,26 @@ export function Dashboard() {
         transition={{ delay: 0.2 }}
       >
         <Tabs
-          value={activeTab}
-          onValueChange={(v) => setActiveTab(v as TaskStatus)}
+          value={activeFilter}
+          onValueChange={(v) => onFilterChange(v)}
           className="w-full"
         >
-          <TabsList className="grid w-full grid-cols-3 border border-[#EDE9E6] bg-[#FFFFFF]">
+          <TabsList className="grid w-full grid-cols-3 border border-border bg-card">
             <TabsTrigger
               value="all"
-              className="text-xs font-semibold tracking-widest data-[state=active]:bg-[#0F172A] data-[state=active]:text-white"
+              className="text-xs font-bold tracking-widest text-foreground/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all"
             >
               ALL
             </TabsTrigger>
             <TabsTrigger
               value="pending"
-              className="text-xs font-semibold tracking-widest data-[state=active]:bg-[#0F172A] data-[state=active]:text-white"
+              className="text-xs font-bold tracking-widest text-foreground/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all"
             >
               PENDING
             </TabsTrigger>
             <TabsTrigger
               value="completed"
-              className="text-xs font-semibold tracking-widest data-[state=active]:bg-[#0F172A] data-[state=active]:text-white"
+              className="text-xs font-bold tracking-widest text-foreground/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all"
             >
               COMPLETED
             </TabsTrigger>
@@ -122,21 +194,13 @@ export function Dashboard() {
               value={status}
               className="mt-4 space-y-3"
             >
-              {loading ? (
-                <div className="flex h-40 items-center justify-center text-sm text-[#0F172A]/50">
-                  Loading tasks...
-                </div>
-              ) : error ? (
-                <div className="flex h-40 items-center justify-center text-sm text-red-500">
-                  Failed to load tasks
-                </div>
-              ) : filteredTasks.length === 0 ? (
-                <div className="flex h-40 items-center justify-center text-sm text-[#0F172A]/50">
+              {tasks.length === 0 ? (
+                <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">
                   No tasks found
                 </div>
               ) : (
                 <AnimatePresence mode="popLayout">
-                  {filteredTasks.map((task: Task, index) => (
+                  {tasks.map((task: Task, index) => (
                     <motion.div
                       key={task.id}
                       initial={{ opacity: 0, y: 10 }}
@@ -149,6 +213,9 @@ export function Dashboard() {
                         onToggleComplete={handleToggleComplete}
                         onDelete={handleDelete}
                         onEdit={() => {}}
+                        onToggleSubtask={handleToggleSubtask}
+                        onDeleteSubtask={handleDeleteSubtask}
+                        onDetachTag={handleDetachTag}
                       />
                     </motion.div>
                   ))}
@@ -158,15 +225,6 @@ export function Dashboard() {
           ))}
         </Tabs>
       </motion.div>
-
-      {/* Modal */}
-      <NewTaskModal
-        open={isModalOpen}
-        onOpenChange={setIsModalOpen}
-        onSubmit={handleCreateTask}
-        isLoading={isCreating}
-      />
     </motion.div>
   )
 }
-
