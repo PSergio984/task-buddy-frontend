@@ -4092,9 +4092,9 @@
       "source_file": "src/App.tsx",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_tsx",
-      "target": "components_new_task_modal_newtaskmodal",
-      "confidence_score": 1.0
+      "target": "components_new_task_modal_newtaskmodal"
     },
     {
       "relation": "imports_from",
@@ -4125,9 +4125,9 @@
       "source_file": "src/App.tsx",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_tsx",
-      "target": "pages_registerpage_registerpage",
-      "confidence_score": 1.0
+      "target": "pages_registerpage_registerpage"
     },
     {
       "relation": "imports_from",
@@ -4486,9 +4486,9 @@
       "source_file": "src/components/audit-trail.tsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_components_audit_trail_tsx",
-      "target": "src_lib_utils_ts",
-      "confidence_score": 1.0
+      "target": "src_lib_utils_ts"
     },
     {
       "relation": "imports",
@@ -4497,9 +4497,9 @@
       "source_file": "src/components/audit-trail.tsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_components_audit_trail_tsx",
-      "target": "lib_utils_cn",
-      "confidence_score": 1.0
+      "target": "lib_utils_cn"
     },
     {
       "relation": "contains",
@@ -4517,9 +4517,9 @@
       "source_file": "src/components/audit-trail.tsx",
       "source_location": "L24",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_components_audit_trail_tsx",
-      "target": "components_audit_trail_audittrailprops",
-      "confidence_score": 1.0
+      "target": "components_audit_trail_audittrailprops"
     },
     {
       "relation": "contains",
@@ -4537,9 +4537,9 @@
       "source_file": "src/components/audit-trail.tsx",
       "source_location": "L36",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_components_audit_trail_tsx",
-      "target": "components_audit_trail_currentlimit_setcurrentlimit",
-      "confidence_score": 1.0
+      "target": "components_audit_trail_currentlimit_setcurrentlimit"
     },
     {
       "relation": "contains",
@@ -4805,9 +4805,9 @@
       "source_file": "src/components/dashboard.tsx",
       "source_location": "L15",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_components_dashboard_tsx",
-      "target": "hooks_useapi_statsoverview",
-      "confidence_score": 1.0
+      "target": "hooks_useapi_statsoverview"
     },
     {
       "relation": "imports_from",
@@ -5108,9 +5108,9 @@
       "source_file": "src/components/new-task-modal.tsx",
       "source_location": "L32",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_components_new_task_modal_tsx",
-      "target": "components_new_task_modal_newtaskmodal",
-      "confidence_score": 1.0
+      "target": "components_new_task_modal_newtaskmodal"
     },
     {
       "relation": "imports_from",
@@ -5190,9 +5190,9 @@
       "source_file": "src/pages/DashboardDemo.tsx",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_pages_dashboarddemo_tsx",
-      "target": "components_new_task_modal_newtaskmodal",
-      "confidence_score": 1.0
+      "target": "components_new_task_modal_newtaskmodal"
     },
     {
       "relation": "imports_from",
@@ -5937,9 +5937,9 @@
       "source_file": "src/components/auth/PasswordStrengthMeter.tsx",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_components_auth_passwordstrengthmeter_tsx",
-      "target": "src_lib_auth_ts",
-      "confidence_score": 1.0
+      "target": "src_lib_auth_ts"
     },
     {
       "relation": "imports",
@@ -5948,9 +5948,9 @@
       "source_file": "src/components/auth/PasswordStrengthMeter.tsx",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_components_auth_passwordstrengthmeter_tsx",
-      "target": "lib_auth_getpasswordstrength",
-      "confidence_score": 1.0
+      "target": "lib_auth_getpasswordstrength"
     },
     {
       "relation": "contains",
@@ -5958,9 +5958,9 @@
       "source_file": "src/components/auth/PasswordStrengthMeter.tsx",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_components_auth_passwordstrengthmeter_tsx",
-      "target": "auth_passwordstrengthmeter_passwordstrengthmeterprops",
-      "confidence_score": 1.0
+      "target": "auth_passwordstrengthmeter_passwordstrengthmeterprops"
     },
     {
       "relation": "contains",
@@ -5968,9 +5968,9 @@
       "source_file": "src/components/auth/PasswordStrengthMeter.tsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_components_auth_passwordstrengthmeter_tsx",
-      "target": "auth_passwordstrengthmeter_password_rules",
-      "confidence_score": 1.0
+      "target": "auth_passwordstrengthmeter_password_rules"
     },
     {
       "relation": "contains",
@@ -5978,9 +5978,9 @@
       "source_file": "src/components/auth/PasswordStrengthMeter.tsx",
       "source_location": "L21",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_components_auth_passwordstrengthmeter_tsx",
-      "target": "auth_passwordstrengthmeter_score_label",
-      "confidence_score": 1.0
+      "target": "auth_passwordstrengthmeter_score_label"
     },
     {
       "relation": "contains",
@@ -5988,9 +5988,9 @@
       "source_file": "src/components/auth/PasswordStrengthMeter.tsx",
       "source_location": "L23",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_components_auth_passwordstrengthmeter_tsx",
-      "target": "auth_passwordstrengthmeter_getstrengthcolor",
-      "confidence_score": 1.0
+      "target": "auth_passwordstrengthmeter_getstrengthcolor"
     },
     {
       "relation": "contains",
@@ -5998,9 +5998,9 @@
       "source_file": "src/components/auth/PasswordStrengthMeter.tsx",
       "source_location": "L40",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_components_auth_passwordstrengthmeter_tsx",
-      "target": "auth_passwordstrengthmeter_getlabelcolor",
-      "confidence_score": 1.0
+      "target": "auth_passwordstrengthmeter_getlabelcolor"
     },
     {
       "relation": "contains",
@@ -6008,9 +6008,9 @@
       "source_file": "src/components/auth/PasswordStrengthMeter.tsx",
       "source_location": "L90",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_components_auth_passwordstrengthmeter_tsx",
-      "target": "auth_passwordstrengthmeter_met",
-      "confidence_score": 1.0
+      "target": "auth_passwordstrengthmeter_met"
     },
     {
       "relation": "imports_from",
@@ -6019,9 +6019,9 @@
       "source_file": "src/components/auth/RegisterForm.tsx",
       "source_location": "L28",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_components_auth_registerform_tsx",
-      "target": "src_components_auth_passwordstrengthmeter_tsx",
-      "confidence_score": 1.0
+      "target": "src_components_auth_passwordstrengthmeter_tsx"
     },
     {
       "relation": "imports_from",
@@ -6030,9 +6030,9 @@
       "source_file": "src/components/auth/RegisterForm.tsx",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_components_auth_registerform_tsx",
-      "target": "src_contexts_authcontext_tsx",
-      "confidence_score": 1.0
+      "target": "src_contexts_authcontext_tsx"
     },
     {
       "relation": "imports",
@@ -6041,9 +6041,9 @@
       "source_file": "src/components/auth/RegisterForm.tsx",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_components_auth_registerform_tsx",
-      "target": "contexts_authcontext_useauth",
-      "confidence_score": 1.0
+      "target": "contexts_authcontext_useauth"
     },
     {
       "relation": "imports_from",
@@ -6052,9 +6052,9 @@
       "source_file": "src/components/auth/RegisterForm.tsx",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_components_auth_registerform_tsx",
-      "target": "src_components_ui_button_tsx",
-      "confidence_score": 1.0
+      "target": "src_components_ui_button_tsx"
     },
     {
       "relation": "imports_from",
@@ -6063,9 +6063,9 @@
       "source_file": "src/components/auth/RegisterForm.tsx",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_components_auth_registerform_tsx",
-      "target": "src_components_ui_input_tsx",
-      "confidence_score": 1.0
+      "target": "src_components_ui_input_tsx"
     },
     {
       "relation": "imports_from",
@@ -6074,9 +6074,9 @@
       "source_file": "src/components/auth/RegisterForm.tsx",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_components_auth_registerform_tsx",
-      "target": "src_components_ui_label_tsx",
-      "confidence_score": 1.0
+      "target": "src_components_ui_label_tsx"
     },
     {
       "relation": "imports_from",
@@ -6085,9 +6085,9 @@
       "source_file": "src/components/auth/RegisterForm.tsx",
       "source_location": "L18",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_components_auth_registerform_tsx",
-      "target": "src_lib_auth_ts",
-      "confidence_score": 1.0
+      "target": "src_lib_auth_ts"
     },
     {
       "relation": "imports",
@@ -6096,9 +6096,9 @@
       "source_file": "src/components/auth/RegisterForm.tsx",
       "source_location": "L18",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_components_auth_registerform_tsx",
-      "target": "lib_auth_sanitizeemail",
-      "confidence_score": 1.0
+      "target": "lib_auth_sanitizeemail"
     },
     {
       "relation": "imports",
@@ -6107,9 +6107,9 @@
       "source_file": "src/components/auth/RegisterForm.tsx",
       "source_location": "L18",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_components_auth_registerform_tsx",
-      "target": "lib_auth_sanitizepassword",
-      "confidence_score": 1.0
+      "target": "lib_auth_sanitizepassword"
     },
     {
       "relation": "imports",
@@ -6118,9 +6118,9 @@
       "source_file": "src/components/auth/RegisterForm.tsx",
       "source_location": "L18",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_components_auth_registerform_tsx",
-      "target": "lib_auth_sanitizeusername",
-      "confidence_score": 1.0
+      "target": "lib_auth_sanitizeusername"
     },
     {
       "relation": "imports",
@@ -6129,9 +6129,9 @@
       "source_file": "src/components/auth/RegisterForm.tsx",
       "source_location": "L18",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_components_auth_registerform_tsx",
-      "target": "lib_auth_validateemail",
-      "confidence_score": 1.0
+      "target": "lib_auth_validateemail"
     },
     {
       "relation": "imports",
@@ -6140,9 +6140,9 @@
       "source_file": "src/components/auth/RegisterForm.tsx",
       "source_location": "L18",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_components_auth_registerform_tsx",
-      "target": "lib_auth_validatepassword",
-      "confidence_score": 1.0
+      "target": "lib_auth_validatepassword"
     },
     {
       "relation": "imports",
@@ -6151,9 +6151,9 @@
       "source_file": "src/components/auth/RegisterForm.tsx",
       "source_location": "L18",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_components_auth_registerform_tsx",
-      "target": "lib_auth_validatepasswordconfirmation",
-      "confidence_score": 1.0
+      "target": "lib_auth_validatepasswordconfirmation"
     },
     {
       "relation": "imports",
@@ -6162,9 +6162,9 @@
       "source_file": "src/components/auth/RegisterForm.tsx",
       "source_location": "L18",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_components_auth_registerform_tsx",
-      "target": "lib_auth_validateusername",
-      "confidence_score": 1.0
+      "target": "lib_auth_validateusername"
     },
     {
       "relation": "imports_from",
@@ -6173,9 +6173,9 @@
       "source_file": "src/components/auth/RegisterForm.tsx",
       "source_location": "L27",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_components_auth_registerform_tsx",
-      "target": "src_hooks_use_toast_ts",
-      "confidence_score": 1.0
+      "target": "src_hooks_use_toast_ts"
     },
     {
       "relation": "imports",
@@ -6184,9 +6184,9 @@
       "source_file": "src/components/auth/RegisterForm.tsx",
       "source_location": "L27",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_components_auth_registerform_tsx",
-      "target": "hooks_use_toast_usetoast",
-      "confidence_score": 1.0
+      "target": "hooks_use_toast_usetoast"
     },
     {
       "relation": "contains",
@@ -6194,9 +6194,9 @@
       "source_file": "src/components/auth/RegisterForm.tsx",
       "source_location": "L30",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_components_auth_registerform_tsx",
-      "target": "auth_registerform_registerform",
-      "confidence_score": 1.0
+      "target": "auth_registerform_registerform"
     },
     {
       "relation": "imports_from",
@@ -6205,9 +6205,9 @@
       "source_file": "src/pages/RegisterPage.tsx",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_pages_registerpage_tsx",
-      "target": "src_components_auth_registerform_tsx",
-      "confidence_score": 1.0
+      "target": "src_components_auth_registerform_tsx"
     },
     {
       "relation": "imports",
@@ -6216,9 +6216,9 @@
       "source_file": "src/pages/RegisterPage.tsx",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_pages_registerpage_tsx",
-      "target": "auth_registerform_registerform",
-      "confidence_score": 1.0
+      "target": "auth_registerform_registerform"
     },
     {
       "relation": "calls",
@@ -8646,9 +8646,9 @@
       "source_file": "src/pages/RegisterPage.tsx",
       "source_location": "L13",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_pages_registerpage_tsx",
-      "target": "pages_registerpage_registerpage",
-      "confidence_score": 1.0
+      "target": "pages_registerpage_registerpage"
     },
     {
       "relation": "contains",
@@ -9676,9 +9676,9 @@
       "source_file": "playwright-report/data/3654424336dbea2fccdf942c8096822749cc9ef8.md",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "playwright_report_data_3654424336dbea2fccdf942c8096822749cc9ef8_md",
-      "target": "data_3654424336dbea2fccdf942c8096822749cc9ef8_instructions",
-      "confidence_score": 1.0
+      "target": "data_3654424336dbea2fccdf942c8096822749cc9ef8_instructions"
     },
     {
       "relation": "contains",
@@ -9686,9 +9686,9 @@
       "source_file": "playwright-report/data/3654424336dbea2fccdf942c8096822749cc9ef8.md",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "playwright_report_data_3654424336dbea2fccdf942c8096822749cc9ef8_md",
-      "target": "data_3654424336dbea2fccdf942c8096822749cc9ef8_test_info",
-      "confidence_score": 1.0
+      "target": "data_3654424336dbea2fccdf942c8096822749cc9ef8_test_info"
     },
     {
       "relation": "contains",
@@ -9696,9 +9696,9 @@
       "source_file": "playwright-report/data/3654424336dbea2fccdf942c8096822749cc9ef8.md",
       "source_location": "L12",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "playwright_report_data_3654424336dbea2fccdf942c8096822749cc9ef8_md",
-      "target": "data_3654424336dbea2fccdf942c8096822749cc9ef8_error_details",
-      "confidence_score": 1.0
+      "target": "data_3654424336dbea2fccdf942c8096822749cc9ef8_error_details"
     },
     {
       "relation": "contains",
@@ -9706,9 +9706,9 @@
       "source_file": "playwright-report/data/3654424336dbea2fccdf942c8096822749cc9ef8.md",
       "source_location": "L28",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "playwright_report_data_3654424336dbea2fccdf942c8096822749cc9ef8_md",
-      "target": "data_3654424336dbea2fccdf942c8096822749cc9ef8_page_snapshot",
-      "confidence_score": 1.0
+      "target": "data_3654424336dbea2fccdf942c8096822749cc9ef8_page_snapshot"
     },
     {
       "relation": "contains",
@@ -9716,9 +9716,9 @@
       "source_file": "playwright-report/data/3654424336dbea2fccdf942c8096822749cc9ef8.md",
       "source_location": "L120",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "playwright_report_data_3654424336dbea2fccdf942c8096822749cc9ef8_md",
-      "target": "data_3654424336dbea2fccdf942c8096822749cc9ef8_test_source",
-      "confidence_score": 1.0
+      "target": "data_3654424336dbea2fccdf942c8096822749cc9ef8_test_source"
     },
     {
       "relation": "contains",
@@ -9726,9 +9726,9 @@
       "source_file": "playwright-report/data/3654424336dbea2fccdf942c8096822749cc9ef8.md",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "data_3654424336dbea2fccdf942c8096822749cc9ef8_error_details",
-      "target": "data_3654424336dbea2fccdf942c8096822749cc9ef8_codeblock_1",
-      "confidence_score": 1.0
+      "target": "data_3654424336dbea2fccdf942c8096822749cc9ef8_codeblock_1"
     },
     {
       "relation": "contains",
@@ -9736,9 +9736,9 @@
       "source_file": "playwright-report/data/3654424336dbea2fccdf942c8096822749cc9ef8.md",
       "source_location": "L30",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "data_3654424336dbea2fccdf942c8096822749cc9ef8_page_snapshot",
-      "target": "data_3654424336dbea2fccdf942c8096822749cc9ef8_codeblock_2",
-      "confidence_score": 1.0
+      "target": "data_3654424336dbea2fccdf942c8096822749cc9ef8_codeblock_2"
     },
     {
       "relation": "contains",
@@ -9746,9 +9746,9 @@
       "source_file": "playwright-report/data/3654424336dbea2fccdf942c8096822749cc9ef8.md",
       "source_location": "L122",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "data_3654424336dbea2fccdf942c8096822749cc9ef8_test_source",
-      "target": "data_3654424336dbea2fccdf942c8096822749cc9ef8_codeblock_3",
-      "confidence_score": 1.0
+      "target": "data_3654424336dbea2fccdf942c8096822749cc9ef8_codeblock_3"
     },
     {
       "relation": "contains",
@@ -9756,9 +9756,9 @@
       "source_file": "playwright-report/data/3e58cd428c80b2531534d090e715e8ab01638c9b.md",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "playwright_report_data_3e58cd428c80b2531534d090e715e8ab01638c9b_md",
-      "target": "data_3e58cd428c80b2531534d090e715e8ab01638c9b_instructions",
-      "confidence_score": 1.0
+      "target": "data_3e58cd428c80b2531534d090e715e8ab01638c9b_instructions"
     },
     {
       "relation": "contains",
@@ -9766,9 +9766,9 @@
       "source_file": "playwright-report/data/3e58cd428c80b2531534d090e715e8ab01638c9b.md",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "playwright_report_data_3e58cd428c80b2531534d090e715e8ab01638c9b_md",
-      "target": "data_3e58cd428c80b2531534d090e715e8ab01638c9b_test_info",
-      "confidence_score": 1.0
+      "target": "data_3e58cd428c80b2531534d090e715e8ab01638c9b_test_info"
     },
     {
       "relation": "contains",
@@ -9776,9 +9776,9 @@
       "source_file": "playwright-report/data/3e58cd428c80b2531534d090e715e8ab01638c9b.md",
       "source_location": "L12",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "playwright_report_data_3e58cd428c80b2531534d090e715e8ab01638c9b_md",
-      "target": "data_3e58cd428c80b2531534d090e715e8ab01638c9b_error_details",
-      "confidence_score": 1.0
+      "target": "data_3e58cd428c80b2531534d090e715e8ab01638c9b_error_details"
     },
     {
       "relation": "contains",
@@ -9786,9 +9786,9 @@
       "source_file": "playwright-report/data/3e58cd428c80b2531534d090e715e8ab01638c9b.md",
       "source_location": "L28",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "playwright_report_data_3e58cd428c80b2531534d090e715e8ab01638c9b_md",
-      "target": "data_3e58cd428c80b2531534d090e715e8ab01638c9b_page_snapshot",
-      "confidence_score": 1.0
+      "target": "data_3e58cd428c80b2531534d090e715e8ab01638c9b_page_snapshot"
     },
     {
       "relation": "contains",
@@ -9796,9 +9796,9 @@
       "source_file": "playwright-report/data/3e58cd428c80b2531534d090e715e8ab01638c9b.md",
       "source_location": "L115",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "playwright_report_data_3e58cd428c80b2531534d090e715e8ab01638c9b_md",
-      "target": "data_3e58cd428c80b2531534d090e715e8ab01638c9b_test_source",
-      "confidence_score": 1.0
+      "target": "data_3e58cd428c80b2531534d090e715e8ab01638c9b_test_source"
     },
     {
       "relation": "contains",
@@ -9806,9 +9806,9 @@
       "source_file": "playwright-report/data/3e58cd428c80b2531534d090e715e8ab01638c9b.md",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "data_3e58cd428c80b2531534d090e715e8ab01638c9b_error_details",
-      "target": "data_3e58cd428c80b2531534d090e715e8ab01638c9b_codeblock_1",
-      "confidence_score": 1.0
+      "target": "data_3e58cd428c80b2531534d090e715e8ab01638c9b_codeblock_1"
     },
     {
       "relation": "contains",
@@ -9816,9 +9816,9 @@
       "source_file": "playwright-report/data/3e58cd428c80b2531534d090e715e8ab01638c9b.md",
       "source_location": "L30",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "data_3e58cd428c80b2531534d090e715e8ab01638c9b_page_snapshot",
-      "target": "data_3e58cd428c80b2531534d090e715e8ab01638c9b_codeblock_2",
-      "confidence_score": 1.0
+      "target": "data_3e58cd428c80b2531534d090e715e8ab01638c9b_codeblock_2"
     },
     {
       "relation": "contains",
@@ -9826,9 +9826,9 @@
       "source_file": "playwright-report/data/3e58cd428c80b2531534d090e715e8ab01638c9b.md",
       "source_location": "L117",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "data_3e58cd428c80b2531534d090e715e8ab01638c9b_test_source",
-      "target": "data_3e58cd428c80b2531534d090e715e8ab01638c9b_codeblock_3",
-      "confidence_score": 1.0
+      "target": "data_3e58cd428c80b2531534d090e715e8ab01638c9b_codeblock_3"
     },
     {
       "relation": "contains",
@@ -9836,9 +9836,9 @@
       "source_file": "playwright-report/data/9be985a3ed9392440dddd9257ca4ea90f55057f7.md",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "playwright_report_data_9be985a3ed9392440dddd9257ca4ea90f55057f7_md",
-      "target": "data_9be985a3ed9392440dddd9257ca4ea90f55057f7_instructions",
-      "confidence_score": 1.0
+      "target": "data_9be985a3ed9392440dddd9257ca4ea90f55057f7_instructions"
     },
     {
       "relation": "contains",
@@ -9846,9 +9846,9 @@
       "source_file": "playwright-report/data/9be985a3ed9392440dddd9257ca4ea90f55057f7.md",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "playwright_report_data_9be985a3ed9392440dddd9257ca4ea90f55057f7_md",
-      "target": "data_9be985a3ed9392440dddd9257ca4ea90f55057f7_test_info",
-      "confidence_score": 1.0
+      "target": "data_9be985a3ed9392440dddd9257ca4ea90f55057f7_test_info"
     },
     {
       "relation": "contains",
@@ -9856,9 +9856,9 @@
       "source_file": "playwright-report/data/9be985a3ed9392440dddd9257ca4ea90f55057f7.md",
       "source_location": "L12",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "playwright_report_data_9be985a3ed9392440dddd9257ca4ea90f55057f7_md",
-      "target": "data_9be985a3ed9392440dddd9257ca4ea90f55057f7_error_details",
-      "confidence_score": 1.0
+      "target": "data_9be985a3ed9392440dddd9257ca4ea90f55057f7_error_details"
     },
     {
       "relation": "contains",
@@ -9866,9 +9866,9 @@
       "source_file": "playwright-report/data/9be985a3ed9392440dddd9257ca4ea90f55057f7.md",
       "source_location": "L28",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "playwright_report_data_9be985a3ed9392440dddd9257ca4ea90f55057f7_md",
-      "target": "data_9be985a3ed9392440dddd9257ca4ea90f55057f7_page_snapshot",
-      "confidence_score": 1.0
+      "target": "data_9be985a3ed9392440dddd9257ca4ea90f55057f7_page_snapshot"
     },
     {
       "relation": "contains",
@@ -9876,9 +9876,9 @@
       "source_file": "playwright-report/data/9be985a3ed9392440dddd9257ca4ea90f55057f7.md",
       "source_location": "L113",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "playwright_report_data_9be985a3ed9392440dddd9257ca4ea90f55057f7_md",
-      "target": "data_9be985a3ed9392440dddd9257ca4ea90f55057f7_test_source",
-      "confidence_score": 1.0
+      "target": "data_9be985a3ed9392440dddd9257ca4ea90f55057f7_test_source"
     },
     {
       "relation": "contains",
@@ -9886,9 +9886,9 @@
       "source_file": "playwright-report/data/9be985a3ed9392440dddd9257ca4ea90f55057f7.md",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "data_9be985a3ed9392440dddd9257ca4ea90f55057f7_error_details",
-      "target": "data_9be985a3ed9392440dddd9257ca4ea90f55057f7_codeblock_1",
-      "confidence_score": 1.0
+      "target": "data_9be985a3ed9392440dddd9257ca4ea90f55057f7_codeblock_1"
     },
     {
       "relation": "contains",
@@ -9896,9 +9896,9 @@
       "source_file": "playwright-report/data/9be985a3ed9392440dddd9257ca4ea90f55057f7.md",
       "source_location": "L30",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "data_9be985a3ed9392440dddd9257ca4ea90f55057f7_page_snapshot",
-      "target": "data_9be985a3ed9392440dddd9257ca4ea90f55057f7_codeblock_2",
-      "confidence_score": 1.0
+      "target": "data_9be985a3ed9392440dddd9257ca4ea90f55057f7_codeblock_2"
     },
     {
       "relation": "contains",
@@ -9906,9 +9906,9 @@
       "source_file": "playwright-report/data/9be985a3ed9392440dddd9257ca4ea90f55057f7.md",
       "source_location": "L115",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "data_9be985a3ed9392440dddd9257ca4ea90f55057f7_test_source",
-      "target": "data_9be985a3ed9392440dddd9257ca4ea90f55057f7_codeblock_3",
-      "confidence_score": 1.0
+      "target": "data_9be985a3ed9392440dddd9257ca4ea90f55057f7_codeblock_3"
     },
     {
       "relation": "contains",
@@ -9916,9 +9916,9 @@
       "source_file": "playwright-report/data/b13f8371be49c44396e62ed7cb2d5521f490a97e.md",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "playwright_report_data_b13f8371be49c44396e62ed7cb2d5521f490a97e_md",
-      "target": "data_b13f8371be49c44396e62ed7cb2d5521f490a97e_instructions",
-      "confidence_score": 1.0
+      "target": "data_b13f8371be49c44396e62ed7cb2d5521f490a97e_instructions"
     },
     {
       "relation": "contains",
@@ -9926,9 +9926,9 @@
       "source_file": "playwright-report/data/b13f8371be49c44396e62ed7cb2d5521f490a97e.md",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "playwright_report_data_b13f8371be49c44396e62ed7cb2d5521f490a97e_md",
-      "target": "data_b13f8371be49c44396e62ed7cb2d5521f490a97e_test_info",
-      "confidence_score": 1.0
+      "target": "data_b13f8371be49c44396e62ed7cb2d5521f490a97e_test_info"
     },
     {
       "relation": "contains",
@@ -9936,9 +9936,9 @@
       "source_file": "playwright-report/data/b13f8371be49c44396e62ed7cb2d5521f490a97e.md",
       "source_location": "L12",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "playwright_report_data_b13f8371be49c44396e62ed7cb2d5521f490a97e_md",
-      "target": "data_b13f8371be49c44396e62ed7cb2d5521f490a97e_error_details",
-      "confidence_score": 1.0
+      "target": "data_b13f8371be49c44396e62ed7cb2d5521f490a97e_error_details"
     },
     {
       "relation": "contains",
@@ -9946,9 +9946,9 @@
       "source_file": "playwright-report/data/b13f8371be49c44396e62ed7cb2d5521f490a97e.md",
       "source_location": "L29",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "playwright_report_data_b13f8371be49c44396e62ed7cb2d5521f490a97e_md",
-      "target": "data_b13f8371be49c44396e62ed7cb2d5521f490a97e_page_snapshot",
-      "confidence_score": 1.0
+      "target": "data_b13f8371be49c44396e62ed7cb2d5521f490a97e_page_snapshot"
     },
     {
       "relation": "contains",
@@ -9956,9 +9956,9 @@
       "source_file": "playwright-report/data/b13f8371be49c44396e62ed7cb2d5521f490a97e.md",
       "source_location": "L75",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "playwright_report_data_b13f8371be49c44396e62ed7cb2d5521f490a97e_md",
-      "target": "data_b13f8371be49c44396e62ed7cb2d5521f490a97e_test_source",
-      "confidence_score": 1.0
+      "target": "data_b13f8371be49c44396e62ed7cb2d5521f490a97e_test_source"
     },
     {
       "relation": "contains",
@@ -9966,9 +9966,9 @@
       "source_file": "playwright-report/data/b13f8371be49c44396e62ed7cb2d5521f490a97e.md",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "data_b13f8371be49c44396e62ed7cb2d5521f490a97e_error_details",
-      "target": "data_b13f8371be49c44396e62ed7cb2d5521f490a97e_codeblock_1",
-      "confidence_score": 1.0
+      "target": "data_b13f8371be49c44396e62ed7cb2d5521f490a97e_codeblock_1"
     },
     {
       "relation": "contains",
@@ -9976,9 +9976,9 @@
       "source_file": "playwright-report/data/b13f8371be49c44396e62ed7cb2d5521f490a97e.md",
       "source_location": "L31",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "data_b13f8371be49c44396e62ed7cb2d5521f490a97e_page_snapshot",
-      "target": "data_b13f8371be49c44396e62ed7cb2d5521f490a97e_codeblock_2",
-      "confidence_score": 1.0
+      "target": "data_b13f8371be49c44396e62ed7cb2d5521f490a97e_codeblock_2"
     },
     {
       "relation": "contains",
@@ -9986,9 +9986,9 @@
       "source_file": "playwright-report/data/b13f8371be49c44396e62ed7cb2d5521f490a97e.md",
       "source_location": "L77",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "data_b13f8371be49c44396e62ed7cb2d5521f490a97e_test_source",
-      "target": "data_b13f8371be49c44396e62ed7cb2d5521f490a97e_codeblock_3",
-      "confidence_score": 1.0
+      "target": "data_b13f8371be49c44396e62ed7cb2d5521f490a97e_codeblock_3"
     },
     {
       "relation": "contains",
@@ -9996,9 +9996,9 @@
       "source_file": "playwright-report/data/ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d.md",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "playwright_report_data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_md",
-      "target": "data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_instructions",
-      "confidence_score": 1.0
+      "target": "data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_instructions"
     },
     {
       "relation": "contains",
@@ -10006,9 +10006,9 @@
       "source_file": "playwright-report/data/ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d.md",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "playwright_report_data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_md",
-      "target": "data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_test_info",
-      "confidence_score": 1.0
+      "target": "data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_test_info"
     },
     {
       "relation": "contains",
@@ -10016,9 +10016,9 @@
       "source_file": "playwright-report/data/ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d.md",
       "source_location": "L12",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "playwright_report_data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_md",
-      "target": "data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_error_details",
-      "confidence_score": 1.0
+      "target": "data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_error_details"
     },
     {
       "relation": "contains",
@@ -10026,9 +10026,9 @@
       "source_file": "playwright-report/data/ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d.md",
       "source_location": "L25",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "playwright_report_data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_md",
-      "target": "data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_page_snapshot",
-      "confidence_score": 1.0
+      "target": "data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_page_snapshot"
     },
     {
       "relation": "contains",
@@ -10036,9 +10036,9 @@
       "source_file": "playwright-report/data/ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d.md",
       "source_location": "L71",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "playwright_report_data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_md",
-      "target": "data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_test_source",
-      "confidence_score": 1.0
+      "target": "data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_test_source"
     },
     {
       "relation": "contains",
@@ -10046,9 +10046,9 @@
       "source_file": "playwright-report/data/ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d.md",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_error_details",
-      "target": "data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_codeblock_1",
-      "confidence_score": 1.0
+      "target": "data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_codeblock_1"
     },
     {
       "relation": "contains",
@@ -10056,9 +10056,9 @@
       "source_file": "playwright-report/data/ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d.md",
       "source_location": "L18",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_error_details",
-      "target": "data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_codeblock_2",
-      "confidence_score": 1.0
+      "target": "data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_codeblock_2"
     },
     {
       "relation": "contains",
@@ -10066,9 +10066,9 @@
       "source_file": "playwright-report/data/ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d.md",
       "source_location": "L27",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_page_snapshot",
-      "target": "data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_codeblock_3",
-      "confidence_score": 1.0
+      "target": "data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_codeblock_3"
     },
     {
       "relation": "contains",
@@ -10076,9 +10076,9 @@
       "source_file": "playwright-report/data/ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d.md",
       "source_location": "L73",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_test_source",
-      "target": "data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_codeblock_4",
-      "confidence_score": 1.0
+      "target": "data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_codeblock_4"
     },
     {
       "relation": "contains",
@@ -10226,9 +10226,9 @@
       "source_file": "test-results/auth-Authentication-login--e8b1a-valid-username-and-password-chromium/error-context.md",
       "source_location": "L18",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "auth_authentication_login_e8b1a_valid_username_and_password_chromium_error_context_error_details",
-      "target": "auth_authentication_login_e8b1a_valid_username_and_password_chromium_error_context_codeblock_2",
-      "confidence_score": 1.0
+      "target": "auth_authentication_login_e8b1a_valid_username_and_password_chromium_error_context_codeblock_2"
     },
     {
       "relation": "contains",
@@ -10246,9 +10246,9 @@
       "source_file": "test-results/auth-Authentication-login--e8b1a-valid-username-and-password-chromium/error-context.md",
       "source_location": "L27",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "auth_authentication_login_e8b1a_valid_username_and_password_chromium_error_context_page_snapshot",
-      "target": "auth_authentication_login_e8b1a_valid_username_and_password_chromium_error_context_codeblock_3",
-      "confidence_score": 1.0
+      "target": "auth_authentication_login_e8b1a_valid_username_and_password_chromium_error_context_codeblock_3"
     },
     {
       "relation": "contains",
@@ -10266,9 +10266,9 @@
       "source_file": "test-results/auth-Authentication-login--e8b1a-valid-username-and-password-chromium/error-context.md",
       "source_location": "L73",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "auth_authentication_login_e8b1a_valid_username_and_password_chromium_error_context_test_source",
-      "target": "auth_authentication_login_e8b1a_valid_username_and_password_chromium_error_context_codeblock_4",
-      "confidence_score": 1.0
+      "target": "auth_authentication_login_e8b1a_valid_username_and_password_chromium_error_context_codeblock_4"
     },
     {
       "relation": "contains",
@@ -10979,5 +10979,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "f91e9a2a69af0545de03603e893bf246e4fde11c"
+  "built_at_commit": "90728e66558f972c0921b68b33bd1d92c003bef5"
 }

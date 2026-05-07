@@ -38,6 +38,10 @@ export function AuditTrail({
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState("")
   const { token } = useAuth()
+  
+  const skeletonIds = useMemo(() => 
+    Array.from({ length: limit }, (_, i) => `audit-skeleton-${i}-${Math.random().toString(36).substring(2, 11)}`),
+  [limit])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -198,9 +202,6 @@ export function AuditTrail({
     return <div className={cn("h-full", className)}>{content}</div>
   }
 
-  const skeletonIds = useMemo(() => 
-    Array.from({ length: limit }, (_, i) => `audit-skeleton-${i}-${Math.random().toString(36).substr(2, 9)}`),
-  [limit])
 
   if (loading && logs.length === 0) {
     return (

@@ -17,7 +17,7 @@ const PASSWORD_RULES = [
   },
 ]
 
-export function PasswordStrengthMeter({ password }: PasswordStrengthMeterProps) {
+export function PasswordStrengthMeter({ password }: Readonly<PasswordStrengthMeterProps>) {
   const { score, label } = getPasswordStrength(password)
 
   const getStrengthColor = (score: number) => {
