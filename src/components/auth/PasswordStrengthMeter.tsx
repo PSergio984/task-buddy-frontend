@@ -66,7 +66,7 @@ export function PasswordStrengthMeter({ password }: PasswordStrengthMeterProps) 
         <div className="flex h-1.5 w-full gap-1.5 overflow-hidden">
           {[0, 1, 2, 3].map((index) => (
             <div
-              key={index}
+              key={`strength-bar-${index}`}
               className="relative h-full flex-1 rounded-full bg-muted"
             >
               <motion.div

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Card } from "@/components/ui/card"
 import { History, Search, AlertCircle, Clock, ChevronDown } from "lucide-react"
@@ -198,13 +198,17 @@ export function AuditTrail({
     return <div className={cn("h-full", className)}>{content}</div>
   }
 
+  const skeletonIds = useMemo(() => 
+    Array.from({ length: limit }, (_, i) => `audit-skeleton-${i}-${Math.random().toString(36).substr(2, 9)}`),
+  [limit])
+
   if (loading && logs.length === 0) {
     return (
       <Card className={cn("border-border bg-card p-6 h-full flex flex-col", className)}>
         <div className="h-4 w-32 bg-muted rounded animate-pulse mb-6" />
         <div className="space-y-4 flex-1">
-          {new Array(limit).fill(null).map((_, i) => (
-            <div key={`skeleton-${i}`} className="flex gap-3">
+          {skeletonIds.map((id) => (
+            <div key={id} className="flex gap-3">
               <div className="h-10 w-10 bg-muted rounded-full animate-pulse" />
               <div className="flex-1 space-y-2">
                 <div className="h-3 w-1/3 bg-muted rounded animate-pulse" />

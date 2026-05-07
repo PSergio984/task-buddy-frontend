@@ -93,7 +93,7 @@ export function useTasks(filter?: string) {
   }, [token, filter])
 
   useEffect(() => {
-    void fetchTasks()
+    fetchTasks()
   }, [fetchTasks])
 
   return { tasks, loading, error, refreshTasks: fetchTasks }
@@ -127,7 +127,7 @@ export function useStats() {
   }, [token])
 
   useEffect(() => {
-    void fetchStats()
+    fetchStats()
   }, [fetchStats])
 
   return { stats, loading, error, refreshStats: fetchStats }
