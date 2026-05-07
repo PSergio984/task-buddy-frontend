@@ -15,6 +15,7 @@ import {
 import type { Task, StatsOverview } from "@/hooks/useApi"
 import { useToast } from "@/hooks/use-toast"
 import axios from "axios"
+import { LayoutDashboard, ListChecks } from "lucide-react"
 
 export interface DashboardProps {
   readonly tasks: Task[]
@@ -162,10 +163,19 @@ export function Dashboard({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="flex flex-1 flex-col gap-6 bg-background p-6"
+      className="flex flex-1 flex-col gap-10 bg-background/30 p-6 md:p-10 backdrop-blur-sm"
     >
+      {/* Header Section */}
+      <header className="flex flex-col gap-2">
+        <div className="flex items-center gap-3 text-primary">
+          <LayoutDashboard className="h-6 w-6" />
+          <h1 className="font-heading text-3xl font-bold tracking-tight">Executive Dashboard</h1>
+        </div>
+        <p className="text-muted-foreground ml-9">Manage your focus and track your peak performance.</p>
+      </header>
+
       {/* Primary: Stats & Audit */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="lg:col-span-1">
           <SystemOverview stats={stats} loading={loadingStats} />
         </div>
@@ -176,64 +186,77 @@ export function Dashboard({
 
       {/* Secondary: Task Management */}
       <motion.div
-        initial={{ y: 16, opacity: 0 }}
+        initial={{ y: 24, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.2 }}
+        transition={{ delay: 0.2, duration: 0.4 }}
+        className="flex flex-col gap-6"
       >
+        <div className="flex items-center gap-3 px-1">
+          <ListChecks className="h-5 w-5 text-primary/70" />
+          <h2 className="text-xl font-bold tracking-tight">Daily Agenda</h2>
+        </div>
+
         <Tabs
           value={activeFilter}
           onValueChange={(v) => onFilterChange(v)}
           className="w-full"
         >
-          <TabsList className="grid w-full grid-cols-3 border border-border bg-card">
+          <TabsList className="inline-flex h-12 items-center justify-center rounded-2xl border bg-background/50 p-1.5 backdrop-blur-xl shadow-sm mb-8">
             <TabsTrigger
               value="all"
-              className="text-xs font-bold tracking-widest text-foreground/50 transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className="rounded-xl px-8 text-xs font-bold tracking-[0.2em] transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg"
             >
               ALL
             </TabsTrigger>
             <TabsTrigger
               value="pending"
-              className="text-xs font-bold tracking-widest text-foreground/50 transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className="rounded-xl px-8 text-xs font-bold tracking-[0.2em] transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg"
             >
               PENDING
             </TabsTrigger>
             <TabsTrigger
               value="completed"
-              className="text-xs font-bold tracking-widest text-foreground/50 transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className="rounded-xl px-8 text-xs font-bold tracking-[0.2em] transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg"
             >
               COMPLETED
             </TabsTrigger>
           </TabsList>
 
           {(["all", "pending", "completed"] as const).map((status) => (
-            <TabsContent key={status} value={status} className="mt-4 space-y-3">
+            <TabsContent key={status} value={status} className="mt-0 space-y-4 focus-visible:outline-none">
               {tasks.length === 0 ? (
-                <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">
-                  No tasks found
+                <div className="flex h-64 flex-col items-center justify-center rounded-[2.5rem] border border-dashed border-border bg-muted/20 text-center animate-in fade-in zoom-in-95 duration-300">
+                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-3xl bg-muted/30">
+                    <ListChecks className="h-8 w-8 text-muted-foreground/30" />
+                  </div>
+                  <p className="text-base font-medium text-muted-foreground italic">
+                    Your agenda is clear. Time to innovate.
+                  </p>
                 </div>
               ) : (
-                <AnimatePresence mode="popLayout">
-                  {tasks.map((task: Task, index) => (
-                    <motion.div
-                      key={task.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ delay: index * 0.05 }}
-                    >
-                      <TaskCard
-                        task={task}
-                        onToggleComplete={handleToggleComplete}
-                        onDelete={handleDelete}
-                        onEdit={onEdit}
-                        onToggleSubtask={handleToggleSubtask}
-                        onDeleteSubtask={handleDeleteSubtask}
-                        onDetachTag={handleDetachTag}
-                      />
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
+                <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                  <AnimatePresence mode="popLayout">
+                    {tasks.map((task: Task, index) => (
+                      <motion.div
+                        key={task.id}
+                        initial={{ opacity: 0, scale: 0.98, y: 10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                        transition={{ delay: index * 0.04, duration: 0.3 }}
+                      >
+                        <TaskCard
+                          task={task}
+                          onToggleComplete={handleToggleComplete}
+                          onDelete={handleDelete}
+                          onEdit={onEdit}
+                          onToggleSubtask={handleToggleSubtask}
+                          onDeleteSubtask={handleDeleteSubtask}
+                          onDetachTag={handleDetachTag}
+                        />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
               )}
             </TabsContent>
           ))}

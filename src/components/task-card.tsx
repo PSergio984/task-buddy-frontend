@@ -3,8 +3,14 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import type { Task } from "@/hooks/useApi"
-import { Trash2, Edit2, Calendar, X } from "lucide-react"
+import { Trash2, Edit2, Calendar, X, Tag, MoreVertical, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 export interface TaskCardProps {
   readonly task: Task
@@ -17,17 +23,9 @@ export interface TaskCardProps {
 }
 
 const priorityConfig = {
-  low: { label: "Low", color: "bg-green-100 text-green-700" },
-  medium: { label: "Medium", color: "bg-yellow-100 text-yellow-700" },
-  high: { label: "High", color: "bg-red-100 text-red-700" },
-}
-
-const categoryConfig: Record<string, { label: string; color: string }> = {
-  work: { label: "Work", color: "bg-blue-100 text-blue-700" },
-  personal: { label: "Personal", color: "bg-purple-100 text-purple-700" },
-  school: { label: "School", color: "bg-indigo-100 text-indigo-700" },
-  health: { label: "Health", color: "bg-orange-100 text-orange-700" },
-  other: { label: "Other", color: "bg-gray-100 text-gray-700" },
+  low: { label: "Standard", color: "bg-muted/50 text-muted-foreground", dot: "bg-muted-foreground/30" },
+  medium: { label: "Important", color: "bg-primary/10 text-primary", dot: "bg-primary/50" },
+  high: { label: "Urgent", color: "bg-accent/10 text-accent", dot: "bg-accent/50" },
 }
 
 export function TaskCard({
@@ -42,159 +40,163 @@ export function TaskCard({
   const priority =
     priorityConfig[task.priority as keyof typeof priorityConfig] ||
     priorityConfig.low
-  const category =
-    categoryConfig[task.category as keyof typeof categoryConfig] ||
-    categoryConfig.other
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: -10 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 10 }}
-      whileHover={{ scale: 1.01 }}
+      layout
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      whileHover={{ y: -4 }}
       transition={{ duration: 0.2 }}
     >
       <Card
         className={cn(
-          "border-border bg-card transition-all"
+          "group relative overflow-hidden border bg-background/50 backdrop-blur-xl shadow-lg transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5 rounded-[2rem]",
+          task.completed && "opacity-75"
         )}
       >
-        <CardContent className="flex items-start justify-between gap-4 p-4">
-          <div className="flex flex-1 items-start gap-3">
-            {/* Checkbox */}
-            <motion.div
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              className="mt-1"
-            >
-              <Checkbox
-                checked={task.completed}
-                onCheckedChange={() => onToggleComplete(task.id)}
-                className="h-5 w-5 border-2 border-primary/40 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-              />
-            </motion.div>
-
-            {/* Content */}
-            <div className="min-w-0 flex-1">
-              <p
-                className={cn(
-                  "font-medium text-foreground",
-                  task.completed && "text-muted-foreground line-through"
-                )}
-              >
-                {task.title}
-              </p>
-
-              {task?.description && (
-                <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-                  {task.description}
-                </p>
-              )}
-
-              {/* Tags and Metadata */}
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span
-                  className={cn(
-                    "rounded px-2 py-1 text-xs font-medium",
-                    category.color
-                  )}
-                >
-                  {category.label}
-                </span>
-                <span
-                  className={cn(
-                    "rounded px-2 py-1 text-xs font-medium",
-                    priority.color
-                  )}
-                >
-                  {priority.label}
-                </span>
-
-                {/* Dynamic Tags */}
-                {task?.tags?.map((tag) => (
-                  <span
-                    key={tag.id}
-                    className="group relative flex items-center gap-1 rounded bg-muted px-2 py-1 text-xs font-medium text-muted-foreground"
+        <CardContent className="p-6">
+          <div className="flex items-start justify-between gap-6">
+            <div className="flex flex-1 items-start gap-4">
+              {/* Custom Checkbox Wrapper */}
+              <div className="relative mt-1">
+                <Checkbox
+                  checked={task.completed}
+                  onCheckedChange={() => onToggleComplete(task.id)}
+                  className="h-6 w-6 rounded-full border-2 border-primary/20 transition-all data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                />
+                {task.completed && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="pointer-events-none absolute inset-0 flex items-center justify-center text-primary-foreground"
                   >
-                    {tag.name}
-                    <button
-                      onClick={() => onDetachTag?.(task.id, tag.id)}
-                      aria-label={`Remove tag ${tag.name}`}
-                      className="ml-1 flex h-4 w-4 items-center justify-center rounded-full opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 focus:opacity-100 focus-visible:ring-1 focus-visible:ring-ring"
-                    >
-                      <X className="h-2.5 w-2.5" />
-                    </button>
-                  </span>
-                ))}
-
-                {task?.due_date && (
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Calendar className="h-3 w-3" />
-                    {new Date(task.due_date).toLocaleDateString()}
-                  </div>
+                    <CheckCircle2 className="h-4 w-4" />
+                  </motion.div>
                 )}
               </div>
 
-              {/* Subtasks */}
-              {task?.subtasks?.length > 0 && (
-                <div className="mt-4 space-y-2 border-t border-border pt-3">
-                  <p className="text-[10px] font-bold tracking-widest text-muted-foreground/40 uppercase">Subtasks</p>
-                  {task.subtasks.map((subtask) => (
-                    <div key={subtask.id} className="group flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          checked={subtask.completed}
-                          onCheckedChange={(checked) => onToggleSubtask?.(subtask.id, !!checked)}
-                          className="h-3.5 w-3.5 border-primary/40 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                        />
-                        <span className={cn(
-                          "text-xs text-muted-foreground",
-                          subtask.completed && "text-muted-foreground/40 line-through"
-                        )}>
-                          {subtask.title}
-                        </span>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onDeleteSubtask?.(subtask.id)}
-                        aria-label={`Delete subtask ${subtask.title}`}
-                        className="h-6 w-6 p-0 opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 focus:opacity-100 focus-visible:ring-1 focus-visible:ring-ring"
+              <div className="min-w-0 flex-1 space-y-1">
+                <div className="flex items-center gap-3">
+                  <h3
+                    className={cn(
+                      "font-heading text-lg font-bold tracking-tight text-foreground transition-all",
+                      task.completed && "text-muted-foreground/50 line-through"
+                    )}
+                  >
+                    {task.title}
+                  </h3>
+                  <div className={cn(
+                    "flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+                    priority.color
+                  )}>
+                    <div className={cn("h-1.5 w-1.5 rounded-full", priority.dot)} />
+                    {priority.label}
+                  </div>
+                </div>
+
+                {task?.description && (
+                  <p className={cn(
+                    "line-clamp-2 text-sm leading-relaxed text-muted-foreground",
+                    task.completed && "text-muted-foreground/40"
+                  )}>
+                    {task.description}
+                  </p>
+                )}
+
+                {/* Metadata & Tags */}
+                <div className="flex flex-wrap items-center gap-3 pt-3">
+                  {task?.due_date && (
+                    <div className="flex items-center gap-1.5 rounded-lg bg-muted/30 px-2 py-1 text-[10px] font-medium text-muted-foreground">
+                      <Calendar className="h-3 w-3" />
+                      {new Date(task.due_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    </div>
+                  )}
+
+                  {task?.tags?.map((tag) => (
+                    <div
+                      key={tag.id}
+                      className="group/tag flex items-center gap-1.5 rounded-lg bg-primary/5 px-2 py-1 text-[10px] font-bold text-primary/70 transition-colors hover:bg-primary/10"
+                    >
+                      <Tag className="h-3 w-3" />
+                      {tag.name}
+                      <button
+                        onClick={() => onDetachTag?.(task.id, tag.id)}
+                        className="ml-0.5 rounded-full p-0.5 opacity-0 transition-opacity group-hover/tag:opacity-100 hover:bg-primary/20"
                       >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
+                        <X className="h-2 w-2" />
+                      </button>
                     </div>
                   ))}
                 </div>
-              )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+               <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-muted/50">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40 rounded-xl border bg-background/80 backdrop-blur-xl">
+                  <DropdownMenuItem onClick={() => onEdit(task)} className="gap-2 rounded-lg cursor-pointer">
+                    <Edit2 className="h-4 w-4 text-primary" />
+                    <span>Edit Task</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onDelete(task.id)} className="gap-2 rounded-lg text-destructive cursor-pointer focus:bg-destructive/10 focus:text-destructive">
+                    <Trash2 className="h-4 w-4" />
+                    <span>Delete</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex items-center gap-1">
-            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onEdit(task)}
-                aria-label={`Edit task ${task.title}`}
-                className="h-8 w-8 p-0 text-blue-500 hover:bg-blue-500/10 transition-colors focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                <Edit2 className="h-4 w-4" />
-              </Button>
-            </motion.div>
-            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onDelete(task.id)}
-                aria-label={`Delete task ${task.title}`}
-                className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 transition-colors focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </motion.div>
-          </div>
+          {/* Subtasks Section */}
+          {(task?.subtasks?.length ?? 0) > 0 && (
+            <div className="mt-6 space-y-3 border-t border-border/50 pt-5">
+              <div className="flex items-center justify-between px-1">
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/50">
+                  Sub-Tasks Progress
+                </span>
+                <span className="text-[10px] font-bold text-primary/70">
+                  {task.subtasks?.filter(s => s.completed).length ?? 0}/{task.subtasks?.length ?? 0}
+                </span>
+              </div>
+              <div className="space-y-2">
+                {task.subtasks?.map((subtask) => (
+                  <div
+                    key={subtask.id}
+                    className="group/sub flex items-center justify-between gap-3 rounded-xl bg-muted/20 px-3 py-2 transition-colors hover:bg-muted/40"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Checkbox
+                        checked={subtask.completed}
+                        onCheckedChange={(checked) => onToggleSubtask?.(subtask.id, !!checked)}
+                        className="h-4 w-4 rounded-md border-2 border-primary/20"
+                      />
+                      <span className={cn(
+                        "text-xs font-medium transition-all",
+                        subtask.completed ? "text-muted-foreground/40 line-through" : "text-muted-foreground"
+                      )}>
+                        {subtask.title}
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onDeleteSubtask?.(subtask.id)}
+                      className="h-6 w-6 rounded-lg opacity-0 transition-opacity group-hover/sub:opacity-100 hover:bg-destructive/10 hover:text-destructive"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </motion.div>

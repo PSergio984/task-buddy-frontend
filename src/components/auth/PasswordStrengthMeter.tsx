@@ -25,13 +25,13 @@ export function PasswordStrengthMeter({ password }: Readonly<PasswordStrengthMet
       case 0:
         return "bg-muted"
       case 1:
-        return "bg-red-500"
+        return "bg-destructive"
       case 2:
-        return "bg-orange-500"
+        return "bg-orange-400"
       case 3:
-        return "bg-yellow-500"
+        return "bg-yellow-400"
       case 4:
-        return "bg-green-500"
+        return "bg-accent"
       default:
         return "bg-muted"
     }
@@ -40,34 +40,34 @@ export function PasswordStrengthMeter({ password }: Readonly<PasswordStrengthMet
   const getLabelColor = (score: number) => {
     switch (score) {
       case 1:
-        return "text-red-600"
+        return "text-destructive"
       case 2:
-        return "text-orange-600"
+        return "text-orange-500"
       case 3:
-        return "text-yellow-600"
+        return "text-yellow-500"
       case 4:
-        return "text-green-600"
+        return "text-accent"
       default:
         return "text-muted-foreground"
     }
   }
 
   return (
-    <div className="mt-4 space-y-4">
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-muted-foreground">
-            Password Strength
+    <div className="mt-6 space-y-4">
+      <div className="space-y-2.5">
+        <div className="flex items-center justify-between px-1">
+          <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+            Security Level
           </span>
           <span className={`text-xs font-bold ${getLabelColor(score)}`}>
             {label}
           </span>
         </div>
-        <div className="flex h-1.5 w-full gap-1.5 overflow-hidden">
+        <div className="flex h-2 w-full gap-2 px-1">
           {[0, 1, 2, 3].map((index) => (
             <div
               key={`strength-bar-${index}`}
-              className="relative h-full flex-1 rounded-full bg-muted"
+              className="relative h-full flex-1 rounded-full bg-muted/50 overflow-hidden"
             >
               <motion.div
                 initial={{ width: 0 }}
@@ -75,40 +75,37 @@ export function PasswordStrengthMeter({ password }: Readonly<PasswordStrengthMet
                   width: score > index ? "100%" : "0%",
                 }}
                 className={`h-full rounded-full ${getStrengthColor(score)}`}
-                transition={{ duration: 0.3, ease: "easeOut" }}
+                transition={{ duration: 0.4, ease: "circOut" }}
               />
             </div>
           ))}
         </div>
       </div>
 
-      <ul
-        className="grid grid-cols-1 gap-x-4 gap-y-1.5 sm:grid-cols-2"
-        aria-label="Password requirements"
-      >
+      <div className="grid grid-cols-1 gap-x-6 gap-y-2 px-1 sm:grid-cols-2">
         {PASSWORD_RULES.map((rule) => {
           const met = rule.test(password)
           return (
-            <li
+            <div
               key={rule.label}
               className="flex items-center gap-2"
             >
               {met ? (
-                <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0 text-green-500" />
+                <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-green-500" />
               ) : (
-                <Circle className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/30" />
+                <Circle className="h-4 w-4 flex-shrink-0 text-muted-foreground/20" />
               )}
               <span
-                className={`text-[11px] transition-colors duration-150 ${
-                  met ? "text-green-600 font-medium" : "text-muted-foreground"
+                className={`text-[11px] font-medium transition-colors duration-200 ${
+                  met ? "text-green-600" : "text-muted-foreground"
                 }`}
               >
                 {rule.label}
               </span>
-            </li>
+            </div>
           )
         })}
-      </ul>
+      </div>
     </div>
   )
 }

@@ -1,11 +1,13 @@
 import { useState } from "react"
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
 import { Sidebar } from "@/components/sidebar"
 import { TopNav } from "@/components/topnav"
 import { Dashboard } from "@/components/dashboard"
 import { NewTaskModal } from "@/components/new-task-modal"
 import { LoginPage } from "@/pages/LoginPage"
 import { RegisterPage } from "@/pages/RegisterPage"
+import { LandingPage } from "@/pages/LandingPage"
+import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage"
 import { ProfilePage } from "@/pages/ProfilePage"
 import { AuditLogsPage } from "@/pages/AuditLogsPage"
 import { ProtectedRoute, PublicRoute } from "@/contexts/ProtectedRoute"
@@ -102,7 +104,15 @@ export function App() {
   return (
     <Router>
       <Routes>
-        {/* Public Routes */}
+        {/* Landing Page */}
+        <Route
+          path="/"
+          element={
+            token ? <Navigate to="/dashboard" replace /> : <LandingPage />
+          }
+        />
+
+        {/* Public Auth Routes */}
         <Route
           path="/login"
           element={
@@ -116,6 +126,14 @@ export function App() {
           element={
             <PublicRoute>
               <RegisterPage />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            <PublicRoute>
+              <ForgotPasswordPage />
             </PublicRoute>
           }
         />
@@ -145,18 +163,9 @@ export function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/"
-          element={
-            token ? (
-              <DashboardLayout />
-            ) : (
-              <PublicRoute>
-                <LoginPage />
-              </PublicRoute>
-            )
-          }
-        />
+
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <Toaster />
     </Router>
@@ -164,3 +173,4 @@ export function App() {
 }
 
 export default App
+

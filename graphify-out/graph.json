@@ -9,7 +9,7 @@
       "source_file": "eslint.config.js",
       "source_location": "L1",
       "id": "eslint_config_js",
-      "community": 28,
+      "community": 27,
       "norm_label": "eslint.config.js"
     },
     {
@@ -18,7 +18,7 @@
       "source_file": "playwright.config.ts",
       "source_location": "L1",
       "id": "playwright_config_ts",
-      "community": 29,
+      "community": 28,
       "norm_label": "playwright.config.ts"
     },
     {
@@ -27,7 +27,7 @@
       "source_file": "tailwind.config.js",
       "source_location": "L1",
       "id": "tailwind_config_js",
-      "community": 30,
+      "community": 29,
       "norm_label": "tailwind.config.js"
     },
     {
@@ -36,7 +36,7 @@
       "source_file": "vite.config.ts",
       "source_location": "L1",
       "id": "vite_config_ts",
-      "community": 31,
+      "community": 30,
       "norm_label": "vite.config.ts"
     },
     {
@@ -45,7 +45,7 @@
       "source_file": "src/App.tsx",
       "source_location": "L1",
       "id": "src_app_tsx",
-      "community": 3,
+      "community": 2,
       "norm_label": "app.tsx"
     },
     {
@@ -54,7 +54,7 @@
       "source_file": "src/App.tsx",
       "source_location": "L17",
       "id": "src_app_dashboardlayout",
-      "community": 3,
+      "community": 2,
       "norm_label": "dashboardlayout()"
     },
     {
@@ -63,7 +63,7 @@
       "source_file": "src/App.tsx",
       "source_location": "L100",
       "id": "src_app_token",
-      "community": 3,
+      "community": 2,
       "norm_label": "{ token }"
     },
     {
@@ -157,10 +157,19 @@
       "norm_label": "{ token }"
     },
     {
+      "label": "skeletonIds",
+      "file_type": "code",
+      "source_file": "src/components/audit-trail.tsx",
+      "source_location": "L42",
+      "id": "components_audit_trail_skeletonids",
+      "community": 1,
+      "norm_label": "skeletonids"
+    },
+    {
       "label": "controller",
       "file_type": "code",
       "source_file": "src/components/audit-trail.tsx",
-      "source_location": "L43",
+      "source_location": "L47",
       "id": "components_audit_trail_controller",
       "community": 1,
       "norm_label": "controller"
@@ -169,7 +178,7 @@
       "label": "fetchAuditLog()",
       "file_type": "code",
       "source_file": "src/components/audit-trail.tsx",
-      "source_location": "L45",
+      "source_location": "L49",
       "id": "components_audit_trail_fetchauditlog",
       "community": 1,
       "norm_label": "fetchauditlog()"
@@ -178,7 +187,7 @@
       "label": "filteredLogs",
       "file_type": "code",
       "source_file": "src/components/audit-trail.tsx",
-      "source_location": "L72",
+      "source_location": "L76",
       "id": "components_audit_trail_filteredlogs",
       "community": 1,
       "norm_label": "filteredlogs"
@@ -189,7 +198,7 @@
       "source_file": "src/components/dashboard.tsx",
       "source_location": "L1",
       "id": "src_components_dashboard_tsx",
-      "community": 3,
+      "community": 2,
       "norm_label": "dashboard.tsx"
     },
     {
@@ -198,7 +207,7 @@
       "source_file": "src/components/dashboard.tsx",
       "source_location": "L19",
       "id": "components_dashboard_dashboardprops",
-      "community": 3,
+      "community": 2,
       "norm_label": "dashboardprops"
     },
     {
@@ -207,7 +216,7 @@
       "source_file": "src/components/dashboard.tsx",
       "source_location": "L29",
       "id": "components_dashboard_dashboard",
-      "community": 3,
+      "community": 2,
       "norm_label": "dashboard()"
     },
     {
@@ -216,7 +225,7 @@
       "source_file": "src/components/logout-dialog.tsx",
       "source_location": "L1",
       "id": "src_components_logout_dialog_tsx",
-      "community": 1,
+      "community": 2,
       "norm_label": "logout-dialog.tsx"
     },
     {
@@ -225,7 +234,7 @@
       "source_file": "src/components/logout-dialog.tsx",
       "source_location": "L11",
       "id": "components_logout_dialog_logoutdialogprops",
-      "community": 1,
+      "community": 2,
       "norm_label": "logoutdialogprops"
     },
     {
@@ -252,7 +261,7 @@
       "source_file": "src/components/new-task-modal.tsx",
       "source_location": "L32",
       "id": "components_new_task_modal_newtaskmodal",
-      "community": 1,
+      "community": 2,
       "norm_label": "newtaskmodal()"
     },
     {
@@ -261,7 +270,7 @@
       "source_file": "src/components/sidebar.tsx",
       "source_location": "L1",
       "id": "src_components_sidebar_tsx",
-      "community": 3,
+      "community": 2,
       "norm_label": "sidebar.tsx"
     },
     {
@@ -270,7 +279,7 @@
       "source_file": "src/components/sidebar.tsx",
       "source_location": "L16",
       "id": "components_sidebar_sidebarprops",
-      "community": 3,
+      "community": 2,
       "norm_label": "sidebarprops"
     },
     {
@@ -279,7 +288,7 @@
       "source_file": "src/components/sidebar.tsx",
       "source_location": "L21",
       "id": "components_sidebar_sidebar",
-      "community": 3,
+      "community": 2,
       "norm_label": "sidebar()"
     },
     {
@@ -288,7 +297,7 @@
       "source_file": "src/components/system-overview.tsx",
       "source_location": "L1",
       "id": "src_components_system_overview_tsx",
-      "community": 3,
+      "community": 2,
       "norm_label": "system-overview.tsx"
     },
     {
@@ -297,7 +306,7 @@
       "source_file": "src/components/system-overview.tsx",
       "source_location": "L6",
       "id": "components_system_overview_systemoverview",
-      "community": 3,
+      "community": 2,
       "norm_label": "systemoverview()"
     },
     {
@@ -486,7 +495,7 @@
       "source_file": "src/components/topnav.tsx",
       "source_location": "L1",
       "id": "src_components_topnav_tsx",
-      "community": 6,
+      "community": 2,
       "norm_label": "topnav.tsx"
     },
     {
@@ -495,7 +504,7 @@
       "source_file": "src/components/topnav.tsx",
       "source_location": "L11",
       "id": "components_topnav_topnavprops",
-      "community": 6,
+      "community": 2,
       "norm_label": "topnavprops"
     },
     {
@@ -504,7 +513,7 @@
       "source_file": "src/components/topnav.tsx",
       "source_location": "L15",
       "id": "components_topnav_topnav",
-      "community": 3,
+      "community": 2,
       "norm_label": "topnav()"
     },
     {
@@ -900,7 +909,7 @@
       "source_file": "src/contexts/AuthContext.tsx",
       "source_location": "L226",
       "id": "contexts_authcontext_useauth",
-      "community": 3,
+      "community": 2,
       "norm_label": "useauth()"
     },
     {
@@ -909,7 +918,7 @@
       "source_file": "src/contexts/ProtectedRoute.tsx",
       "source_location": "L1",
       "id": "src_contexts_protectedroute_tsx",
-      "community": 3,
+      "community": 2,
       "norm_label": "protectedroute.tsx"
     },
     {
@@ -918,7 +927,7 @@
       "source_file": "src/contexts/ProtectedRoute.tsx",
       "source_location": "L5",
       "id": "contexts_protectedroute_protectedrouteprops",
-      "community": 3,
+      "community": 2,
       "norm_label": "protectedrouteprops"
     },
     {
@@ -927,7 +936,7 @@
       "source_file": "src/contexts/ProtectedRoute.tsx",
       "source_location": "L9",
       "id": "contexts_protectedroute_loadingscreen",
-      "community": 3,
+      "community": 2,
       "norm_label": "loadingscreen()"
     },
     {
@@ -936,7 +945,7 @@
       "source_file": "src/contexts/ProtectedRoute.tsx",
       "source_location": "L20",
       "id": "contexts_protectedroute_protectedroute",
-      "community": 3,
+      "community": 2,
       "norm_label": "protectedroute()"
     },
     {
@@ -945,7 +954,7 @@
       "source_file": "src/contexts/ProtectedRoute.tsx",
       "source_location": "L34",
       "id": "contexts_protectedroute_publicroute",
-      "community": 3,
+      "community": 2,
       "norm_label": "publicroute()"
     },
     {
@@ -1080,7 +1089,7 @@
       "source_file": "src/hooks/use-toast.ts",
       "source_location": "L168",
       "id": "hooks_use_toast_usetoast",
-      "community": 3,
+      "community": 2,
       "norm_label": "usetoast()"
     },
     {
@@ -1089,7 +1098,7 @@
       "source_file": "src/hooks/useApi.ts",
       "source_location": "L1",
       "id": "src_hooks_useapi_ts",
-      "community": 3,
+      "community": 2,
       "norm_label": "useapi.ts"
     },
     {
@@ -1098,7 +1107,7 @@
       "source_file": "src/hooks/useApi.ts",
       "source_location": "L9",
       "id": "hooks_useapi_task",
-      "community": 3,
+      "community": 2,
       "norm_label": "task"
     },
     {
@@ -1107,7 +1116,7 @@
       "source_file": "src/hooks/useApi.ts",
       "source_location": "L23",
       "id": "hooks_useapi_subtask",
-      "community": 3,
+      "community": 2,
       "norm_label": "subtask"
     },
     {
@@ -1116,7 +1125,7 @@
       "source_file": "src/hooks/useApi.ts",
       "source_location": "L32",
       "id": "hooks_useapi_tag",
-      "community": 3,
+      "community": 2,
       "norm_label": "tag"
     },
     {
@@ -1125,7 +1134,7 @@
       "source_file": "src/hooks/useApi.ts",
       "source_location": "L40",
       "id": "hooks_useapi_taskstats",
-      "community": 3,
+      "community": 2,
       "norm_label": "taskstats"
     },
     {
@@ -1134,7 +1143,7 @@
       "source_file": "src/hooks/useApi.ts",
       "source_location": "L47",
       "id": "hooks_useapi_tagdistribution",
-      "community": 3,
+      "community": 2,
       "norm_label": "tagdistribution"
     },
     {
@@ -1143,7 +1152,7 @@
       "source_file": "src/hooks/useApi.ts",
       "source_location": "L52",
       "id": "hooks_useapi_statsoverview",
-      "community": 3,
+      "community": 2,
       "norm_label": "statsoverview"
     },
     {
@@ -1152,7 +1161,7 @@
       "source_file": "src/hooks/useApi.ts",
       "source_location": "L58",
       "id": "hooks_useapi_usetasks",
-      "community": 3,
+      "community": 2,
       "norm_label": "usetasks()"
     },
     {
@@ -1161,7 +1170,7 @@
       "source_file": "src/hooks/useApi.ts",
       "source_location": "L103",
       "id": "hooks_useapi_usestats",
-      "community": 3,
+      "community": 2,
       "norm_label": "usestats()"
     },
     {
@@ -1170,7 +1179,7 @@
       "source_file": "src/hooks/useApi.ts",
       "source_location": "L137",
       "id": "hooks_useapi_usecreatetask",
-      "community": 3,
+      "community": 2,
       "norm_label": "usecreatetask()"
     },
     {
@@ -1179,7 +1188,7 @@
       "source_file": "src/hooks/useApi.ts",
       "source_location": "L167",
       "id": "hooks_useapi_useupdatetask",
-      "community": 3,
+      "community": 2,
       "norm_label": "useupdatetask()"
     },
     {
@@ -1188,7 +1197,7 @@
       "source_file": "src/hooks/useApi.ts",
       "source_location": "L194",
       "id": "hooks_useapi_usedeletetask",
-      "community": 3,
+      "community": 2,
       "norm_label": "usedeletetask()"
     },
     {
@@ -1197,7 +1206,7 @@
       "source_file": "src/hooks/useApi.ts",
       "source_location": "L220",
       "id": "hooks_useapi_useupdatesubtask",
-      "community": 3,
+      "community": 2,
       "norm_label": "useupdatesubtask()"
     },
     {
@@ -1206,7 +1215,7 @@
       "source_file": "src/hooks/useApi.ts",
       "source_location": "L247",
       "id": "hooks_useapi_usedeletesubtask",
-      "community": 3,
+      "community": 2,
       "norm_label": "usedeletesubtask()"
     },
     {
@@ -1215,7 +1224,7 @@
       "source_file": "src/hooks/useApi.ts",
       "source_location": "L273",
       "id": "hooks_useapi_usedetachtag",
-      "community": 3,
+      "community": 2,
       "norm_label": "usedetachtag()"
     },
     {
@@ -1224,7 +1233,7 @@
       "source_file": "src/hooks/useApi.ts",
       "source_location": "L299",
       "id": "hooks_useapi_usedeletetag",
-      "community": 3,
+      "community": 2,
       "norm_label": "usedeletetag()"
     },
     {
@@ -1404,7 +1413,7 @@
       "source_file": "src/pages/AuditLogsPage.tsx",
       "source_location": "L1",
       "id": "src_pages_auditlogspage_tsx",
-      "community": 3,
+      "community": 2,
       "norm_label": "auditlogspage.tsx"
     },
     {
@@ -1413,7 +1422,7 @@
       "source_file": "src/pages/AuditLogsPage.tsx",
       "source_location": "L8",
       "id": "pages_auditlogspage_auditlogspage",
-      "community": 3,
+      "community": 2,
       "norm_label": "auditlogspage()"
     },
     {
@@ -1422,7 +1431,7 @@
       "source_file": "src/pages/DashboardDemo.tsx",
       "source_location": "L1",
       "id": "src_pages_dashboarddemo_tsx",
-      "community": 3,
+      "community": 2,
       "norm_label": "dashboarddemo.tsx"
     },
     {
@@ -1431,7 +1440,7 @@
       "source_file": "src/pages/DashboardDemo.tsx",
       "source_location": "L9",
       "id": "pages_dashboarddemo_dashboarddemo",
-      "community": 3,
+      "community": 2,
       "norm_label": "dashboarddemo()"
     },
     {
@@ -1539,7 +1548,7 @@
       "source_file": "src/pages/ProfilePage.tsx",
       "source_location": "L1",
       "id": "src_pages_profilepage_tsx",
-      "community": 7,
+      "community": 0,
       "norm_label": "profilepage.tsx"
     },
     {
@@ -1548,7 +1557,7 @@
       "source_file": "src/pages/ProfilePage.tsx",
       "source_location": "L19",
       "id": "pages_profilepage_password_rules",
-      "community": 7,
+      "community": 0,
       "norm_label": "password_rules"
     },
     {
@@ -1557,7 +1566,7 @@
       "source_file": "src/pages/ProfilePage.tsx",
       "source_location": "L28",
       "id": "pages_profilepage_user_token_refreshuser_logout",
-      "community": 7,
+      "community": 0,
       "norm_label": "{ user, token, refreshuser, logout }"
     },
     {
@@ -1566,7 +1575,7 @@
       "source_file": "src/pages/ProfilePage.tsx",
       "source_location": "L29",
       "id": "pages_profilepage_toast",
-      "community": 7,
+      "community": 0,
       "norm_label": "{ toast }"
     },
     {
@@ -1575,7 +1584,7 @@
       "source_file": "src/pages/ProfilePage.tsx",
       "source_location": "L31",
       "id": "pages_profilepage_navigate",
-      "community": 7,
+      "community": 0,
       "norm_label": "navigate"
     },
     {
@@ -1584,7 +1593,7 @@
       "source_file": "src/pages/ProfilePage.tsx",
       "source_location": "L33",
       "id": "pages_profilepage_newusername_setnewusername",
-      "community": 7,
+      "community": 0,
       "norm_label": "[newusername, setnewusername]"
     },
     {
@@ -1593,7 +1602,7 @@
       "source_file": "src/pages/ProfilePage.tsx",
       "source_location": "L34",
       "id": "pages_profilepage_currentpassword_setcurrentpassword",
-      "community": 7,
+      "community": 0,
       "norm_label": "[currentpassword, setcurrentpassword]"
     },
     {
@@ -1602,7 +1611,7 @@
       "source_file": "src/pages/ProfilePage.tsx",
       "source_location": "L35",
       "id": "pages_profilepage_newpassword_setnewpassword",
-      "community": 7,
+      "community": 0,
       "norm_label": "[newpassword, setnewpassword]"
     },
     {
@@ -1611,7 +1620,7 @@
       "source_file": "src/pages/ProfilePage.tsx",
       "source_location": "L36",
       "id": "pages_profilepage_confirmpassword_setconfirmpassword",
-      "community": 7,
+      "community": 0,
       "norm_label": "[confirmpassword, setconfirmpassword]"
     },
     {
@@ -1620,7 +1629,7 @@
       "source_file": "src/pages/ProfilePage.tsx",
       "source_location": "L38",
       "id": "pages_profilepage_isupdatingusername_setisupdatingusername",
-      "community": 7,
+      "community": 0,
       "norm_label": "[isupdatingusername, setisupdatingusername]"
     },
     {
@@ -1629,7 +1638,7 @@
       "source_file": "src/pages/ProfilePage.tsx",
       "source_location": "L39",
       "id": "pages_profilepage_isupdatingpassword_setisupdatingpassword",
-      "community": 7,
+      "community": 0,
       "norm_label": "[isupdatingpassword, setisupdatingpassword]"
     },
     {
@@ -1638,7 +1647,7 @@
       "source_file": "src/pages/ProfilePage.tsx",
       "source_location": "L41",
       "id": "pages_profilepage_handleupdateusername",
-      "community": 7,
+      "community": 0,
       "norm_label": "handleupdateusername()"
     },
     {
@@ -1656,7 +1665,7 @@
       "source_file": "src/pages/ProfilePage.tsx",
       "source_location": "L224",
       "id": "pages_profilepage_met",
-      "community": 7,
+      "community": 0,
       "norm_label": "met"
     },
     {
@@ -1674,7 +1683,7 @@
       "source_file": "src/pages/RegisterPage.tsx",
       "source_location": "L13",
       "id": "pages_registerpage_registerpage",
-      "community": 3,
+      "community": 0,
       "norm_label": "registerpage()"
     },
     {
@@ -1683,7 +1692,7 @@
       "source_file": "tests/auth.spec.ts",
       "source_location": "L1",
       "id": "tests_auth_spec_ts",
-      "community": 24,
+      "community": 23,
       "norm_label": "auth.spec.ts"
     },
     {
@@ -1692,7 +1701,7 @@
       "source_file": "tests/auth.spec.ts",
       "source_location": "L36",
       "id": "tests_auth_spec_payload",
-      "community": 24,
+      "community": 23,
       "norm_label": "payload"
     },
     {
@@ -1701,7 +1710,7 @@
       "source_file": "tests/auth.spec.ts",
       "source_location": "L143",
       "id": "tests_auth_spec_strengthlabel",
-      "community": 24,
+      "community": 23,
       "norm_label": "strengthlabel"
     },
     {
@@ -1710,7 +1719,7 @@
       "source_file": "tests/auth.spec.ts",
       "source_location": "L144",
       "id": "tests_auth_spec_strengthbar",
-      "community": 24,
+      "community": 23,
       "norm_label": "strengthbar"
     },
     {
@@ -1998,7 +2007,7 @@
       "source_file": "README.md",
       "source_location": "L1",
       "id": "readme_md",
-      "community": 2,
+      "community": 3,
       "norm_label": "readme.md"
     },
     {
@@ -2007,7 +2016,7 @@
       "source_file": "README.md",
       "source_location": "L1",
       "id": "task_buddy_frontend_readme_task_buddy_frontend",
-      "community": 2,
+      "community": 3,
       "norm_label": "task-buddy frontend"
     },
     {
@@ -2016,7 +2025,7 @@
       "source_file": "README.md",
       "source_location": "L5",
       "id": "task_buddy_frontend_readme_overview",
-      "community": 2,
+      "community": 3,
       "norm_label": "overview"
     },
     {
@@ -2025,7 +2034,7 @@
       "source_file": "README.md",
       "source_location": "L16",
       "id": "task_buddy_frontend_readme_design_system",
-      "community": 2,
+      "community": 3,
       "norm_label": "design system"
     },
     {
@@ -2034,7 +2043,7 @@
       "source_file": "README.md",
       "source_location": "L18",
       "id": "task_buddy_frontend_readme_color_palette",
-      "community": 2,
+      "community": 3,
       "norm_label": "color palette"
     },
     {
@@ -2043,7 +2052,7 @@
       "source_file": "README.md",
       "source_location": "L30",
       "id": "task_buddy_frontend_readme_architecture",
-      "community": 2,
+      "community": 3,
       "norm_label": "architecture"
     },
     {
@@ -2052,7 +2061,7 @@
       "source_file": "README.md",
       "source_location": "L32",
       "id": "task_buddy_frontend_readme_project_structure",
-      "community": 2,
+      "community": 3,
       "norm_label": "project structure"
     },
     {
@@ -2061,7 +2070,7 @@
       "source_file": "README.md",
       "source_location": "L34",
       "id": "task_buddy_frontend_readme_codeblock_1",
-      "community": 2,
+      "community": 3,
       "norm_label": "code:block1 (src/)"
     },
     {
@@ -2070,7 +2079,7 @@
       "source_file": "README.md",
       "source_location": "L62",
       "id": "task_buddy_frontend_readme_key_components",
-      "community": 2,
+      "community": 3,
       "norm_label": "key components"
     },
     {
@@ -2079,7 +2088,7 @@
       "source_file": "README.md",
       "source_location": "L64",
       "id": "task_buddy_frontend_readme_dashboard_tsx",
-      "community": 2,
+      "community": 3,
       "norm_label": "`dashboard.tsx`"
     },
     {
@@ -2088,7 +2097,7 @@
       "source_file": "README.md",
       "source_location": "L71",
       "id": "task_buddy_frontend_readme_sidebar_tsx",
-      "community": 2,
+      "community": 3,
       "norm_label": "`sidebar.tsx`"
     },
     {
@@ -2097,7 +2106,7 @@
       "source_file": "README.md",
       "source_location": "L77",
       "id": "task_buddy_frontend_readme_topnav_tsx",
-      "community": 2,
+      "community": 3,
       "norm_label": "`topnav.tsx`"
     },
     {
@@ -2106,7 +2115,7 @@
       "source_file": "README.md",
       "source_location": "L83",
       "id": "task_buddy_frontend_readme_task_card_tsx",
-      "community": 2,
+      "community": 3,
       "norm_label": "`task-card.tsx`"
     },
     {
@@ -2115,7 +2124,7 @@
       "source_file": "README.md",
       "source_location": "L91",
       "id": "task_buddy_frontend_readme_new_task_modal_tsx",
-      "community": 2,
+      "community": 3,
       "norm_label": "`new-task-modal.tsx`"
     },
     {
@@ -2124,7 +2133,7 @@
       "source_file": "README.md",
       "source_location": "L100",
       "id": "task_buddy_frontend_readme_api_integration",
-      "community": 2,
+      "community": 3,
       "norm_label": "api integration"
     },
     {
@@ -2133,7 +2142,7 @@
       "source_file": "README.md",
       "source_location": "L104",
       "id": "task_buddy_frontend_readme_codeblock_2",
-      "community": 2,
+      "community": 3,
       "norm_label": "code:typescript (// fetch all tasks)"
     },
     {
@@ -2142,7 +2151,7 @@
       "source_file": "README.md",
       "source_location": "L124",
       "id": "task_buddy_frontend_readme_getting_started",
-      "community": 8,
+      "community": 7,
       "norm_label": "getting started"
     },
     {
@@ -2151,7 +2160,7 @@
       "source_file": "README.md",
       "source_location": "L126",
       "id": "task_buddy_frontend_readme_prerequisites",
-      "community": 8,
+      "community": 7,
       "norm_label": "prerequisites"
     },
     {
@@ -2160,7 +2169,7 @@
       "source_file": "README.md",
       "source_location": "L131",
       "id": "task_buddy_frontend_readme_installation",
-      "community": 8,
+      "community": 7,
       "norm_label": "installation"
     },
     {
@@ -2169,7 +2178,7 @@
       "source_file": "README.md",
       "source_location": "L133",
       "id": "task_buddy_frontend_readme_codeblock_3",
-      "community": 8,
+      "community": 7,
       "norm_label": "code:bash (# install dependencies)"
     },
     {
@@ -2178,7 +2187,7 @@
       "source_file": "README.md",
       "source_location": "L141",
       "id": "task_buddy_frontend_readme_configuration",
-      "community": 8,
+      "community": 7,
       "norm_label": "configuration"
     },
     {
@@ -2187,7 +2196,7 @@
       "source_file": "README.md",
       "source_location": "L145",
       "id": "task_buddy_frontend_readme_codeblock_4",
-      "community": 8,
+      "community": 7,
       "norm_label": "code:env (vite_api_base_url=http://127.0.0.1:8000)"
     },
     {
@@ -2196,7 +2205,7 @@
       "source_file": "README.md",
       "source_location": "L149",
       "id": "task_buddy_frontend_readme_development",
-      "community": 8,
+      "community": 7,
       "norm_label": "development"
     },
     {
@@ -2205,7 +2214,7 @@
       "source_file": "README.md",
       "source_location": "L151",
       "id": "task_buddy_frontend_readme_codeblock_5",
-      "community": 8,
+      "community": 7,
       "norm_label": "code:bash (# start dev server)"
     },
     {
@@ -2214,7 +2223,7 @@
       "source_file": "README.md",
       "source_location": "L158",
       "id": "task_buddy_frontend_readme_build",
-      "community": 8,
+      "community": 7,
       "norm_label": "build"
     },
     {
@@ -2223,7 +2232,7 @@
       "source_file": "README.md",
       "source_location": "L160",
       "id": "task_buddy_frontend_readme_codeblock_6",
-      "community": 8,
+      "community": 7,
       "norm_label": "code:bash (# build for production)"
     },
     {
@@ -2232,7 +2241,7 @@
       "source_file": "README.md",
       "source_location": "L177",
       "id": "task_buddy_frontend_readme_features",
-      "community": 2,
+      "community": 3,
       "norm_label": "features"
     },
     {
@@ -2241,7 +2250,7 @@
       "source_file": "README.md",
       "source_location": "L179",
       "id": "task_buddy_frontend_readme_task_management",
-      "community": 2,
+      "community": 3,
       "norm_label": "task management"
     },
     {
@@ -2250,7 +2259,7 @@
       "source_file": "README.md",
       "source_location": "L188",
       "id": "task_buddy_frontend_readme_dashboard_insights",
-      "community": 2,
+      "community": 3,
       "norm_label": "dashboard insights"
     },
     {
@@ -2259,7 +2268,7 @@
       "source_file": "README.md",
       "source_location": "L194",
       "id": "task_buddy_frontend_readme_user_experience",
-      "community": 2,
+      "community": 3,
       "norm_label": "user experience"
     },
     {
@@ -2268,7 +2277,7 @@
       "source_file": "README.md",
       "source_location": "L201",
       "id": "task_buddy_frontend_readme_modern_react_patterns",
-      "community": 2,
+      "community": 3,
       "norm_label": "modern react patterns"
     },
     {
@@ -2277,7 +2286,7 @@
       "source_file": "README.md",
       "source_location": "L205",
       "id": "task_buddy_frontend_readme_type_safety",
-      "community": 2,
+      "community": 3,
       "norm_label": "type safety"
     },
     {
@@ -2286,7 +2295,7 @@
       "source_file": "README.md",
       "source_location": "L210",
       "id": "task_buddy_frontend_readme_state_management",
-      "community": 2,
+      "community": 3,
       "norm_label": "state management"
     },
     {
@@ -2295,7 +2304,7 @@
       "source_file": "README.md",
       "source_location": "L215",
       "id": "task_buddy_frontend_readme_performance",
-      "community": 2,
+      "community": 3,
       "norm_label": "performance"
     },
     {
@@ -2304,7 +2313,7 @@
       "source_file": "README.md",
       "source_location": "L220",
       "id": "task_buddy_frontend_readme_accessibility",
-      "community": 2,
+      "community": 3,
       "norm_label": "accessibility"
     },
     {
@@ -2313,7 +2322,7 @@
       "source_file": "README.md",
       "source_location": "L226",
       "id": "task_buddy_frontend_readme_development_workflow",
-      "community": 2,
+      "community": 3,
       "norm_label": "development workflow"
     },
     {
@@ -2322,7 +2331,7 @@
       "source_file": "README.md",
       "source_location": "L228",
       "id": "task_buddy_frontend_readme_adding_new_features",
-      "community": 2,
+      "community": 3,
       "norm_label": "adding new features"
     },
     {
@@ -2331,7 +2340,7 @@
       "source_file": "README.md",
       "source_location": "L237",
       "id": "task_buddy_frontend_readme_common_tasks",
-      "community": 2,
+      "community": 3,
       "norm_label": "common tasks"
     },
     {
@@ -2340,7 +2349,7 @@
       "source_file": "README.md",
       "source_location": "L239",
       "id": "task_buddy_frontend_readme_add_a_new_ui_component",
-      "community": 2,
+      "community": 3,
       "norm_label": "add a new ui component"
     },
     {
@@ -2349,7 +2358,7 @@
       "source_file": "README.md",
       "source_location": "L240",
       "id": "task_buddy_frontend_readme_codeblock_7",
-      "community": 2,
+      "community": 3,
       "norm_label": "code:bash (# create in src/components/ui/)"
     },
     {
@@ -2358,7 +2367,7 @@
       "source_file": "README.md",
       "source_location": "L245",
       "id": "task_buddy_frontend_readme_add_api_integration",
-      "community": 2,
+      "community": 3,
       "norm_label": "add api integration"
     },
     {
@@ -2367,7 +2376,7 @@
       "source_file": "README.md",
       "source_location": "L246",
       "id": "task_buddy_frontend_readme_codeblock_8",
-      "community": 2,
+      "community": 3,
       "norm_label": "code:typescript (// add new hook to src/hooks/useapi.ts)"
     },
     {
@@ -2376,7 +2385,7 @@
       "source_file": "README.md",
       "source_location": "L256",
       "id": "task_buddy_frontend_readme_customize_colors",
-      "community": 2,
+      "community": 3,
       "norm_label": "customize colors"
     },
     {
@@ -2385,7 +2394,7 @@
       "source_file": "README.md",
       "source_location": "L258",
       "id": "task_buddy_frontend_readme_codeblock_9",
-      "community": 2,
+      "community": 3,
       "norm_label": "code:css (:root {)"
     },
     {
@@ -2394,7 +2403,7 @@
       "source_file": "README.md",
       "source_location": "L264",
       "id": "task_buddy_frontend_readme_browser_support",
-      "community": 2,
+      "community": 3,
       "norm_label": "browser support"
     },
     {
@@ -2403,7 +2412,7 @@
       "source_file": "README.md",
       "source_location": "L271",
       "id": "task_buddy_frontend_readme_performance_metrics",
-      "community": 2,
+      "community": 3,
       "norm_label": "performance metrics"
     },
     {
@@ -2412,7 +2421,7 @@
       "source_file": "README.md",
       "source_location": "L277",
       "id": "task_buddy_frontend_readme_environment_variables",
-      "community": 2,
+      "community": 3,
       "norm_label": "environment variables"
     },
     {
@@ -2421,7 +2430,7 @@
       "source_file": "README.md",
       "source_location": "L279",
       "id": "task_buddy_frontend_readme_codeblock_10",
-      "community": 2,
+      "community": 3,
       "norm_label": "code:env (# api configuration)"
     },
     {
@@ -2430,7 +2439,7 @@
       "source_file": "README.md",
       "source_location": "L284",
       "id": "task_buddy_frontend_readme_scripts",
-      "community": 2,
+      "community": 3,
       "norm_label": "scripts"
     },
     {
@@ -2439,7 +2448,7 @@
       "source_file": "README.md",
       "source_location": "L295",
       "id": "task_buddy_frontend_readme_contributing",
-      "community": 2,
+      "community": 3,
       "norm_label": "contributing"
     },
     {
@@ -2448,7 +2457,7 @@
       "source_file": "README.md",
       "source_location": "L302",
       "id": "task_buddy_frontend_readme_license",
-      "community": 2,
+      "community": 3,
       "norm_label": "license"
     },
     {
@@ -2457,7 +2466,7 @@
       "source_file": "README.md",
       "source_location": "L306",
       "id": "task_buddy_frontend_readme_support",
-      "community": 2,
+      "community": 3,
       "norm_label": "support"
     },
     {
@@ -2466,7 +2475,7 @@
       "source_file": "playwright-report/data/3654424336dbea2fccdf942c8096822749cc9ef8.md",
       "source_location": "L1",
       "id": "playwright_report_data_3654424336dbea2fccdf942c8096822749cc9ef8_md",
-      "community": 11,
+      "community": 10,
       "norm_label": "3654424336dbea2fccdf942c8096822749cc9ef8.md"
     },
     {
@@ -2475,7 +2484,7 @@
       "source_file": "playwright-report/data/3654424336dbea2fccdf942c8096822749cc9ef8.md",
       "source_location": "L1",
       "id": "data_3654424336dbea2fccdf942c8096822749cc9ef8_instructions",
-      "community": 11,
+      "community": 10,
       "norm_label": "instructions"
     },
     {
@@ -2484,7 +2493,7 @@
       "source_file": "playwright-report/data/3654424336dbea2fccdf942c8096822749cc9ef8.md",
       "source_location": "L7",
       "id": "data_3654424336dbea2fccdf942c8096822749cc9ef8_test_info",
-      "community": 11,
+      "community": 10,
       "norm_label": "test info"
     },
     {
@@ -2493,7 +2502,7 @@
       "source_file": "playwright-report/data/3654424336dbea2fccdf942c8096822749cc9ef8.md",
       "source_location": "L12",
       "id": "data_3654424336dbea2fccdf942c8096822749cc9ef8_error_details",
-      "community": 11,
+      "community": 10,
       "norm_label": "error details"
     },
     {
@@ -2502,7 +2511,7 @@
       "source_file": "playwright-report/data/3654424336dbea2fccdf942c8096822749cc9ef8.md",
       "source_location": "L14",
       "id": "data_3654424336dbea2fccdf942c8096822749cc9ef8_codeblock_1",
-      "community": 11,
+      "community": 10,
       "norm_label": "code:block1 (error: expect(locator).tobeenabled() failed)"
     },
     {
@@ -2511,7 +2520,7 @@
       "source_file": "playwright-report/data/3654424336dbea2fccdf942c8096822749cc9ef8.md",
       "source_location": "L28",
       "id": "data_3654424336dbea2fccdf942c8096822749cc9ef8_page_snapshot",
-      "community": 11,
+      "community": 10,
       "norm_label": "page snapshot"
     },
     {
@@ -2520,7 +2529,7 @@
       "source_file": "playwright-report/data/3654424336dbea2fccdf942c8096822749cc9ef8.md",
       "source_location": "L30",
       "id": "data_3654424336dbea2fccdf942c8096822749cc9ef8_codeblock_2",
-      "community": 11,
+      "community": 10,
       "norm_label": "code:yaml (- generic [ref=e2]:)"
     },
     {
@@ -2529,7 +2538,7 @@
       "source_file": "playwright-report/data/3654424336dbea2fccdf942c8096822749cc9ef8.md",
       "source_location": "L120",
       "id": "data_3654424336dbea2fccdf942c8096822749cc9ef8_test_source",
-      "community": 11,
+      "community": 10,
       "norm_label": "test source"
     },
     {
@@ -2538,7 +2547,7 @@
       "source_file": "playwright-report/data/3654424336dbea2fccdf942c8096822749cc9ef8.md",
       "source_location": "L122",
       "id": "data_3654424336dbea2fccdf942c8096822749cc9ef8_codeblock_3",
-      "community": 11,
+      "community": 10,
       "norm_label": "code:ts (4   |   test.beforeeach(async ({ page }) => {)"
     },
     {
@@ -2547,7 +2556,7 @@
       "source_file": "playwright-report/data/3e58cd428c80b2531534d090e715e8ab01638c9b.md",
       "source_location": "L1",
       "id": "playwright_report_data_3e58cd428c80b2531534d090e715e8ab01638c9b_md",
-      "community": 12,
+      "community": 11,
       "norm_label": "3e58cd428c80b2531534d090e715e8ab01638c9b.md"
     },
     {
@@ -2556,7 +2565,7 @@
       "source_file": "playwright-report/data/3e58cd428c80b2531534d090e715e8ab01638c9b.md",
       "source_location": "L1",
       "id": "data_3e58cd428c80b2531534d090e715e8ab01638c9b_instructions",
-      "community": 12,
+      "community": 11,
       "norm_label": "instructions"
     },
     {
@@ -2565,7 +2574,7 @@
       "source_file": "playwright-report/data/3e58cd428c80b2531534d090e715e8ab01638c9b.md",
       "source_location": "L7",
       "id": "data_3e58cd428c80b2531534d090e715e8ab01638c9b_test_info",
-      "community": 12,
+      "community": 11,
       "norm_label": "test info"
     },
     {
@@ -2574,7 +2583,7 @@
       "source_file": "playwright-report/data/3e58cd428c80b2531534d090e715e8ab01638c9b.md",
       "source_location": "L12",
       "id": "data_3e58cd428c80b2531534d090e715e8ab01638c9b_error_details",
-      "community": 12,
+      "community": 11,
       "norm_label": "error details"
     },
     {
@@ -2583,7 +2592,7 @@
       "source_file": "playwright-report/data/3e58cd428c80b2531534d090e715e8ab01638c9b.md",
       "source_location": "L14",
       "id": "data_3e58cd428c80b2531534d090e715e8ab01638c9b_codeblock_1",
-      "community": 12,
+      "community": 11,
       "norm_label": "code:block1 (error: expect(locator).tocontaintext(expected) failed)"
     },
     {
@@ -2592,7 +2601,7 @@
       "source_file": "playwright-report/data/3e58cd428c80b2531534d090e715e8ab01638c9b.md",
       "source_location": "L28",
       "id": "data_3e58cd428c80b2531534d090e715e8ab01638c9b_page_snapshot",
-      "community": 12,
+      "community": 11,
       "norm_label": "page snapshot"
     },
     {
@@ -2601,7 +2610,7 @@
       "source_file": "playwright-report/data/3e58cd428c80b2531534d090e715e8ab01638c9b.md",
       "source_location": "L30",
       "id": "data_3e58cd428c80b2531534d090e715e8ab01638c9b_codeblock_2",
-      "community": 12,
+      "community": 11,
       "norm_label": "code:yaml (- generic [ref=e2]:)"
     },
     {
@@ -2610,7 +2619,7 @@
       "source_file": "playwright-report/data/3e58cd428c80b2531534d090e715e8ab01638c9b.md",
       "source_location": "L115",
       "id": "data_3e58cd428c80b2531534d090e715e8ab01638c9b_test_source",
-      "community": 12,
+      "community": 11,
       "norm_label": "test source"
     },
     {
@@ -2619,7 +2628,7 @@
       "source_file": "playwright-report/data/3e58cd428c80b2531534d090e715e8ab01638c9b.md",
       "source_location": "L117",
       "id": "data_3e58cd428c80b2531534d090e715e8ab01638c9b_codeblock_3",
-      "community": 12,
+      "community": 11,
       "norm_label": "code:ts (48  |           }),)"
     },
     {
@@ -2628,7 +2637,7 @@
       "source_file": "playwright-report/data/9be985a3ed9392440dddd9257ca4ea90f55057f7.md",
       "source_location": "L1",
       "id": "playwright_report_data_9be985a3ed9392440dddd9257ca4ea90f55057f7_md",
-      "community": 13,
+      "community": 12,
       "norm_label": "9be985a3ed9392440dddd9257ca4ea90f55057f7.md"
     },
     {
@@ -2637,7 +2646,7 @@
       "source_file": "playwright-report/data/9be985a3ed9392440dddd9257ca4ea90f55057f7.md",
       "source_location": "L1",
       "id": "data_9be985a3ed9392440dddd9257ca4ea90f55057f7_instructions",
-      "community": 13,
+      "community": 12,
       "norm_label": "instructions"
     },
     {
@@ -2646,7 +2655,7 @@
       "source_file": "playwright-report/data/9be985a3ed9392440dddd9257ca4ea90f55057f7.md",
       "source_location": "L7",
       "id": "data_9be985a3ed9392440dddd9257ca4ea90f55057f7_test_info",
-      "community": 13,
+      "community": 12,
       "norm_label": "test info"
     },
     {
@@ -2655,7 +2664,7 @@
       "source_file": "playwright-report/data/9be985a3ed9392440dddd9257ca4ea90f55057f7.md",
       "source_location": "L12",
       "id": "data_9be985a3ed9392440dddd9257ca4ea90f55057f7_error_details",
-      "community": 13,
+      "community": 12,
       "norm_label": "error details"
     },
     {
@@ -2664,7 +2673,7 @@
       "source_file": "playwright-report/data/9be985a3ed9392440dddd9257ca4ea90f55057f7.md",
       "source_location": "L14",
       "id": "data_9be985a3ed9392440dddd9257ca4ea90f55057f7_codeblock_1",
-      "community": 13,
+      "community": 12,
       "norm_label": "code:block1 (error: expect(locator).tobedisabled() failed)"
     },
     {
@@ -2673,7 +2682,7 @@
       "source_file": "playwright-report/data/9be985a3ed9392440dddd9257ca4ea90f55057f7.md",
       "source_location": "L28",
       "id": "data_9be985a3ed9392440dddd9257ca4ea90f55057f7_page_snapshot",
-      "community": 13,
+      "community": 12,
       "norm_label": "page snapshot"
     },
     {
@@ -2682,7 +2691,7 @@
       "source_file": "playwright-report/data/9be985a3ed9392440dddd9257ca4ea90f55057f7.md",
       "source_location": "L30",
       "id": "data_9be985a3ed9392440dddd9257ca4ea90f55057f7_codeblock_2",
-      "community": 13,
+      "community": 12,
       "norm_label": "code:yaml (- generic [ref=e2]:)"
     },
     {
@@ -2691,7 +2700,7 @@
       "source_file": "playwright-report/data/9be985a3ed9392440dddd9257ca4ea90f55057f7.md",
       "source_location": "L113",
       "id": "data_9be985a3ed9392440dddd9257ca4ea90f55057f7_test_source",
-      "community": 13,
+      "community": 12,
       "norm_label": "test source"
     },
     {
@@ -2700,7 +2709,7 @@
       "source_file": "playwright-report/data/9be985a3ed9392440dddd9257ca4ea90f55057f7.md",
       "source_location": "L115",
       "id": "data_9be985a3ed9392440dddd9257ca4ea90f55057f7_codeblock_3",
-      "community": 13,
+      "community": 12,
       "norm_label": "code:ts (22  |       await expect()"
     },
     {
@@ -2709,7 +2718,7 @@
       "source_file": "playwright-report/data/b13f8371be49c44396e62ed7cb2d5521f490a97e.md",
       "source_location": "L1",
       "id": "playwright_report_data_b13f8371be49c44396e62ed7cb2d5521f490a97e_md",
-      "community": 14,
+      "community": 13,
       "norm_label": "b13f8371be49c44396e62ed7cb2d5521f490a97e.md"
     },
     {
@@ -2718,7 +2727,7 @@
       "source_file": "playwright-report/data/b13f8371be49c44396e62ed7cb2d5521f490a97e.md",
       "source_location": "L1",
       "id": "data_b13f8371be49c44396e62ed7cb2d5521f490a97e_instructions",
-      "community": 14,
+      "community": 13,
       "norm_label": "instructions"
     },
     {
@@ -2727,7 +2736,7 @@
       "source_file": "playwright-report/data/b13f8371be49c44396e62ed7cb2d5521f490a97e.md",
       "source_location": "L7",
       "id": "data_b13f8371be49c44396e62ed7cb2d5521f490a97e_test_info",
-      "community": 14,
+      "community": 13,
       "norm_label": "test info"
     },
     {
@@ -2736,7 +2745,7 @@
       "source_file": "playwright-report/data/b13f8371be49c44396e62ed7cb2d5521f490a97e.md",
       "source_location": "L12",
       "id": "data_b13f8371be49c44396e62ed7cb2d5521f490a97e_error_details",
-      "community": 14,
+      "community": 13,
       "norm_label": "error details"
     },
     {
@@ -2745,7 +2754,7 @@
       "source_file": "playwright-report/data/b13f8371be49c44396e62ed7cb2d5521f490a97e.md",
       "source_location": "L14",
       "id": "data_b13f8371be49c44396e62ed7cb2d5521f490a97e_codeblock_1",
-      "community": 14,
+      "community": 13,
       "norm_label": "code:block1 (error: expect(locator).tobevisible() failed)"
     },
     {
@@ -2754,7 +2763,7 @@
       "source_file": "playwright-report/data/b13f8371be49c44396e62ed7cb2d5521f490a97e.md",
       "source_location": "L29",
       "id": "data_b13f8371be49c44396e62ed7cb2d5521f490a97e_page_snapshot",
-      "community": 14,
+      "community": 13,
       "norm_label": "page snapshot"
     },
     {
@@ -2763,7 +2772,7 @@
       "source_file": "playwright-report/data/b13f8371be49c44396e62ed7cb2d5521f490a97e.md",
       "source_location": "L31",
       "id": "data_b13f8371be49c44396e62ed7cb2d5521f490a97e_codeblock_2",
-      "community": 14,
+      "community": 13,
       "norm_label": "code:yaml (- generic [ref=e2]:)"
     },
     {
@@ -2772,7 +2781,7 @@
       "source_file": "playwright-report/data/b13f8371be49c44396e62ed7cb2d5521f490a97e.md",
       "source_location": "L75",
       "id": "data_b13f8371be49c44396e62ed7cb2d5521f490a97e_test_source",
-      "community": 14,
+      "community": 13,
       "norm_label": "test source"
     },
     {
@@ -2781,7 +2790,7 @@
       "source_file": "playwright-report/data/b13f8371be49c44396e62ed7cb2d5521f490a97e.md",
       "source_location": "L77",
       "id": "data_b13f8371be49c44396e62ed7cb2d5521f490a97e_codeblock_3",
-      "community": 14,
+      "community": 13,
       "norm_label": "code:ts (1   | import { test, expect } from \"@playwright/test\")"
     },
     {
@@ -2790,7 +2799,7 @@
       "source_file": "playwright-report/data/ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d.md",
       "source_location": "L1",
       "id": "playwright_report_data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_md",
-      "community": 9,
+      "community": 8,
       "norm_label": "ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d.md"
     },
     {
@@ -2799,7 +2808,7 @@
       "source_file": "playwright-report/data/ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d.md",
       "source_location": "L1",
       "id": "data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_instructions",
-      "community": 9,
+      "community": 8,
       "norm_label": "instructions"
     },
     {
@@ -2808,7 +2817,7 @@
       "source_file": "playwright-report/data/ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d.md",
       "source_location": "L7",
       "id": "data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_test_info",
-      "community": 9,
+      "community": 8,
       "norm_label": "test info"
     },
     {
@@ -2817,7 +2826,7 @@
       "source_file": "playwright-report/data/ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d.md",
       "source_location": "L12",
       "id": "data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_error_details",
-      "community": 9,
+      "community": 8,
       "norm_label": "error details"
     },
     {
@@ -2826,7 +2835,7 @@
       "source_file": "playwright-report/data/ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d.md",
       "source_location": "L14",
       "id": "data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_codeblock_1",
-      "community": 9,
+      "community": 8,
       "norm_label": "code:block1 (test timeout of 30000ms exceeded.)"
     },
     {
@@ -2835,7 +2844,7 @@
       "source_file": "playwright-report/data/ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d.md",
       "source_location": "L18",
       "id": "data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_codeblock_2",
-      "community": 9,
+      "community": 8,
       "norm_label": "code:block2 (error: locator.fill: test timeout of 30000ms exceeded.)"
     },
     {
@@ -2844,7 +2853,7 @@
       "source_file": "playwright-report/data/ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d.md",
       "source_location": "L25",
       "id": "data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_page_snapshot",
-      "community": 9,
+      "community": 8,
       "norm_label": "page snapshot"
     },
     {
@@ -2853,7 +2862,7 @@
       "source_file": "playwright-report/data/ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d.md",
       "source_location": "L27",
       "id": "data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_codeblock_3",
-      "community": 9,
+      "community": 8,
       "norm_label": "code:yaml (- generic [ref=e2]:)"
     },
     {
@@ -2862,7 +2871,7 @@
       "source_file": "playwright-report/data/ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d.md",
       "source_location": "L71",
       "id": "data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_test_source",
-      "community": 9,
+      "community": 8,
       "norm_label": "test source"
     },
     {
@@ -2871,7 +2880,7 @@
       "source_file": "playwright-report/data/ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d.md",
       "source_location": "L73",
       "id": "data_ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d_codeblock_4",
-      "community": 9,
+      "community": 8,
       "norm_label": "code:ts (1   | import { test, expect } from \"@playwright/test\")"
     },
     {
@@ -2880,7 +2889,7 @@
       "source_file": "test-results/auth-Authentication-keeps--ec458--until-the-inputs-are-valid-chromium/error-context.md",
       "source_location": "L1",
       "id": "test_results_auth_authentication_keeps_ec458_until_the_inputs_are_valid_chromium_error_context_md",
-      "community": 15,
+      "community": 14,
       "norm_label": "error-context.md"
     },
     {
@@ -2889,7 +2898,7 @@
       "source_file": "test-results/auth-Authentication-keeps--ec458--until-the-inputs-are-valid-chromium/error-context.md",
       "source_location": "L1",
       "id": "auth_authentication_keeps_ec458_until_the_inputs_are_valid_chromium_error_context_instructions",
-      "community": 15,
+      "community": 14,
       "norm_label": "instructions"
     },
     {
@@ -2898,7 +2907,7 @@
       "source_file": "test-results/auth-Authentication-keeps--ec458--until-the-inputs-are-valid-chromium/error-context.md",
       "source_location": "L7",
       "id": "auth_authentication_keeps_ec458_until_the_inputs_are_valid_chromium_error_context_test_info",
-      "community": 15,
+      "community": 14,
       "norm_label": "test info"
     },
     {
@@ -2907,7 +2916,7 @@
       "source_file": "test-results/auth-Authentication-keeps--ec458--until-the-inputs-are-valid-chromium/error-context.md",
       "source_location": "L12",
       "id": "auth_authentication_keeps_ec458_until_the_inputs_are_valid_chromium_error_context_error_details",
-      "community": 15,
+      "community": 14,
       "norm_label": "error details"
     },
     {
@@ -2916,7 +2925,7 @@
       "source_file": "test-results/auth-Authentication-keeps--ec458--until-the-inputs-are-valid-chromium/error-context.md",
       "source_location": "L14",
       "id": "auth_authentication_keeps_ec458_until_the_inputs_are_valid_chromium_error_context_codeblock_1",
-      "community": 15,
+      "community": 14,
       "norm_label": "code:block1 (error: expect(locator).tobedisabled() failed)"
     },
     {
@@ -2925,7 +2934,7 @@
       "source_file": "test-results/auth-Authentication-keeps--ec458--until-the-inputs-are-valid-chromium/error-context.md",
       "source_location": "L28",
       "id": "auth_authentication_keeps_ec458_until_the_inputs_are_valid_chromium_error_context_page_snapshot",
-      "community": 15,
+      "community": 14,
       "norm_label": "page snapshot"
     },
     {
@@ -2934,7 +2943,7 @@
       "source_file": "test-results/auth-Authentication-keeps--ec458--until-the-inputs-are-valid-chromium/error-context.md",
       "source_location": "L30",
       "id": "auth_authentication_keeps_ec458_until_the_inputs_are_valid_chromium_error_context_codeblock_2",
-      "community": 15,
+      "community": 14,
       "norm_label": "code:yaml (- generic [ref=e2]:)"
     },
     {
@@ -2943,7 +2952,7 @@
       "source_file": "test-results/auth-Authentication-keeps--ec458--until-the-inputs-are-valid-chromium/error-context.md",
       "source_location": "L113",
       "id": "auth_authentication_keeps_ec458_until_the_inputs_are_valid_chromium_error_context_test_source",
-      "community": 15,
+      "community": 14,
       "norm_label": "test source"
     },
     {
@@ -2952,7 +2961,7 @@
       "source_file": "test-results/auth-Authentication-keeps--ec458--until-the-inputs-are-valid-chromium/error-context.md",
       "source_location": "L115",
       "id": "auth_authentication_keeps_ec458_until_the_inputs_are_valid_chromium_error_context_codeblock_3",
-      "community": 15,
+      "community": 14,
       "norm_label": "code:ts (22  |       await expect()"
     },
     {
@@ -2961,7 +2970,7 @@
       "source_file": "test-results/auth-Authentication-login--e8b1a-valid-username-and-password-chromium/error-context.md",
       "source_location": "L1",
       "id": "test_results_auth_authentication_login_e8b1a_valid_username_and_password_chromium_error_context_md",
-      "community": 10,
+      "community": 9,
       "norm_label": "error-context.md"
     },
     {
@@ -2970,7 +2979,7 @@
       "source_file": "test-results/auth-Authentication-login--e8b1a-valid-username-and-password-chromium/error-context.md",
       "source_location": "L1",
       "id": "auth_authentication_login_e8b1a_valid_username_and_password_chromium_error_context_instructions",
-      "community": 10,
+      "community": 9,
       "norm_label": "instructions"
     },
     {
@@ -2979,7 +2988,7 @@
       "source_file": "test-results/auth-Authentication-login--e8b1a-valid-username-and-password-chromium/error-context.md",
       "source_location": "L7",
       "id": "auth_authentication_login_e8b1a_valid_username_and_password_chromium_error_context_test_info",
-      "community": 10,
+      "community": 9,
       "norm_label": "test info"
     },
     {
@@ -2988,7 +2997,7 @@
       "source_file": "test-results/auth-Authentication-login--e8b1a-valid-username-and-password-chromium/error-context.md",
       "source_location": "L12",
       "id": "auth_authentication_login_e8b1a_valid_username_and_password_chromium_error_context_error_details",
-      "community": 10,
+      "community": 9,
       "norm_label": "error details"
     },
     {
@@ -2997,7 +3006,7 @@
       "source_file": "test-results/auth-Authentication-login--e8b1a-valid-username-and-password-chromium/error-context.md",
       "source_location": "L14",
       "id": "auth_authentication_login_e8b1a_valid_username_and_password_chromium_error_context_codeblock_1",
-      "community": 10,
+      "community": 9,
       "norm_label": "code:block1 (test timeout of 30000ms exceeded.)"
     },
     {
@@ -3006,7 +3015,7 @@
       "source_file": "test-results/auth-Authentication-login--e8b1a-valid-username-and-password-chromium/error-context.md",
       "source_location": "L18",
       "id": "auth_authentication_login_e8b1a_valid_username_and_password_chromium_error_context_codeblock_2",
-      "community": 10,
+      "community": 9,
       "norm_label": "code:block2 (error: locator.fill: test timeout of 30000ms exceeded.)"
     },
     {
@@ -3015,7 +3024,7 @@
       "source_file": "test-results/auth-Authentication-login--e8b1a-valid-username-and-password-chromium/error-context.md",
       "source_location": "L25",
       "id": "auth_authentication_login_e8b1a_valid_username_and_password_chromium_error_context_page_snapshot",
-      "community": 10,
+      "community": 9,
       "norm_label": "page snapshot"
     },
     {
@@ -3024,7 +3033,7 @@
       "source_file": "test-results/auth-Authentication-login--e8b1a-valid-username-and-password-chromium/error-context.md",
       "source_location": "L27",
       "id": "auth_authentication_login_e8b1a_valid_username_and_password_chromium_error_context_codeblock_3",
-      "community": 10,
+      "community": 9,
       "norm_label": "code:yaml (- generic [ref=e2]:)"
     },
     {
@@ -3033,7 +3042,7 @@
       "source_file": "test-results/auth-Authentication-login--e8b1a-valid-username-and-password-chromium/error-context.md",
       "source_location": "L71",
       "id": "auth_authentication_login_e8b1a_valid_username_and_password_chromium_error_context_test_source",
-      "community": 10,
+      "community": 9,
       "norm_label": "test source"
     },
     {
@@ -3042,7 +3051,7 @@
       "source_file": "test-results/auth-Authentication-login--e8b1a-valid-username-and-password-chromium/error-context.md",
       "source_location": "L73",
       "id": "auth_authentication_login_e8b1a_valid_username_and_password_chromium_error_context_codeblock_4",
-      "community": 10,
+      "community": 9,
       "norm_label": "code:ts (1   | import { test, expect } from \"@playwright/test\")"
     },
     {
@@ -3051,7 +3060,7 @@
       "source_file": "test-results/auth-Authentication-regist-2c564-ds-and-a-sanitized-username-chromium/error-context.md",
       "source_location": "L1",
       "id": "test_results_auth_authentication_regist_2c564_ds_and_a_sanitized_username_chromium_error_context_md",
-      "community": 16,
+      "community": 15,
       "norm_label": "error-context.md"
     },
     {
@@ -3060,7 +3069,7 @@
       "source_file": "test-results/auth-Authentication-regist-2c564-ds-and-a-sanitized-username-chromium/error-context.md",
       "source_location": "L1",
       "id": "auth_authentication_regist_2c564_ds_and_a_sanitized_username_chromium_error_context_instructions",
-      "community": 16,
+      "community": 15,
       "norm_label": "instructions"
     },
     {
@@ -3069,7 +3078,7 @@
       "source_file": "test-results/auth-Authentication-regist-2c564-ds-and-a-sanitized-username-chromium/error-context.md",
       "source_location": "L7",
       "id": "auth_authentication_regist_2c564_ds_and_a_sanitized_username_chromium_error_context_test_info",
-      "community": 16,
+      "community": 15,
       "norm_label": "test info"
     },
     {
@@ -3078,7 +3087,7 @@
       "source_file": "test-results/auth-Authentication-regist-2c564-ds-and-a-sanitized-username-chromium/error-context.md",
       "source_location": "L12",
       "id": "auth_authentication_regist_2c564_ds_and_a_sanitized_username_chromium_error_context_error_details",
-      "community": 16,
+      "community": 15,
       "norm_label": "error details"
     },
     {
@@ -3087,7 +3096,7 @@
       "source_file": "test-results/auth-Authentication-regist-2c564-ds-and-a-sanitized-username-chromium/error-context.md",
       "source_location": "L14",
       "id": "auth_authentication_regist_2c564_ds_and_a_sanitized_username_chromium_error_context_codeblock_1",
-      "community": 16,
+      "community": 15,
       "norm_label": "code:block1 (error: expect(locator).tobeenabled() failed)"
     },
     {
@@ -3096,7 +3105,7 @@
       "source_file": "test-results/auth-Authentication-regist-2c564-ds-and-a-sanitized-username-chromium/error-context.md",
       "source_location": "L28",
       "id": "auth_authentication_regist_2c564_ds_and_a_sanitized_username_chromium_error_context_page_snapshot",
-      "community": 16,
+      "community": 15,
       "norm_label": "page snapshot"
     },
     {
@@ -3105,7 +3114,7 @@
       "source_file": "test-results/auth-Authentication-regist-2c564-ds-and-a-sanitized-username-chromium/error-context.md",
       "source_location": "L30",
       "id": "auth_authentication_regist_2c564_ds_and_a_sanitized_username_chromium_error_context_codeblock_2",
-      "community": 16,
+      "community": 15,
       "norm_label": "code:yaml (- generic [ref=e2]:)"
     },
     {
@@ -3114,7 +3123,7 @@
       "source_file": "test-results/auth-Authentication-regist-2c564-ds-and-a-sanitized-username-chromium/error-context.md",
       "source_location": "L120",
       "id": "auth_authentication_regist_2c564_ds_and_a_sanitized_username_chromium_error_context_test_source",
-      "community": 16,
+      "community": 15,
       "norm_label": "test source"
     },
     {
@@ -3123,7 +3132,7 @@
       "source_file": "test-results/auth-Authentication-regist-2c564-ds-and-a-sanitized-username-chromium/error-context.md",
       "source_location": "L122",
       "id": "auth_authentication_regist_2c564_ds_and_a_sanitized_username_chromium_error_context_codeblock_3",
-      "community": 16,
+      "community": 15,
       "norm_label": "code:ts (4   |   test.beforeeach(async ({ page }) => {)"
     },
     {
@@ -3132,7 +3141,7 @@
       "source_file": "test-results/auth-Authentication-shows--1b3f2-ding-and-icon-on-auth-pages-chromium/error-context.md",
       "source_location": "L1",
       "id": "test_results_auth_authentication_shows_1b3f2_ding_and_icon_on_auth_pages_chromium_error_context_md",
-      "community": 17,
+      "community": 16,
       "norm_label": "error-context.md"
     },
     {
@@ -3141,7 +3150,7 @@
       "source_file": "test-results/auth-Authentication-shows--1b3f2-ding-and-icon-on-auth-pages-chromium/error-context.md",
       "source_location": "L1",
       "id": "auth_authentication_shows_1b3f2_ding_and_icon_on_auth_pages_chromium_error_context_instructions",
-      "community": 17,
+      "community": 16,
       "norm_label": "instructions"
     },
     {
@@ -3150,7 +3159,7 @@
       "source_file": "test-results/auth-Authentication-shows--1b3f2-ding-and-icon-on-auth-pages-chromium/error-context.md",
       "source_location": "L7",
       "id": "auth_authentication_shows_1b3f2_ding_and_icon_on_auth_pages_chromium_error_context_test_info",
-      "community": 17,
+      "community": 16,
       "norm_label": "test info"
     },
     {
@@ -3159,7 +3168,7 @@
       "source_file": "test-results/auth-Authentication-shows--1b3f2-ding-and-icon-on-auth-pages-chromium/error-context.md",
       "source_location": "L12",
       "id": "auth_authentication_shows_1b3f2_ding_and_icon_on_auth_pages_chromium_error_context_error_details",
-      "community": 17,
+      "community": 16,
       "norm_label": "error details"
     },
     {
@@ -3168,7 +3177,7 @@
       "source_file": "test-results/auth-Authentication-shows--1b3f2-ding-and-icon-on-auth-pages-chromium/error-context.md",
       "source_location": "L14",
       "id": "auth_authentication_shows_1b3f2_ding_and_icon_on_auth_pages_chromium_error_context_codeblock_1",
-      "community": 17,
+      "community": 16,
       "norm_label": "code:block1 (error: expect(locator).tobevisible() failed)"
     },
     {
@@ -3177,7 +3186,7 @@
       "source_file": "test-results/auth-Authentication-shows--1b3f2-ding-and-icon-on-auth-pages-chromium/error-context.md",
       "source_location": "L29",
       "id": "auth_authentication_shows_1b3f2_ding_and_icon_on_auth_pages_chromium_error_context_page_snapshot",
-      "community": 17,
+      "community": 16,
       "norm_label": "page snapshot"
     },
     {
@@ -3186,7 +3195,7 @@
       "source_file": "test-results/auth-Authentication-shows--1b3f2-ding-and-icon-on-auth-pages-chromium/error-context.md",
       "source_location": "L31",
       "id": "auth_authentication_shows_1b3f2_ding_and_icon_on_auth_pages_chromium_error_context_codeblock_2",
-      "community": 17,
+      "community": 16,
       "norm_label": "code:yaml (- generic [ref=e2]:)"
     },
     {
@@ -3195,7 +3204,7 @@
       "source_file": "test-results/auth-Authentication-shows--1b3f2-ding-and-icon-on-auth-pages-chromium/error-context.md",
       "source_location": "L75",
       "id": "auth_authentication_shows_1b3f2_ding_and_icon_on_auth_pages_chromium_error_context_test_source",
-      "community": 17,
+      "community": 16,
       "norm_label": "test source"
     },
     {
@@ -3204,7 +3213,7 @@
       "source_file": "test-results/auth-Authentication-shows--1b3f2-ding-and-icon-on-auth-pages-chromium/error-context.md",
       "source_location": "L77",
       "id": "auth_authentication_shows_1b3f2_ding_and_icon_on_auth_pages_chromium_error_context_codeblock_3",
-      "community": 17,
+      "community": 16,
       "norm_label": "code:ts (1   | import { test, expect } from \"@playwright/test\")"
     },
     {
@@ -3213,7 +3222,7 @@
       "source_file": "test-results/auth-Authentication-update-b2c37-icator-as-password-improves-chromium/error-context.md",
       "source_location": "L1",
       "id": "test_results_auth_authentication_update_b2c37_icator_as_password_improves_chromium_error_context_md",
-      "community": 18,
+      "community": 17,
       "norm_label": "error-context.md"
     },
     {
@@ -3222,7 +3231,7 @@
       "source_file": "test-results/auth-Authentication-update-b2c37-icator-as-password-improves-chromium/error-context.md",
       "source_location": "L1",
       "id": "auth_authentication_update_b2c37_icator_as_password_improves_chromium_error_context_instructions",
-      "community": 18,
+      "community": 17,
       "norm_label": "instructions"
     },
     {
@@ -3231,7 +3240,7 @@
       "source_file": "test-results/auth-Authentication-update-b2c37-icator-as-password-improves-chromium/error-context.md",
       "source_location": "L7",
       "id": "auth_authentication_update_b2c37_icator_as_password_improves_chromium_error_context_test_info",
-      "community": 18,
+      "community": 17,
       "norm_label": "test info"
     },
     {
@@ -3240,7 +3249,7 @@
       "source_file": "test-results/auth-Authentication-update-b2c37-icator-as-password-improves-chromium/error-context.md",
       "source_location": "L12",
       "id": "auth_authentication_update_b2c37_icator_as_password_improves_chromium_error_context_error_details",
-      "community": 18,
+      "community": 17,
       "norm_label": "error details"
     },
     {
@@ -3249,7 +3258,7 @@
       "source_file": "test-results/auth-Authentication-update-b2c37-icator-as-password-improves-chromium/error-context.md",
       "source_location": "L14",
       "id": "auth_authentication_update_b2c37_icator_as_password_improves_chromium_error_context_codeblock_1",
-      "community": 18,
+      "community": 17,
       "norm_label": "code:block1 (error: expect(locator).tocontaintext(expected) failed)"
     },
     {
@@ -3258,7 +3267,7 @@
       "source_file": "test-results/auth-Authentication-update-b2c37-icator-as-password-improves-chromium/error-context.md",
       "source_location": "L28",
       "id": "auth_authentication_update_b2c37_icator_as_password_improves_chromium_error_context_page_snapshot",
-      "community": 18,
+      "community": 17,
       "norm_label": "page snapshot"
     },
     {
@@ -3267,7 +3276,7 @@
       "source_file": "test-results/auth-Authentication-update-b2c37-icator-as-password-improves-chromium/error-context.md",
       "source_location": "L30",
       "id": "auth_authentication_update_b2c37_icator_as_password_improves_chromium_error_context_codeblock_2",
-      "community": 18,
+      "community": 17,
       "norm_label": "code:yaml (- generic [ref=e2]:)"
     },
     {
@@ -3276,7 +3285,7 @@
       "source_file": "test-results/auth-Authentication-update-b2c37-icator-as-password-improves-chromium/error-context.md",
       "source_location": "L115",
       "id": "auth_authentication_update_b2c37_icator_as_password_improves_chromium_error_context_test_source",
-      "community": 18,
+      "community": 17,
       "norm_label": "test source"
     },
     {
@@ -3285,7 +3294,7 @@
       "source_file": "test-results/auth-Authentication-update-b2c37-icator-as-password-improves-chromium/error-context.md",
       "source_location": "L117",
       "id": "auth_authentication_update_b2c37_icator_as_password_improves_chromium_error_context_codeblock_3",
-      "community": 18,
+      "community": 17,
       "norm_label": "code:ts (48  |           }),)"
     },
     {
@@ -3518,7 +3527,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/13d8c5e199e906653a4d3359d442b5b626b58097.md",
       "source_location": "L1",
-      "community": 19,
+      "community": 18,
       "norm_label": "13d8c5e199e906653a4d3359d442b5b626b58097.md",
       "id": "playwright_report_data_13d8c5e199e906653a4d3359d442b5b626b58097_md"
     },
@@ -3527,7 +3536,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/13d8c5e199e906653a4d3359d442b5b626b58097.md",
       "source_location": "L1",
-      "community": 19,
+      "community": 18,
       "norm_label": "instructions",
       "id": "data_13d8c5e199e906653a4d3359d442b5b626b58097_instructions"
     },
@@ -3536,7 +3545,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/13d8c5e199e906653a4d3359d442b5b626b58097.md",
       "source_location": "L7",
-      "community": 19,
+      "community": 18,
       "norm_label": "test info",
       "id": "data_13d8c5e199e906653a4d3359d442b5b626b58097_test_info"
     },
@@ -3545,7 +3554,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/13d8c5e199e906653a4d3359d442b5b626b58097.md",
       "source_location": "L12",
-      "community": 19,
+      "community": 18,
       "norm_label": "error details",
       "id": "data_13d8c5e199e906653a4d3359d442b5b626b58097_error_details"
     },
@@ -3554,7 +3563,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/13d8c5e199e906653a4d3359d442b5b626b58097.md",
       "source_location": "L14",
-      "community": 19,
+      "community": 18,
       "norm_label": "code:block1 (error: locator.fill: error: strict mode violation: getbylabe)",
       "id": "data_13d8c5e199e906653a4d3359d442b5b626b58097_codeblock_1"
     },
@@ -3563,7 +3572,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/13d8c5e199e906653a4d3359d442b5b626b58097.md",
       "source_location": "L24",
-      "community": 19,
+      "community": 18,
       "norm_label": "page snapshot",
       "id": "data_13d8c5e199e906653a4d3359d442b5b626b58097_page_snapshot"
     },
@@ -3572,7 +3581,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/13d8c5e199e906653a4d3359d442b5b626b58097.md",
       "source_location": "L26",
-      "community": 19,
+      "community": 18,
       "norm_label": "code:yaml (- generic [ref=e5]:)",
       "id": "data_13d8c5e199e906653a4d3359d442b5b626b58097_codeblock_2"
     },
@@ -3581,7 +3590,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/13d8c5e199e906653a4d3359d442b5b626b58097.md",
       "source_location": "L70",
-      "community": 19,
+      "community": 18,
       "norm_label": "test source",
       "id": "data_13d8c5e199e906653a4d3359d442b5b626b58097_test_source"
     },
@@ -3590,7 +3599,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/13d8c5e199e906653a4d3359d442b5b626b58097.md",
       "source_location": "L72",
-      "community": 19,
+      "community": 18,
       "norm_label": "code:ts (1   | import { test, expect } from \"@playwright/test\")",
       "id": "data_13d8c5e199e906653a4d3359d442b5b626b58097_codeblock_3"
     },
@@ -3599,7 +3608,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/2b9e057e769221c1906ac27f2ddc156a187a96cc.md",
       "source_location": "L1",
-      "community": 20,
+      "community": 19,
       "norm_label": "2b9e057e769221c1906ac27f2ddc156a187a96cc.md",
       "id": "playwright_report_data_2b9e057e769221c1906ac27f2ddc156a187a96cc_md"
     },
@@ -3608,7 +3617,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/2b9e057e769221c1906ac27f2ddc156a187a96cc.md",
       "source_location": "L1",
-      "community": 20,
+      "community": 19,
       "norm_label": "instructions",
       "id": "data_2b9e057e769221c1906ac27f2ddc156a187a96cc_instructions"
     },
@@ -3617,7 +3626,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/2b9e057e769221c1906ac27f2ddc156a187a96cc.md",
       "source_location": "L7",
-      "community": 20,
+      "community": 19,
       "norm_label": "test info",
       "id": "data_2b9e057e769221c1906ac27f2ddc156a187a96cc_test_info"
     },
@@ -3626,7 +3635,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/2b9e057e769221c1906ac27f2ddc156a187a96cc.md",
       "source_location": "L12",
-      "community": 20,
+      "community": 19,
       "norm_label": "error details",
       "id": "data_2b9e057e769221c1906ac27f2ddc156a187a96cc_error_details"
     },
@@ -3635,7 +3644,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/2b9e057e769221c1906ac27f2ddc156a187a96cc.md",
       "source_location": "L14",
-      "community": 20,
+      "community": 19,
       "norm_label": "code:block1 (error: locator.fill: error: strict mode violation: getbylabe)",
       "id": "data_2b9e057e769221c1906ac27f2ddc156a187a96cc_codeblock_1"
     },
@@ -3644,7 +3653,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/2b9e057e769221c1906ac27f2ddc156a187a96cc.md",
       "source_location": "L25",
-      "community": 20,
+      "community": 19,
       "norm_label": "page snapshot",
       "id": "data_2b9e057e769221c1906ac27f2ddc156a187a96cc_page_snapshot"
     },
@@ -3653,7 +3662,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/2b9e057e769221c1906ac27f2ddc156a187a96cc.md",
       "source_location": "L27",
-      "community": 20,
+      "community": 19,
       "norm_label": "code:yaml (- generic [ref=e5]:)",
       "id": "data_2b9e057e769221c1906ac27f2ddc156a187a96cc_codeblock_2"
     },
@@ -3662,7 +3671,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/2b9e057e769221c1906ac27f2ddc156a187a96cc.md",
       "source_location": "L85",
-      "community": 20,
+      "community": 19,
       "norm_label": "test source",
       "id": "data_2b9e057e769221c1906ac27f2ddc156a187a96cc_test_source"
     },
@@ -3671,7 +3680,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/2b9e057e769221c1906ac27f2ddc156a187a96cc.md",
       "source_location": "L87",
-      "community": 20,
+      "community": 19,
       "norm_label": "code:ts (47  |             user: { id: \"user-1\", username: \"demo.user)",
       "id": "data_2b9e057e769221c1906ac27f2ddc156a187a96cc_codeblock_3"
     },
@@ -3680,7 +3689,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/6ad1be4bcaedaf16b79cfca4c934ace5a92c47ff.md",
       "source_location": "L1",
-      "community": 21,
+      "community": 20,
       "norm_label": "6ad1be4bcaedaf16b79cfca4c934ace5a92c47ff.md",
       "id": "playwright_report_data_6ad1be4bcaedaf16b79cfca4c934ace5a92c47ff_md"
     },
@@ -3689,7 +3698,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/6ad1be4bcaedaf16b79cfca4c934ace5a92c47ff.md",
       "source_location": "L1",
-      "community": 21,
+      "community": 20,
       "norm_label": "instructions",
       "id": "data_6ad1be4bcaedaf16b79cfca4c934ace5a92c47ff_instructions"
     },
@@ -3698,7 +3707,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/6ad1be4bcaedaf16b79cfca4c934ace5a92c47ff.md",
       "source_location": "L7",
-      "community": 21,
+      "community": 20,
       "norm_label": "test info",
       "id": "data_6ad1be4bcaedaf16b79cfca4c934ace5a92c47ff_test_info"
     },
@@ -3707,7 +3716,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/6ad1be4bcaedaf16b79cfca4c934ace5a92c47ff.md",
       "source_location": "L12",
-      "community": 21,
+      "community": 20,
       "norm_label": "error details",
       "id": "data_6ad1be4bcaedaf16b79cfca4c934ace5a92c47ff_error_details"
     },
@@ -3716,7 +3725,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/6ad1be4bcaedaf16b79cfca4c934ace5a92c47ff.md",
       "source_location": "L14",
-      "community": 21,
+      "community": 20,
       "norm_label": "code:block1 (error: locator.fill: error: strict mode violation: getbylabe)",
       "id": "data_6ad1be4bcaedaf16b79cfca4c934ace5a92c47ff_codeblock_1"
     },
@@ -3725,7 +3734,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/6ad1be4bcaedaf16b79cfca4c934ace5a92c47ff.md",
       "source_location": "L25",
-      "community": 21,
+      "community": 20,
       "norm_label": "page snapshot",
       "id": "data_6ad1be4bcaedaf16b79cfca4c934ace5a92c47ff_page_snapshot"
     },
@@ -3734,7 +3743,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/6ad1be4bcaedaf16b79cfca4c934ace5a92c47ff.md",
       "source_location": "L27",
-      "community": 21,
+      "community": 20,
       "norm_label": "code:yaml (- generic [ref=e5]:)",
       "id": "data_6ad1be4bcaedaf16b79cfca4c934ace5a92c47ff_codeblock_2"
     },
@@ -3743,7 +3752,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/6ad1be4bcaedaf16b79cfca4c934ace5a92c47ff.md",
       "source_location": "L89",
-      "community": 21,
+      "community": 20,
       "norm_label": "test source",
       "id": "data_6ad1be4bcaedaf16b79cfca4c934ace5a92c47ff_test_source"
     },
@@ -3752,7 +3761,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/6ad1be4bcaedaf16b79cfca4c934ace5a92c47ff.md",
       "source_location": "L91",
-      "community": 21,
+      "community": 20,
       "norm_label": "code:ts (1   | import { test, expect } from \"@playwright/test\")",
       "id": "data_6ad1be4bcaedaf16b79cfca4c934ace5a92c47ff_codeblock_3"
     },
@@ -3761,7 +3770,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/792af29868e4d44c73ca023e79146517fd70c395.md",
       "source_location": "L1",
-      "community": 22,
+      "community": 21,
       "norm_label": "792af29868e4d44c73ca023e79146517fd70c395.md",
       "id": "playwright_report_data_792af29868e4d44c73ca023e79146517fd70c395_md"
     },
@@ -3770,7 +3779,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/792af29868e4d44c73ca023e79146517fd70c395.md",
       "source_location": "L1",
-      "community": 22,
+      "community": 21,
       "norm_label": "instructions",
       "id": "data_792af29868e4d44c73ca023e79146517fd70c395_instructions"
     },
@@ -3779,7 +3788,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/792af29868e4d44c73ca023e79146517fd70c395.md",
       "source_location": "L7",
-      "community": 22,
+      "community": 21,
       "norm_label": "test info",
       "id": "data_792af29868e4d44c73ca023e79146517fd70c395_test_info"
     },
@@ -3788,7 +3797,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/792af29868e4d44c73ca023e79146517fd70c395.md",
       "source_location": "L12",
-      "community": 22,
+      "community": 21,
       "norm_label": "error details",
       "id": "data_792af29868e4d44c73ca023e79146517fd70c395_error_details"
     },
@@ -3797,7 +3806,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/792af29868e4d44c73ca023e79146517fd70c395.md",
       "source_location": "L14",
-      "community": 22,
+      "community": 21,
       "norm_label": "code:block1 (error: expect(locator).tobevisible() failed)",
       "id": "data_792af29868e4d44c73ca023e79146517fd70c395_codeblock_1"
     },
@@ -3806,7 +3815,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/792af29868e4d44c73ca023e79146517fd70c395.md",
       "source_location": "L29",
-      "community": 22,
+      "community": 21,
       "norm_label": "page snapshot",
       "id": "data_792af29868e4d44c73ca023e79146517fd70c395_page_snapshot"
     },
@@ -3815,7 +3824,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/792af29868e4d44c73ca023e79146517fd70c395.md",
       "source_location": "L31",
-      "community": 22,
+      "community": 21,
       "norm_label": "code:yaml (- generic [ref=e5]:)",
       "id": "data_792af29868e4d44c73ca023e79146517fd70c395_codeblock_2"
     },
@@ -3824,7 +3833,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/792af29868e4d44c73ca023e79146517fd70c395.md",
       "source_location": "L74",
-      "community": 22,
+      "community": 21,
       "norm_label": "test source",
       "id": "data_792af29868e4d44c73ca023e79146517fd70c395_test_source"
     },
@@ -3833,7 +3842,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/792af29868e4d44c73ca023e79146517fd70c395.md",
       "source_location": "L76",
-      "community": 22,
+      "community": 21,
       "norm_label": "code:ts (1   | import { test, expect } from \"@playwright/test\")",
       "id": "data_792af29868e4d44c73ca023e79146517fd70c395_codeblock_3"
     },
@@ -3842,7 +3851,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/b479776f257122ea098624f5362cb4c7ea6a13e5.md",
       "source_location": "L1",
-      "community": 23,
+      "community": 22,
       "norm_label": "b479776f257122ea098624f5362cb4c7ea6a13e5.md",
       "id": "playwright_report_data_b479776f257122ea098624f5362cb4c7ea6a13e5_md"
     },
@@ -3851,7 +3860,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/b479776f257122ea098624f5362cb4c7ea6a13e5.md",
       "source_location": "L1",
-      "community": 23,
+      "community": 22,
       "norm_label": "instructions",
       "id": "data_b479776f257122ea098624f5362cb4c7ea6a13e5_instructions"
     },
@@ -3860,7 +3869,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/b479776f257122ea098624f5362cb4c7ea6a13e5.md",
       "source_location": "L7",
-      "community": 23,
+      "community": 22,
       "norm_label": "test info",
       "id": "data_b479776f257122ea098624f5362cb4c7ea6a13e5_test_info"
     },
@@ -3869,7 +3878,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/b479776f257122ea098624f5362cb4c7ea6a13e5.md",
       "source_location": "L12",
-      "community": 23,
+      "community": 22,
       "norm_label": "error details",
       "id": "data_b479776f257122ea098624f5362cb4c7ea6a13e5_error_details"
     },
@@ -3878,7 +3887,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/b479776f257122ea098624f5362cb4c7ea6a13e5.md",
       "source_location": "L14",
-      "community": 23,
+      "community": 22,
       "norm_label": "code:block1 (error: locator.fill: error: strict mode violation: getbylabe)",
       "id": "data_b479776f257122ea098624f5362cb4c7ea6a13e5_codeblock_1"
     },
@@ -3887,7 +3896,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/b479776f257122ea098624f5362cb4c7ea6a13e5.md",
       "source_location": "L25",
-      "community": 23,
+      "community": 22,
       "norm_label": "page snapshot",
       "id": "data_b479776f257122ea098624f5362cb4c7ea6a13e5_page_snapshot"
     },
@@ -3896,7 +3905,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/b479776f257122ea098624f5362cb4c7ea6a13e5.md",
       "source_location": "L27",
-      "community": 23,
+      "community": 22,
       "norm_label": "code:yaml (- generic [ref=e5]:)",
       "id": "data_b479776f257122ea098624f5362cb4c7ea6a13e5_codeblock_2"
     },
@@ -3905,7 +3914,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/b479776f257122ea098624f5362cb4c7ea6a13e5.md",
       "source_location": "L90",
-      "community": 23,
+      "community": 22,
       "norm_label": "test source",
       "id": "data_b479776f257122ea098624f5362cb4c7ea6a13e5_test_source"
     },
@@ -3914,7 +3923,7 @@
       "file_type": "document",
       "source_file": "playwright-report/data/b479776f257122ea098624f5362cb4c7ea6a13e5.md",
       "source_location": "L92",
-      "community": 23,
+      "community": 22,
       "norm_label": "code:ts (28  |   }))",
       "id": "data_b479776f257122ea098624f5362cb4c7ea6a13e5_codeblock_3"
     },
@@ -3922,7 +3931,7 @@
       "label": "TaskBuddy App",
       "file_type": "code",
       "source_file": "src/App.tsx",
-      "community": 26,
+      "community": 25,
       "norm_label": "taskbuddy app",
       "id": "app_taskbuddy"
     },
@@ -3930,7 +3939,7 @@
       "label": "Auth Context",
       "file_type": "code",
       "source_file": "src/contexts/AuthContext.tsx",
-      "community": 26,
+      "community": 25,
       "norm_label": "auth context",
       "id": "context_auth"
     },
@@ -3938,7 +3947,7 @@
       "label": "API Hooks",
       "file_type": "code",
       "source_file": "src/hooks/useApi.ts",
-      "community": 25,
+      "community": 24,
       "norm_label": "api hooks",
       "id": "hook_useapi"
     },
@@ -3946,7 +3955,7 @@
       "label": "Dashboard Page",
       "file_type": "code",
       "source_file": "src/pages/DashboardDemo.tsx",
-      "community": 25,
+      "community": 24,
       "norm_label": "dashboard page",
       "id": "page_dashboard"
     },
@@ -3954,7 +3963,7 @@
       "label": "Audit Trail",
       "file_type": "code",
       "source_file": "src/components/audit-trail.tsx",
-      "community": 25,
+      "community": 24,
       "norm_label": "audit trail",
       "id": "comp_audittrail"
     },
@@ -3962,7 +3971,7 @@
       "label": "Backend API Docs",
       "file_type": "document",
       "source_file": "API.md",
-      "community": 25,
+      "community": 24,
       "norm_label": "backend api docs",
       "id": "doc_api"
     },
@@ -3970,7 +3979,7 @@
       "label": "Project README",
       "file_type": "document",
       "source_file": "README.md",
-      "community": 32,
+      "community": 31,
       "norm_label": "project readme",
       "id": "doc_readme"
     },
@@ -3978,7 +3987,7 @@
       "label": "Task Model",
       "file_type": "rationale",
       "source_file": "src/hooks/useApi.ts",
-      "community": 27,
+      "community": 26,
       "norm_label": "task model",
       "id": "entity_task"
     },
@@ -3986,7 +3995,7 @@
       "label": "Subtask Model",
       "file_type": "rationale",
       "source_file": "src/hooks/useApi.ts",
-      "community": 27,
+      "community": 26,
       "norm_label": "subtask model",
       "id": "entity_subtask"
     },
@@ -3994,7 +4003,7 @@
       "label": "Tag Model",
       "file_type": "rationale",
       "source_file": "src/hooks/useApi.ts",
-      "community": 27,
+      "community": 26,
       "norm_label": "tag model",
       "id": "entity_tag"
     },
@@ -4002,7 +4011,7 @@
       "label": "App Icon",
       "file_type": "image",
       "source_file": "public/task-buddy-icon.svg",
-      "community": 26,
+      "community": 25,
       "norm_label": "app icon",
       "id": "img_logo"
     }
@@ -4580,6 +4589,16 @@
       "confidence_score": 1.0,
       "source": "src_components_audit_trail_tsx",
       "target": "components_audit_trail_token"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/audit-trail.tsx",
+      "source_location": "L42",
+      "weight": 1.0,
+      "source": "src_components_audit_trail_tsx",
+      "target": "components_audit_trail_skeletonids",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -10979,5 +10998,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "90728e66558f972c0921b68b33bd1d92c003bef5"
+  "built_at_commit": "ca565c38f446653a2a7fa5e46de4c8b0ad5321d7"
 }

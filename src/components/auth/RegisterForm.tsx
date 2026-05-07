@@ -13,6 +13,7 @@ import {
   EyeOff,
   KeyRound,
   Mail,
+  User,
   UserPlus,
 } from "lucide-react"
 import {
@@ -64,8 +65,7 @@ export function RegisterForm() {
       })
       toast({
         title: "Account created!",
-        description: "Your account has been created successfully. Please log in to continue.",
-        variant: "success",
+        description: "Welcome to Task Buddy. Please log in to start your journey.",
       })
       navigate("/login")
     } catch (err: unknown) {
@@ -84,201 +84,117 @@ export function RegisterForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      {/* Username Field */}
-      <FormField
-        id="username"
-        label="Username"
-        icon={<UserPlus className="h-4 w-4" />}
-        error={usernameError}
-        showError={submitAttempted || username.length > 0}
-        helpText="3-32 characters. Letters, numbers, dots, underscores, and hyphens only."
-      >
-        <Input
-          id="username"
-          type="text"
-          autoComplete="username"
-          placeholder="your.username"
-          value={username}
-          onChange={(e) => setUsername(sanitizeUsername(e.target.value))}
-          onBlur={() => setSubmitAttempted(true)}
-          required
-          className="h-12 pl-10"
-        />
-      </FormField>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-2">
+        <Label htmlFor="username" className="text-sm font-semibold ml-1">
+          Username
+        </Label>
+        <div className="relative group">
+          <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground transition-colors group-focus-within:text-accent" />
+          <Input
+            id="username"
+            type="text"
+            placeholder="your_handle"
+            value={username}
+            onChange={(e) => setUsername(sanitizeUsername(e.target.value))}
+            required
+            className="h-14 rounded-2xl border-border bg-background/50 pl-12 text-lg focus-visible:ring-accent/30"
+          />
+        </div>
+        {(submitAttempted || username.length > 0) && usernameError && (
+          <p className="mt-1.5 text-xs text-destructive ml-1">{usernameError}</p>
+        )}
+      </div>
 
-      {/* Email Field */}
-      <FormField
-        id="email"
-        label="Email"
-        icon={<Mail className="h-4 w-4" />}
-        error={emailError}
-        showError={submitAttempted || email.length > 0}
-        helpText="We use this for account recovery and notifications."
-      >
-        <Input
-          id="email"
-          type="email"
-          autoComplete="email"
-          placeholder="you@example.com"
-          value={email}
-          onChange={(e) => setEmail(sanitizeEmail(e.target.value))}
-          onBlur={() => setSubmitAttempted(true)}
-          required
-          className="h-12 pl-10"
-        />
-      </FormField>
+      <div className="space-y-2">
+        <Label htmlFor="email" className="text-sm font-semibold ml-1">
+          Email Address
+        </Label>
+        <div className="relative group">
+          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground transition-colors group-focus-within:text-accent" />
+          <Input
+            id="email"
+            type="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(sanitizeEmail(e.target.value))}
+            required
+            className="h-14 rounded-2xl border-border bg-background/50 pl-12 text-lg focus-visible:ring-accent/30"
+          />
+        </div>
+        {(submitAttempted || email.length > 0) && emailError && (
+          <p className="mt-1.5 text-xs text-destructive ml-1">{emailError}</p>
+        )}
+      </div>
 
-      {/* Password Field */}
-      <FormField
-        id="password"
-        label="Password"
-        icon={<KeyRound className="h-4 w-4" />}
-        error={passwordError}
-        showError={submitAttempted || password.length > 0}
-      >
-        <div className="relative">
+      <div className="space-y-2">
+        <Label htmlFor="password" title="At least 8 characters" className="text-sm font-semibold ml-1">
+          Password
+        </Label>
+        <div className="relative group">
+          <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground transition-colors group-focus-within:text-accent" />
           <Input
             id="password"
             type={showPassword ? "text" : "password"}
-            autoComplete="new-password"
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(sanitizePassword(e.target.value))}
-            onBlur={() => setSubmitAttempted(true)}
             required
-            className="h-12 pl-10 pr-12"
+            className="h-14 rounded-2xl border-border bg-background/50 pl-12 pr-12 text-lg focus-visible:ring-accent/30"
           />
-          <PasswordToggle
-            isVisible={showPassword}
-            onToggle={() => setShowPassword(!showPassword)}
-          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((v) => !v)}
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+          </button>
         </div>
         <PasswordStrengthMeter password={password} />
-      </FormField>
+        {(submitAttempted || password.length > 0) && passwordError && (
+          <p className="mt-1.5 text-xs text-destructive ml-1">{passwordError}</p>
+        )}
+      </div>
 
-      {/* Confirm Password Field */}
-      <FormField
-        id="confirmPassword"
-        label="Confirm Password"
-        icon={<BadgeCheck className="h-4 w-4" />}
-        error={confirmPasswordError}
-        showError={submitAttempted || confirmPassword.length > 0}
-        helpText="Re-enter the password exactly as above."
-      >
-        <div className="relative">
+      <div className="space-y-2">
+        <Label htmlFor="confirmPassword" title="Passwords must match" className="text-sm font-semibold ml-1">
+          Confirm Password
+        </Label>
+        <div className="relative group">
+          <BadgeCheck className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground transition-colors group-focus-within:text-accent" />
           <Input
             id="confirmPassword"
             type={showConfirmPassword ? "text" : "password"}
-            autoComplete="new-password"
             placeholder="••••••••"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(sanitizePassword(e.target.value))}
-            onBlur={() => setSubmitAttempted(true)}
             required
-            className="h-12 pl-10 pr-12"
+            className="h-14 rounded-2xl border-border bg-background/50 pl-12 pr-12 text-lg focus-visible:ring-accent/30"
           />
-          <PasswordToggle
-            isVisible={showConfirmPassword}
-            onToggle={() => setShowConfirmPassword(!showConfirmPassword)}
-          />
+          <button
+            type="button"
+            onClick={() => setShowConfirmPassword((v) => !v)}
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+          </button>
         </div>
-      </FormField>
-
-      {error && (
-        <motion.div
-          initial={{ opacity: 0, y: -4 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-          role="alert"
-        >
-          {error}
-        </motion.div>
-      )}
-
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.16, delay: 0.12 }}
-      >
-        <Button
-          type="submit"
-          disabled={loading || !isFormValid}
-          className="h-12 w-full gap-2"
-        >
-          {loading ? (
-            "Creating account..."
-          ) : (
-            <>
-              <UserPlus className="h-4 w-4" />
-              Create Account
-              <ArrowRight className="h-4 w-4" />
-            </>
-          )}
-        </Button>
-      </motion.div>
-    </form>
-  )
-}
-
-function FormField({
-  id,
-  label,
-  icon,
-  error,
-  showError,
-  helpText,
-  children,
-}: Readonly<{
-  id: string
-  label: string
-  icon: React.ReactNode
-  error: string | null
-  showError: boolean
-  helpText?: string
-  children: React.ReactNode
-}>) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: -8 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.16 }}
-    >
-      <Label htmlFor={id} className="text-sm font-medium">
-        {label}
-      </Label>
-      <div className="relative mt-2">
-        <div className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground">
-          {icon}
-        </div>
-        {children}
+        {(submitAttempted || confirmPassword.length > 0) && confirmPasswordError && (
+          <p className="mt-1.5 text-xs text-destructive ml-1">{confirmPasswordError}</p>
+        )}
       </div>
-      {helpText && !error && (
-        <p className="mt-2 text-xs text-muted-foreground">{helpText}</p>
-      )}
-      {showError && error && (
-        <p role="alert" className="mt-2 text-xs text-red-600">
-          {error}
-        </p>
-      )}
-    </motion.div>
-  )
-}
 
-function PasswordToggle({
-  isVisible,
-  onToggle,
-}: Readonly<{
-  isVisible: boolean
-  onToggle: () => void
-}>) {
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      className="absolute top-1/2 right-3 -translate-y-1/2 rounded p-1 text-muted-foreground/60 transition-colors hover:text-foreground"
-    >
-      {isVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-    </button>
+      <Button
+        type="submit"
+        disabled={loading || !isFormValid}
+        className="w-full h-14 rounded-2xl text-lg font-bold shadow-xl shadow-primary/10 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
+      >
+        {loading ? (
+          <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="h-6 w-6 border-2 border-primary-foreground border-t-transparent rounded-full" />
+        ) : (
+          <span className="flex items-center gap-2">Create Account <ArrowRight className="h-5 w-5" /></span>
+        )}
+      </Button>
+    </form>
   )
 }
