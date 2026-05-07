@@ -85,6 +85,7 @@ function DashboardLayout() {
 
       {/* New Task Modal */}
       <NewTaskModal
+        key={editingTask?.id ?? "new"}
         open={isModalOpen}
         onOpenChange={handleOpenChange}
         onSubmit={handleCreateTask}

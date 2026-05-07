@@ -5,10 +5,10 @@ type Theme = "dark" | "light" | "system"
 type ResolvedTheme = "dark" | "light"
 
 type ThemeProviderProps = {
-  children: React.ReactNode
-  defaultTheme?: Theme
-  storageKey?: string
-  disableTransitionOnChange?: boolean
+  readonly children: React.ReactNode
+  readonly defaultTheme?: Theme
+  readonly storageKey?: string
+  readonly disableTransitionOnChange?: boolean
 }
 
 type ThemeProviderState = {
@@ -17,7 +17,7 @@ type ThemeProviderState = {
 }
 
 const COLOR_SCHEME_QUERY = "(prefers-color-scheme: dark)"
-const THEME_VALUES: Theme[] = ["dark", "light", "system"]
+const THEME_VALUES = new Set<Theme>(["dark", "light", "system"])
 
 const ThemeProviderContext = React.createContext<
   ThemeProviderState | undefined
@@ -28,11 +28,11 @@ function isTheme(value: string | null): value is Theme {
     return false
   }
 
-  return THEME_VALUES.includes(value as Theme)
+  return THEME_VALUES.has(value as Theme)
 }
 
 function getSystemTheme(): ResolvedTheme {
-  if (window.matchMedia(COLOR_SCHEME_QUERY).matches) {
+  if (globalThis.matchMedia(COLOR_SCHEME_QUERY).matches) {
     return "dark"
   }
 
@@ -49,7 +49,7 @@ function disableTransitionsTemporarily() {
   document.head.appendChild(style)
 
   return () => {
-    window.getComputedStyle(document.body)
+    globalThis.getComputedStyle(document.body)
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         style.remove()
@@ -58,32 +58,13 @@ function disableTransitionsTemporarily() {
   }
 }
 
-function isEditableTarget(target: EventTarget | null) {
-  if (!(target instanceof HTMLElement)) {
-    return false
-  }
-
-  if (target.isContentEditable) {
-    return true
-  }
-
-  const editableParent = target.closest(
-    "input, textarea, select, [contenteditable='true']"
-  )
-  if (editableParent) {
-    return true
-  }
-
-  return false
-}
-
 export function ThemeProvider({
   children,
   defaultTheme = "light",
   storageKey = "theme",
   disableTransitionOnChange = true,
   ...props
-}: ThemeProviderProps) {
+}: Readonly<ThemeProviderProps>) {
   const [theme, setThemeState] = React.useState<Theme>(() => {
     const storedTheme = localStorage.getItem(storageKey)
     if (isTheme(storedTheme)) {
@@ -127,7 +108,7 @@ export function ThemeProvider({
       return undefined
     }
 
-    const mediaQuery = window.matchMedia(COLOR_SCHEME_QUERY)
+    const mediaQuery = globalThis.matchMedia(COLOR_SCHEME_QUERY)
     const handleChange = () => {
       applyTheme("system")
     }
@@ -158,10 +139,10 @@ export function ThemeProvider({
       setThemeState(defaultTheme)
     }
 
-    window.addEventListener("storage", handleStorageChange)
+    globalThis.addEventListener("storage", handleStorageChange)
 
     return () => {
-      window.removeEventListener("storage", handleStorageChange)
+      globalThis.removeEventListener("storage", handleStorageChange)
     }
   }, [defaultTheme, storageKey])
 

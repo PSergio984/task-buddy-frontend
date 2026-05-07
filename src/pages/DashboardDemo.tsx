@@ -57,6 +57,7 @@ export function DashboardDemo() {
 
       {/* New Task Modal */}
       <NewTaskModal
+        key={isModalOpen ? "open" : "closed"}
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
         onSubmit={handleCreateTask}

@@ -21,7 +21,7 @@ const USERNAME_REGEX =
 const CONTROL_CHARS = /[\u0000-\u001F\u007F]/g
 
 function normalizeText(value: string) {
-  return value.normalize("NFKC").replace(CONTROL_CHARS, "")
+  return value.normalize("NFKC").replaceAll(CONTROL_CHARS, "")
 }
 
 function formatFirstBackendError(detail: unknown): string | null {
@@ -49,7 +49,7 @@ function formatFirstBackendError(detail: unknown): string | null {
 }
 
 export function sanitizeUsername(value: string) {
-  return normalizeText(value).replace(/[^A-Za-z0-9._@\- ]/g, "")
+  return normalizeText(value).replaceAll(/[^A-Za-z0-9._@\- ]/g, "")
 }
 
 export function sanitizeEmail(value: string) {

@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card"
 import { LayoutGrid, PieChart } from "lucide-react"
 import type { StatsOverview } from "@/hooks/useApi"
 
-export function SystemOverview({ stats, loading }: { stats: StatsOverview | null, loading: boolean }) {
+export function SystemOverview({ stats, loading }: Readonly<{ stats: StatsOverview | null, loading: boolean }>) {
   if (loading || !stats) {
     return (
       <Card className="border-border bg-card p-6 animate-pulse">

@@ -9,10 +9,10 @@ import { LogoutDialog } from "@/components/logout-dialog"
 import { ThemeToggle } from "@/components/theme-toggle"
 
 export interface TopNavProps {
-  onNewTask: () => void
+  readonly onNewTask: () => void
 }
 
-export function TopNav({ onNewTask }: TopNavProps) {
+export function TopNav({ onNewTask }: Readonly<TopNavProps>) {
   const { user, logout } = useAuth()
   const { toast } = useToast()
   const navigate = useNavigate()

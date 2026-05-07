@@ -67,6 +67,8 @@ export function useTasks(filter?: string) {
       return
     }
     try {
+      // Force to next tick to avoid synchronous setState in effect warning
+      await Promise.resolve()
       setLoading(true)
       let url = `${API_BASE_URL}/api/v1/tasks/`
       
@@ -83,7 +85,7 @@ export function useTasks(filter?: string) {
       const data = response.data
       setTasks(Array.isArray(data) ? data : data.items || [])
       setError(null)
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err instanceof Error ? err : new Error("Unknown error"))
     } finally {
       setLoading(false)
@@ -91,7 +93,7 @@ export function useTasks(filter?: string) {
   }, [token, filter])
 
   useEffect(() => {
-    fetchTasks()
+    void fetchTasks()
   }, [fetchTasks])
 
   return { tasks, loading, error, refreshTasks: fetchTasks }
@@ -110,13 +112,14 @@ export function useStats() {
       return
     }
     try {
+      await Promise.resolve()
       setLoading(true)
       const response = await axios.get(`${API_BASE_URL}/api/v1/stats/overview`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       setStats(response.data)
       setError(null)
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err instanceof Error ? err : new Error("Unknown error"))
     } finally {
       setLoading(false)
@@ -124,7 +127,7 @@ export function useStats() {
   }, [token])
 
   useEffect(() => {
-    fetchStats()
+    void fetchStats()
   }, [fetchStats])
 
   return { stats, loading, error, refreshStats: fetchStats }
@@ -146,7 +149,7 @@ export function useCreateTask() {
         })
         setError(null)
         return response.data
-      } catch (err: any) {
+      } catch (err: unknown) {
         const error = err instanceof Error ? err : new Error("Unknown error")
         setError(error)
         throw error
@@ -175,7 +178,7 @@ export function useUpdateTask() {
       })
       setError(null)
       return response.data
-    } catch (err: any) {
+    } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error("Unknown error")
       setError(error)
       throw error
@@ -201,7 +204,7 @@ export function useDeleteTask() {
         headers: { Authorization: `Bearer ${token}` },
       })
       setError(null)
-    } catch (err: any) {
+    } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error("Unknown error")
       setError(error)
       throw error
@@ -228,7 +231,7 @@ export function useUpdateSubtask() {
       })
       setError(null)
       return response.data
-    } catch (err: any) {
+    } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error("Unknown error")
       setError(error)
       throw error
@@ -254,7 +257,7 @@ export function useDeleteSubtask() {
         headers: { Authorization: `Bearer ${token}` },
       })
       setError(null)
-    } catch (err: any) {
+    } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error("Unknown error")
       setError(error)
       throw error
@@ -280,7 +283,7 @@ export function useDetachTag() {
         headers: { Authorization: `Bearer ${token}` },
       })
       setError(null)
-    } catch (err: any) {
+    } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error("Unknown error")
       setError(error)
       throw error
@@ -306,7 +309,7 @@ export function useDeleteTag() {
         headers: { Authorization: `Bearer ${token}` },
       })
       setError(null)
-    } catch (err: any) {
+    } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error("Unknown error")
       setError(error)
       throw error

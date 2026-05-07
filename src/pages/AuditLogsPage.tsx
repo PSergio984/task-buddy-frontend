@@ -27,8 +27,8 @@ export function AuditLogsPage() {
               <p className="text-sm text-muted-foreground">Complete history of system activities</p>
             </div>
 
-            <div className="rounded-xl bg-card shadow-sm overflow-hidden border border-border">
-               <AuditTrail />
+            <div className="rounded-xl bg-card shadow-sm overflow-hidden border border-border h-[600px]">
+               <AuditTrail hideCard limit={15} />
             </div>
           </motion.div>
         </main>

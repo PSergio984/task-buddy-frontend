@@ -14,11 +14,11 @@ import { useToast } from "@/hooks/use-toast"
 import { LogoutDialog } from "@/components/logout-dialog"
 
 export interface SidebarProps {
-  activeFilter: string
-  onFilterChange: (filter: string) => void
+  readonly activeFilter: string
+  readonly onFilterChange: (filter: string) => void
 }
 
-export function Sidebar({ activeFilter, onFilterChange }: SidebarProps) {
+export function Sidebar({ activeFilter, onFilterChange }: Readonly<SidebarProps>) {
   const { logout, user } = useAuth()
   const { toast } = useToast()
   const navigate = useNavigate()

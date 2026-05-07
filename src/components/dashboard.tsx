@@ -12,17 +12,18 @@ import {
   useDeleteSubtask,
   useDetachTag,
 } from "@/hooks/useApi"
-import type { Task } from "@/hooks/useApi"
+import type { Task, StatsOverview } from "@/hooks/useApi"
 import { useToast } from "@/hooks/use-toast"
+import axios from "axios"
 
 export interface DashboardProps {
-  tasks: Task[]
-  activeFilter: string
-  onFilterChange: (filter: string) => void
-  onRefresh: () => void
-  onEdit: (task: Task) => void
-  stats: any
-  loadingStats: boolean
+  readonly tasks: Task[]
+  readonly activeFilter: string
+  readonly onFilterChange: (filter: string) => void
+  readonly onRefresh: () => void
+  readonly onEdit: (task: Task) => void
+  readonly stats: StatsOverview | null
+  readonly loadingStats: boolean
 }
 
 export function Dashboard({
@@ -33,7 +34,7 @@ export function Dashboard({
   onEdit,
   stats,
   loadingStats,
-}: DashboardProps) {
+}: Readonly<DashboardProps>) {
   const { logout } = useAuth()
   const { updateTask } = useUpdateTask()
   const { deleteTask } = useDeleteTask()
@@ -52,13 +53,15 @@ export function Dashboard({
           completed: !task.completed,
         })
         toast({
-          title: !task.completed ? "Task completed!" : "Task restored",
-          description: !task.completed ? "Excellent work on completing the task." : "The task has been moved back to pending.",
+          title: task.completed ? "Task restored" : "Task completed!",
+          description: task.completed
+            ? "The task has been moved back to pending."
+            : "Excellent work on completing the task.",
           variant: "success",
         })
         onRefresh()
-      } catch (err: any) {
-        if (err.response?.status === 401) {
+      } catch (err: unknown) {
+        if (axios.isAxiosError(err) && err.response?.status === 401) {
           await logout()
           return
         }
@@ -70,7 +73,7 @@ export function Dashboard({
         console.error("Failed to update task:", err)
       }
     },
-    [tasks, updateTask, onRefresh, toast]
+    [tasks, updateTask, onRefresh, toast, logout]
   )
 
   const handleDelete = useCallback(
@@ -83,8 +86,8 @@ export function Dashboard({
           variant: "success",
         })
         onRefresh()
-      } catch (err: any) {
-        if (err.response?.status === 401) {
+      } catch (err: unknown) {
+        if (axios.isAxiosError(err) && err.response?.status === 401) {
           await logout()
           return
         }
@@ -96,7 +99,7 @@ export function Dashboard({
         console.error("Failed to delete task:", err)
       }
     },
-    [deleteTask, onRefresh, toast]
+    [deleteTask, onRefresh, toast, logout]
   )
 
   const handleToggleSubtask = useCallback(
@@ -105,6 +108,7 @@ export function Dashboard({
         await updateSubtask(subtaskId, { completed })
         onRefresh()
       } catch (err) {
+        console.error("Failed to update subtask:", err)
         toast({
           title: "Update failed",
           description: "Could not update subtask status.",
@@ -125,6 +129,7 @@ export function Dashboard({
         })
         onRefresh()
       } catch (err) {
+        console.error("Failed to delete subtask:", err)
         toast({
           title: "Delete failed",
           description: "Could not delete subtask.",
@@ -141,6 +146,7 @@ export function Dashboard({
         await detachTag(taskId, tagId)
         onRefresh()
       } catch (err) {
+        console.error("Failed to detach tag:", err)
         toast({
           title: "Detach failed",
           description: "Could not remove tag from task.",
@@ -182,30 +188,26 @@ export function Dashboard({
           <TabsList className="grid w-full grid-cols-3 border border-border bg-card">
             <TabsTrigger
               value="all"
-              className="text-xs font-bold tracking-widest text-foreground/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all"
+              className="text-xs font-bold tracking-widest text-foreground/50 transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             >
               ALL
             </TabsTrigger>
             <TabsTrigger
               value="pending"
-              className="text-xs font-bold tracking-widest text-foreground/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all"
+              className="text-xs font-bold tracking-widest text-foreground/50 transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             >
               PENDING
             </TabsTrigger>
             <TabsTrigger
               value="completed"
-              className="text-xs font-bold tracking-widest text-foreground/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all"
+              className="text-xs font-bold tracking-widest text-foreground/50 transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             >
               COMPLETED
             </TabsTrigger>
           </TabsList>
 
           {(["all", "pending", "completed"] as const).map((status) => (
-            <TabsContent
-              key={status}
-              value={status}
-              className="mt-4 space-y-3"
-            >
+            <TabsContent key={status} value={status} className="mt-4 space-y-3">
               {tasks.length === 0 ? (
                 <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">
                   No tasks found

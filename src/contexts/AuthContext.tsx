@@ -3,6 +3,7 @@ import {
   useContext,
   useState,
   useCallback,
+  useMemo,
   type ReactNode,
 } from "react"
 import axios from "axios"
@@ -40,20 +41,20 @@ const API_BASE_URL =
 const TOKEN_STORAGE_KEY = "auth_token"
 const USER_STORAGE_KEY = "auth_user"
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [user, setUser] = useState<AuthUser | null>(() => {
-    const s = localStorage.getItem(USER_STORAGE_KEY)
+    const s = globalThis.localStorage.getItem(USER_STORAGE_KEY)
     if (!s) return null
     try {
       return JSON.parse(s) as AuthUser
     } catch {
-      localStorage.removeItem(USER_STORAGE_KEY)
+      globalThis.localStorage.removeItem(USER_STORAGE_KEY)
       return null
     }
   })
 
   const [token, setToken] = useState<string | null>(() => {
-    return localStorage.getItem(TOKEN_STORAGE_KEY)
+    return globalThis.localStorage.getItem(TOKEN_STORAGE_KEY)
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -87,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         setToken(newToken)
-        localStorage.setItem(TOKEN_STORAGE_KEY, newToken)
+        globalThis.localStorage.setItem(TOKEN_STORAGE_KEY, newToken)
 
         const nextUser = normalizeAuthUser(response.data)
         if (!nextUser) {
@@ -97,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           )
         }
         setUser(nextUser)
-        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextUser))
+        globalThis.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextUser))
       } catch (err) {
         setError(getAuthErrorMessage(err, "Login failed."))
         throw err
@@ -133,13 +134,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const nextUser = normalizeAuthUser(response.data)
         if (nextUser) {
           setUser(nextUser)
-          localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextUser))
+          globalThis.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextUser))
         }
 
         const newToken = extractAccessToken(response.data)
         if (newToken) {
           setToken(newToken)
-          localStorage.setItem(TOKEN_STORAGE_KEY, newToken)
+          globalThis.localStorage.setItem(TOKEN_STORAGE_KEY, newToken)
         }
       } catch (err) {
         setError(getAuthErrorMessage(err, "Registration failed."))
@@ -158,14 +159,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           headers: { Authorization: `Bearer ${token}` }
         });
       } catch (err) {
-        console.error("Backend logout failed:", err);
+        // Log the logout failure but continue with local state cleanup
+        // to ensure the user is logged out on the client side.
+        console.error("Logout request failed, cleaning up local session anyway.", err);
       }
     }
     setToken(null)
     setUser(null)
     setError(null)
-    localStorage.removeItem(TOKEN_STORAGE_KEY)
-    localStorage.removeItem(USER_STORAGE_KEY)
+    globalThis.localStorage.removeItem(TOKEN_STORAGE_KEY)
+    globalThis.localStorage.removeItem(USER_STORAGE_KEY)
   }, [token])
 
   const refreshUser = useCallback(async () => {
@@ -183,38 +186,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const nextUser = normalizeAuthUser(response.data)
       if (nextUser) {
         setUser(nextUser)
-        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextUser))
+        globalThis.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextUser))
       }
       setError(null)
-    } catch (err: any) {
-      if (err.response?.status === 401) {
-        await logout()
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        if (err.response?.status === 401) {
+          await logout()
+        } else {
+          setError(err.response?.data?.detail || "Failed to refresh user profile")
+        }
       } else {
-        setError(err.response?.data?.detail || "Failed to refresh user profile")
+        setError("Failed to refresh user profile")
       }
     } finally {
       setLoading(false)
     }
   }, [token, logout])
 
+  const value = useMemo(() => ({
+    user,
+    token,
+    loading,
+    error,
+    login,
+    register,
+    logout,
+    refreshUser,
+  }), [user, token, loading, error, login, register, logout, refreshUser])
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        token,
-        loading,
-        error,
-        login,
-        register,
-        logout,
-        refreshUser,
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext)
   if (context === undefined) {
@@ -222,3 +230,4 @@ export function useAuth() {
   }
   return context
 }
+

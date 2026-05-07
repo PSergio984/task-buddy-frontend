@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import {
   Dialog,
   DialogContent,
@@ -20,13 +20,13 @@ import {
 import type { Task } from "@/hooks/useApi"
 
 export interface NewTaskModalProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onSubmit: (
+  readonly open: boolean
+  readonly onOpenChange: (open: boolean) => void
+  readonly onSubmit: (
     taskData: Omit<Task, "id" | "created_at" | "user_id">
   ) => Promise<void>
-  isLoading: boolean
-  task?: Task | null
+  readonly isLoading: boolean
+  readonly task?: Task | null
 }
 
 export function NewTaskModal({
@@ -35,31 +35,19 @@ export function NewTaskModal({
   onSubmit,
   isLoading,
   task,
-}: NewTaskModalProps) {
-  const [title, setTitle] = useState("")
-  const [description, setDescription] = useState("")
-  const [priority, setPriority] = useState<"low" | "medium" | "high">("medium")
+}: Readonly<NewTaskModalProps>) {
+  const [title, setTitle] = useState(task?.title ?? "")
+  const [description, setDescription] = useState(task?.description ?? "")
+  const [priority, setPriority] = useState<"low" | "medium" | "high">(
+    task?.priority ?? "medium"
+  )
   const [category, setCategory] = useState<
     "work" | "personal" | "school" | "health" | "other"
-  >("work")
-  const [dueDate, setDueDate] = useState("")
+  >(task?.category ?? "work")
+  const [dueDate, setDueDate] = useState(
+    task?.due_date ? task.due_date.split("T")[0] : ""
+  )
   const isEditMode = !!task
-
-  useEffect(() => {
-    if (open && task) {
-      setTitle(task.title)
-      setDescription(task.description || "")
-      setPriority(task.priority as any)
-      setCategory(task.category as any)
-      setDueDate(task.due_date ? task.due_date.split('T')[0] : "")
-    } else if (open && !task) {
-      setTitle("")
-      setDescription("")
-      setPriority("medium")
-      setCategory("work")
-      setDueDate("")
-    }
-  }, [open, task])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -77,7 +65,7 @@ export function NewTaskModal({
 
     try {
       await onSubmit(taskData)
-      // Reset form
+      // Reset form (though key change in parent will also handle this)
       setTitle("")
       setDescription("")
       setPriority("medium")
@@ -85,7 +73,7 @@ export function NewTaskModal({
       setDueDate("")
       onOpenChange(false)
     } catch (error) {
-      console.error("Failed to create task:", error)
+      console.error("Failed to save task:", error)
     }
   }
 
@@ -208,9 +196,12 @@ export function NewTaskModal({
                 disabled={isLoading || !title.trim()}
                 className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 transition-all"
               >
-                {isLoading 
-                  ? (isEditMode ? "Updating..." : "Creating...") 
-                  : (isEditMode ? "Update Task" : "Create Task")}
+                {(() => {
+                  if (isLoading) {
+                    return isEditMode ? "Updating..." : "Creating..."
+                  }
+                  return isEditMode ? "Update Task" : "Create Task"
+                })()}
               </Button>
             </DialogFooter>
           </form>

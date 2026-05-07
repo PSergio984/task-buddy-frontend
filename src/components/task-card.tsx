@@ -7,13 +7,13 @@ import { Trash2, Edit2, Calendar, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export interface TaskCardProps {
-  task: Task
-  onToggleComplete: (id: number) => void
-  onDelete: (id: number) => void
-  onEdit: (task: Task) => void
-  onToggleSubtask?: (subtaskId: number, completed: boolean) => void
-  onDeleteSubtask?: (subtaskId: number) => void
-  onDetachTag?: (taskId: number, tagId: number) => void
+  readonly task: Task
+  readonly onToggleComplete: (id: number) => void
+  readonly onDelete: (id: number) => void
+  readonly onEdit: (task: Task) => void
+  readonly onToggleSubtask?: (subtaskId: number, completed: boolean) => void
+  readonly onDeleteSubtask?: (subtaskId: number) => void
+  readonly onDetachTag?: (taskId: number, tagId: number) => void
 }
 
 const priorityConfig = {
@@ -85,7 +85,7 @@ export function TaskCard({
                 {task.title}
               </p>
 
-              {task.description && (
+              {task?.description && (
                 <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
                   {task.description}
                 </p>
@@ -111,7 +111,7 @@ export function TaskCard({
                 </span>
 
                 {/* Dynamic Tags */}
-                {task.tags && task.tags.map((tag) => (
+                {task?.tags?.map((tag) => (
                   <span
                     key={tag.id}
                     className="group relative flex items-center gap-1 rounded bg-muted px-2 py-1 text-xs font-medium text-muted-foreground"
@@ -127,7 +127,7 @@ export function TaskCard({
                   </span>
                 ))}
 
-                {task.due_date && (
+                {task?.due_date && (
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Calendar className="h-3 w-3" />
                     {new Date(task.due_date).toLocaleDateString()}
@@ -136,7 +136,7 @@ export function TaskCard({
               </div>
 
               {/* Subtasks */}
-              {task.subtasks && task.subtasks.length > 0 && (
+              {task?.subtasks?.length > 0 && (
                 <div className="mt-4 space-y-2 border-t border-border pt-3">
                   <p className="text-[10px] font-bold tracking-widest text-muted-foreground/40 uppercase">Subtasks</p>
                   {task.subtasks.map((subtask) => (

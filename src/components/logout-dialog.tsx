@@ -9,12 +9,12 @@ import {
 import { Button } from "@/components/ui/button"
 
 interface LogoutDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onConfirm: () => void
+  readonly open: boolean
+  readonly onOpenChange: (open: boolean) => void
+  readonly onConfirm: () => void
 }
 
-export function LogoutDialog({ open, onOpenChange, onConfirm }: LogoutDialogProps) {
+export function LogoutDialog({ open, onOpenChange, onConfirm }: Readonly<LogoutDialogProps>) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px] border-border bg-card p-0 overflow-hidden shadow-2xl">

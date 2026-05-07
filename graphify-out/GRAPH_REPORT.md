@@ -1,12 +1,18 @@
-# Graph Report - .  (2026-05-07)
+# Graph Report - task-buddy-frontend  (2026-05-07)
 
 ## Corpus Check
-- Corpus is ~36,384 words - fits in a single context window. You may not need a graph.
+- 50 files · ~36,384 words
+- Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 213 nodes · 422 edges · 16 communities (15 shown, 1 thin omitted)
+- 386 nodes · 583 edges · 28 communities (27 shown, 1 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 2 edges (avg confidence: 0.9)
-- Token cost: 1,500 input · 500 output
+- Token cost: 0 input · 0 output
+
+## Graph Freshness
+- Built from commit: `09c53c32`
+- Run `git rev-parse HEAD` and compare to check if the graph is stale.
+- Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - [[_COMMUNITY_Authentication & Authorization|Authentication & Authorization]]
@@ -20,97 +26,157 @@
 - [[_COMMUNITY_API Documentation & Integration|API Documentation & Integration]]
 - [[_COMMUNITY_Main Application Shell|Main Application Shell]]
 - [[_COMMUNITY_Data Models & Entities|Data Models & Entities]]
+- [[_COMMUNITY_Linting Configuration|Linting Configuration]]
+- [[_COMMUNITY_Playwright Testing Config|Playwright Testing Config]]
+- [[_COMMUNITY_Tailwind CSS Styling|Tailwind CSS Styling]]
+- [[_COMMUNITY_Build & Vite Configuration|Build & Vite Configuration]]
 - [[_COMMUNITY_Project Documentation|Project Documentation]]
+- [[_COMMUNITY_Community 16|Community 16]]
+- [[_COMMUNITY_Community 17|Community 17]]
+- [[_COMMUNITY_Community 18|Community 18]]
+- [[_COMMUNITY_Community 19|Community 19]]
+- [[_COMMUNITY_Community 20|Community 20]]
+- [[_COMMUNITY_Community 21|Community 21]]
+- [[_COMMUNITY_Community 22|Community 22]]
+- [[_COMMUNITY_Community 27|Community 27]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `useAuth()` - 25 edges
-2. `cn()` - 12 edges
-3. `useToast()` - 11 edges
-4. `sanitizePassword()` - 11 edges
-5. `Dashboard()` - 10 edges
-6. `useTasks()` - 9 edges
-7. `Sidebar()` - 7 edges
-8. `TopNav()` - 7 edges
-9. `Card` - 7 edges
-10. `sanitizeUsername()` - 7 edges
+2. `Task-Buddy Frontend` - 15 edges
+3. `cn()` - 12 edges
+4. `useToast()` - 11 edges
+5. `sanitizePassword()` - 11 edges
+6. `Task-Buddy API Integration Guide` - 11 edges
+7. `Dashboard()` - 10 edges
+8. `useTasks()` - 9 edges
+9. `Sidebar()` - 7 edges
+10. `TopNav()` - 7 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `TaskBuddy App` --references--> `App Icon`  [INFERRED]
   src/App.tsx → public/task-buddy-icon.svg
 - `API Hooks` --implements--> `Backend API Docs`  [INFERRED]
   src/hooks/useApi.ts → API.md
-- `handleUpdateUsername()` --calls--> `sanitizeUsername()`  [EXTRACTED]
-  src/pages/ProfilePage.tsx → src/lib/auth.ts
 - `useDeleteTag()` --calls--> `useAuth()`  [EXTRACTED]
   src/hooks/useApi.ts → src/contexts/AuthContext.tsx
+- `handleUpdateUsername()` --calls--> `sanitizeUsername()`  [EXTRACTED]
+  src/pages/ProfilePage.tsx → src/lib/auth.ts
 - `DashboardLayout()` --calls--> `useCreateTask()`  [EXTRACTED]
   src/App.tsx → src/hooks/useApi.ts
 
-## Communities (16 total, 1 thin omitted)
+## Communities (28 total, 1 thin omitted)
 
 ### Community 0 - "Authentication & Authorization"
-Cohesion: 0.07
-Nodes (47): AuthContext, AuthContextType, AuthUser, BackendErrorDetail, extractAccessToken(), formatFirstBackendError(), getAuthErrorMessage(), getPasswordStrength() (+39 more)
+Cohesion: 0.05
+Nodes (59): AuthContext, AuthContextType, AuthUser, BackendErrorDetail, extractAccessToken(), formatFirstBackendError(), getAuthErrorMessage(), getPasswordStrength() (+51 more)
 
 ### Community 1 - "Core UI Components"
-Cohesion: 0.15
-Nodes (29): Dashboard(), DashboardProps, Sidebar(), SidebarProps, SystemOverview(), TopNav(), useAuth(), ProtectedRoute() (+21 more)
+Cohesion: 0.05
+Nodes (40): Accessibility, Add a new UI component, Add API integration, Adding New Features, Browser Support, Build, code:env (# API Configuration), code:bash (# Install dependencies) (+32 more)
 
 ### Community 2 - "User Navigation & Theme"
-Cohesion: 0.1
-Nodes (19): LogoutDialogProps, useTheme(), ThemeToggle(), TopNavProps, [confirmPassword, setConfirmPassword], [currentPassword, setCurrentPassword], handleUpdateUsername(), [isUpdatingPassword, setIsUpdatingPassword] (+11 more)
+Cohesion: 0.08
+Nodes (25): [category, setCategory], [description, setDescription], [dueDate, setDueDate], NewTaskModalProps, [priority, setPriority], [title, setTitle], SystemOverview(), categoryConfig (+17 more)
 
 ### Community 3 - "Audit & Activity Logging"
-Cohesion: 0.09
-Nodes (19): AuditEntry, controller, [error, setError], filteredLogs, [loading, setLoading], [logs, setLogs], [search, setSearch], { token } (+11 more)
+Cohesion: 0.16
+Nodes (28): Dashboard(), DashboardProps, Sidebar(), SidebarProps, TopNav(), useAuth(), ProtectedRoute(), ProtectedRouteProps (+20 more)
 
 ### Community 4 - "Task Management Forms"
-Cohesion: 0.13
-Nodes (13): [category, setCategory], [description, setDescription], [dueDate, setDueDate], NewTaskModalProps, [priority, setPriority], [title, setTitle], cn(), InputProps (+5 more)
+Cohesion: 0.06
+Nodes (30): API Endpoints, Base URL Configuration, code:typescript (interface Task {), code:typescript (const { deleteTask, loading, error } = useDeleteTask();), code:typescript (const { tasks, loading, error } = useTasks();), code:block12 (Content-Type: application/json), code:env (VITE_API_BASE_URL=http://127.0.0.1:8000), code:typescript (const { createTask, loading } = useCreateTask();) (+22 more)
 
 ### Community 5 - "State Management & Actions"
+Cohesion: 0.1
+Nodes (15): LogoutDialogProps, ResolvedTheme, Theme, THEME_VALUES, ThemeProvider(), ThemeProviderContext, ThemeProviderProps, ThemeProviderState (+7 more)
+
+### Community 6 - "Theme Utilities"
 Cohesion: 0.14
 Nodes (17): Action, ActionType, actionTypes, addToRemoveQueue(), dispatch(), genId(), listeners, memoryState (+9 more)
 
-### Community 6 - "Theme Utilities"
-Cohesion: 0.15
-Nodes (8): ResolvedTheme, Theme, THEME_VALUES, ThemeProvider(), ThemeProviderContext, ThemeProviderProps, ThemeProviderState, AuthProvider()
-
 ### Community 7 - "Testing & Validation"
+Cohesion: 0.18
+Nodes (11): API Integration, Architecture, code:block1 (src/), code:typescript (// Fetch all tasks), `dashboard.tsx`, Key Components, `new-task-modal.tsx`, Project Structure (+3 more)
+
+### Community 8 - "API Documentation & Integration"
+Cohesion: 0.2
+Nodes (8): AuditEntry, controller, [error, setError], filteredLogs, [loading, setLoading], [logs, setLogs], [search, setSearch], { token }
+
+### Community 9 - "Main Application Shell"
+Cohesion: 0.22
+Nodes (8): code:block1 (Error: locator.fill: Error: strict mode violation: getByLabe), code:yaml (- generic [ref=e5]:), code:ts (1   | import { test, expect } from "@playwright/test"), Error details, Instructions, Page snapshot, Test info, Test source
+
+### Community 10 - "Data Models & Entities"
+Cohesion: 0.22
+Nodes (8): code:block1 (Error: locator.fill: Error: strict mode violation: getByLabe), code:yaml (- generic [ref=e5]:), code:ts (47  |             user: { id: "user-1", username: "demo.user), Error details, Instructions, Page snapshot, Test info, Test source
+
+### Community 11 - "Linting Configuration"
+Cohesion: 0.22
+Nodes (8): code:block1 (Error: locator.fill: Error: strict mode violation: getByLabe), code:yaml (- generic [ref=e5]:), code:ts (1   | import { test, expect } from "@playwright/test"), Error details, Instructions, Page snapshot, Test info, Test source
+
+### Community 12 - "Playwright Testing Config"
+Cohesion: 0.22
+Nodes (8): code:block1 (Error: expect(locator).toBeVisible() failed), code:yaml (- generic [ref=e5]:), code:ts (1   | import { test, expect } from "@playwright/test"), Error details, Instructions, Page snapshot, Test info, Test source
+
+### Community 13 - "Tailwind CSS Styling"
+Cohesion: 0.22
+Nodes (8): code:block1 (Error: locator.fill: Error: strict mode violation: getByLabe), code:yaml (- generic [ref=e5]:), code:ts (28  |   })), Error details, Instructions, Page snapshot, Test info, Test source
+
+### Community 14 - "Build & Vite Configuration"
+Cohesion: 0.22
+Nodes (8): code:block1 (Error: locator.fill: Error: strict mode violation: getByLabe), code:yaml (- generic [ref=e5]:), code:ts (28  |   })), Error details, Instructions, Page snapshot, Test info, Test source
+
+### Community 15 - "Project Documentation"
+Cohesion: 0.22
+Nodes (8): code:block1 (Error: locator.fill: Error: strict mode violation: getByLabe), code:yaml (- generic [ref=e5]:), code:ts (1   | import { test, expect } from "@playwright/test"), Error details, Instructions, Page snapshot, Test info, Test source
+
+### Community 16 - "Community 16"
+Cohesion: 0.22
+Nodes (8): code:block1 (Error: locator.fill: Error: strict mode violation: getByLabe), code:yaml (- generic [ref=e5]:), code:ts (1   | import { test, expect } from "@playwright/test"), Error details, Instructions, Page snapshot, Test info, Test source
+
+### Community 17 - "Community 17"
+Cohesion: 0.22
+Nodes (8): code:block1 (Error: expect(locator).toBeVisible() failed), code:yaml (- generic [ref=e5]:), code:ts (1   | import { test, expect } from "@playwright/test"), Error details, Instructions, Page snapshot, Test info, Test source
+
+### Community 18 - "Community 18"
+Cohesion: 0.22
+Nodes (8): code:block1 (Error: locator.fill: Error: strict mode violation: getByLabe), code:yaml (- generic [ref=e5]:), code:ts (47  |             user: { id: "user-1", username: "demo.user), Error details, Instructions, Page snapshot, Test info, Test source
+
+### Community 19 - "Community 19"
 Cohesion: 0.5
 Nodes (3): payload, strengthBar, strengthLabel
 
-### Community 8 - "API Documentation & Integration"
+### Community 20 - "Community 20"
 Cohesion: 0.5
 Nodes (4): Audit Trail, Backend API Docs, API Hooks, Dashboard Page
 
-### Community 9 - "Main Application Shell"
+### Community 21 - "Community 21"
 Cohesion: 0.67
 Nodes (3): TaskBuddy App, Auth Context, App Icon
 
-### Community 10 - "Data Models & Entities"
+### Community 22 - "Community 22"
 Cohesion: 0.67
 Nodes (3): Subtask Model, Tag Model, Task Model
 
 ## Knowledge Gaps
-- **104 isolated node(s):** `{ token }`, `AuditEntry`, `[logs, setLogs]`, `[loading, setLoading]`, `[error, setError]` (+99 more)
+- **204 isolated node(s):** `{ token }`, `AuditEntry`, `[logs, setLogs]`, `[loading, setLoading]`, `[error, setError]` (+199 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **1 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `useAuth()` connect `Core UI Components` to `Authentication & Authorization`, `User Navigation & Theme`, `Audit & Activity Logging`?**
-  _High betweenness centrality (0.060) - this node is a cross-community bridge._
-- **Why does `cn()` connect `Task Management Forms` to `Core UI Components`, `User Navigation & Theme`, `Audit & Activity Logging`, `State Management & Actions`?**
-  _High betweenness centrality (0.020) - this node is a cross-community bridge._
-- **Why does `useToast()` connect `Core UI Components` to `Authentication & Authorization`, `User Navigation & Theme`, `State Management & Actions`?**
-  _High betweenness centrality (0.013) - this node is a cross-community bridge._
+- **Why does `useAuth()` connect `Audit & Activity Logging` to `API Documentation & Integration`, `Authentication & Authorization`, `State Management & Actions`?**
+  _High betweenness centrality (0.018) - this node is a cross-community bridge._
+- **Why does `Task-Buddy Frontend` connect `Core UI Components` to `Testing & Validation`?**
+  _High betweenness centrality (0.015) - this node is a cross-community bridge._
+- **Why does `cn()` connect `User Navigation & Theme` to `Audit & Activity Logging`, `State Management & Actions`, `Theme Utilities`?**
+  _High betweenness centrality (0.006) - this node is a cross-community bridge._
 - **What connects `{ token }`, `AuditEntry`, `[logs, setLogs]` to the rest of the system?**
-  _104 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _204 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Authentication & Authorization` be split into smaller, more focused modules?**
-  _Cohesion score 0.07 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.05 - nodes in this community are weakly interconnected._
+- **Should `Core UI Components` be split into smaller, more focused modules?**
+  _Cohesion score 0.05 - nodes in this community are weakly interconnected._
 - **Should `User Navigation & Theme` be split into smaller, more focused modules?**
-  _Cohesion score 0.1 - nodes in this community are weakly interconnected._
-- **Should `Audit & Activity Logging` be split into smaller, more focused modules?**
-  _Cohesion score 0.09 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.08 - nodes in this community are weakly interconnected._
