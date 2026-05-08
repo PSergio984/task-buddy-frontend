@@ -1,10 +1,11 @@
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 import { useNavigate, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useToast } from "@/hooks/use-toast"
 import { LogoutDialog } from "@/components/logout-dialog"
+import { useGroups } from "@/hooks/useApi"
 import {
   Tooltip,
   TooltipContent,
@@ -14,18 +15,11 @@ import {
   CheckSquare2,
   LayoutDashboard,
   Clock,
-  Briefcase,
-  GraduationCap,
-  HeartPulse,
   LayoutGrid,
-  LogOut,
-  Settings,
   Filter,
-  ChevronLeft,
-  ChevronRight,
-  User,
   PanelLeftClose,
   PanelLeftOpen,
+  Layers,
 } from "lucide-react"
 
 export interface SidebarProps {
@@ -43,7 +37,8 @@ export function Sidebar({
 }: Readonly<SidebarProps>) {
   const navigate = useNavigate()
   const location = useLocation()
-  const { user, logout } = useAuth()
+  const { user: _user, logout } = useAuth()
+  const { groups } = useGroups()
   const { toast } = useToast()
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
 
@@ -57,14 +52,6 @@ export function Sidebar({
     })
     navigate("/login")
   }
-
-  const categories = [
-    { id: "all", label: "Overview", icon: LayoutGrid },
-    { id: "work", label: "Work", icon: Briefcase },
-    { id: "personal", label: "Personal", icon: User },
-    { id: "school", label: "School", icon: GraduationCap },
-    { id: "health", label: "Wellness", icon: HeartPulse },
-  ]
 
   const navLinks = [
     { id: "dashboard", path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -180,7 +167,7 @@ export function Sidebar({
           </nav>
         </div>
 
-        {/* Categories Section */}
+        {/* Overview Section */}
         <div className="space-y-4">
           <div
             className={cn(
@@ -190,22 +177,74 @@ export function Sidebar({
           >
             {!isCollapsed && (
               <p className="text-[10px] font-bold tracking-[0.3em] text-muted-foreground/40 uppercase">
-                Categories
+                Focus
               </p>
             )}
             <Filter className={cn("text-muted-foreground/20", isCollapsed ? "h-4 w-4" : "h-3 w-3")} />
           </div>
 
           <div className="flex flex-col gap-2">
-            {categories.map((category) => {
-              const isActive = activeFilter === category.id
+            <motion.button
+              onClick={() => {
+                if (location.pathname !== "/dashboard")
+                  navigate("/dashboard")
+                onFilterChange("all")
+              }}
+              whileHover={{ x: isCollapsed ? 0 : 4 }}
+              whileTap={{ scale: 0.98 }}
+              className={cn(
+                "group flex items-center rounded-2xl px-4 py-4 text-left text-sm font-bold transition-all duration-300",
+                isCollapsed
+                  ? "mx-auto w-14 justify-center"
+                  : "w-full justify-between",
+                activeFilter === "all"
+                  ? "bg-accent/10 text-accent ring-1 ring-accent/30 shadow-lg shadow-accent/5"
+                  : "text-muted-foreground hover:bg-muted/30 hover:text-foreground"
+              )}
+            >
+              <div className="flex items-center gap-4">
+                <LayoutGrid
+                  className={cn(
+                    "h-5 w-5 transition-colors duration-300",
+                    activeFilter === "all" ? "text-accent" : "text-muted-foreground/20 group-hover:text-foreground"
+                  )}
+                />
+                {!isCollapsed && <span>Overview</span>}
+              </div>
+              {!isCollapsed && activeFilter === "all" && (
+                <div className="h-2 w-2 rounded-full bg-accent shadow-glow shadow-accent/50" />
+              )}
+            </motion.button>
+          </div>
+        </div>
+
+        {/* Groups Section */}
+        <div className="space-y-4">
+          <div
+            className={cn(
+              "flex items-center justify-between px-4",
+              isCollapsed && "justify-center"
+            )}
+          >
+            {!isCollapsed && (
+              <p className="text-[10px] font-bold tracking-[0.3em] text-muted-foreground/40 uppercase">
+                Custom Groups
+              </p>
+            )}
+            <Layers className={cn("text-muted-foreground/20", isCollapsed ? "h-4 w-4" : "h-3 w-3")} />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            {groups.map((group) => {
+              const filterId = `group:${group.id}`
+              const isActive = activeFilter === filterId
               const content = (
                 <motion.button
-                  key={category.id}
+                  key={group.id}
                   onClick={() => {
                     if (location.pathname !== "/dashboard")
                       navigate("/dashboard")
-                    onFilterChange(category.id)
+                    onFilterChange(filterId)
                   }}
                   whileHover={{ x: isCollapsed ? 0 : 4 }}
                   whileTap={{ scale: 0.98 }}
@@ -215,31 +254,34 @@ export function Sidebar({
                       ? "mx-auto w-14 justify-center"
                       : "w-full justify-between",
                     isActive
-                      ? "bg-accent/10 text-accent ring-1 ring-accent/30 shadow-lg shadow-accent/5"
+                      ? "bg-primary/10 text-primary ring-1 ring-primary/30 shadow-lg shadow-primary/5"
                       : "text-muted-foreground hover:bg-muted/30 hover:text-foreground"
                   )}
                 >
                   <div className="flex items-center gap-4">
-                    <category.icon
+                    <div 
                       className={cn(
-                        "h-5 w-5 transition-colors duration-300",
-                        isActive ? "text-accent" : "text-muted-foreground/20 group-hover:text-foreground"
+                        "h-5 w-5 rounded-lg flex items-center justify-center transition-colors duration-300",
+                        isActive ? "opacity-100" : "opacity-40 group-hover:opacity-100"
                       )}
-                    />
-                    {!isCollapsed && <span>{category.label}</span>}
+                      style={{ backgroundColor: group.color || "gray" }}
+                    >
+                      <Layers className="h-3 w-3 text-white" />
+                    </div>
+                    {!isCollapsed && <span>{group.name}</span>}
                   </div>
                   {!isCollapsed && isActive && (
-                    <div className="h-2 w-2 rounded-full bg-accent shadow-glow shadow-accent/50" />
+                    <div className="h-2 w-2 rounded-full bg-primary shadow-glow shadow-primary/50" />
                   )}
                 </motion.button>
               )
 
               if (isCollapsed) {
                 return (
-                  <Tooltip key={category.id}>
+                  <Tooltip key={group.id}>
                     <TooltipTrigger asChild>{content}</TooltipTrigger>
                     <TooltipContent side="right" className="font-bold">
-                      {category.label}
+                      {group.name}
                     </TooltipContent>
                   </Tooltip>
                 )
