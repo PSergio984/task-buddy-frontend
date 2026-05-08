@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Dialog,
   DialogContent,
@@ -18,9 +18,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { motion } from "framer-motion"
-import { Sparkles, Calendar, Tag, AlertCircle, PencilLine, Trash2 } from "lucide-react"
-import type { Task } from "@/hooks/useApi"
-import { cn } from "@/lib/utils"
+import { Sparkles, Calendar, PencilLine, Layers } from "lucide-react"
+import { useGroups, type Task } from "@/hooks/useApi"
 
 export interface NewTaskModalProps {
   readonly open: boolean
@@ -39,17 +38,45 @@ export function NewTaskModal({
   isLoading,
   task,
 }: Readonly<NewTaskModalProps>) {
+  const { groups } = useGroups()
   const [title, setTitle] = useState(task?.title ?? "")
   const [description, setDescription] = useState(task?.description ?? "")
-  const [priority, setPriority] = useState<"low" | "medium" | "high">(
-    task?.priority ?? "medium"
+  const [groupId, setGroupId] = useState<string>(
+    task?.group_id?.toString() ?? "none"
   )
-  const [category, setCategory] = useState<
-    "work" | "personal" | "school" | "health" | "other"
-  >(task?.category ?? "work")
-  const [dueDate, setDueDate] = useState(
-    task?.due_date ? task.due_date.split("T")[0] : ""
-  )
+  
+  // Format due_date for datetime-local input (YYYY-MM-DDThh:mm)
+  const formatDateTimeForInput = (dateStr?: string) => {
+    if (!dateStr) return ""
+    try {
+      const date = new Date(dateStr)
+      if (isNaN(date.getTime())) return ""
+      // Adjust for local timezone offset to get local time in ISO format
+      const localDate = new Date(date)
+      localDate.setMinutes(date.getMinutes() - date.getTimezoneOffset())
+      return localDate.toISOString().slice(0, 16)
+    } catch (e) {
+      return ""
+    }
+  }
+
+  const [dueDate, setDueDate] = useState(formatDateTimeForInput(task?.due_date))
+
+  // Update state when task prop changes (e.g. when opening modal to edit)
+  useEffect(() => {
+    if (task) {
+      setTitle(task.title ?? "")
+      setDescription(task.description ?? "")
+      setGroupId(task.group_id?.toString() ?? "none")
+      setDueDate(formatDateTimeForInput(task.due_date))
+    } else {
+      setTitle("")
+      setDescription("")
+      setGroupId("none")
+      setDueDate("")
+    }
+  }, [task, open])
+
   const isEditMode = !!task
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -60,19 +87,19 @@ export function NewTaskModal({
     const taskData: Omit<Task, "id" | "created_at" | "user_id"> = {
       title: title.trim(),
       description: description.trim() || undefined,
-      priority,
-      category,
-      due_date: dueDate || undefined,
+      group_id: groupId !== "none" ? parseInt(groupId) : undefined,
+      due_date: dueDate ? new Date(dueDate).toISOString() : undefined,
       completed: task?.completed ?? false,
     }
 
     try {
       await onSubmit(taskData)
-      setTitle("")
-      setDescription("")
-      setPriority("medium")
-      setCategory("work")
-      setDueDate("")
+      if (!isEditMode) {
+        setTitle("")
+        setDescription("")
+        setGroupId("none")
+        setDueDate("")
+      }
       onOpenChange(false)
     } catch (error) {
       console.error("Failed to save task:", error)
@@ -136,45 +163,32 @@ export function NewTaskModal({
               </div>
 
               {/* Parameters Grid */}
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6">
                 <div className="space-y-3">
-                  <Label htmlFor="priority" className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
-                    <AlertCircle className="h-3 w-3" />
-                    Priority
+                  <Label htmlFor="groupId" className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
+                    <Layers className="h-3 w-3" />
+                    Group
                   </Label>
                   <Select
-                    value={priority}
-                    onValueChange={(v: "low" | "medium" | "high") => setPriority(v)}
+                    value={groupId}
+                    onValueChange={(v: string) => setGroupId(v)}
                   >
-                    <SelectTrigger id="priority" className="h-12 rounded-2xl border-border bg-background/50 px-4 font-semibold">
-                      <SelectValue />
+                    <SelectTrigger id="groupId" className="h-12 rounded-2xl border-border bg-background/50 px-4 font-semibold">
+                      <SelectValue placeholder="Select Group" />
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl border-border bg-background/95 backdrop-blur-xl">
-                      <SelectItem value="low" className="rounded-xl focus:bg-muted font-medium">Low Intensity</SelectItem>
-                      <SelectItem value="medium" className="rounded-xl focus:bg-muted font-medium">Medium Flow</SelectItem>
-                      <SelectItem value="high" className="rounded-xl focus:bg-muted font-medium">High Velocity</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-3">
-                  <Label htmlFor="category" className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
-                    <Tag className="h-3 w-3" />
-                    Domain
-                  </Label>
-                  <Select
-                    value={category}
-                    onValueChange={(v: any) => setCategory(v)}
-                  >
-                    <SelectTrigger id="category" className="h-12 rounded-2xl border-border bg-background/50 px-4 font-semibold">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-2xl border-border bg-background/95 backdrop-blur-xl">
-                      <SelectItem value="work" className="rounded-xl focus:bg-muted font-medium">Professional</SelectItem>
-                      <SelectItem value="personal" className="rounded-xl focus:bg-muted font-medium">Personal</SelectItem>
-                      <SelectItem value="school" className="rounded-xl focus:bg-muted font-medium">Academic</SelectItem>
-                      <SelectItem value="health" className="rounded-xl focus:bg-muted font-medium">Wellness</SelectItem>
-                      <SelectItem value="other" className="rounded-xl focus:bg-muted font-medium">Uncategorized</SelectItem>
+                      <SelectItem value="none" className="rounded-xl focus:bg-muted font-medium">No Group</SelectItem>
+                      {groups.map((group) => (
+                        <SelectItem key={group.id} value={group.id.toString()} className="rounded-xl focus:bg-muted font-medium">
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="h-2 w-2 rounded-full" 
+                              style={{ backgroundColor: group.color || "gray" }} 
+                            />
+                            {group.name}
+                          </div>
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -189,7 +203,7 @@ export function NewTaskModal({
                 <div className="relative group">
                    <Input
                     id="dueDate"
-                    type="date"
+                    type="datetime-local"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
                     className="h-14 rounded-2xl border-border bg-background/50 px-6 font-semibold focus-visible:ring-primary/20"
