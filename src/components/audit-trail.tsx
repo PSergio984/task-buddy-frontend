@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Card } from "@/components/ui/card"
-import { History, Search, AlertCircle, Clock, ChevronDown, Activity, Sparkles } from "lucide-react"
+import { Search, AlertCircle, Clock, ChevronDown, Activity, Sparkles } from "lucide-react"
 import axios from "axios"
 import { useAuth } from "@/contexts/AuthContext"
 import { Input } from "@/components/ui/input"
