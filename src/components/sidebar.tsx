@@ -1,174 +1,253 @@
-import { useState } from "react"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { useNavigate, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
+import { useState } from "react"
 import { useAuth } from "@/contexts/AuthContext"
-import {
-  BarChart3,
-  CheckSquare2,
-  Filter,
-  LayoutDashboard,
-  LogOut,
-  Hash,
-  ArrowRight,
-  ShieldCheck,
-  User
-} from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { LogoutDialog } from "@/components/logout-dialog"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import {
+  CheckSquare2,
+  LayoutDashboard,
+  Clock,
+  Briefcase,
+  GraduationCap,
+  HeartPulse,
+  LayoutGrid,
+  LogOut,
+  Settings,
+  Filter,
+  ChevronLeft,
+  ChevronRight,
+  User,
+  PanelLeftClose,
+  PanelLeftOpen,
+} from "lucide-react"
 
 export interface SidebarProps {
   readonly activeFilter: string
   readonly onFilterChange: (filter: string) => void
+  readonly isCollapsed: boolean
+  readonly onToggle: () => void
 }
 
-export function Sidebar({ activeFilter, onFilterChange }: Readonly<SidebarProps>) {
-  const { logout, user } = useAuth()
-  const { toast } = useToast()
+export function Sidebar({
+  activeFilter,
+  onFilterChange,
+  isCollapsed,
+  onToggle,
+}: Readonly<SidebarProps>) {
   const navigate = useNavigate()
   const location = useLocation()
+  const { user, logout } = useAuth()
+  const { toast } = useToast()
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
-
-  const categories = [
-    { id: "all", label: "Overview", icon: LayoutDashboard },
-    { id: "work", label: "Work", icon: Hash },
-    { id: "personal", label: "Personal", icon: User },
-    { id: "school", label: "School", icon: Hash },
-    { id: "health", label: "Wellness", icon: Hash },
-  ]
-
-  const navLinks = [
-    { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { path: "/audit-logs", label: "Security", icon: ShieldCheck },
-    { path: "/profile", label: "Account", icon: User },
-  ]
 
   const handleLogout = async () => {
     setIsLogoutDialogOpen(false)
     await logout()
     toast({
-      title: "Securely Disconnected",
-      description: "Your session has been terminated successfully.",
+      title: "Securely Logged Out",
+      description: "Come back soon to stay on track.",
       variant: "default",
     })
     navigate("/login")
   }
 
+  const categories = [
+    { id: "all", label: "Overview", icon: LayoutGrid },
+    { id: "work", label: "Work", icon: Briefcase },
+    { id: "personal", label: "Personal", icon: User },
+    { id: "school", label: "School", icon: GraduationCap },
+    { id: "health", label: "Wellness", icon: HeartPulse },
+  ]
+
+  const navLinks = [
+    { id: "dashboard", path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { id: "history", path: "/audit-logs", label: "History", icon: Clock },
+  ]
+
   return (
     <motion.aside
-      initial={{ x: -40, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-      className="hidden md:flex min-h-svh w-[280px] flex-col border-r bg-background/50 backdrop-blur-3xl px-6 py-10"
+      initial={false}
+      animate={{ width: isCollapsed ? 96 : 320 }}
+      transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+      className="relative hidden min-h-svh flex-col border-r bg-background/60 px-4 py-8 backdrop-blur-2xl md:flex shadow-2xl shadow-primary/5 group/sidebar"
     >
-      {/* Branding */}
-      <div className="mb-12 flex items-center gap-3 px-2">
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/20">
-          <CheckSquare2 className="h-6 w-6 text-primary-foreground" />
+      {/* Branding Section */}
+      <div className="mb-12 flex items-center justify-between gap-4 px-2 relative">
+        <div className="flex items-center gap-4 overflow-hidden">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary via-primary to-accent shadow-xl shadow-primary/20">
+            <CheckSquare2 className="h-7 w-7 text-primary-foreground" />
+          </div>
+          {!isCollapsed && (
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="flex flex-col whitespace-nowrap"
+            >
+              <h1 className="font-heading text-xl font-bold tracking-tighter text-foreground uppercase leading-none">
+                Task Buddy
+              </h1>
+              <p className="text-[10px] font-bold tracking-[0.3em] text-primary uppercase mt-1">
+                Workspace
+              </p>
+            </motion.div>
+          )}
         </div>
-        <div>
-          <h1 className="font-heading text-lg font-black tracking-tight text-foreground uppercase">
-            Task Buddy
-          </h1>
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">v2.0 Premium</p>
+
+        {/* Improved Toggle Button - More Obvious & Following Reference */}
+        <div className={cn(
+          "transition-all duration-300",
+          isCollapsed ? "absolute left-0 right-0 flex justify-center -bottom-10" : ""
+        )}>
+          <motion.button
+            whileHover={{ scale: 1.05, backgroundColor: "var(--primary)", color: "var(--primary-foreground)" }}
+            whileTap={{ scale: 0.95 }}
+            onClick={onToggle}
+            className={cn(
+              "flex h-10 w-10 items-center justify-center rounded-xl border-2 border-border bg-background shadow-lg transition-all duration-300 cursor-pointer group/toggle",
+              !isCollapsed && "hover:border-primary"
+            )}
+            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {isCollapsed ? (
+              <PanelLeftOpen className="h-5 w-5 text-muted-foreground group-hover/toggle:text-primary-foreground" />
+            ) : (
+              <PanelLeftClose className="h-5 w-5 text-muted-foreground group-hover/toggle:text-primary-foreground" />
+            )}
+          </motion.button>
         </div>
       </div>
 
-      <div className="flex flex-col flex-1 gap-10">
+      <div className="flex flex-1 flex-col gap-10 overflow-y-auto no-scrollbar">
         {/* Navigation Links */}
         <div className="space-y-4">
-           <p className="px-4 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Management</p>
-          <nav className="flex flex-col gap-1.5">
-            {navLinks.map(({ path, label, icon: Icon }) => {
+          {!isCollapsed && (
+            <p className="px-4 text-[10px] font-bold tracking-[0.3em] text-muted-foreground/40 uppercase">
+              Management
+            </p>
+          )}
+          <nav className="flex flex-col gap-2">
+            {navLinks.map(({ path, label, icon: Icon, id }) => {
               const isActive = location.pathname === path
-              return (
+              const content = (
                 <button
-                  key={path}
+                  key={id}
                   onClick={() => navigate(path)}
                   className={cn(
-                    "group flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-300",
+                    "group relative flex items-center rounded-2xl px-4 py-4 text-sm font-bold transition-all duration-300",
+                    isCollapsed
+                      ? "mx-auto w-14 justify-center"
+                      : "w-full justify-start gap-4",
                     isActive
-                      ? "bg-primary text-primary-foreground shadow-xl shadow-primary/20"
+                      ? "bg-primary text-primary-foreground shadow-xl shadow-primary/30"
                       : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                   )}
                 >
-                  <div className="flex items-center gap-3">
-                    <Icon className={cn("h-4 w-4", isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-primary")} />
-                    {label}
-                  </div>
-                  {isActive && (
-                    <motion.div layoutId="active-pill">
-                      <ArrowRight className="h-3 w-3 opacity-50" />
-                    </motion.div>
+                  <Icon
+                    className={cn(
+                      "h-5 w-5 transition-transform duration-300 group-hover:scale-110",
+                      isActive
+                        ? "text-primary-foreground"
+                        : "text-muted-foreground/40 group-hover:text-primary"
+                    )}
+                  />
+                  {!isCollapsed && <span>{label}</span>}
+                  {!isCollapsed && isActive && (
+                    <motion.div 
+                      layoutId="sidebar-active-indicator"
+                      className="absolute right-4 h-1.5 w-1.5 rounded-full bg-primary-foreground" 
+                    />
                   )}
                 </button>
               )
+
+              if (isCollapsed) {
+                return (
+                  <Tooltip key={id}>
+                    <TooltipTrigger asChild>{content}</TooltipTrigger>
+                    <TooltipContent side="right" className="font-bold">{label}</TooltipContent>
+                  </Tooltip>
+                )
+              }
+              return content
             })}
           </nav>
         </div>
 
-        {/* Filters Section */}
+        {/* Categories Section */}
         <div className="space-y-4">
-           <div className="flex items-center justify-between px-4">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Categories</p>
-            <Filter className="h-3 w-3 text-muted-foreground/30" />
+          <div
+            className={cn(
+              "flex items-center justify-between px-4",
+              isCollapsed && "justify-center"
+            )}
+          >
+            {!isCollapsed && (
+              <p className="text-[10px] font-bold tracking-[0.3em] text-muted-foreground/40 uppercase">
+                Categories
+              </p>
+            )}
+            <Filter className={cn("text-muted-foreground/20", isCollapsed ? "h-4 w-4" : "h-3 w-3")} />
           </div>
 
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             {categories.map((category) => {
-               const isActive = activeFilter === category.id
-               return (
+              const isActive = activeFilter === category.id
+              const content = (
                 <motion.button
                   key={category.id}
-                  onClick={() => onFilterChange(category.id)}
-                  whileHover={{ x: 4 }}
+                  onClick={() => {
+                    if (location.pathname !== "/dashboard")
+                      navigate("/dashboard")
+                    onFilterChange(category.id)
+                  }}
+                  whileHover={{ x: isCollapsed ? 0 : 4 }}
                   whileTap={{ scale: 0.98 }}
                   className={cn(
-                    "flex items-center justify-between rounded-2xl px-4 py-3 text-left text-sm font-semibold transition-all",
+                    "group flex items-center rounded-2xl px-4 py-4 text-left text-sm font-bold transition-all duration-300",
+                    isCollapsed
+                      ? "mx-auto w-14 justify-center"
+                      : "w-full justify-between",
                     isActive
-                      ? "bg-accent/10 text-accent ring-1 ring-inset ring-accent/20"
+                      ? "bg-accent/10 text-accent ring-1 ring-accent/30 shadow-lg shadow-accent/5"
                       : "text-muted-foreground hover:bg-muted/30 hover:text-foreground"
                   )}
                 >
-                  <div className="flex items-center gap-3">
-                    <category.icon className={cn("h-4 w-4", isActive ? "text-accent" : "text-muted-foreground/40")} />
-                    {category.label}
+                  <div className="flex items-center gap-4">
+                    <category.icon
+                      className={cn(
+                        "h-5 w-5 transition-colors duration-300",
+                        isActive ? "text-accent" : "text-muted-foreground/20 group-hover:text-foreground"
+                      )}
+                    />
+                    {!isCollapsed && <span>{category.label}</span>}
                   </div>
-                  {isActive && <div className="h-1.5 w-1.5 rounded-full bg-accent" />}
+                  {!isCollapsed && isActive && (
+                    <div className="h-2 w-2 rounded-full bg-accent shadow-glow shadow-accent/50" />
+                  )}
                 </motion.button>
               )
+
+              if (isCollapsed) {
+                return (
+                  <Tooltip key={category.id}>
+                    <TooltipTrigger asChild>{content}</TooltipTrigger>
+                    <TooltipContent side="right" className="font-bold">
+                      {category.label}
+                    </TooltipContent>
+                  </Tooltip>
+                )
+              }
+              return content
             })}
           </div>
         </div>
-      </div>
-
-      {/* User Info & Logout */}
-      <div className="mt-auto space-y-6 pt-10">
-        <div className="rounded-3xl border bg-muted/20 p-5 backdrop-blur-sm">
-           <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-background border shadow-sm">
-                 <User className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-bold text-foreground">
-                  {user?.username ?? user?.email ?? "User Session"}
-                </p>
-                <p className="truncate text-[10px] font-medium text-muted-foreground">
-                  {user?.email ?? "active_account"}
-                </p>
-              </div>
-           </div>
-        </div>
-
-        <motion.button
-          onClick={() => setIsLogoutDialogOpen(true)}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="flex w-full items-center justify-center gap-3 rounded-[1.5rem] border border-border bg-background py-3 text-sm font-bold text-muted-foreground shadow-sm transition-all hover:bg-destructive/5 hover:text-destructive hover:border-destructive/20"
-        >
-          <LogOut className="h-4 w-4" />
-          Disconnect Session
-        </motion.button>
       </div>
 
       <LogoutDialog 
