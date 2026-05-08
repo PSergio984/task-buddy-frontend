@@ -4,6 +4,7 @@ import {
   useState,
   useCallback,
   useMemo,
+  useEffect,
   type ReactNode,
 } from "react"
 import axios from "axios"
@@ -59,9 +60,52 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const refreshUser = useCallback(async () => {
+    if (!token) {
+      setUser(null)
+      setLoading(false)
+      return
+    }
+
+    try {
+      setLoading(true)
+      const response = await axios.get(`${API_BASE_URL}/api/v1/users/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const nextUser = normalizeAuthUser(response.data)
+      if (nextUser) {
+        setUser(nextUser)
+        globalThis.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextUser))
+      }
+      setError(null)
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        if (err.response?.status === 401) {
+          // Token is invalid/expired
+          setToken(null)
+          setUser(null)
+          globalThis.localStorage.removeItem(TOKEN_STORAGE_KEY)
+          globalThis.localStorage.removeItem(USER_STORAGE_KEY)
+        } else {
+          setError(err.response?.data?.detail || "Failed to refresh user profile")
+        }
+      } else {
+        setError("Failed to refresh user profile")
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [token])
+
   // user is initialized synchronously from localStorage above to keep the
   // token/user initial states consistent and avoid transient authenticated
   // but empty-user states.
+  // Then we refresh it on mount to ensure we have the latest data.
+  useEffect(() => {
+    if (token) {
+      refreshUser()
+    }
+  }, []) // Only on mount
 
   const login = useCallback(
     async (credentials: { username: string; password: string }) => {
@@ -170,39 +214,6 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     globalThis.localStorage.removeItem(TOKEN_STORAGE_KEY)
     globalThis.localStorage.removeItem(USER_STORAGE_KEY)
   }, [token])
-
-  const refreshUser = useCallback(async () => {
-    if (!token) {
-      setUser(null)
-      setLoading(false)
-      return
-    }
-
-    try {
-      setLoading(true)
-      const response = await axios.get(`${API_BASE_URL}/api/v1/users/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      const nextUser = normalizeAuthUser(response.data)
-      if (nextUser) {
-        setUser(nextUser)
-        globalThis.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextUser))
-      }
-      setError(null)
-    } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
-        if (err.response?.status === 401) {
-          await logout()
-        } else {
-          setError(err.response?.data?.detail || "Failed to refresh user profile")
-        }
-      } else {
-        setError("Failed to refresh user profile")
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [token, logout])
 
   const value = useMemo(() => ({
     user,

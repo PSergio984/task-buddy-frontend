@@ -40,12 +40,29 @@
 | Component Composition | `src/components/` | To build complex UIs from simpler, focused components. |
 | Context API | `src/contexts/` | To provide global state like Auth and Theme without prop drilling. |
 
-### 5) Known Architectural Risks
+### 5) Graphify Insights (Core Abstractions)
+
+According to `graphify-out/GRAPH_REPORT.md`, the following are the most connected "God Nodes" and key communities in the frontend:
+
+**God Nodes (Core Abstractions):**
+1. `useAuth()` (Global Authentication Hook)
+2. `cn()` (Utility for conditional Tailwind classes)
+3. `Task-Buddy Frontend` (System Root)
+4. `useToast()` (Global User Feedback)
+5. `sanitizePassword()` (Security Utility)
+
+**Key Communities:**
+- **Authentication & Authorization**: High node density (67), centralized around `useAuth`.
+- **Core UI Components**: Dashboard, Sidebar, and other layout components.
+- **User Navigation & Theme**: Routing and theme management.
+- **Audit & Activity Logging**: Frontend tracking and display of audit entries.
+
+### 6) Known Architectural Risks
 
 - **Prop Drilling**: Potential for deep nesting if context is not used effectively for shared state.
 - **API Coupling**: Hard-coding API endpoint logic within components instead of hooks.
 
-### 6) Evidence
+### 7) Evidence
 
 - `README.md` (Architecture section)
 - `src/App.tsx`

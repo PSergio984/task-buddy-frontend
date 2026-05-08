@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { Plus, User, LogOut, ChevronDown, Sparkles, Bell, PanelLeftOpen, PanelLeftClose, Menu, ShieldCheck, Clock } from "lucide-react"
+import { Plus, User, LogOut, ChevronDown, Bell, Clock } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useNavigate } from "react-router-dom"
@@ -11,11 +11,9 @@ import { cn } from "@/lib/utils"
 
 export interface TopNavProps {
   readonly onNewTask: () => void
-  readonly isCollapsed: boolean
-  readonly onToggle: () => void
 }
 
-export function TopNav({ onNewTask, isCollapsed, onToggle }: Readonly<TopNavProps>) {
+export function TopNav({ onNewTask }: Readonly<TopNavProps>) {
   const { user, logout } = useAuth()
   const { toast } = useToast()
   const navigate = useNavigate()

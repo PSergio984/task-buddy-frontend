@@ -197,8 +197,11 @@ export function normalizeAuthUser(payload: unknown) {
 
   const user: AuthUser = { id: String(rawId) }
 
-  if (typeof userPayload.username === "string") {
+  if (typeof userPayload.username === "string" && userPayload.username.trim().length > 0) {
     user.username = userPayload.username
+  } else if (typeof userPayload.email === "string" && userPayload.email.trim().length > 0) {
+    // Fallback to email prefix as username if username is missing
+    user.username = userPayload.email.split("@")[0]
   }
 
   if (typeof userPayload.email === "string") {

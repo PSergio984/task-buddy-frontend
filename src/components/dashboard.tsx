@@ -19,8 +19,8 @@ import { LayoutDashboard, ListChecks } from "lucide-react"
 
 export interface DashboardProps {
   readonly tasks: Task[]
-  readonly activeFilter: string
-  readonly onFilterChange: (filter: string) => void
+  readonly activeStatus: string
+  readonly onStatusChange: (status: string) => void
   readonly onRefresh: () => void
   readonly onEdit: (task: Task) => void
   readonly stats: StatsOverview | null
@@ -29,8 +29,8 @@ export interface DashboardProps {
 
 export function Dashboard({
   tasks,
-  activeFilter,
-  onFilterChange,
+  activeStatus,
+  onStatusChange,
   onRefresh,
   onEdit,
   stats,
@@ -163,7 +163,7 @@ export function Dashboard({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="flex flex-1 flex-col gap-10 bg-background/30 p-6 md:p-10 backdrop-blur-sm"
+      className="flex flex-1 flex-col gap-8 bg-background/20 p-2 md:p-4 lg:p-6 backdrop-blur-sm"
     >
       {/* Header Section */}
       <header className="flex flex-col gap-2">
@@ -197,8 +197,8 @@ export function Dashboard({
         </div>
 
         <Tabs
-          value={activeFilter}
-          onValueChange={(v) => onFilterChange(v)}
+          value={activeStatus}
+          onValueChange={(v) => onStatusChange(v)}
           className="w-full"
         >
           <TabsList className="inline-flex h-12 items-center justify-center rounded-2xl border bg-background/50 p-1.5 backdrop-blur-xl shadow-sm mb-8">

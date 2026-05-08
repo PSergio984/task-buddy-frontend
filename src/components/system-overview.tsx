@@ -1,8 +1,7 @@
 import { motion } from "framer-motion"
 import { Card } from "@/components/ui/card"
-import { LayoutGrid, PieChart, Target, Zap, TrendingUp } from "lucide-react"
+import { PieChart, Target, Zap, TrendingUp } from "lucide-react"
 import type { StatsOverview } from "@/hooks/useApi"
-import { cn } from "@/lib/utils"
 
 export function SystemOverview({ stats, loading }: Readonly<{ stats: StatsOverview | null, loading: boolean }>) {
   if (loading || !stats) {

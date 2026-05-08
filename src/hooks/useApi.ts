@@ -6,13 +6,21 @@ const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000"
 
 // Task types
+export interface Group {
+  id: number
+  name: string
+  color?: string
+  user_id: number
+  created_at: string
+}
+
 export interface Task {
   id: number
   title: string
   description?: string
   completed: boolean
-  priority?: "low" | "medium" | "high"
-  category?: "work" | "personal" | "school" | "health" | "other"
+  group_id?: number
+  group?: Group
   due_date?: string
   created_at: string
   user_id: number
@@ -26,6 +34,7 @@ export interface Subtask {
   title: string
   description?: string
   completed: boolean
+  due_date?: string
   created_at: string
 }
 
@@ -55,7 +64,7 @@ export interface StatsOverview {
 }
 
 // Fetch tasks from the backend
-export function useTasks(filter?: string) {
+export function useTasks(filter?: string, group_id?: number) {
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
@@ -70,13 +79,20 @@ export function useTasks(filter?: string) {
       // Force to next tick to avoid synchronous setState in effect warning
       await Promise.resolve()
       setLoading(true)
-      let url = `${API_BASE_URL}/api/v1/tasks/`
       
+      const params = new URLSearchParams()
       if (filter === "completed") {
-        url += "?completed=true"
+        params.append("completed", "true")
       } else if (filter === "pending") {
-        url += "?completed=false"
+        params.append("completed", "false")
       }
+      
+      if (group_id) {
+        params.append("group_id", group_id.toString())
+      }
+
+      const queryString = params.toString()
+      const url = `${API_BASE_URL}/api/v1/tasks/${queryString ? `?${queryString}` : ""}`
 
       const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
@@ -90,7 +106,7 @@ export function useTasks(filter?: string) {
     } finally {
       setLoading(false)
     }
-  }, [token, filter])
+  }, [token, filter, group_id])
 
   useEffect(() => {
     fetchTasks()
@@ -131,6 +147,111 @@ export function useStats() {
   }, [fetchStats])
 
   return { stats, loading, error, refreshStats: fetchStats }
+}
+
+// Fetch and manage groups
+export function useGroups() {
+  const [groups, setGroups] = useState<Group[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+  const { token } = useAuth()
+
+  const fetchGroups = useCallback(async () => {
+    if (!token) {
+      setLoading(false)
+      return
+    }
+    try {
+      await Promise.resolve()
+      setLoading(true)
+      const response = await axios.get(`${API_BASE_URL}/api/v1/groups/`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = response.data
+      setGroups(Array.isArray(data) ? data : data.items || [])
+      setError(null)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err : new Error("Unknown error"))
+    } finally {
+      setLoading(false)
+    }
+  }, [token])
+
+  const createGroup = useCallback(
+    async (groupData: { name: string; color?: string }) => {
+      if (!token) return
+      try {
+        setLoading(true)
+        const response = await axios.post(`${API_BASE_URL}/api/v1/groups/`, groupData, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        await fetchGroups()
+        return response.data
+      } catch (err: unknown) {
+        const error = err instanceof Error ? err : new Error("Unknown error")
+        setError(error)
+        throw error
+      } finally {
+        setLoading(false)
+      }
+    },
+    [token, fetchGroups]
+  )
+
+  const updateGroup = useCallback(
+    async (id: number, updates: { name?: string; color?: string }) => {
+      if (!token) return
+      try {
+        setLoading(true)
+        const response = await axios.put(`${API_BASE_URL}/api/v1/groups/${id}`, updates, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        await fetchGroups()
+        return response.data
+      } catch (err: unknown) {
+        const error = err instanceof Error ? err : new Error("Unknown error")
+        setError(error)
+        throw error
+      } finally {
+        setLoading(false)
+      }
+    },
+    [token, fetchGroups]
+  )
+
+  const deleteGroup = useCallback(
+    async (id: number) => {
+      if (!token) return
+      try {
+        setLoading(true)
+        await axios.delete(`${API_BASE_URL}/api/v1/groups/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        await fetchGroups()
+      } catch (err: unknown) {
+        const error = err instanceof Error ? err : new Error("Unknown error")
+        setError(error)
+        throw error
+      } finally {
+        setLoading(false)
+      }
+    },
+    [token, fetchGroups]
+  )
+
+  useEffect(() => {
+    fetchGroups()
+  }, [fetchGroups])
+
+  return {
+    groups,
+    loading,
+    error,
+    refreshGroups: fetchGroups,
+    createGroup,
+    updateGroup,
+    deleteGroup,
+  }
 }
 
 // Create a new task

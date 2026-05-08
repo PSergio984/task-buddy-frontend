@@ -2,6 +2,15 @@
 export default {
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["Plus Jakarta Sans", "sans-serif"],
+        heading: ["Plus Jakarta Sans", "sans-serif"],
+      },
+      borderRadius: {
+        lg: "1rem",
+        md: "calc(1rem - 2px)",
+        sm: "calc(1rem - 4px)",
+      },
       colors: {
         // Brand Color Palette
         "brand-bg": "#F1F5F9", // Primary Background

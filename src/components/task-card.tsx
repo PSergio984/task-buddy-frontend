@@ -22,12 +22,6 @@ export interface TaskCardProps {
   readonly onDetachTag?: (taskId: number, tagId: number) => void
 }
 
-const priorityConfig = {
-  low: { label: "Standard", color: "bg-muted/50 text-muted-foreground", dot: "bg-muted-foreground/30" },
-  medium: { label: "Important", color: "bg-primary/10 text-primary", dot: "bg-primary/50" },
-  high: { label: "Urgent", color: "bg-accent/10 text-accent", dot: "bg-accent/50" },
-}
-
 export function TaskCard({
   task,
   onToggleComplete,
@@ -37,9 +31,15 @@ export function TaskCard({
   onDeleteSubtask,
   onDetachTag,
 }: TaskCardProps) {
-  const priority =
-    priorityConfig[task.priority as keyof typeof priorityConfig] ||
-    priorityConfig.low
+  const formatDueDate = (dateStr: string) => {
+    const date = new Date(dateStr)
+    return new Intl.DateTimeFormat(undefined, {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+    }).format(date)
+  }
 
   return (
     <motion.div
@@ -87,13 +87,16 @@ export function TaskCard({
                   >
                     {task.title}
                   </h3>
-                  <div className={cn(
-                    "flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider",
-                    priority.color
-                  )}>
-                    <div className={cn("h-1.5 w-1.5 rounded-full", priority.dot)} />
-                    {priority.label}
-                  </div>
+                  
+                  {task.group && (
+                    <div className="flex items-center gap-1.5 rounded-full bg-muted/50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                      <div 
+                        className="h-1.5 w-1.5 rounded-full" 
+                        style={{ backgroundColor: task.group.color || "gray" }} 
+                      />
+                      {task.group.name}
+                    </div>
+                  )}
                 </div>
 
                 {task?.description && (
@@ -110,7 +113,7 @@ export function TaskCard({
                   {task?.due_date && (
                     <div className="flex items-center gap-1.5 rounded-lg bg-muted/30 px-2 py-1 text-[10px] font-medium text-muted-foreground">
                       <Calendar className="h-3 w-3" />
-                      {new Date(task.due_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                      {formatDueDate(task.due_date)}
                     </div>
                   )}
 

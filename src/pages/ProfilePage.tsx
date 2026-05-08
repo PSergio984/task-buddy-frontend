@@ -1,17 +1,15 @@
-import { useState, type FormEvent } from "react"
+import { useState, useEffect, type FormEvent } from "react"
 import { motion } from "framer-motion"
 import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { TopNav } from "@/components/topnav"
-import { Sidebar } from "@/components/sidebar"
-import { useTasks } from "@/hooks/useApi"
-import { User, KeyRound, Save, ArrowLeft, CheckCircle2, Circle, ShieldCheck, BadgeCheck } from "lucide-react"
+import { User, KeyRound, Save, ArrowLeft, CheckCircle2, Circle, ShieldCheck, BadgeCheck, Eye, EyeOff } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { sanitizeUsername, sanitizePassword, validatePassword } from "@/lib/auth"
 import { useToast } from "@/hooks/use-toast"
+import { cn } from "@/lib/utils"
 import axios from "axios"
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000"
@@ -27,20 +25,37 @@ const PASSWORD_RULES = [
 export function ProfilePage() {
   const { user, token, refreshUser, logout } = useAuth()
   const { toast } = useToast()
-  useTasks()
   const navigate = useNavigate()
   
-  const [newUsername, setNewUsername] = useState(user?.username || "")
+  const [newUsername, setNewUsername] = useState("")
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   
   const [isUpdatingUsername, setIsUpdatingUsername] = useState(false)
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false)
+  
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
+  const [isInitialized, setIsInitialized] = useState(false)
+  
+  // Sync state when user data arrives or changes
+  useEffect(() => {
+    if (user && !isInitialized) {
+      // Use the normalized username which now already includes the fallback logic
+      setNewUsername(user.username || "")
+      setIsInitialized(true)
+    }
+  }, [user, isInitialized])
+
+  const isUsernameValid = newUsername.trim().length > 0 && /^[A-Za-z0-9._@\- ]+$/.test(newUsername)
+  const hasUsernameChanged = user && newUsername !== user.username && isUsernameValid
 
   const handleUpdateUsername = async (e: FormEvent) => {
     e.preventDefault()
-    if (!newUsername || newUsername === user?.username) return
+    if (!hasUsernameChanged) return
     
     setIsUpdatingUsername(true)
     try {
@@ -123,167 +138,195 @@ export function ProfilePage() {
   }
 
   return (
-    <div className="flex min-h-svh flex-col bg-background selection:bg-accent/20">
-      <TopNav onNewTask={() => navigate("/dashboard")} />
-      
-      <div className="flex flex-1">
-        <Sidebar activeFilter="" onFilterChange={() => navigate("/dashboard")} />
-        
-        <main className="flex-1 p-6 md:p-12">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="mx-auto max-w-3xl space-y-12"
-          >
-            <header className="space-y-2">
-              <div className="flex items-center gap-4">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => navigate("/dashboard")}
-                  className="rounded-full hover:bg-muted"
-                >
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-                <h1 className="font-heading text-4xl font-bold tracking-tight">Account Settings</h1>
+    <div className="p-6 md:p-12">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="mx-auto max-w-3xl space-y-12"
+      >
+        <header className="space-y-2">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/dashboard")}
+              className="rounded-full hover:bg-muted"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="font-heading text-4xl font-bold tracking-tight">Account Settings</h1>
+          </div>
+          <p className="text-muted-foreground ml-14">
+            Manage your profile information and security preferences.
+          </p>
+        </header>
+
+        <div className="grid gap-8">
+          {/* Profile Card */}
+          <Card className="overflow-hidden border bg-background/50 p-8 shadow-2xl shadow-primary/5 backdrop-blur-xl rounded-[2rem]">
+            <div className="mb-8 flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                <User className="h-6 w-6" />
               </div>
-              <p className="text-muted-foreground ml-14">
-                Manage your profile information and security preferences.
-              </p>
-            </header>
-
-            <div className="grid gap-8">
-              {/* Profile Card */}
-              <Card className="overflow-hidden border bg-background/50 p-8 shadow-2xl shadow-primary/5 backdrop-blur-xl rounded-[2rem]">
-                <div className="mb-8 flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                    <User className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold">Public Profile</h2>
-                    <p className="text-sm text-muted-foreground">How you appear to others.</p>
-                  </div>
-                </div>
-
-                <form onSubmit={handleUpdateUsername} className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="username" className="text-sm font-semibold ml-1">Username</Label>
-                    <div className="relative group">
-                      <BadgeCheck className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground transition-colors group-focus-within:text-accent" />
-                      <Input
-                        id="username"
-                        value={newUsername}
-                        onChange={(e) => setNewUsername(e.target.value)}
-                        className="h-14 rounded-2xl border-border bg-background/50 pl-12 text-lg focus-visible:ring-accent/30"
-                      />
-                    </div>
-                  </div>
-                  <Button
-                    type="submit"
-                    disabled={isUpdatingUsername || newUsername === user?.username}
-                    className="h-12 px-8 rounded-xl font-bold shadow-lg shadow-primary/10"
-                  >
-                    {isUpdatingUsername ? (
-                      <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2" />
-                    ) : (
-                      <Save className="mr-2 h-4 w-4" />
-                    )}
-                    {isUpdatingUsername ? "Updating..." : "Save Changes"}
-                  </Button>
-                </form>
-              </Card>
-
-              {/* Security Card */}
-              <Card className="overflow-hidden border bg-background/50 p-8 shadow-2xl shadow-primary/5 backdrop-blur-xl rounded-[2rem]">
-                <div className="mb-8 flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/10 text-accent">
-                    <ShieldCheck className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold">Security</h2>
-                    <p className="text-sm text-muted-foreground">Keep your account safe and secure.</p>
-                  </div>
-                </div>
-
-                <form onSubmit={handleUpdatePassword} className="space-y-6">
-                  <div className="grid gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="current-password" className="text-sm font-semibold ml-1">Current Password</Label>
-                      <Input
-                        id="current-password"
-                        type="password"
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="h-14 rounded-2xl border-border bg-background/50 px-6 text-lg focus-visible:ring-accent/30"
-                        required
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="new-password" className="text-sm font-semibold ml-1">New Password</Label>
-                      <Input
-                        id="new-password"
-                        type="password"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="h-14 rounded-2xl border-border bg-background/50 px-6 text-lg focus-visible:ring-accent/30"
-                        required
-                      />
-                      
-                      <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 px-1">
-                        {PASSWORD_RULES.map((rule) => {
-                          const met = rule.test(newPassword)
-                          return (
-                            <div key={rule.label} className="flex items-center gap-2">
-                              {met ? (
-                                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                              ) : (
-                                <Circle className="h-4 w-4 text-muted-foreground/30" />
-                              )}
-                              <span className={`text-xs font-medium ${met ? "text-green-600" : "text-muted-foreground"}`}>
-                                {rule.label}
-                              </span>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="confirm-password" className="text-sm font-semibold ml-1">Confirm New Password</Label>
-                      <Input
-                        id="confirm-password"
-                        type="password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="h-14 rounded-2xl border-border bg-background/50 px-6 text-lg focus-visible:ring-accent/30"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    disabled={isUpdatingPassword || !newPassword || newPassword !== confirmPassword}
-                    className="h-12 px-8 rounded-xl font-bold bg-accent hover:bg-accent/90 shadow-lg shadow-accent/10"
-                  >
-                    {isUpdatingPassword ? (
-                      <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2" />
-                    ) : (
-                      <KeyRound className="mr-2 h-4 w-4" />
-                    )}
-                    {isUpdatingPassword ? "Updating..." : "Update Password"}
-                  </Button>
-                </form>
-              </Card>
+              <div>
+                <h2 className="text-xl font-bold">Public Profile</h2>
+                <p className="text-sm text-muted-foreground">How you appear to others.</p>
+              </div>
             </div>
-          </motion.div>
-        </main>
-      </div>
+
+            <form onSubmit={handleUpdateUsername} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="username" className="text-sm font-semibold ml-1">Username</Label>
+                <div className="relative group">
+                  <BadgeCheck className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground transition-colors group-focus-within:text-accent" />
+                  <Input
+                    id="username"
+                    value={newUsername}
+                    onChange={(e) => setNewUsername(e.target.value)}
+                    placeholder="Enter your username"
+                    className="h-14 rounded-2xl border-border bg-background/50 pl-12 text-lg focus-visible:ring-accent/30"
+                  />
+                </div>
+                {(!newUsername || newUsername.trim().length === 0) && (
+                  <p className="text-[10px] font-bold text-destructive px-2">Username cannot be empty</p>
+                )}
+              </div>
+              <Button
+                type="submit"
+                disabled={isUpdatingUsername || !hasUsernameChanged}
+                className={cn(
+                  "h-12 px-8 rounded-xl font-bold shadow-lg transition-all",
+                  hasUsernameChanged
+                    ? "bg-primary text-primary-foreground shadow-primary/20 hover:scale-[1.02]" 
+                    : "bg-muted text-muted-foreground shadow-none cursor-not-allowed opacity-50"
+                )}
+              >
+                {isUpdatingUsername ? (
+                  <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
+                {isUpdatingUsername ? "Updating..." : "Save Changes"}
+              </Button>
+            </form>
+          </Card>
+
+          {/* Security Card */}
+          <Card className="overflow-hidden border bg-background/50 p-8 shadow-2xl shadow-primary/5 backdrop-blur-xl rounded-[2rem]">
+            <div className="mb-8 flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/10 text-accent">
+                <ShieldCheck className="h-6 w-6" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold">Security</h2>
+                <p className="text-sm text-muted-foreground">Keep your account safe and secure.</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleUpdatePassword} className="space-y-6">
+              <div className="grid gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="current-password" className="text-sm font-semibold ml-1">Current Password</Label>
+                  <div className="relative group">
+                    <Input
+                      id="current-password"
+                      type={showCurrentPassword ? "text" : "password"}
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="h-14 rounded-2xl border-border bg-background/50 px-6 pr-12 text-lg focus-visible:ring-accent/30"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrentPassword((v) => !v)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showCurrentPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="new-password" className="text-sm font-semibold ml-1">New Password</Label>
+                  <div className="relative group">
+                    <Input
+                      id="new-password"
+                      type={showNewPassword ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="h-14 rounded-2xl border-border bg-background/50 px-6 pr-12 text-lg focus-visible:ring-accent/30"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword((v) => !v)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
+                  
+                  <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 px-1">
+                    {PASSWORD_RULES.map((rule) => {
+                      const met = rule.test(newPassword)
+                      return (
+                        <div key={rule.label} className="flex items-center gap-2">
+                          {met ? (
+                            <CheckCircle2 className="h-4 w-4 text-green-500" />
+                          ) : (
+                            <Circle className="h-4 w-4 text-muted-foreground/30" />
+                          )}
+                          <span className={`text-xs font-medium ${met ? "text-green-600" : "text-muted-foreground"}`}>
+                            {rule.label}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password" className="text-sm font-semibold ml-1">Confirm New Password</Label>
+                  <div className="relative group">
+                    <Input
+                      id="confirm-password"
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="h-14 rounded-2xl border-border bg-background/50 px-6 pr-12 text-lg focus-visible:ring-accent/30"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword((v) => !v)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                disabled={isUpdatingPassword || !newPassword || newPassword !== confirmPassword}
+                className="h-12 px-8 rounded-xl font-bold bg-accent hover:bg-accent/90 shadow-lg shadow-accent/10"
+              >
+                {isUpdatingPassword ? (
+                  <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2" />
+                ) : (
+                  <KeyRound className="mr-2 h-4 w-4" />
+                )}
+                {isUpdatingPassword ? "Updating..." : "Update Password"}
+              </Button>
+            </form>
+          </Card>
+        </div>
+      </motion.div>
     </div>
   )
 }

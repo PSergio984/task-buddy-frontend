@@ -1,68 +1,39 @@
-import { Sidebar } from "@/components/sidebar"
-import { TopNav } from "@/components/topnav"
 import { Dashboard } from "@/components/dashboard"
-import { NewTaskModal } from "@/components/new-task-modal"
-import { useState, useCallback } from "react"
-import { useCreateTask, useTasks, useStats } from "@/hooks/useApi"
-import type { Task } from "@/hooks/useApi"
+import { useOutletContext } from "react-router-dom"
+import type { Task, StatsOverview } from "@/hooks/useApi"
+
+interface LayoutContext {
+  tasks: Task[]
+  loadingTasks: boolean
+  stats: StatsOverview | null
+  loadingStats: boolean
+  activeStatus: string
+  setActiveStatus: (status: string) => void
+  handleRefresh: () => Promise<void>
+  handleEditTask: (task: Task) => void
+}
 
 export function DashboardDemo() {
-  const [activeFilter, setActiveFilter] = useState<string>("all")
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  
-  const { tasks, refreshTasks } = useTasks(activeFilter === "all" ? undefined : activeFilter)
-  const { stats, loading: loadingStats, refreshStats } = useStats()
-  const { createTask, loading: isCreating } = useCreateTask()
-
-  const handleRefresh = useCallback(async () => {
-    await Promise.all([refreshTasks(), refreshStats()])
-  }, [refreshTasks, refreshStats])
-
-  const handleCreateTask = async (
-    taskData: Omit<Task, "id" | "created_at" | "user_id">
-  ) => {
-    try {
-      await createTask(taskData)
-      setIsModalOpen(false)
-      await handleRefresh()
-    } catch (error) {
-      console.error("Failed to create task:", error)
-    }
-  }
+  const { 
+    tasks, 
+    stats, 
+    loadingStats, 
+    activeStatus, 
+    setActiveStatus, 
+    handleRefresh,
+    handleEditTask
+  } = useOutletContext<LayoutContext>()
 
   return (
-    <div className="flex min-h-svh flex-col bg-background">
-      {/* Top Navigation */}
-      <TopNav onNewTask={() => setIsModalOpen(true)} />
-
-      {/* Main Content */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <Sidebar 
-          activeFilter={activeFilter} 
-          onFilterChange={setActiveFilter} 
-        />
-
-        {/* Dashboard */}
-        <Dashboard 
-          tasks={tasks} 
-          activeFilter={activeFilter} 
-          onFilterChange={setActiveFilter} 
-          onRefresh={handleRefresh}
-          onEdit={() => {}}
-          stats={stats}
-          loadingStats={loadingStats}
-        />
-      </div>
-
-      {/* New Task Modal */}
-      <NewTaskModal
-        key={isModalOpen ? "open" : "closed"}
-        open={isModalOpen}
-        onOpenChange={setIsModalOpen}
-        onSubmit={handleCreateTask}
-        isLoading={isCreating}
-      />
-    </div>
+    <Dashboard 
+      tasks={tasks} 
+      activeStatus={activeStatus} 
+      onStatusChange={setActiveStatus} 
+      onRefresh={handleRefresh}
+      onEdit={handleEditTask}
+      stats={stats}
+      loadingStats={loadingStats}
+    />
   )
 }
+

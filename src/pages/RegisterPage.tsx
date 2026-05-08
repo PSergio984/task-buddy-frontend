@@ -1,4 +1,4 @@
-import { useNavigate, Link } from "react-router-dom"
+import { Link } from "react-router-dom"
 import { motion } from "framer-motion"
 import {
   CheckCircle2,
@@ -6,8 +6,6 @@ import {
 import { RegisterForm } from "@/components/auth/RegisterForm"
 
 export function RegisterPage() {
-  const navigate = useNavigate()
-
   return (
     <div className="flex min-h-svh bg-background overflow-hidden">
       {/* Left Column: Authentication Form */}

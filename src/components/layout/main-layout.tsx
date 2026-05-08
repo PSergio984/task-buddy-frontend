@@ -9,7 +9,8 @@ import { useToast } from "@/hooks/use-toast"
 
 export function MainLayout() {
   const [isCollapsed, setIsCollapsed] = useState(false)
-  const [activeFilter, setActiveFilter] = useState("all")
+  const [activeSidebarFilter, setActiveSidebarFilter] = useState("all")
+  const [activeStatus, setActiveStatus] = useState("all")
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   
@@ -17,8 +18,13 @@ export function MainLayout() {
   const navigate = useNavigate()
   const { toast } = useToast()
 
+  // Parse filters for useTasks hook
+  const isGroupFilter = activeSidebarFilter.startsWith("group:")
+  const filterParam = activeStatus === "all" ? undefined : activeStatus
+  const groupIdParam = isGroupFilter ? parseInt(activeSidebarFilter.split(":")[1]) : undefined
+
   // Lifted data state to ensure consistency and prevent redundant fetches
-  const { tasks, loading: loadingTasks, refreshTasks } = useTasks(activeFilter === "all" ? undefined : activeFilter)
+  const { tasks, loading: loadingTasks, refreshTasks } = useTasks(filterParam, groupIdParam)
   const { stats, loading: loadingStats, refreshStats } = useStats()
   const { createTask, loading: isCreating } = useCreateTask()
   const { updateTask, loading: isUpdating } = useUpdateTask()
@@ -81,8 +87,8 @@ export function MainLayout() {
       <Sidebar 
         isCollapsed={isCollapsed} 
         onToggle={() => setIsCollapsed(!isCollapsed)}
-        activeFilter={activeFilter}
-        onFilterChange={setActiveFilter}
+        activeFilter={activeSidebarFilter}
+        onFilterChange={setActiveSidebarFilter}
       />
 
       {/* Main Content Wrapper */}
@@ -90,8 +96,6 @@ export function MainLayout() {
         {/* Persistent Top Navigation */}
         <TopNav 
           onNewTask={handleOpenNewTask} 
-          isCollapsed={isCollapsed}
-          onToggle={() => setIsCollapsed(!isCollapsed)}
         />
 
         {/* Scrollable Main Content */}
@@ -102,8 +106,8 @@ export function MainLayout() {
               loadingTasks, 
               stats, 
               loadingStats, 
-              activeFilter, 
-              setActiveFilter, 
+              activeStatus, 
+              setActiveStatus, 
               handleRefresh,
               handleEditTask
             }} />
@@ -123,3 +127,4 @@ export function MainLayout() {
     </div>
   )
 }
+

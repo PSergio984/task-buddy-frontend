@@ -1,176 +1,82 @@
-import { useState } from "react"
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
-import { Sidebar } from "@/components/sidebar"
-import { TopNav } from "@/components/topnav"
-import { Dashboard } from "@/components/dashboard"
-import { NewTaskModal } from "@/components/new-task-modal"
 import { LoginPage } from "@/pages/LoginPage"
 import { RegisterPage } from "@/pages/RegisterPage"
 import { LandingPage } from "@/pages/LandingPage"
 import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage"
 import { ProfilePage } from "@/pages/ProfilePage"
 import { AuditLogsPage } from "@/pages/AuditLogsPage"
+import { DashboardDemo } from "@/pages/DashboardDemo"
+import { MainLayout } from "@/components/layout/main-layout"
 import { ProtectedRoute, PublicRoute } from "@/contexts/ProtectedRoute"
 import { useAuth } from "@/contexts/AuthContext"
-import { useCreateTask, useTasks, useStats, useUpdateTask } from "@/hooks/useApi"
-import type { Task } from "@/hooks/useApi"
 import { Toaster } from "@/components/ui/toaster"
-
-function DashboardLayout() {
-  const [activeFilter, setActiveFilter] = useState<string>("all")
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [editingTask, setEditingTask] = useState<Task | null>(null)
-  
-  const { createTask, loading: isCreating } = useCreateTask()
-  const { updateTask, loading: isUpdating } = useUpdateTask()
-  const { tasks, refreshTasks } = useTasks(activeFilter)
-  const { stats, loading: loadingStats, refreshStats } = useStats()
-
-  const handleRefresh = async () => {
-    await Promise.all([refreshTasks(), refreshStats()])
-  }
-
-  const handleCreateTask = async (
-    taskData: Omit<Task, "id" | "created_at" | "user_id">
-  ) => {
-    try {
-      if (editingTask) {
-        await updateTask(editingTask.id, taskData)
-      } else {
-        await createTask(taskData)
-      }
-      setIsModalOpen(false)
-      setEditingTask(null)
-      await handleRefresh()
-    } catch (error) {
-      console.error("Failed to save task:", error)
-    }
-  }
-
-  const handleEditTask = (task: Task) => {
-    setEditingTask(task)
-    setIsModalOpen(true)
-  }
-
-  const handleOpenChange = (open: boolean) => {
-    setIsModalOpen(open)
-    if (!open) setEditingTask(null)
-  }
-
-  return (
-    <div className="flex min-h-svh flex-col bg-background">
-      {/* Top Navigation */}
-      <TopNav onNewTask={() => {
-        setEditingTask(null)
-        setIsModalOpen(true)
-      }} />
-
-      {/* Main Content */}
-      <div className="flex flex-1">
-        {/* Sidebar — receives tasks for system overview */}
-        <Sidebar 
-          activeFilter={activeFilter} 
-          onFilterChange={setActiveFilter} 
-        />
-
-        {/* Dashboard — main content area */}
-        <Dashboard 
-          tasks={tasks} 
-          activeFilter={activeFilter} 
-          onFilterChange={setActiveFilter}
-          onRefresh={handleRefresh}
-          onEdit={handleEditTask}
-          stats={stats}
-          loadingStats={loadingStats}
-        />
-      </div>
-
-      {/* New Task Modal */}
-      <NewTaskModal
-        key={editingTask?.id ?? "new"}
-        open={isModalOpen}
-        onOpenChange={handleOpenChange}
-        onSubmit={handleCreateTask}
-        isLoading={isCreating || isUpdating}
-        task={editingTask}
-      />
-    </div>
-  )
-}
+import { TooltipProvider } from "@/components/ui/tooltip"
 
 export function App() {
   const { token } = useAuth()
 
   return (
-    <Router>
-      <Routes>
-        {/* Landing Page */}
-        <Route
-          path="/"
-          element={
-            token ? <Navigate to="/dashboard" replace /> : <LandingPage />
-          }
-        />
+    <TooltipProvider delayDuration={0}>
+      <Router>
+        <Routes>
+          {/* Landing Page */}
+          <Route
+            path="/"
+            element={
+              token ? <Navigate to="/dashboard" replace /> : <LandingPage />
+            }
+          />
 
-        {/* Public Auth Routes */}
-        <Route
-          path="/login"
-          element={
-            <PublicRoute>
-              <LoginPage />
-            </PublicRoute>
-          }
-        />
-        <Route
-          path="/register"
-          element={
-            <PublicRoute>
-              <RegisterPage />
-            </PublicRoute>
-          }
-        />
-        <Route
-          path="/forgot-password"
-          element={
-            <PublicRoute>
-              <ForgotPasswordPage />
-            </PublicRoute>
-          }
-        />
+          {/* Public Auth Routes */}
+          <Route
+            path="/login"
+            element={
+              <PublicRoute>
+                <LoginPage />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <PublicRoute>
+                <RegisterPage />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/forgot-password"
+            element={
+              <PublicRoute>
+                <PublicRoute>
+                  <ForgotPasswordPage />
+                </PublicRoute>
+              </PublicRoute>
+            }
+          />
 
-        {/* Protected Routes */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <DashboardLayout />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <ProfilePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/audit-logs"
-          element={
-            <ProtectedRoute>
-              <AuditLogsPage />
-            </ProtectedRoute>
-          }
-        />
+          {/* Protected Routes with Persistent Layout */}
+          <Route
+            element={
+              <ProtectedRoute>
+                <MainLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/dashboard" element={<DashboardDemo />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/audit-logs" element={<AuditLogsPage />} />
+          </Route>
 
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-      <Toaster />
-    </Router>
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+        <Toaster />
+      </Router>
+    </TooltipProvider>
   )
 }
 
 export default App
+
 

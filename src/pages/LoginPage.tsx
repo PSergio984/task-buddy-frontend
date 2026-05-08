@@ -19,7 +19,7 @@ export function LoginPage() {
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [submitAttempted, setSubmitAttempted] = useState(false)
-  const { login, loading, error } = useAuth()
+  const { login, loading } = useAuth()
   const { toast } = useToast()
   const navigate = useNavigate()
 
@@ -29,9 +29,6 @@ export function LoginPage() {
 
   const showEmailError = submitAttempted || email.length > 0
   const showPasswordError = submitAttempted || password.length > 0
-  const submitLabel = isFormValid
-    ? "Sign in to task-buddy"
-    : "Complete the required fields"
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
