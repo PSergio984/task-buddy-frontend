@@ -2,9 +2,9 @@
 
 ## Current Status
 - **Phase:** 3 - Task Grouping and Due Time
-- **Status:** PLANNED
+- **Status:** IN_PROGRESS
 - **Stopped at:** Phase 2 completed
-- **Resume file:** `.planning/ROADMAP.md`
+- **Resume file:** `.planning/phases/03-task-grouping-and-due-time/03-01-PLAN.md`
 
 ## History
 - 2026-05-08: Codebase mapped and indexed.

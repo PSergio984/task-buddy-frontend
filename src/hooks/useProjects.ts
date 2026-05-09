@@ -1,48 +1,48 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { groupsApi } from "@/lib/api"
+import { projectsApi } from "@/lib/api"
 import { useAuth } from "@/contexts/AuthContext"
 
-export function useGroups() {
+export function useProjects() {
   const { user } = useAuth()
   
   return useQuery({
-    queryKey: ["groups"],
-    queryFn: groupsApi.list,
+    queryKey: ["projects"],
+    queryFn: projectsApi.list,
     enabled: !!user,
   })
 }
 
-export function useCreateGroup() {
+export function useCreateProject() {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: groupsApi.create,
+    mutationFn: projectsApi.create,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["groups"] })
+      queryClient.invalidateQueries({ queryKey: ["projects"] })
     },
   })
 }
 
-export function useUpdateGroup() {
+export function useUpdateProject() {
   const queryClient = useQueryClient()
   
   return useMutation({
     mutationFn: ({ id, updates }: { id: number; updates: { name?: string; color?: string } }) =>
-      groupsApi.update(id, updates),
+      projectsApi.update(id, updates),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["groups"] })
+      queryClient.invalidateQueries({ queryKey: ["projects"] })
     },
   })
 }
 
-export function useDeleteGroup() {
+export function useDeleteProject() {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: groupsApi.delete,
+    mutationFn: projectsApi.delete,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["groups"] })
-      // Also invalidate tasks because they might belong to this group
+      queryClient.invalidateQueries({ queryKey: ["projects"] })
+      // Also invalidate tasks because they might belong to this project
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
     },
   })

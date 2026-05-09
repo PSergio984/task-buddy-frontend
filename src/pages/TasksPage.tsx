@@ -27,13 +27,13 @@ export function TasksPage() {
   const { logout } = useAuth()
   const { toast } = useToast()
 
-  const isGroupFilter = activeSidebarFilter.startsWith("group:")
+  const isProjectFilter = activeSidebarFilter.startsWith("project:")
   const filterParam = activeStatus === "all" ? undefined : activeStatus
-  const groupIdParam = isGroupFilter ? parseInt(activeSidebarFilter.split(":")[1]) : undefined
+  const projectIdParam = isProjectFilter ? parseInt(activeSidebarFilter.split(":")[1]) : undefined
 
   const { data: tasks = [], isLoading: loadingTasks, refetch: refreshTasks } = useTasks(
     filterParam, 
-    groupIdParam, 
+    projectIdParam, 
     activeTagId || undefined
   )
 

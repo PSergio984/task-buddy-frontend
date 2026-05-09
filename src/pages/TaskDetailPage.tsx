@@ -154,12 +154,12 @@ export function TaskDetailPage() {
               >
                 {task.priority} Priority
               </Badge>
-              {task.group && (
+              {task.project && (
                 <Badge
                   variant="secondary"
                   className="flex items-center gap-1.5 border-white/10 bg-white/5 text-[10px] font-bold tracking-widest text-foreground/60 uppercase"
                 >
-                  <Layers className="h-3 w-3" /> {task.group.name}
+                  <Layers className="h-3 w-3" /> {task.project.name}
                 </Badge>
               )}
             </div>

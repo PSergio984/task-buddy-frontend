@@ -12,10 +12,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { motion } from "framer-motion"
 import { Layers, Palette } from "lucide-react"
-import { useCreateGroup } from "@/hooks/useGroups"
+import { useCreateProject } from "@/hooks/useProjects"
 import { useToast } from "@/hooks/use-toast"
 
-export interface CreateGroupModalProps {
+export interface CreateProjectModalProps {
   readonly open: boolean
   readonly onOpenChange: (open: boolean) => void
 }
@@ -29,13 +29,13 @@ const COLORS = [
   "#ec4899", // pink
 ]
 
-export function CreateGroupModal({
+export function CreateProjectModal({
   open,
   onOpenChange,
-}: Readonly<CreateGroupModalProps>) {
+}: Readonly<CreateProjectModalProps>) {
   const [name, setName] = useState("")
   const [color, setColor] = useState(COLORS[0])
-  const createGroup = useCreateGroup()
+  const createProject = useCreateProject()
   const { toast } = useToast()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,7 +44,7 @@ export function CreateGroupModal({
     if (!name.trim()) return
 
     try {
-      await createGroup.mutateAsync({
+      await createProject.mutateAsync({
         name: name.trim(),
         color,
       })
@@ -52,14 +52,14 @@ export function CreateGroupModal({
       setColor(COLORS[0])
       onOpenChange(false)
       toast({
-        title: "Workspace Created",
-        description: "Your new workspace is ready.",
+        title: "Project Created",
+        description: "Your new project is ready.",
       })
     } catch (error) {
-      console.error("Failed to create group:", error)
+      console.error("Failed to create project:", error)
       toast({
         title: "Creation Failed",
-        description: "Could not create workspace. Please try again.",
+        description: "Could not create project. Please try again.",
         variant: "destructive",
       })
     }
@@ -72,7 +72,7 @@ export function CreateGroupModal({
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          className="pointer-events-auto overflow-hidden border bg-background/80 p-0 shadow-2xl shadow-primary/10 backdrop-blur-2xl rounded-[2.5rem]"
+          className="pointer-events-auto overflow-hidden border-none bg-white dark:bg-zinc-900 p-0 shadow-sm rounded-[2.5rem]"
         >
           <div className="p-8 sm:p-10">
             <DialogHeader className="mb-8 text-left">
@@ -81,7 +81,7 @@ export function CreateGroupModal({
                   <Layers className="h-5 w-5" />
                 </div>
                 <DialogTitle className="font-heading text-3xl font-black tracking-tight text-foreground">
-                  New Workspace
+                  New Project
                 </DialogTitle>
               </div>
               <DialogDescription className="text-sm font-medium text-muted-foreground tracking-wide ml-13">
@@ -92,7 +92,7 @@ export function CreateGroupModal({
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
-                  Workspace Name
+                  Project Name
                 </Label>
                 <Input
                   id="name"
@@ -100,7 +100,7 @@ export function CreateGroupModal({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
-                  className="h-14 rounded-2xl border-border bg-background/50 px-6 text-lg font-semibold focus-visible:ring-primary/20 placeholder:text-muted-foreground/30"
+                  className="h-14 rounded-2xl border-border bg-muted/50 dark:bg-zinc-800/50 px-6 text-lg font-semibold focus-visible:ring-primary/20 placeholder:text-muted-foreground/30"
                 />
               </div>
 
@@ -136,18 +136,18 @@ export function CreateGroupModal({
                   onClick={() => onOpenChange(false)}
                   className="h-12 px-6 rounded-2xl text-muted-foreground hover:text-foreground hover:bg-muted transition-all font-bold"
                 >
-                  Cancel
+                  Discard
                 </Button>
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Button
                     type="submit"
-                    disabled={createGroup.isPending || !name.trim()}
+                    disabled={createProject.isPending || !name.trim()}
                     className="h-12 px-8 rounded-2xl bg-primary text-primary-foreground shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all font-bold tracking-tight"
                   >
-                    {createGroup.isPending ? (
+                    {createProject.isPending ? (
                       <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full" />
                     ) : (
-                      <span>Create Workspace</span>
+                      <span>Create Project</span>
                     )}
                   </Button>
                 </motion.div>

@@ -52,7 +52,7 @@ export function TaskCard({
     >
       <Card
         className={cn(
-          "group relative overflow-hidden border bg-background/50 backdrop-blur-xl shadow-lg transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5 rounded-[2rem]",
+          "group relative overflow-hidden border-none bg-white dark:bg-zinc-900 shadow-sm transition-all duration-300 hover:shadow-xl rounded-[2rem]",
           task.completed && "opacity-75"
         )}
       >
@@ -89,13 +89,13 @@ export function TaskCard({
                   </h3>
                   
                   <div className="flex items-center gap-2">
-                    {task.group && (
+                    {task.project && (
                       <div className="flex items-center gap-1.5 rounded-full bg-muted/50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                         <div 
                           className="h-1.5 w-1.5 rounded-full" 
-                          style={{ backgroundColor: task.group.color || "gray" }} 
+                          style={{ backgroundColor: task.project.color || "gray" }} 
                         />
-                        {task.group.name}
+                        {task.project.name}
                       </div>
                     )}
                     

@@ -13,11 +13,11 @@ export function DashboardDemo() {
   const { handleEditTask } = useOutletContext<LayoutContext>()
   const { activeSidebarFilter, activeTagId } = useFilters()
   
-  const isGroupFilter = activeSidebarFilter.startsWith("group:")
-  const groupIdParam = isGroupFilter ? parseInt(activeSidebarFilter.split(":")[1]) : undefined
+  const isProjectFilter = activeSidebarFilter.startsWith("project:")
+  const projectIdParam = isProjectFilter ? parseInt(activeSidebarFilter.split(":")[1]) : undefined
 
   // For Dashboard, we want to fetch all tasks and filter them by time locally
-  const { data: tasks = [], isLoading: loadingTasks, refetch: refreshTasks } = useTasks(undefined, groupIdParam, activeTagId || undefined)
+  const { data: tasks = [], isLoading: loadingTasks, refetch: refreshTasks } = useTasks(undefined, projectIdParam, activeTagId || undefined)
   const { data: stats = null, isLoading: loadingStats, refetch: refreshStats } = useStats()
 
   const handleRefresh = async () => {

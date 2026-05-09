@@ -3,8 +3,8 @@ import { useNavigate, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/contexts/AuthContext"
 import { useFilters } from "@/contexts/FilterContext"
-import { CreateGroupModal } from "@/components/create-group-modal"
-import { useGroups } from "@/hooks/useGroups"
+import { CreateProjectModal } from "@/components/create-project-modal"
+import { useProjects } from "@/hooks/useProjects"
 import { useTags } from "@/hooks/useTags"
 import {
   Tooltip,
@@ -42,9 +42,9 @@ export function Sidebar({
     activeTagId,
     setActiveTagId 
   } = useFilters()
-  const { data: groups = [] } = useGroups()
+  const { data: projects = [] } = useProjects()
   const { data: tags = [] } = useTags()
-  const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false)
+  const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = useState(false)
 
   const navLinks = [
     { id: "dashboard", path: "/dashboard", label: "Overview", icon: LayoutDashboard },
@@ -157,7 +157,7 @@ export function Sidebar({
           </nav>
         </div>
 
-        {/* Groups Section */}
+        {/* Projects Section */}
         <div className="space-y-4">
           <div
             className={cn(
@@ -167,14 +167,14 @@ export function Sidebar({
           >
             {!isCollapsed && (
               <p className="text-[10px] font-bold tracking-[0.3em] text-foreground/40 uppercase">
-                Workspaces
+                Projects
               </p>
             )}
             {!isCollapsed ? (
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                onClick={() => setIsCreateGroupModalOpen(true)}
+                onClick={() => setIsCreateProjectModalOpen(true)}
                 className="p-1 rounded-md hover:bg-white/10 text-foreground/40 hover:text-foreground transition-colors cursor-pointer"
               >
                 <Plus className="h-4 w-4" />
@@ -185,17 +185,17 @@ export function Sidebar({
           </div>
 
           <div className="flex flex-col gap-2">
-            {groups.length === 0 && !isCollapsed && (
+            {projects.length === 0 && !isCollapsed && (
               <div className="px-4 py-6 rounded-2xl border border-dashed border-border/50 bg-white/5 text-center">
-                <p className="text-[10px] font-bold text-foreground/40 uppercase">No Workspaces</p>
+                <p className="text-[10px] font-bold text-foreground/40 uppercase">No Projects</p>
               </div>
             )}
-            {groups.map((group) => {
-              const filterId = `group:${group.id}`
+            {projects.map((project) => {
+              const filterId = `project:${project.id}`
               const isActive = activeSidebarFilter === filterId && activeTagId === null
               const content = (
                 <motion.button
-                  key={group.id}
+                  key={project.id}
                   onClick={() => {
                     setActiveSidebarFilter(filterId)
                     setActiveTagId(null)
@@ -218,11 +218,11 @@ export function Sidebar({
                         "h-6 w-6 rounded-lg flex items-center justify-center transition-all duration-300 shadow-lg",
                         isActive ? "scale-110" : "opacity-40 group-hover:opacity-100 group-hover:scale-110"
                       )}
-                      style={{ backgroundColor: group.color || "gray" }}
+                      style={{ backgroundColor: project.color || "gray" }}
                     >
                       <Layers className="h-3.5 w-3.5 text-white" />
                     </div>
-                    {!isCollapsed && <span>{group.name}</span>}
+                    {!isCollapsed && <span>{project.name}</span>}
                   </div>
                   {!isCollapsed && isActive && (
                     <div className="h-1.5 w-1.5 rounded-full bg-primary shadow-glow shadow-primary/50" />
@@ -232,10 +232,10 @@ export function Sidebar({
 
               if (isCollapsed) {
                 return (
-                  <Tooltip key={group.id} delayDuration={0}>
+                  <Tooltip key={project.id} delayDuration={0}>
                     <TooltipTrigger asChild>{content}</TooltipTrigger>
                     <TooltipContent side="right" className="font-bold border-none bg-primary text-primary-foreground px-4 py-2 rounded-xl shadow-2xl">
-                      {group.name}
+                      {project.name}
                     </TooltipContent>
                   </Tooltip>
                 )
@@ -306,9 +306,9 @@ export function Sidebar({
         </div>
       </div>
 
-      <CreateGroupModal 
-        open={isCreateGroupModalOpen} 
-        onOpenChange={setIsCreateGroupModalOpen} 
+      <CreateProjectModal 
+        open={isCreateProjectModalOpen} 
+        onOpenChange={setIsCreateProjectModalOpen} 
       />
     </motion.aside>
   )

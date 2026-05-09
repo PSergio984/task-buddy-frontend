@@ -26,7 +26,7 @@ api.interceptors.response.use(
 // Types
 export type TaskPriority = "LOW" | "MEDIUM" | "HIGH"
 
-export interface Group {
+export interface Project {
   id: number
   name: string
   color?: string
@@ -40,8 +40,8 @@ export interface Task {
   description?: string
   completed: boolean
   priority: TaskPriority
-  group_id?: number
-  group?: Group
+  project_id?: number
+  project?: Project
   due_date?: string
   created_at: string
   user_id: number
@@ -86,15 +86,15 @@ export interface StatsOverview {
 
 // Raw API functions
 export const tasksApi = {
-  list: async (filter?: string, group_id?: number, tag_id?: number) => {
+  list: async (filter?: string, project_id?: number, tag_id?: number) => {
     const params = new URLSearchParams()
     if (filter === "completed") {
       params.append("completed", "true")
     } else if (filter === "pending") {
       params.append("completed", "false")
     }
-    if (group_id) {
-      params.append("group_id", group_id.toString())
+    if (project_id) {
+      params.append("project_id", project_id.toString())
     }
     if (tag_id) {
       params.append("tag_id", tag_id.toString())
@@ -126,22 +126,22 @@ export const statsApi = {
   },
 }
 
-export const groupsApi = {
+export const projectsApi = {
   list: async () => {
-    const response = await api.get<Group[] | { items: Group[] }>("/api/v1/groups/")
+    const response = await api.get<Project[] | { items: Project[] }>("/api/v1/projects/")
     const data = response.data
     return Array.isArray(data) ? data : data.items || []
   },
-  create: async (groupData: { name: string; color?: string }) => {
-    const response = await api.post<Group>("/api/v1/groups/", groupData)
+  create: async (projectData: { name: string; color?: string }) => {
+    const response = await api.post<Project>("/api/v1/projects/", projectData)
     return response.data
   },
   update: async (id: number, updates: { name?: string; color?: string }) => {
-    const response = await api.put<Group>(`/api/v1/groups/${id}`, updates)
+    const response = await api.put<Project>(`/api/v1/projects/${id}`, updates)
     return response.data
   },
   delete: async (id: number) => {
-    await api.delete(`/api/v1/groups/${id}`)
+    await api.delete(`/api/v1/projects/${id}`)
   },
 }
 

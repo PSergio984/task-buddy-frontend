@@ -2,12 +2,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { tasksApi, subtasksApi, tagsApi, type Task, type Subtask } from "@/lib/api"
 import { useAuth } from "@/contexts/AuthContext"
 
-export function useTasks(filter?: string, group_id?: number, tag_id?: number) {
+export function useTasks(filter?: string, project_id?: number, tag_id?: number) {
   const { user } = useAuth()
   
   return useQuery({
-    queryKey: ["tasks", { filter, group_id, tag_id }],
-    queryFn: () => tasksApi.list(filter, group_id, tag_id),
+    queryKey: ["tasks", { filter, project_id, tag_id }],
+    queryFn: () => tasksApi.list(filter, project_id, tag_id),
     enabled: !!user,
   })
 }

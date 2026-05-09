@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Select,
   SelectContent,
@@ -19,7 +20,7 @@ import {
 } from "@/components/ui/select"
 import { motion } from "framer-motion"
 import { CalendarIcon, Sparkles, PencilLine, Layers, Tag, Flag, Clock } from "lucide-react"
-import { useGroups } from "@/hooks/useGroups"
+import { useProjects } from "@/hooks/useProjects"
 import type { Task, TaskPriority } from "@/lib/api"
 import { format } from "date-fns"
 import { Calendar } from "@/components/ui/calendar"
@@ -47,11 +48,11 @@ export function NewTaskModal({
   isLoading,
   task,
 }: Readonly<NewTaskModalProps>) {
-  const { data: groups = [] } = useGroups()
-  const [title, setTitle] = useState(task?.title ?? "")
-  const [description, setDescription] = useState(task?.description ?? "")
-  const [groupId, setGroupId] = useState<string>(
-    task?.group_id?.toString() ?? "none"
+  const { data: projects = [] } = useProjects()
+  const [title, setTitle] = useState("")
+  const [description, setDescription] = useState("")
+  const [projectId, setProjectId] = useState<string>(
+    task?.project_id?.toString() ?? "none"
   )
   const [priority, setPriority] = useState<TaskPriority>(task?.priority ?? "MEDIUM")
   const [tags, setTags] = useState<string>(task?.tags?.map(t => t.name).join(", ") ?? "")
@@ -64,14 +65,14 @@ export function NewTaskModal({
     if (task) {
       setTitle(task.title ?? "")
       setDescription(task.description ?? "")
-      setGroupId(task.group_id?.toString() ?? "none")
+      setProjectId(task.project_id?.toString() ?? "none")
       setPriority(task.priority ?? "MEDIUM")
       setTags(task.tags?.map(t => t.name).join(", ") ?? "")
       setDueDate(task.due_date ? new Date(task.due_date) : undefined)
     } else {
       setTitle("")
       setDescription("")
-      setGroupId("none")
+      setProjectId("none")
       setPriority("MEDIUM")
       setTags("")
       setDueDate(undefined)
@@ -88,7 +89,7 @@ export function NewTaskModal({
     const taskData = {
       title: title.trim(),
       description: description.trim() || undefined,
-      group_id: groupId !== "none" ? parseInt(groupId) : undefined,
+      project_id: projectId !== "none" ? parseInt(projectId) : undefined,
       due_date: dueDate ? dueDate.toISOString() : undefined,
       completed: task?.completed ?? false,
       priority,
@@ -100,12 +101,11 @@ export function NewTaskModal({
       if (!isEditMode) {
         setTitle("")
         setDescription("")
-        setGroupId("none")
+        setProjectId("none")
         setPriority("MEDIUM")
         setTags("")
         setDueDate(undefined)
       }
-      onOpenChange(false)
     } catch (error) {
       console.error("Failed to save task:", error)
     }
@@ -149,35 +149,35 @@ export function NewTaskModal({
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   required
-                  className="h-14 rounded-2xl border-border bg-background/50 px-6 text-lg font-semibold focus-visible:ring-primary/20 placeholder:text-muted-foreground/30"
+                  className="h-14 rounded-2xl border-border bg-muted/50 dark:bg-zinc-800/50 px-6 text-lg font-semibold focus-visible:ring-primary/20 placeholder:text-muted-foreground/30"
                 />
               </div>
 
               {/* Parameters Grid */}
               <div className="grid grid-cols-2 gap-4">
-                {/* Group */}
+                {/* Project */}
                 <div className="space-y-2">
-                  <Label htmlFor="groupId" className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
+                  <Label htmlFor="projectId" className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
                     <Layers className="h-3 w-3" />
-                    Group
+                    Project
                   </Label>
                   <Select
-                    value={groupId}
-                    onValueChange={(v: string) => setGroupId(v)}
+                    value={projectId}
+                    onValueChange={(v: string) => setProjectId(v)}
                   >
-                    <SelectTrigger id="groupId" className="h-12 rounded-2xl border-border bg-background/50 px-4 font-semibold">
-                      <SelectValue placeholder="Select Group" />
+                    <SelectTrigger id="projectId" className="h-12 rounded-2xl border-border bg-muted/50 dark:bg-zinc-800/50 px-4 font-semibold">
+                      <SelectValue placeholder="Select Project" />
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl border-border bg-background/95 backdrop-blur-xl">
-                      <SelectItem value="none" className="rounded-xl focus:bg-muted font-medium">No Group</SelectItem>
-                      {groups.map((group) => (
-                        <SelectItem key={group.id} value={group.id.toString()} className="rounded-xl focus:bg-muted font-medium">
+                      <SelectItem value="none" className="rounded-xl focus:bg-muted font-medium">No Project</SelectItem>
+                      {projects.map((project) => (
+                        <SelectItem key={project.id} value={project.id.toString()} className="rounded-xl focus:bg-muted font-medium">
                           <div className="flex items-center gap-2">
                             <div 
                               className="h-2 w-2 rounded-full" 
-                              style={{ backgroundColor: group.color || "gray" }} 
+                              style={{ backgroundColor: project.color || "gray" }} 
                             />
-                            {group.name}
+                            {project.name}
                           </div>
                         </SelectItem>
                       ))}
@@ -195,7 +195,7 @@ export function NewTaskModal({
                     value={priority}
                     onValueChange={(v: TaskPriority) => setPriority(v)}
                   >
-                    <SelectTrigger id="priority" className="h-12 rounded-2xl border-border bg-background/50 px-4 font-semibold">
+                    <SelectTrigger id="priority" className="h-12 rounded-2xl border-border bg-muted/50 dark:bg-zinc-800/50 px-4 font-semibold">
                       <SelectValue placeholder="Select Priority" />
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl border-border bg-background/95 backdrop-blur-xl">
@@ -222,35 +222,6 @@ export function NewTaskModal({
                 </div>
               </div>
 
-              {/* Tags Section */}
-              <div className="space-y-2">
-                <Label htmlFor="tags" className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
-                  <Tag className="h-3 w-3" />
-                  Tags
-                </Label>
-                <Input
-                  id="tags"
-                  placeholder="e.g., work, research, critical"
-                  value={tags}
-                  onChange={(e) => setTags(e.target.value)}
-                  className="h-12 rounded-2xl border-border bg-background/50 px-4 font-medium focus-visible:ring-primary/20 placeholder:text-muted-foreground/30"
-                />
-              </div>
-
-              {/* Description Section */}
-              <div className="space-y-2">
-                <Label htmlFor="description" className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
-                  Contextual Details
-                </Label>
-                <textarea
-                  id="description"
-                  placeholder="Define scope and dependencies..."
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="flex min-h-[100px] w-full rounded-2xl border border-border bg-background/50 px-6 py-4 text-sm font-medium text-foreground placeholder:text-muted-foreground/30 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all outline-none resize-none"
-                />
-              </div>
-
               {/* Timing Section (Date & Time) */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -263,7 +234,7 @@ export function NewTaskModal({
                       <Button
                         variant={"outline"}
                         className={cn(
-                          "w-full h-12 justify-start text-left font-semibold rounded-2xl border-border bg-background/50 px-6 focus-visible:ring-primary/20 hover:bg-background/80 transition-colors",
+                          "w-full h-12 justify-start text-left font-semibold rounded-2xl border-border bg-muted/50 dark:bg-zinc-800/50 px-6 focus-visible:ring-primary/20 hover:bg-background/80 transition-colors",
                           !dueDate && "text-muted-foreground"
                         )}
                       >
@@ -297,9 +268,38 @@ export function NewTaskModal({
                       newDate.setHours(hours, minutes);
                       setDueDate(newDate);
                     }}
-                    className="h-12 rounded-2xl border-border bg-background/50 px-4 font-semibold focus-visible:ring-primary/20"
+                    className="h-12 rounded-2xl border-border bg-muted/50 dark:bg-zinc-800/50 px-4 font-semibold focus-visible:ring-primary/20"
                   />
                 </div>
+              </div>
+
+              {/* Tags Section */}
+              <div className="space-y-2">
+                <Label htmlFor="tags" className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
+                  <Tag className="h-3 w-3" />
+                  Tags
+                </Label>
+                <Input
+                  id="tags"
+                  placeholder="e.g., work, research, critical"
+                  value={tags}
+                  onChange={(e) => setTags(e.target.value)}
+                  className="h-12 rounded-2xl border-border bg-muted/50 dark:bg-zinc-800/50 px-4 font-medium focus-visible:ring-primary/20 placeholder:text-muted-foreground/30"
+                />
+              </div>
+
+              {/* Description Section */}
+              <div className="space-y-2">
+                <Label htmlFor="description" className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
+                  Description
+                </Label>
+                <Textarea
+                  id="description"
+                  placeholder="Define scope and dependencies..."
+                  value={description}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)}
+                  className="flex min-h-[100px] w-full rounded-2xl border border-border bg-muted/50 dark:bg-zinc-800/50 px-6 py-4 text-sm font-medium text-foreground placeholder:text-muted-foreground/30 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all outline-none resize-none"
+                />
               </div>
 
               <DialogFooter className="pt-6 border-t border-border/50 gap-4 flex sm:justify-end">
