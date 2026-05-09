@@ -28,10 +28,10 @@ export function RegisterPage() {
           </div>
 
           <div className="mb-10 text-left">
-            <h1 className="text-4xl font-bold tracking-tight text-foreground mb-3">
+            <h1 className="text-5xl font-black tracking-tighter text-foreground mb-3 uppercase">
               Create Account
             </h1>
-            <p className="text-lg text-muted-foreground">
+            <p className="text-xl text-foreground font-bold">
               Join thousands of achievers. Manifest your goals today.
             </p>
           </div>
@@ -39,7 +39,7 @@ export function RegisterPage() {
           <RegisterForm />
 
           <div className="mt-12 pt-8 border-t text-center lg:text-left">
-            <p className="text-muted-foreground">
+            <p className="text-foreground/80 font-medium">
               Already have an account?{" "}
               <Link
                 to="/login"
@@ -79,9 +79,9 @@ export function RegisterPage() {
             </div>
             <h2 className="text-6xl font-black tracking-tighter text-foreground leading-[0.9] mb-6">
               DESIGN YOUR <br />
-              <span className="text-accent underline decoration-accent/20 underline-offset-8">OWN SUCCESS.</span>
+              <span className="text-accent underline decoration-accent/20 underline-offset-8 uppercase">OWN SUCCESS.</span>
             </h2>
-            <p className="text-xl text-muted-foreground/80 max-w-sm ml-auto font-medium leading-relaxed">
+            <p className="text-xl text-foreground max-w-sm ml-auto font-bold leading-relaxed">
               Unlock the full potential of your time with our state-of-the-art task management system.
             </p>
           </motion.div>

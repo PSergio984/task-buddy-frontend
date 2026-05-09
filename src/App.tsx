@@ -8,13 +8,14 @@ import { LandingPage } from "@/pages/LandingPage"
 import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage"
 import { ProfilePage } from "@/pages/ProfilePage"
 import { AuditLogsPage } from "@/pages/AuditLogsPage"
-import { DashboardDemo } from "@/pages/DashboardDemo"
+import { TasksPage } from "@/pages/TasksPage"
 import { MainLayout } from "@/components/layout/main-layout"
 import { ProtectedRoute, PublicRoute } from "@/contexts/ProtectedRoute"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { useAuth } from "@/contexts/AuthContext"
 import { Toaster } from "@/components/ui/toaster"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { DashboardDemo } from "@/pages/DashboardDemo"
 
 export function App() {
   const { user } = useAuth()
@@ -67,6 +68,7 @@ export function App() {
                 }
               >
                 <Route path="/dashboard" element={<DashboardDemo />} />
+                <Route path="/tasks" element={<TasksPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/audit-logs" element={<AuditLogsPage />} />
               </Route>

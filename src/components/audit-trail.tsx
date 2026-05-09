@@ -1,15 +1,17 @@
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Card } from "@/components/ui/card"
-import { Search, AlertCircle, Clock, ChevronDown, Activity, Sparkles } from "lucide-react"
 import axios from "axios"
+import { Card } from "@/components/ui/card"
+import { 
+  Search, AlertCircle, Clock, ChevronDown, Activity, Sparkles,
+  CheckCircle2, Folder, ListTodo, Shield, LogIn, LogOut, 
+  Trash2, Edit3, Plus, ExternalLink
+} from "lucide-react"
+import { api } from "@/lib/api"
 import { useAuth } from "@/contexts/AuthContext"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000"
 
 export interface AuditEntry {
   id: number
@@ -43,35 +45,33 @@ export function AuditTrail({
     Array.from({ length: limit }, (_, i) => `audit-skeleton-${i}-${Math.random().toString(36).substring(2, 11)}`),
   [limit])
 
+  const fetchAuditLog = useCallback(async (signal?: AbortSignal) => {
+    if (!user) {
+      setLoading(false)
+      return
+    }
+    try {
+      setLoading(true)
+      const response = await api.get("/api/v1/audit/logs", {
+        params: { limit: Math.max(currentLimit * 2, 50) },
+        signal,
+      })
+      setLogs(Array.isArray(response.data) ? response.data : [])
+      setError(null)
+    } catch (err: unknown) {
+      if (axios.isCancel(err)) return
+      setError("Failed to load audit trail.")
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }, [user, currentLimit])
+
   useEffect(() => {
     const controller = new AbortController()
-
-    const fetchAuditLog = async () => {
-      if (!user) {
-        setLoading(false)
-        return
-      }
-      try {
-        setLoading(true)
-        const response = await axios.get(`${API_BASE_URL}/api/v1/audit/logs`, {
-          params: { limit: Math.max(currentLimit * 2, 50) },
-          signal: controller.signal,
-          withCredentials: true,
-        })
-        setLogs(Array.isArray(response.data) ? response.data : [])
-        setError(null)
-      } catch (err: unknown) {
-        if (axios.isCancel(err)) return
-        setError("Failed to load audit trail.")
-        console.error(err)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchAuditLog()
+    fetchAuditLog(controller.signal)
     return () => controller.abort()
-  }, [user, currentLimit])
+  }, [fetchAuditLog])
 
   const filteredLogs = logs
     .filter((log) => {
@@ -82,31 +82,59 @@ export function AuditTrail({
     })
     .slice(0, currentLimit)
 
+  const getIcon = (action: string, targetType: string) => {
+    const act = action?.toLowerCase() || ""
+    const type = targetType?.toUpperCase() || ""
+    
+    if (act.includes('login')) return <LogIn className="h-4 w-4 text-emerald-500" />
+    if (act.includes('logout')) return <LogOut className="h-4 w-4 text-rose-500" />
+    
+    switch (type) {
+      case 'TASK':
+        if (act.includes('delete')) return <Trash2 className="h-4 w-4 text-rose-400" />
+        if (act.includes('create')) return <Plus className="h-4 w-4 text-emerald-400" />
+        if (act.includes('update')) return <Edit3 className="h-4 w-4 text-sky-400" />
+        return <CheckCircle2 className="h-4 w-4 text-blue-400" />
+      case 'SUBTASK':
+        if (act.includes('delete')) return <Trash2 className="h-4 w-4 text-rose-400" />
+        if (act.includes('create')) return <Plus className="h-4 w-4 text-indigo-400" />
+        return <ListTodo className="h-4 w-4 text-indigo-400" />
+      case 'GROUP':
+        if (act.includes('delete')) return <Trash2 className="h-4 w-4 text-rose-400" />
+        return <Folder className="h-4 w-4 text-amber-400" />
+      case 'USER':
+        return <Shield className="h-4 w-4 text-purple-400" />
+      default:
+        return <Activity className="h-4 w-4 text-muted-foreground" />
+    }
+  }
+
   const content = (
     <div className={cn("flex flex-col h-full", !hideCard && "p-8")}>
       {/* Header */}
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm ring-1 ring-primary/20">
             <Activity className="h-6 w-6" />
           </div>
           <div>
             <h3 className="font-heading text-xl font-bold tracking-tight text-foreground">
               Timeline
             </h3>
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest">
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest flex items-center gap-1.5">
+              <Shield className="h-3 w-3" />
               Security Logs
             </p>
           </div>
         </div>
         
         <div className="relative w-full sm:max-w-[240px]">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground transition-colors" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
           <Input 
             placeholder="Filter logs..." 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-11 pl-11 rounded-xl bg-background/50 border-border focus-visible:ring-accent/30"
+            className="h-11 pl-11 rounded-xl bg-background/50 border-border focus-visible:ring-accent/30 placeholder:text-muted-foreground/50 transition-all hover:bg-background/80"
           />
         </div>
       </div>
@@ -120,7 +148,7 @@ export function AuditTrail({
             <p className="text-sm font-semibold text-destructive">{error}</p>
             <Button 
               variant="outline" 
-              onClick={() => globalThis.location.reload()}
+              onClick={() => fetchAuditLog()}
               className="w-full rounded-xl border-destructive/20 text-destructive hover:bg-destructive/10"
             >
               Try Again
@@ -136,32 +164,40 @@ export function AuditTrail({
                   {filteredLogs.map((log, index) => (
                     <motion.div
                       key={log.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, scale: 0.98 }}
                       transition={{ duration: 0.3, delay: index * 0.03 }}
                       className="group relative flex gap-6"
                     >
                       {/* Visual Connector */}
                       {index !== filteredLogs.length - 1 && (
-                        <div className="absolute left-6 top-12 bottom-[-24px] w-[2px] bg-gradient-to-b from-border via-border/50 to-transparent" />
+                        <div className="absolute left-6 top-12 bottom-[-24px] w-[2px] bg-gradient-to-b from-border/80 via-border/30 to-transparent" />
                       )}
                       
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border bg-card/80 shadow-sm transition-all group-hover:scale-110 group-hover:border-primary/30 group-hover:shadow-primary/5">
-                        <Clock className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-primary" />
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border bg-card shadow-sm transition-all group-hover:scale-110 group-hover:border-primary/40 group-hover:shadow-lg group-hover:shadow-primary/5">
+                        {getIcon(log.action, log.target_type)}
                       </div>
                       
-                      <div className="flex flex-col gap-2 py-1">
-                        <div className="flex items-center gap-3">
-                          <span className="text-sm font-bold tracking-tight text-foreground uppercase decoration-accent/20 decoration-2 underline-offset-4 group-hover:underline">
-                            {log.action?.replaceAll("_", " ") || "ACTIVITY"}
-                          </span>
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-muted/50 px-2.5 py-0.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                            {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
+                      <div className="flex flex-col gap-1.5 py-1 flex-1">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm font-bold tracking-tight text-foreground uppercase decoration-primary/20 decoration-2 underline-offset-4 group-hover:underline">
+                              {log.action?.replaceAll("_", " ") || "ACTIVITY"}
+                            </span>
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted/50 px-2.5 py-0.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                              <Clock className="h-3 w-3" />
+                              {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          {log.target_id && log.target_type === 'TASK' && (
+                            <button className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-primary">
+                              <ExternalLink className="h-3.5 w-3.5" />
+                            </button>
+                          )}
                         </div>
-                        <p className="text-sm leading-relaxed text-muted-foreground/80 group-hover:text-foreground transition-colors">
-                          {log.details}
+                        <p className="text-sm leading-relaxed text-muted-foreground/80 group-hover:text-foreground transition-colors font-medium">
+                          {log.details || `Performed ${log.action} on ${log.target_type} #${log.target_id}`}
                         </p>
                       </div>
                     </motion.div>

@@ -1,12 +1,27 @@
 import axios from "axios"
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000"
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
 })
+
+// Add a response interceptor to handle 401 errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Prevent infinite loop: don't trigger logout if the request that failed was already a logout request
+    const isLogoutRequest = error.config?.url?.endsWith("/api/v1/users/logout")
+    
+    if (error.response?.status === 401 && !isLogoutRequest) {
+      // Dispatch a custom event to notify AuthContext
+      window.dispatchEvent(new CustomEvent("auth:unauthorized"))
+    }
+    return Promise.reject(error)
+  }
+)
 
 // Types
 export type TaskPriority = "LOW" | "MEDIUM" | "HIGH"

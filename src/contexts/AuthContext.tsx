@@ -7,6 +7,7 @@ import {
   useEffect,
   type ReactNode,
 } from "react"
+import { api } from "@/lib/api"
 import axios from "axios"
 import {
   getAuthErrorMessage,
@@ -34,13 +35,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000"
-
 const USER_STORAGE_KEY = "auth_user"
-
-// Enable sending cookies with every request
-axios.defaults.withCredentials = true
 
 export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [user, setUser] = useState<AuthUser | null>(() => {
@@ -57,10 +52,21 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const logout = useCallback(async () => {
+    try {
+      await api.post("/api/v1/users/logout", {})
+    } catch (err) {
+      console.error("Logout request failed, cleaning up local session anyway.", err)
+    }
+    setUser(null)
+    setError(null)
+    globalThis.localStorage.removeItem(USER_STORAGE_KEY)
+  }, [])
+
   const refreshUser = useCallback(async () => {
     try {
       setLoading(true)
-      const response = await axios.get(`${API_BASE_URL}/api/v1/users/me`)
+      const response = await api.get("/api/v1/users/me")
       const nextUser = normalizeAuthUser(response.data)
       if (nextUser) {
         setUser(nextUser)
@@ -71,10 +77,9 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       if (axios.isAxiosError(err)) {
         if (err.response?.status === 401) {
           // Token is invalid/expired or not present
-          setUser(null)
-          globalThis.localStorage.removeItem(USER_STORAGE_KEY)
+          // logout() // Handled by event listener if using shared api
         } else {
-          setError(err.response?.data?.detail || "Failed to refresh user profile")
+          setError((err.response?.data as any)?.detail || "Failed to refresh user profile")
         }
       } else {
         setError("Failed to refresh user profile")
@@ -84,10 +89,19 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     }
   }, [])
 
-  // On mount, attempt to refresh the user using the HttpOnly cookie
+  // On mount, attempt to refresh the user and listen for unauthorized events
   useEffect(() => {
     refreshUser()
-  }, [refreshUser])
+
+    const handleUnauthorized = () => {
+      logout()
+    }
+
+    window.addEventListener("auth:unauthorized", handleUnauthorized)
+    return () => {
+      window.removeEventListener("auth:unauthorized", handleUnauthorized)
+    }
+  }, [refreshUser, logout])
 
   const login = useCallback(
     async (credentials: { username: string; password: string }) => {
@@ -98,8 +112,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         body.set("username", sanitizeUsername(credentials.username))
         body.set("password", sanitizePassword(credentials.password))
 
-        const response = await axios.post(
-          `${API_BASE_URL}/api/v1/users/token`,
+        const response = await api.post(
+          "/api/v1/users/token",
           body,
           {
             headers: {
@@ -137,8 +151,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       setLoading(true)
       setError(null)
       try {
-        const response = await axios.post(
-          `${API_BASE_URL}/api/v1/users/register`,
+        const response = await api.post(
+          "/api/v1/users/register",
           {
             username: sanitizeUsername(credentials.username),
             email: sanitizeEmail(credentials.email),
@@ -164,17 +178,6 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     },
     []
   )
-
-  const logout = useCallback(async () => {
-    try {
-      await axios.post(`${API_BASE_URL}/api/v1/users/logout`, {});
-    } catch (err) {
-      console.error("Logout request failed, cleaning up local session anyway.", err);
-    }
-    setUser(null)
-    setError(null)
-    globalThis.localStorage.removeItem(USER_STORAGE_KEY)
-  }, [])
 
   const value = useMemo(() => ({
     user,

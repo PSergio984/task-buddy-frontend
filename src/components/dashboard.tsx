@@ -134,7 +134,7 @@ export function Dashboard({
   const handleToggleSubtask = useCallback(
     async (subtaskId: number, completed: boolean) => {
       try {
-        await updateSubtask(subtaskId, { completed })
+        await updateSubtask({ id: subtaskId, updates: { completed } })
         onRefresh()
       } catch (err) {
         console.error("Failed to update subtask:", err)
@@ -172,7 +172,7 @@ export function Dashboard({
   const handleDetachTag = useCallback(
     async (taskId: number, tagId: number) => {
       try {
-        await detachTag(taskId, tagId)
+        await detachTag({ taskId, tagId })
         onRefresh()
       } catch (err) {
         console.error("Failed to detach tag:", err)

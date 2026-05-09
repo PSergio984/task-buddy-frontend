@@ -85,11 +85,11 @@ export function LoginPage() {
               </div>
               <span className="text-3xl font-bold tracking-tighter text-foreground">Task Buddy</span>
             </div>
-            <h2 className="text-6xl font-black tracking-tighter text-foreground leading-[0.9]">
+            <h2 className="text-6xl font-black tracking-tighter text-foreground leading-[0.9] uppercase">
               ELEVATE YOUR <br />
               <span className="text-accent underline decoration-accent/20 underline-offset-8">DAILY FLOW.</span>
             </h2>
-            <p className="text-xl text-muted-foreground/80 max-w-sm font-medium leading-relaxed">
+            <p className="text-xl text-foreground max-w-sm font-black leading-relaxed">
               The intelligent assistant designed for high-performance teams and focused individuals.
             </p>
           </motion.div>
@@ -116,21 +116,21 @@ export function LoginPage() {
           </div>
 
           <div className="mb-10 text-left">
-            <h1 className="text-4xl font-bold tracking-tight text-foreground mb-3">
+            <h1 className="text-5xl font-black tracking-tighter text-foreground mb-3 uppercase">
               Welcome Back
             </h1>
-            <p className="text-lg text-muted-foreground">
-              Enter your credentials to access your executive suite.
+            <p className="text-xl text-foreground font-black">
+              Join thousands of achievers. Manifest your goals today.
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-semibold ml-1">
+              <Label htmlFor="email" className="text-sm font-black uppercase tracking-widest text-foreground ml-1">
                 Email Address
               </Label>
               <div className="relative group">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground transition-colors group-focus-within:text-accent" />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-foreground/70 transition-colors group-focus-within:text-accent" />
                 <Input
                   id="email"
                   type="email"
@@ -138,7 +138,7 @@ export function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(sanitizeEmail(e.target.value))}
                   required
-                  className="h-14 rounded-2xl border-border bg-background/50 pl-12 text-lg focus-visible:ring-accent/30"
+                  className="h-14 rounded-2xl border-border bg-background/50 pl-12 text-lg font-medium focus-visible:ring-accent/30"
                 />
               </div>
               {showEmailError && emailError && (
@@ -148,18 +148,18 @@ export function LoginPage() {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between ml-1">
-                <Label htmlFor="password" title="Password must be at least 8 characters" className="text-sm font-semibold">
+                <Label htmlFor="password" title="Password must be at least 8 characters" className="text-sm font-black uppercase tracking-widest text-foreground">
                   Password
                 </Label>
                 <Link
                   to="/forgot-password"
-                  className="text-sm font-medium text-accent hover:underline underline-offset-4 transition-colors"
+                  className="text-sm font-black text-accent hover:underline underline-offset-4 transition-colors uppercase tracking-tighter"
                 >
                   Forgot password?
                 </Link>
               </div>
               <div className="relative group">
-                <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground transition-colors group-focus-within:text-accent" />
+                <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-foreground/90 transition-colors group-focus-within:text-accent" />
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
@@ -196,7 +196,7 @@ export function LoginPage() {
           </form>
 
           <div className="mt-12 pt-8 border-t text-center lg:text-left">
-            <p className="text-muted-foreground">
+            <p className="text-foreground font-medium">
               Don't have an account?{" "}
               <Link
                 to="/register"

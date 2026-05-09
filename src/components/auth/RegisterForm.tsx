@@ -85,11 +85,11 @@ export function RegisterForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2">
-        <Label htmlFor="username" className="text-sm font-semibold ml-1">
+        <Label htmlFor="username" className="text-sm font-black uppercase tracking-widest ml-1 text-foreground">
           Username
         </Label>
         <div className="relative group">
-          <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground transition-colors group-focus-within:text-accent" />
+          <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-foreground transition-colors group-focus-within:text-accent" />
           <Input
             id="username"
             type="text"
@@ -97,20 +97,20 @@ export function RegisterForm() {
             value={username}
             onChange={(e) => setUsername(sanitizeUsername(e.target.value))}
             required
-            className="h-14 rounded-2xl border-border bg-background/50 pl-12 text-lg focus-visible:ring-accent/30"
+            className="h-14 rounded-2xl border-border bg-background/50 pl-12 text-lg focus-visible:ring-accent/30 text-foreground"
           />
         </div>
         {(submitAttempted || username.length > 0) && usernameError && (
-          <p className="mt-1.5 text-xs text-destructive ml-1">{usernameError}</p>
+          <p className="mt-1.5 text-xs text-destructive ml-1 font-bold">{usernameError}</p>
         )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="email" className="text-sm font-semibold ml-1">
+        <Label htmlFor="email" className="text-sm font-black uppercase tracking-widest ml-1 text-foreground">
           Email Address
         </Label>
         <div className="relative group">
-          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground transition-colors group-focus-within:text-accent" />
+          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-foreground transition-colors group-focus-within:text-accent" />
           <Input
             id="email"
             type="email"
@@ -118,20 +118,20 @@ export function RegisterForm() {
             value={email}
             onChange={(e) => setEmail(sanitizeEmail(e.target.value))}
             required
-            className="h-14 rounded-2xl border-border bg-background/50 pl-12 text-lg focus-visible:ring-accent/30"
+            className="h-14 rounded-2xl border-border bg-background/50 pl-12 text-lg focus-visible:ring-accent/30 text-foreground"
           />
         </div>
         {(submitAttempted || email.length > 0) && emailError && (
-          <p className="mt-1.5 text-xs text-destructive ml-1">{emailError}</p>
+          <p className="mt-1.5 text-xs text-destructive ml-1 font-bold">{emailError}</p>
         )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password" title="At least 8 characters" className="text-sm font-semibold ml-1">
+        <Label htmlFor="password" title="At least 8 characters" className="text-sm font-black uppercase tracking-widest ml-1 text-foreground">
           Password
         </Label>
         <div className="relative group">
-          <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground transition-colors group-focus-within:text-accent" />
+          <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-foreground transition-colors group-focus-within:text-accent" />
           <Input
             id="password"
             type={showPassword ? "text" : "password"}
@@ -139,28 +139,28 @@ export function RegisterForm() {
             value={password}
             onChange={(e) => setPassword(sanitizePassword(e.target.value))}
             required
-            className="h-14 rounded-2xl border-border bg-background/50 pl-12 pr-12 text-lg focus-visible:ring-accent/30"
+            className="h-14 rounded-2xl border-border bg-background/50 pl-12 pr-12 text-lg focus-visible:ring-accent/30 text-foreground"
           />
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/60 hover:text-foreground transition-colors"
           >
             {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
           </button>
         </div>
         <PasswordStrengthMeter password={password} />
         {(submitAttempted || password.length > 0) && passwordError && (
-          <p className="mt-1.5 text-xs text-destructive ml-1">{passwordError}</p>
+          <p className="mt-1.5 text-xs text-destructive ml-1 font-bold">{passwordError}</p>
         )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="confirmPassword" title="Passwords must match" className="text-sm font-semibold ml-1">
+        <Label htmlFor="confirmPassword" title="Passwords must match" className="text-sm font-black uppercase tracking-widest ml-1 text-foreground">
           Confirm Password
         </Label>
         <div className="relative group">
-          <BadgeCheck className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground transition-colors group-focus-within:text-accent" />
+          <BadgeCheck className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-foreground transition-colors group-focus-within:text-accent" />
           <Input
             id="confirmPassword"
             type={showConfirmPassword ? "text" : "password"}
@@ -168,18 +168,18 @@ export function RegisterForm() {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(sanitizePassword(e.target.value))}
             required
-            className="h-14 rounded-2xl border-border bg-background/50 pl-12 pr-12 text-lg focus-visible:ring-accent/30"
+            className="h-14 rounded-2xl border-border bg-background/50 pl-12 pr-12 text-lg focus-visible:ring-accent/30 text-foreground"
           />
           <button
             type="button"
             onClick={() => setShowConfirmPassword((v) => !v)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/60 hover:text-foreground transition-colors"
           >
             {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
           </button>
         </div>
         {(submitAttempted || confirmPassword.length > 0) && confirmPasswordError && (
-          <p className="mt-1.5 text-xs text-destructive ml-1">{confirmPasswordError}</p>
+          <p className="mt-1.5 text-xs text-destructive ml-1 font-bold">{confirmPasswordError}</p>
         )}
       </div>
 
