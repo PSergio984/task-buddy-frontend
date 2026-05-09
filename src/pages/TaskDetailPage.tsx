@@ -229,7 +229,7 @@ export function TaskDetailPage() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.1 }}
           >
-            <Card className="overflow-hidden rounded-[2.5rem] border-white/10 bg-white/5 shadow-2xl backdrop-blur-xl">
+            <Card className="overflow-hidden rounded-[2.5rem] border-none bg-white dark:bg-zinc-900 shadow-sm">
               <CardHeader className="p-10 pb-4">
                 <CardTitle className="text-xl font-bold tracking-[0.2em] text-foreground/40 uppercase">
                   Description
@@ -311,7 +311,7 @@ export function TaskDetailPage() {
             transition={{ delay: 0.3 }}
             className="space-y-6"
           >
-            <Card className="group relative overflow-hidden rounded-[2.5rem] border-none bg-primary text-primary-foreground shadow-2xl shadow-primary/20">
+            <Card className="group relative overflow-hidden rounded-[2.5rem] border-none bg-primary text-primary-foreground shadow-sm">
               <div className="absolute top-0 right-0 p-8 opacity-20 transition-transform group-hover:scale-125">
                 <Clock className="h-20 w-20" />
               </div>
@@ -331,7 +331,7 @@ export function TaskDetailPage() {
                     </p>
                     <p className="text-xl font-bold">
                       {task.due_date
-                        ? format(new Date(task.due_date), "MMM d, yyyy")
+                        ? format(new Date(task.due_date), "MMM d, yyyy 'at' p")
                         : "No deadline"}
                     </p>
                   </div>
@@ -352,7 +352,7 @@ export function TaskDetailPage() {
               </CardContent>
             </Card>
 
-            <Card className="rounded-[2.5rem] border-white/10 bg-white/5 shadow-2xl backdrop-blur-xl">
+            <Card className="rounded-[2.5rem] border-none bg-white dark:bg-zinc-900 shadow-sm">
               <CardHeader className="p-8 pb-4">
                 <CardTitle className="text-sm font-bold tracking-[0.3em] text-foreground/40 uppercase">
                   Tags

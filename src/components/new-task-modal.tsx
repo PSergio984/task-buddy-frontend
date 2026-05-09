@@ -18,9 +18,17 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { motion } from "framer-motion"
-import { Sparkles, Calendar, PencilLine, Layers, Tag, Flag } from "lucide-react"
+import { CalendarIcon, Sparkles, PencilLine, Layers, Tag, Flag, Clock } from "lucide-react"
 import { useGroups } from "@/hooks/useGroups"
 import type { Task, TaskPriority } from "@/lib/api"
+import { format } from "date-fns"
+import { Calendar } from "@/components/ui/calendar"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { cn } from "@/lib/utils"
 
 export interface NewTaskModalProps {
   readonly open: boolean
@@ -48,21 +56,9 @@ export function NewTaskModal({
   const [priority, setPriority] = useState<TaskPriority>(task?.priority ?? "MEDIUM")
   const [tags, setTags] = useState<string>(task?.tags?.map(t => t.name).join(", ") ?? "")
   
-  // Format due_date for datetime-local input (YYYY-MM-DDThh:mm)
-  const formatDateTimeForInput = (dateStr?: string) => {
-    if (!dateStr) return ""
-    try {
-      const date = new Date(dateStr)
-      if (isNaN(date.getTime())) return ""
-      const localDate = new Date(date)
-      localDate.setMinutes(date.getMinutes() - date.getTimezoneOffset())
-      return localDate.toISOString().slice(0, 16)
-    } catch (e) {
-      return ""
-    }
-  }
-
-  const [dueDate, setDueDate] = useState(formatDateTimeForInput(task?.due_date))
+  const [dueDate, setDueDate] = useState<Date | undefined>(
+    task?.due_date ? new Date(task.due_date) : undefined
+  )
 
   useEffect(() => {
     if (task) {
@@ -71,14 +67,14 @@ export function NewTaskModal({
       setGroupId(task.group_id?.toString() ?? "none")
       setPriority(task.priority ?? "MEDIUM")
       setTags(task.tags?.map(t => t.name).join(", ") ?? "")
-      setDueDate(formatDateTimeForInput(task.due_date))
+      setDueDate(task.due_date ? new Date(task.due_date) : undefined)
     } else {
       setTitle("")
       setDescription("")
       setGroupId("none")
       setPriority("MEDIUM")
       setTags("")
-      setDueDate("")
+      setDueDate(undefined)
     }
   }, [task, open])
 
@@ -93,7 +89,7 @@ export function NewTaskModal({
       title: title.trim(),
       description: description.trim() || undefined,
       group_id: groupId !== "none" ? parseInt(groupId) : undefined,
-      due_date: dueDate ? new Date(dueDate).toISOString() : undefined,
+      due_date: dueDate ? dueDate.toISOString() : undefined,
       completed: task?.completed ?? false,
       priority,
       tags: tags.split(",").map(t => t.trim()).filter(t => t !== ""),
@@ -107,7 +103,7 @@ export function NewTaskModal({
         setGroupId("none")
         setPriority("MEDIUM")
         setTags("")
-        setDueDate("")
+        setDueDate(undefined)
       }
       onOpenChange(false)
     } catch (error) {
@@ -122,7 +118,7 @@ export function NewTaskModal({
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          className="pointer-events-auto overflow-hidden border bg-background/80 p-0 shadow-2xl shadow-primary/10 backdrop-blur-2xl rounded-[2.5rem]"
+          className="pointer-events-auto overflow-hidden border-none bg-white dark:bg-zinc-900 p-0 shadow-sm rounded-[2.5rem]"
         >
           <div className="p-8 sm:p-10">
             <DialogHeader className="mb-10 text-left">
@@ -131,7 +127,7 @@ export function NewTaskModal({
                   {isEditMode ? <PencilLine className="h-5 w-5" /> : <Sparkles className="h-5 w-5" />}
                 </div>
                 <DialogTitle className="font-heading text-3xl font-black tracking-tight text-foreground">
-                  {isEditMode ? "Refine Intent" : "Manifest Task"}
+                  {isEditMode ? "Edit Task" : "Create Task"}
                 </DialogTitle>
               </div>
               <DialogDescription className="text-sm font-medium text-muted-foreground tracking-wide ml-13">
@@ -255,19 +251,53 @@ export function NewTaskModal({
                 />
               </div>
 
-              {/* Deadline */}
-              <div className="space-y-2">
-                <Label htmlFor="dueDate" className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
-                  <Calendar className="h-3 w-3" />
-                  Execution Deadline
-                </Label>
-                <div className="relative group">
-                   <Input
-                    id="dueDate"
-                    type="datetime-local"
-                    value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
-                    className="h-12 rounded-2xl border-border bg-background/50 px-6 font-semibold focus-visible:ring-primary/20"
+              {/* Timing Section (Date & Time) */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
+                    <CalendarIcon className="h-3 w-3" />
+                    Deadline Date
+                  </Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full h-12 justify-start text-left font-semibold rounded-2xl border-border bg-background/50 px-6 focus-visible:ring-primary/20 hover:bg-background/80 transition-colors",
+                          !dueDate && "text-muted-foreground"
+                        )}
+                      >
+                        {dueDate ? format(dueDate, "PPP") : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 rounded-2xl border-border bg-background/95 backdrop-blur-xl" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={dueDate}
+                        onSelect={setDueDate}
+                        initialFocus
+                        className="rounded-2xl"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="time" className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
+                    <Clock className="h-3 w-3" />
+                    Deadline Time
+                  </Label>
+                  <Input
+                    id="time"
+                    type="time"
+                    value={dueDate ? format(dueDate, "HH:mm") : ""}
+                    onChange={(e) => {
+                      const [hours, minutes] = e.target.value.split(":").map(Number);
+                      const newDate = dueDate ? new Date(dueDate) : new Date();
+                      newDate.setHours(hours, minutes);
+                      setDueDate(newDate);
+                    }}
+                    className="h-12 rounded-2xl border-border bg-background/50 px-4 font-semibold focus-visible:ring-primary/20"
                   />
                 </div>
               </div>
@@ -290,7 +320,7 @@ export function NewTaskModal({
                     {isLoading ? (
                       <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full" />
                     ) : (
-                      <span>{isEditMode ? "Synchronize" : "Finalize Task"}</span>
+                      <span>{isEditMode ? "Update Task" : "Create Task"}</span>
                     )}
                   </Button>
                 </motion.div>

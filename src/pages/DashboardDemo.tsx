@@ -11,13 +11,13 @@ interface LayoutContext {
 
 export function DashboardDemo() {
   const { handleEditTask } = useOutletContext<LayoutContext>()
-  const { activeSidebarFilter, activeStatus, setActiveStatus, activeTagId } = useFilters()
+  const { activeSidebarFilter, activeTagId } = useFilters()
   
   const isGroupFilter = activeSidebarFilter.startsWith("group:")
-  const filterParam = activeStatus === "all" ? undefined : activeStatus
   const groupIdParam = isGroupFilter ? parseInt(activeSidebarFilter.split(":")[1]) : undefined
 
-  const { data: tasks = [], isLoading: loadingTasks, refetch: refreshTasks } = useTasks(filterParam, groupIdParam, activeTagId || undefined)
+  // For Dashboard, we want to fetch all tasks and filter them by time locally
+  const { data: tasks = [], isLoading: loadingTasks, refetch: refreshTasks } = useTasks(undefined, groupIdParam, activeTagId || undefined)
   const { data: stats = null, isLoading: loadingStats, refetch: refreshStats } = useStats()
 
   const handleRefresh = async () => {
@@ -28,8 +28,6 @@ export function DashboardDemo() {
     <Dashboard 
       tasks={tasks} 
       loadingTasks={loadingTasks}
-      activeStatus={activeStatus} 
-      onStatusChange={setActiveStatus} 
       onRefresh={handleRefresh}
       onEdit={handleEditTask}
       stats={stats}

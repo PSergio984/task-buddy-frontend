@@ -1,4 +1,4 @@
-import { useCallback } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { motion, AnimatePresence } from "framer-motion"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -6,6 +6,14 @@ import { TaskCard } from "@/components/task-card"
 import { AuditTrail } from "@/components/audit-trail"
 import { SystemOverview } from "@/components/system-overview"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  isToday,
+  isTomorrow,
+  isWithinInterval,
+  startOfToday,
+  endOfWeek,
+  parseISO,
+} from "date-fns"
 import {
   useUpdateTask,
   useDeleteTask,
@@ -16,13 +24,11 @@ import {
 import type { Task, StatsOverview } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import axios from "axios"
-import { LayoutDashboard, ListChecks } from "lucide-react"
+import { LayoutDashboard, ListChecks, Calendar } from "lucide-react"
 
 export interface DashboardProps {
   readonly tasks: Task[]
   readonly loadingTasks?: boolean
-  readonly activeStatus: string
-  readonly onStatusChange: (status: string) => void
   readonly onRefresh: () => void
   readonly onEdit: (task: Task) => void
   readonly stats: StatsOverview | null
@@ -31,22 +37,22 @@ export interface DashboardProps {
 
 function TaskListSkeleton() {
   return (
-    <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
       {[...Array(4)].map((_, i) => (
-        <div key={i} className="h-[180px] rounded-[2rem] border bg-background/50 p-6 space-y-4">
+        <div key={i} className="h-[200px] rounded-[2.5rem] border-none bg-white dark:bg-zinc-900 p-8 space-y-4 shadow-sm">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 space-y-3">
-              <Skeleton className="h-6 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-7 w-3/4 rounded-lg" />
+              <Skeleton className="h-4 w-1/2 rounded-lg" />
             </div>
-            <Skeleton className="h-10 w-10 rounded-xl" />
+            <Skeleton className="h-12 w-12 rounded-2xl" />
           </div>
-          <div className="flex gap-2">
-            <Skeleton className="h-5 w-16 rounded-lg" />
-            <Skeleton className="h-5 w-16 rounded-lg" />
+          <div className="flex gap-3">
+            <Skeleton className="h-6 w-20 rounded-full" />
+            <Skeleton className="h-6 w-20 rounded-full" />
           </div>
-          <div className="pt-2">
-            <Skeleton className="h-2 w-full rounded-full" />
+          <div className="pt-4">
+            <Skeleton className="h-1.5 w-full rounded-full" />
           </div>
         </div>
       ))}
@@ -57,8 +63,6 @@ function TaskListSkeleton() {
 export function Dashboard({
   tasks,
   loadingTasks,
-  activeStatus,
-  onStatusChange,
   onRefresh,
   onEdit,
   stats,
@@ -70,8 +74,28 @@ export function Dashboard({
   const { mutateAsync: updateSubtask } = useUpdateSubtask()
   const { mutateAsync: deleteSubtask } = useDeleteSubtask()
   const { mutateAsync: detachTag } = useDetachTag()
+  const [activeTab, setActiveTab] = useState("all")
   
   const { toast } = useToast()
+
+  const filteredTasks = useMemo(() => {
+    const today = startOfToday()
+    const weekEnd = endOfWeek(today, { weekStartsOn: 1 }) // Assuming Monday start
+
+    return tasks.filter((task) => {
+      if (activeTab === "all") return true
+      if (!task.due_date) return false
+
+      const dueDate = parseISO(task.due_date)
+      
+      if (activeTab === "today") return isToday(dueDate)
+      if (activeTab === "tomorrow") return isTomorrow(dueDate)
+      if (activeTab === "week") {
+        return isWithinInterval(dueDate, { start: today, end: weekEnd })
+      }
+      return true
+    })
+  }, [tasks, activeTab])
 
   const handleToggleComplete = useCallback(
     async (id: number) => {
@@ -191,19 +215,21 @@ export function Dashboard({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="flex flex-1 flex-col gap-8 bg-background/20 p-2 md:p-4 lg:p-6 backdrop-blur-sm"
+      className="flex flex-1 flex-col gap-10 bg-background/20 p-4 md:p-8 lg:p-12 backdrop-blur-3xl"
     >
       {/* Header Section */}
-      <header className="flex flex-col gap-2">
-        <div className="flex items-center gap-3 text-primary">
-          <LayoutDashboard className="h-6 w-6" />
-          <h1 className="font-heading text-3xl font-bold tracking-tight">Executive Dashboard</h1>
+      <header className="flex flex-col gap-3">
+        <div className="flex items-center gap-4 text-primary">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 shadow-inner">
+            <LayoutDashboard className="h-6 w-6" />
+          </div>
+          <h1 className="font-heading text-4xl font-black tracking-tighter uppercase">Executive Dashboard</h1>
         </div>
-        <p className="text-muted-foreground ml-9">Manage your focus and track your peak performance.</p>
+        <p className="text-lg font-medium text-foreground/60 ml-16">High-performance tracking for your strategic objectives.</p>
       </header>
 
       {/* Primary: Stats & Audit */}
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-10 lg:grid-cols-3">
         <div className="lg:col-span-1">
           <SystemOverview stats={stats} loading={loadingStats} />
         </div>
@@ -217,79 +243,88 @@ export function Dashboard({
         initial={{ y: 24, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.2, duration: 0.4 }}
-        className="flex flex-col gap-6"
+        className="flex flex-col gap-8"
       >
-        <div className="flex items-center gap-3 px-1">
-          <ListChecks className="h-5 w-5 text-primary/70" />
-          <h2 className="text-xl font-bold tracking-tight">Daily Agenda</h2>
+        <div className="flex items-center justify-between px-2">
+          <div className="flex items-center gap-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10">
+              <Calendar className="h-5 w-5 text-accent" />
+            </div>
+            <h2 className="text-2xl font-black tracking-tight uppercase">Strategic Agenda</h2>
+          </div>
         </div>
 
         <Tabs
-          value={activeStatus}
-          onValueChange={(v) => onStatusChange(v)}
+          value={activeTab}
+          onValueChange={setActiveTab}
           className="w-full"
         >
-          <TabsList className="inline-flex h-12 items-center justify-center rounded-2xl border bg-background/50 p-1.5 backdrop-blur-xl shadow-sm mb-8">
+          <TabsList className="inline-flex h-14 items-center justify-center rounded-[2rem] border-none bg-white/5 p-1.5 backdrop-blur-2xl shadow-xl mb-10">
             <TabsTrigger
               value="all"
-              className="rounded-xl px-8 text-xs font-bold tracking-[0.2em] transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg"
+              className="rounded-3xl px-10 text-[10px] font-black tracking-[0.3em] transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-2xl uppercase"
             >
-              ALL
+              All
             </TabsTrigger>
             <TabsTrigger
-              value="pending"
-              className="rounded-xl px-8 text-xs font-bold tracking-[0.2em] transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg"
+              value="today"
+              className="rounded-3xl px-10 text-[10px] font-black tracking-[0.3em] transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-2xl uppercase"
             >
-              PENDING
+              Today
             </TabsTrigger>
             <TabsTrigger
-              value="completed"
-              className="rounded-xl px-8 text-xs font-bold tracking-[0.2em] transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg"
+              value="tomorrow"
+              className="rounded-3xl px-10 text-[10px] font-black tracking-[0.3em] transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-2xl uppercase"
             >
-              COMPLETED
+              Tomorrow
+            </TabsTrigger>
+            <TabsTrigger
+              value="week"
+              className="rounded-3xl px-10 text-[10px] font-black tracking-[0.3em] transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-2xl uppercase"
+            >
+              This Week
             </TabsTrigger>
           </TabsList>
 
-          {(["all", "pending", "completed"] as const).map((status) => (
-            <TabsContent key={status} value={status} className="mt-0 space-y-4 focus-visible:outline-none">    
-              {loadingTasks ? (
-                <TaskListSkeleton />
-              ) : tasks.length === 0 ? (
-                <div className="flex h-64 flex-col items-center justify-center rounded-[2.5rem] border border-dashed border-border bg-muted/20 text-center animate-in fade-in zoom-in-95 duration-300">
-                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-3xl bg-muted/30">    
-                    <ListChecks className="h-8 w-8 text-muted-foreground/30" />
-                  </div>
-                  <p className="text-base font-medium text-muted-foreground italic">
-                    Your agenda is clear. Time to innovate.
-                  </p>
+          <TabsContent value={activeTab} className="mt-0 space-y-6 focus-visible:outline-none">    
+            {loadingTasks ? (
+              <TaskListSkeleton />
+            ) : filteredTasks.length === 0 ? (
+              <div className="flex h-80 flex-col items-center justify-center rounded-[3rem] border-2 border-dashed border-border/30 bg-white/5 text-center animate-in fade-in zoom-in-95 duration-500">
+                <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[2rem] bg-muted/20">    
+                  <ListChecks className="h-10 w-10 text-muted-foreground/20" />
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-                  <AnimatePresence mode="popLayout">
-                    {tasks.map((task: Task, index) => (
-                      <motion.div
-                        key={task.id}
-                        initial={{ opacity: 0, scale: 0.98, y: 10 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                        transition={{ delay: index * 0.04, duration: 0.3 }}
-                      >
-                        <TaskCard
-                          task={task}
-                          onToggleComplete={handleToggleComplete}
-                          onDelete={handleDelete}
-                          onEdit={onEdit}
-                          onToggleSubtask={handleToggleSubtask}
-                          onDeleteSubtask={handleDeleteSubtask}
-                          onDetachTag={handleDetachTag}
-                        />
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </div>
-              )}
-            </TabsContent>
-          ))}
+                <h3 className="text-xl font-bold text-foreground mb-2 uppercase tracking-tight">Agenda Clear</h3>
+                <p className="text-muted-foreground font-medium italic">
+                  No critical objectives found in this view.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+                <AnimatePresence mode="popLayout">
+                  {filteredTasks.map((task: Task, index) => (
+                    <motion.div
+                      key={task.id}
+                      initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.9, y: -20 }}
+                      transition={{ delay: index * 0.05, type: "spring", stiffness: 260, damping: 20 }}
+                    >
+                      <TaskCard
+                        task={task}
+                        onToggleComplete={handleToggleComplete}
+                        onDelete={handleDelete}
+                        onEdit={onEdit}
+                        onToggleSubtask={handleToggleSubtask}
+                        onDeleteSubtask={handleDeleteSubtask}
+                        onDetachTag={handleDetachTag}
+                      />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+            )}
+          </TabsContent>
         </Tabs>
       </motion.div>
 
