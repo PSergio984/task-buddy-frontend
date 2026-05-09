@@ -37,7 +37,7 @@ export function AuditTrail({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState("")
-  const { token } = useAuth()
+  const { user } = useAuth()
   
   const skeletonIds = useMemo(() => 
     Array.from({ length: limit }, (_, i) => `audit-skeleton-${i}-${Math.random().toString(36).substring(2, 11)}`),
@@ -47,16 +47,16 @@ export function AuditTrail({
     const controller = new AbortController()
 
     const fetchAuditLog = async () => {
-      if (!token) {
+      if (!user) {
         setLoading(false)
         return
       }
       try {
         setLoading(true)
         const response = await axios.get(`${API_BASE_URL}/api/v1/audit/logs`, {
-          headers: { Authorization: `Bearer ${token}` },
           params: { limit: Math.max(currentLimit * 2, 50) },
-          signal: controller.signal
+          signal: controller.signal,
+          withCredentials: true,
         })
         setLogs(Array.isArray(response.data) ? response.data : [])
         setError(null)
@@ -71,7 +71,7 @@ export function AuditTrail({
 
     fetchAuditLog()
     return () => controller.abort()
-  }, [token, currentLimit])
+  }, [user, currentLimit])
 
   const filteredLogs = logs
     .filter((log) => {

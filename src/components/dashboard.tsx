@@ -5,20 +5,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { TaskCard } from "@/components/task-card"
 import { AuditTrail } from "@/components/audit-trail"
 import { SystemOverview } from "@/components/system-overview"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   useUpdateTask,
   useDeleteTask,
   useUpdateSubtask,
   useDeleteSubtask,
   useDetachTag,
-} from "@/hooks/useApi"
-import type { Task, StatsOverview } from "@/hooks/useApi"
+} from "@/hooks/useTasks"
+import type { Task, StatsOverview } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import axios from "axios"
 import { LayoutDashboard, ListChecks } from "lucide-react"
 
 export interface DashboardProps {
   readonly tasks: Task[]
+  readonly loadingTasks?: boolean
   readonly activeStatus: string
   readonly onStatusChange: (status: string) => void
   readonly onRefresh: () => void
@@ -27,8 +29,34 @@ export interface DashboardProps {
   readonly loadingStats: boolean
 }
 
+function TaskListSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="h-[180px] rounded-[2rem] border bg-background/50 p-6 space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 space-y-3">
+              <Skeleton className="h-6 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
+            <Skeleton className="h-10 w-10 rounded-xl" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-5 w-16 rounded-lg" />
+            <Skeleton className="h-5 w-16 rounded-lg" />
+          </div>
+          <div className="pt-2">
+            <Skeleton className="h-2 w-full rounded-full" />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export function Dashboard({
   tasks,
+  loadingTasks,
   activeStatus,
   onStatusChange,
   onRefresh,
@@ -37,11 +65,12 @@ export function Dashboard({
   loadingStats,
 }: Readonly<DashboardProps>) {
   const { logout } = useAuth()
-  const { updateTask } = useUpdateTask()
-  const { deleteTask } = useDeleteTask()
-  const { updateSubtask } = useUpdateSubtask()
-  const { deleteSubtask } = useDeleteSubtask()
-  const { detachTag } = useDetachTag()
+  const { mutateAsync: updateTask } = useUpdateTask()
+  const { mutateAsync: deleteTask } = useDeleteTask()
+  const { mutateAsync: updateSubtask } = useUpdateSubtask()
+  const { mutateAsync: deleteSubtask } = useDeleteSubtask()
+  const { mutateAsync: detachTag } = useDetachTag()
+  
   const { toast } = useToast()
 
   const handleToggleComplete = useCallback(
@@ -50,8 +79,9 @@ export function Dashboard({
       if (!task) return
 
       try {
-        await updateTask(id, {
-          completed: !task.completed,
+        await updateTask({
+          id,
+          updates: { completed: !task.completed }
         })
         toast({
           title: task.completed ? "Task restored" : "Task completed!",
@@ -60,7 +90,6 @@ export function Dashboard({
             : "Excellent work on completing the task.",
           variant: "success",
         })
-        onRefresh()
       } catch (err: unknown) {
         if (axios.isAxiosError(err) && err.response?.status === 401) {
           await logout()
@@ -74,7 +103,7 @@ export function Dashboard({
         console.error("Failed to update task:", err)
       }
     },
-    [tasks, updateTask, onRefresh, toast, logout]
+    [tasks, updateTask, toast, logout]
   )
 
   const handleDelete = useCallback(
@@ -86,7 +115,6 @@ export function Dashboard({
           description: "The task has been permanently removed.",
           variant: "success",
         })
-        onRefresh()
       } catch (err: unknown) {
         if (axios.isAxiosError(err) && err.response?.status === 401) {
           await logout()
@@ -100,7 +128,7 @@ export function Dashboard({
         console.error("Failed to delete task:", err)
       }
     },
-    [deleteTask, onRefresh, toast, logout]
+    [deleteTask, toast, logout]
   )
 
   const handleToggleSubtask = useCallback(
@@ -223,10 +251,12 @@ export function Dashboard({
           </TabsList>
 
           {(["all", "pending", "completed"] as const).map((status) => (
-            <TabsContent key={status} value={status} className="mt-0 space-y-4 focus-visible:outline-none">
-              {tasks.length === 0 ? (
+            <TabsContent key={status} value={status} className="mt-0 space-y-4 focus-visible:outline-none">    
+              {loadingTasks ? (
+                <TaskListSkeleton />
+              ) : tasks.length === 0 ? (
                 <div className="flex h-64 flex-col items-center justify-center rounded-[2.5rem] border border-dashed border-border bg-muted/20 text-center animate-in fade-in zoom-in-95 duration-300">
-                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-3xl bg-muted/30">
+                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-3xl bg-muted/30">    
                     <ListChecks className="h-8 w-8 text-muted-foreground/30" />
                   </div>
                   <p className="text-base font-medium text-muted-foreground italic">
@@ -262,6 +292,7 @@ export function Dashboard({
           ))}
         </Tabs>
       </motion.div>
+
     </motion.div>
   )
 }

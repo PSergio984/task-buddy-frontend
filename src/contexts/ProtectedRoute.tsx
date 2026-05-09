@@ -164,13 +164,13 @@ function LoadingScreen() {
 }
 
 export function ProtectedRoute({ children }: Readonly<ProtectedRouteProps>) {
-  const { token, loading } = useAuth()
+  const { user, loading } = useAuth()
 
   if (loading) {
     return <LoadingScreen />
   }
 
-  if (!token) {
+  if (!user) {
     return <Navigate to="/login" />
   }
 
@@ -178,13 +178,13 @@ export function ProtectedRoute({ children }: Readonly<ProtectedRouteProps>) {
 }
 
 export function PublicRoute({ children }: Readonly<ProtectedRouteProps>) {
-  const { token, loading } = useAuth()
+  const { user, loading } = useAuth()
 
   if (loading) {
     return <LoadingScreen />
   }
 
-  if (token) {
+  if (user) {
     return <Navigate to="/dashboard" />
   }
 

@@ -54,7 +54,38 @@
 .github\instructions
 .github\instructions\playwright-typescript.instructions.md
 .github\instructions\power-apps-code-apps.instructions.md
+.github\workflows
+.github\workflows\datadog-synthetics.yml
 .gitignore
+.planning
+.planning\codebase
+.planning\codebase\ARCHITECTURE.md
+.planning\codebase\CONCERNS.md
+.planning\codebase\CONVENTIONS.md
+.planning\codebase\INTEGRATIONS.md
+.planning\codebase\STACK.md
+.planning\codebase\STRUCTURE.md
+.planning\codebase\TESTING.md
+.planning\map
+.planning\phases
+.planning\phases\01-frontend-rework
+.planning\phases\01-frontend-rework\01-01-PLAN.md
+.planning\phases\01-frontend-rework\01-01-SUMMARY.md
+.planning\phases\01-frontend-rework\01-02-PLAN.md
+.planning\phases\01-frontend-rework\01-03-PLAN.md
+.planning\phases\01-frontend-rework\01-CONTEXT.md
+.planning\phases\01-frontend-rework\01-DISCUSSION-LOG.md
+.planning\phases\01-frontend-rework\01-RESEARCH.md
+.planning\phases\01-frontend-rework\01-UI-SPEC.md
+.planning\phases\01-frontend-rework\01-VALIDATION.md
+.planning\phases\03-task-grouping-and-due-time
+.planning\phases\03-task-grouping-and-due-time\04-REVIEW.md
+.planning\phases\03-task-grouping-and-due-time\05-REVIEW.md
+.planning\proposals
+.planning\proposals\JWT_SECURITY_FIX.md
+.planning\REQUIREMENTS.md
+.planning\ROADMAP.md
+.planning\STATE.md
 .prettierignore
 .prettierrc
 .vscode
@@ -64,6 +95,13 @@ components.json
 docs
 docs\codebase
 docs\codebase\.codebase-scan.txt
+docs\codebase\ARCHITECTURE.md
+docs\codebase\CONCERNS.md
+docs\codebase\CONVENTIONS.md
+docs\codebase\INTEGRATIONS.md
+docs\codebase\STACK.md
+docs\codebase\STRUCTURE.md
+docs\codebase\TESTING.md
 eslint.config.js
 graphify-out
 graphify-out\.graphify_labels.json
@@ -77,6 +115,8 @@ graphify-out\cache\ast\03f03d5959344e815a2facd15d405183209ddaa4429797d4ba5d3ca86
 graphify-out\cache\ast\0432628ab67d894b355fd293b7406292ec17ae71b891dbbf1f9a8c98b6524fe0.json
 graphify-out\cache\ast\0643e304480cb4a7ad458968d60d627eb85735238ce65994c5689b06a0251dfb.json
 graphify-out\cache\ast\069ee59e5eb63f5bd0b661a972558506b8552767935ad8a23150feb95c3a8196.json
+graphify-out\cache\ast\09f3305acf9ca3c2e3997f34ec5e671bad0227864abcbc0fe4ee7932a2680eeb.json
+graphify-out\cache\ast\0ebe4b899ab0007d966fe0a55c2b62b81f567d2c28502ed909847c9defc3618c.json
 graphify-out\cache\ast\0fc267ce0c4f86ba96b56b24f95a15cbff4057bcc047e9be3c250da7a0be28bc.json
 graphify-out\cache\ast\107690838b939c08c3b58ebdc1a97386d0ac57dd505911c0f01b5ea14b470002.json
 graphify-out\cache\ast\108b387640add38b58b330ca343ea3e7de1e1e630bcbf55d80e363f23f83b30d.json
@@ -87,19 +127,27 @@ graphify-out\cache\ast\18337107ec0b667246d9e2f6c2eb130e55a2c1e3a0d73b2f615bdc101
 graphify-out\cache\ast\1922a6647a479c65eaec32987e678f642ab7f97a46a05512de8b100e7c7d84a7.json
 graphify-out\cache\ast\1c06fd7fb24aac0bc6fed28e4e78de060436ea737150af4f7e14cee81d04513c.json
 graphify-out\cache\ast\1d51eafdf6dff1ffa889c7f45a42d03355b6e194c1eb780b8c01dba247f17659.json
+graphify-out\cache\ast\1d751a226064b7e126ca0e37a91f918c66bc5650506153ab40b6b7b5a598265f.json
 graphify-out\cache\ast\2058eb95948c8093088c6885de98a6cd82cbd73bc3fc3d2d02118f0478aebb98.json
 graphify-out\cache\ast\20e5fac6c7c4e104c5d284622dfefde4c71ce3a3cf2a714c191037fc3b26b801.json
 graphify-out\cache\ast\25ba14818dbb03ace1bf93834f6c9fd0f566922548276957bd005568a709590d.json
 graphify-out\cache\ast\2634903338e0d6842f75c44c260d53846f043f834fef879da5f8fe7e4f8c922a.json
+graphify-out\cache\ast\2718a9747b8e170e92f17e5c14b52d9a09776040b96b4421b7c2fc0b661328e4.json
+graphify-out\cache\ast\2762562f3e331f26db7d79e753b1fb958353307de1c63e6e390a8d7e2a164a0d.json
 graphify-out\cache\ast\2931d0cde81d6723b162a71ee1892c7195fc69c798847119f9d007f858c7620c.json
+graphify-out\cache\ast\2c2cda8c6d16911672b05a4c3816d7763d259b070de19d9b0f50ae97b72f5c42.json
 graphify-out\cache\ast\2c6013e41ee9c444834b1eb952377c5bb24aaf63865f00d3eef94d5de29c4782.json
 graphify-out\cache\ast\2dc9d8f2ee4cd1062eda7de2341a2092ff0e443acb23396fa40cbdbc15947fbe.json
 graphify-out\cache\ast\2edf6061b38b01fd18a17b181d3f6d8319329f5fdece054b8de30335a49609b5.json
+graphify-out\cache\ast\351f1cda4504c7726b932a5fbdaac6be9bcb1311bf00619d80f982a3957ce595.json
+graphify-out\cache\ast\392f7bfbad4c774418ad4ebac6a432bc57d26cad12381687d1e0c00f99e83907.json
 graphify-out\cache\ast\396c073ca3ab97706e5bf7a9df3dc7f00cd4d62e047824a39e368e3f95f21e34.json
 graphify-out\cache\ast\3ab6554b0b56cb38b3975673e1fd2058c6c2391077d66b84bb98902f28e6fdfd.json
 graphify-out\cache\ast\3d71a7749183c530b904afbaccaed98cbcd94ec0f43885872951aa1f37fa409d.json
 graphify-out\cache\ast\3dfdf54c6e03b7335aa961f2e27f83522471009836ad6117dcc428d1d634dfe5.json
+graphify-out\cache\ast\3f1bc04877adb7c27fea40de5e1c31f42d3d2ebb023958813924def74ca85514.json
 graphify-out\cache\ast\3f368f6781dfd25e111a579ff6d21f8300ca18333e2a77700188b30cf7a79945.json
+graphify-out\cache\ast\40be8f23aa72c8cdd1ad046a519db67171b96320ac57cd8081ed7bc73a294b04.json
 graphify-out\cache\ast\45f1a0c6d60f151e489789a4d76cd54805caa014c3f5016a67401af5f9d8bdc5.json
 graphify-out\cache\ast\475b27f366340bc9b2e3f4d7e12cb49527717aa55f7cbe094d77a677c68db519.json
 graphify-out\cache\ast\48170cf0d26e9c28584c3da016ba98b86d152f9ad85eb4ed1108bf549e5a2c14.json
@@ -108,8 +156,10 @@ graphify-out\cache\ast\4acbaa0fab8ea17a943019805582efddb82380ae66a142d8a59497a56
 graphify-out\cache\ast\4baa3370c3f9a4435d000fe7d397165594924160c0b563382388e9d9598007ad.json
 graphify-out\cache\ast\4be931bdf967c482f3689e8c2af9a44fc1f1570bc88b1165cf38bd30d670be6e.json
 graphify-out\cache\ast\4bfdd10444a1dccc5faa9c48364df5835441082cc735a15e7aad42646d35c277.json
+graphify-out\cache\ast\4c5ff91595f8af587e5ac2a178475fefde8ffb94036fbab5f7eae07abe3cba6c.json
 graphify-out\cache\ast\4dd368964b4a4de62ff8f0bcbc872c3465576b60a0c30066f8ad63f4914495e2.json
 graphify-out\cache\ast\4de144d97c3e0b5b8550342d1b1b1653404f2c6acb37d4aceee561dc90c56bb5.json
+graphify-out\cache\ast\4fb7462a1794f0745e16340f11606c0e5d4b1971026840af28ad7c170055f18a.json
 graphify-out\cache\ast\5093262ed090d340d5c149fbff53ba916c5506274048c4ec284647480f8b739d.json
 graphify-out\cache\ast\513b445f2fc9caf39704110dfea43b9f8d33abf9a0da942b450fa0765c8a02e7.json
 graphify-out\cache\ast\51c6aa9e4527d5183caf6dcc91535f8d137356b09f31d717209373c4f38cedea.json
@@ -119,8 +169,11 @@ graphify-out\cache\ast\55cd496428c292c00eabb066c8321aeed452e319509544edbfe8fbbc3
 graphify-out\cache\ast\582838b9c69b63141351a68d598dd3bf3726d0f9211be07438ce904eff4c1be5.json
 graphify-out\cache\ast\5a8265e407ab7fb33d6f6d07479cc7710b9d9c1e250f3d0426a3b119f12742f0.json
 graphify-out\cache\ast\5e05ccc194fe9b4212282e4a80804b883151a72f10b3b8a0cb7fea8d52740665.json
+graphify-out\cache\ast\6143204accb2ef469891787562f3b78301d8d8bb324ff2cabcbf08eee9e35eed.json
 graphify-out\cache\ast\617d70fe53501718987a5274108e57a1fed6eea3ea511e8564d8d314ee9ce44d.json
 graphify-out\cache\ast\62d234962f6010c346e74f2d54ebe1a635cb7773ae62b6e965b379930d28ba6c.json
+graphify-out\cache\ast\658548c1dd54ab44d11e6eae7961a0b08b1a7df96cf53fbfe5393b4798cb0d39.json
+graphify-out\cache\ast\68186cfeb2c1ff43bbe4a728778c4dc29281b0b6ec0f7a694286e89b5678fb90.json
 graphify-out\cache\ast\698510d8b535ca883f660e7b34658663131581e5eaeebfb56efbc94df8c277a0.json
 graphify-out\cache\ast\6d5fd0c66c3016cc87b4e68e15600bd4f9ae28e20695d4e649776bfd5f261aca.json
 graphify-out\cache\ast\6da18d1b4c9241c02331326a862d4addde8efb9c0379d2e3268d941db34736be.json
@@ -129,77 +182,24 @@ graphify-out\cache\ast\6f0ac1b0019dfafcb9d6e02792116eb6b75f5635f9b55cef7ae909230
 graphify-out\cache\ast\7406d4e9b04ef71b5b1262a7a262c829c164dc25acae75e4975bafc83ebcfd7d.json
 graphify-out\cache\ast\7b609654c44db26ba6070eff4f31de75f218091ec28e6c58c157c6ff4109d61d.json
 graphify-out\cache\ast\7f0444dfb4758994e45ea4649c675e65bfc434a43cc49f4d5e2303e88d66169d.json
+graphify-out\cache\ast\80464cb6f0e16502cfbd3860bde953e423b8b7da70f05185c40a6580440b1ea0.json
+graphify-out\cache\ast\80ac9f425a4928a02874993f8277c2780fcec10353c0113c4737e1df08cc8ae1.json
 graphify-out\cache\ast\80f9e7a6a3d9b41ac84829a8760ae495f74cc7e0af69be9e1ed34433587fbddb.json
+graphify-out\cache\ast\82387d8b869e525dcb5b6695baf1638cfb06feb7b82c8e39e77422edd89d72a1.json
+graphify-out\cache\ast\82e0be9bc411f61b1691337210a3b4cec6957ad59131d39145e9df23efe5a42b.json
 graphify-out\cache\ast\851d45163e74c45491e86affa590a4824fe7acbd346bd7d9c0056d2326ed6141.json
 graphify-out\cache\ast\898054ab7471173498a1466bdad98d45417a3ca0a37d1e93c931f55907c07bb5.json
 graphify-out\cache\ast\8de1b1abb7dd4c23a2319d080b7ef0ae82d32281377a54bb7e6f10ace169ccb0.json
 graphify-out\cache\ast\8fa3ed9f2f3a3bb451d989011d67987b7f0969db2dfc32e0a3123df0bb38accf.json
 graphify-out\cache\ast\900471d7d556c9017d650d78d073585aae7bae715c6d374c454be28d34019e1a.json
+graphify-out\cache\ast\911462601468b0277e60668bd8c7b319ebd04628874a25e46fcb47c16fb6f3de.json
+graphify-out\cache\ast\913d5dff589c29ad7a083742f1ff779715a0a8ef69aca421e04748cf792eecec.json
 graphify-out\cache\ast\9206adce2492a3f2adc1dd3b097065709dc915820127b517ddc4de87c2c40672.json
+graphify-out\cache\ast\922767750146a0a1918b614ff6c67a8856129f223215869ea4e5288439cb3b83.json
 graphify-out\cache\ast\92d64ae50d0bb4e19ce4d0ab1f34d3a3bbb26ae2ea78117bfb751ad7b54a30df.json
 graphify-out\cache\ast\9372fe447f724eac17e45edf7100b9e24dc1dae77e473d354f5cdf04cf0c8ea0.json
-graphify-out\cache\ast\9927dfecbe09c5084c7633ad773f195295672bbcee5603aa44cd832a8eb4d68b.json
-graphify-out\cache\ast\9b01f4b6401a11bdaec15a3315b535be444cfea16fc276056bdb4a340b64e071.json
-graphify-out\cache\ast\9ce6d865b850047580647bec6e60e9b214d0e0478bdf6a48ac63beae57b2b147.json
-graphify-out\cache\ast\a0fac585aee179e454bd3f520b3208d4cd68d341e9b904097880ec4861aad4ef.json
-graphify-out\cache\ast\a1ab4ec2ebef9c3bb88071b8c7ea3dfaabebc9ce8b1720460d84146e27025999.json
-graphify-out\cache\ast\a280f3cbfc4ab7b6bd1cb0f76808bfa2713a9a6695d8c37fee6ea4dbdbd2607b.json
-graphify-out\cache\ast\a4e8af80b189d0bb6d1bceb6eb8568e2abb78af349676647050e6b93b988cd37.json
-graphify-out\cache\ast\aaf7db30f1b48ed06cdf9f96bd7d448d738f6da3f3d6a0a26f5f02ade8537f91.json
-graphify-out\cache\ast\abbef2fe0b6c2cc74f6c371152144651b1182071b2fa1c6281688a98d3593e81.json
-graphify-out\cache\ast\b0fdc6867b852ae2e808eacbfe4e20fdf37b4db91add24fc7430eaee253b952d.json
-graphify-out\cache\ast\b43eebb5098d44367e64112727dcdcfc682ba0ec0184e5950306fb5bc99251b1.json
-graphify-out\cache\ast\b756cb771cd52c0c9da6aa1a0ea949543b0c02232767fed6bf46ddbf9b00cf4e.json
-graphify-out\cache\ast\b76d82b355482578432332d79cf1a01d41d3f2312f880ba0517052c879f4a163.json
-graphify-out\cache\ast\b8c019abf750391d5644823c193ee0db331e4261bd484399026a43c802c31b5d.json
-graphify-out\cache\ast\bbd4259b8fd9ab482b63c1f0ee6a63c6970cbb19be1df1491fed8844d5297359.json
-graphify-out\cache\ast\bd2cedadd845e8e2d4121b5c794b2e0b3c48a386206db6ffba5c8b053b064f40.json
-graphify-out\cache\ast\c0091f831b8fdfe56c548fc3185baf78b26f0cdd3317fdaefa16591327f05db2.json
-graphify-out\cache\ast\c1750c58006e0eca05120a86682506b801c75a298f902c39c5214f7d4c9aeb75.json
-graphify-out\cache\ast\c3fc1381660ac3db40d20ed416dc9a5ae41c21a8465a19e2944b82fc0156a6b9.json
-graphify-out\cache\ast\c7d790eabae2c6f33d39d8469e18eeaad5b4b11374e6b104eafe09ad237d1518.json
-graphify-out\cache\ast\ca58c75869ec07dd878c92e4ab22a7c9523c0302c047d4eccfdaed22686459e6.json
-graphify-out\cache\ast\cad58f50439a9f734db66016e2bd8aa750f8a04b43d14c56e2149ca9e2e6ba29.json
-graphify-out\cache\ast\d09fb9c3b97412a1ab1ed65dba9361bf069ad50becd5863fd17a10b4830bdb3a.json
-graphify-out\cache\ast\d1527cb0de7c8704eca735dc4fe54c10030c96a7b8af1444db348fac59fc4540.json
-graphify-out\cache\ast\d2d247dbd6498611f683b620dee5285cf0775eb4546755b930c5afe64c725919.json
-graphify-out\cache\ast\d6477fdb793d3704368fadde8098c10e880c93a81ec366664f83524d57616f4c.json
-graphify-out\cache\ast\dca03e0e1b54528d585e43c8e43b4658db97a52610e66ef42b10566f374ba8a5.json
-graphify-out\cache\ast\dfab72af96c9bd1ebef355d83fa143d8f0d5e13ea20aa8d75ab318bc06a9f4e9.json
-graphify-out\cache\ast\dfbf56e945ddcd795c5b954fd1926389b0999565fb73cf9e32bf5a28c0435119.json
-graphify-out\cache\ast\e7032946e457e39bb4e1216c9b395274a84fc286499f57749ff43c2cfc171cc2.json
-graphify-out\cache\ast\e92f2c12b1d16d30a9b42d0b4e4e6e7ebdfccd63a8921ae6907949658d4400a3.json
-graphify-out\cache\ast\e9f52cc89b788b3c6e902a3a47259fd3d72f7778a100838631f7c30d26331d1f.json
-graphify-out\cache\ast\eeb88ba0ca0a2da16af9ca248d69054f575e2a9729852faa97a555440196ab43.json
-graphify-out\cache\ast\f03b28a66dd12dfb63941570a5dca8262e9bd8166d1b8130609cd28948124150.json
-graphify-out\cache\ast\f4c933724980801885e042290baf9c9144cb86773ef7d00ae4b50777bb3d8947.json
-graphify-out\cache\ast\f797bb8d967b884612daa847aa71b2555e3bf0d919ebb046a678aa163387f4d8.json
-graphify-out\cache\ast\f8afa78c56c712318fb05ca1654401dce31d51ba8ac0db20dca858a45e75bd00.json
-graphify-out\cache\ast\fb003126da7c976b21658e94aae0bbf55071475291f015b1b0c027b8f23398fd.json
-graphify-out\cache\semantic
-graphify-out\graph.html
-graphify-out\graph.json
-graphify-out\GRAPH_REPORT.md
-graphify-out\manifest.json
-index.html
-package-lock.json
-package.json
-playwright-report
-playwright-report\data
-playwright-report\data\3654424336dbea2fccdf942c8096822749cc9ef8.md
-playwright-report\data\3e58cd428c80b2531534d090e715e8ab01638c9b.md
-playwright-report\data\9be985a3ed9392440dddd9257ca4ea90f55057f7.md
-playwright-report\data\b13f8371be49c44396e62ed7cb2d5521f490a97e.md
-playwright-report\data\ef0a9bd0cf20c81e4e2de00d5bf7df8782fe349d.md
-playwright-report\index.html
-playwright.config.ts
-public
-public\task-buddy-icon.svg
-public\vite.svg
-README.md
-src
-src\App.tsx
-src\assets
+graphify-out\cache\ast\9474c5ff82b0bc6f671539139e85cccf66092247fb2db6ade408461e8feef7ca.json
+graphify-out\cache\ast\96ad9163deb9e647848b41f64384d3133ea72431a3c005eb496f67700eed2b9d.json
 
 === STACK DETECTION (manifest files) ===
 
@@ -216,6 +216,7 @@ src\assets
       "dependencies": {
         "@fontsource-variable/geist": "^5.2.8",
         "@radix-ui/react-toast": "^1.2.15",
+        "@radix-ui/react-tooltip": "^1.2.8",
         "@tailwindcss/vite": "^4.2.1",
         "axios": "^1.16.0",
         "class-variance-authority": "^0.7.1",
@@ -235,6 +236,9 @@ src\assets
       "devDependencies": {
         "@eslint/js": "^9.39.4",
         "@playwright/test": "^1.59.1",
+        "@testing-library/jest-dom": "^6.9.1",
+        "@testing-library/react": "^16.3.2",
+        "@testing-library/user-event": "^14.6.1",
         "@types/node": "^24.12.0",
         "@types/react": "^19.2.14",
         "@types/react-dom": "^19.2.3",
@@ -243,49 +247,45 @@ src\assets
         "eslint-plugin-react-hooks": "^7.0.1",
         "eslint-plugin-react-refresh": "^0.5.2",
         "globals": "^16.5.0",
+        "jsdom": "^28.1.0",
         "prettier": "^3.8.1",
         "prettier-plugin-tailwindcss": "^0.7.2",
         "typescript": "~5.9.3",
         "typescript-eslint": "^8.57.1",
-        "vite": "^7.3.1"
+        "vite": "^7.3.1",
+        "vitest": "^4.1.5"
       }
     },
-    "node_modules/@babel/code-frame": {
-      "version": "7.29.0",
-      "resolved": "https://registry.npmjs.org/@babel/code-frame/-/code-frame-7.29.0.tgz",
-      "integrity": "sha512-9NhCeYjq9+3uxgdtp20LSiJXJvN0FeCtNGpJxuMFZ1Kv3cWUNb6DOhJwUvcVCzKGR66cw4njwM6hrJLqgOwbcw==",
+    "node_modules/@acemir/cssom": {
+      "version": "0.9.31",
+      "resolved": "https://registry.npmjs.org/@acemir/cssom/-/cssom-0.9.31.tgz",
+      "integrity": "sha512-ZnR3GSaH+/vJ0YlHau21FjfLYjMpYVIzTD8M8vIEQvIGxeOXyXdzCI140rrCY862p/C/BbzWsjc1dgnM9mkoTA==",
+      "dev": true,
+      "license": "MIT"
+    },
+    "node_modules/@adobe/css-tools": {
+      "version": "4.4.4",
+      "resolved": "https://registry.npmjs.org/@adobe/css-tools/-/css-tools-4.4.4.tgz",
+      "integrity": "sha512-Elp+iwUx5rN5+Y8xLt5/GRoG20WGoDCQ/1Fb+1LiGtvwbDavuSk0jhD/eZdckHAuzcDzccnkv+rEjyWfRx18gg==",
+      "dev": true,
+      "license": "MIT"
+    },
+    "node_modules/@asamuzakjp/css-color": {
+      "version": "5.1.11",
+      "resolved": "https://registry.npmjs.org/@asamuzakjp/css-color/-/css-color-5.1.11.tgz",
+      "integrity": "sha512-KVw6qIiCTUQhByfTd78h2yD1/00waTmm9uy/R7Ck/ctUyAPj+AEDLkQIdJW0T8+qGgj3j5bpNKK7Q3G+LedJWg==",
+      "dev": true,
       "license": "MIT",
       "dependencies": {
-        "@babel/helper-validator-identifier": "^7.28.5",
-        "js-tokens": "^4.0.0",
-        "picocolors": "^1.1.1"
+        "@asamuzakjp/generational-cache": "^1.0.1",
+        "@csstools/css-calc": "^3.2.0",
+        "@csstools/css-color-parser": "^4.1.0",
+        "@csstools/css-parser-algorithms": "^4.0.0",
+        "@csstools/css-tokenizer": "^4.0.0"
       },
       "engines": {
-        "node": ">=6.9.0"
-      }
-    },
-    "node_modules/@babel/compat-data": {
-      "version": "7.29.3",
-      "resolved": "https://registry.npmjs.org/@babel/compat-data/-/compat-data-7.29.3.tgz",
-      "integrity": "sha512-LIVqM46zQWZhj17qA8wb4nW/ixr2y1Nw+r1etiAWgRM6U1IqP+LNhL1yg440jYZR72jCWcWbLWzIosH+uP1fqg==",
-      "license": "MIT",
-      "engines": {
-        "node": ">=6.9.0"
-      }
-    },
-    "node_modules/@babel/core": {
-      "version": "7.29.0",
-      "resolved": "https://registry.npmjs.org/@babel/core/-/core-7.29.0.tgz",
-      "integrity": "sha512-CGOfOJqWjg2qW/Mb6zNsDm+u5vFQ8DxXfbM09z69p5Z6+mE1ikP2jUXw+j42Pf1XTYED2Rni5f95npYeuwMDQA==",
-      "license": "MIT",
-      "dependencies": {
-        "@babel/code-frame": "^7.29.0",
-        "@babel/generator": "^7.29.0",
-        "@babel/helper-compilation-targets": "^7.28.6",
-        "@babel/helper-module-transforms": "^7.28.6",
-        "@babel/helpers": "^7.28.6",
 
-[TRUNCATED] Showing first 80 of 9534 lines.
+[TRUNCATED] Showing first 80 of 10678 lines.
 --- package.json ---
 {
   "name": "task-buddy-frontend",
@@ -298,12 +298,16 @@ src\assets
     "lint": "eslint .",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "preview": "vite preview"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.8",
     "@radix-ui/react-toast": "^1.2.15",
+    "@radix-ui/react-tooltip": "^1.2.8",
     "@tailwindcss/vite": "^4.2.1",
     "axios": "^1.16.0",
     "class-variance-authority": "^0.7.1",
@@ -323,6 +327,9 @@ src\assets
   "devDependencies": {
     "@eslint/js": "^9.39.4",
     "@playwright/test": "^1.59.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^24.12.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
@@ -331,11 +338,13 @@ src\assets
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^16.5.0",
+    "jsdom": "^28.1.0",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.57.1",
-    "vite": "^7.3.1"
+    "vite": "^7.3.1",
+    "vitest": "^4.1.5"
   }
 }
 
@@ -359,75 +368,77 @@ VITE_API_BASE_URL=http://127.0.0.1:8000
 None found.
 
 === GIT RECENT COMMITS (last 20) ===
+76b68b4 chore(frontend): clean up unused imports and variables to fix build
+60ffcde chore: remove unused imports and variables in sidebar
+3ba4661 chore: remove unused import and prefix unused variable in RegisterForm
+67337c8 chore: remove unused History import in audit-trail
+0e0f09a fix(ui): fix timezone bug in NewTaskModal and remove legacy priority/category fields
+2f16f07 UI: Refine sidebar, navigation, layout padding, and authentication flows
+8d60ff1 docs(state): record phase 1 planning completion
+4201282 docs(01): complete phase planning with UI-SPEC
+4d21cb8 docs(state): record phase 1 UI-SPEC completion
+f08ec6b docs(01): UI design contract
+752ad99 docs(01): capture phase context
+cd2ec54 docs: generate codebase map documents
+6875efc docs: initialize comprehensive codebase documentation
+b4c3d9d Merge branch 'main' of https://github.com/PSergio984/task-buddy-frontend
+e30c83c docs: initialize comprehensive codebase documentation
+ebb5813 Add Datadog Synthetic tests workflow
 c2abdca feat: implement core application routing, dashboard layout, and modernized UI-UX design system support
 ca565c3 fix: removed deprecated api calls on the audit ttrail and added readonly props on passwordstrength meter
 90728e6 fix: removed void operators, replaced keys with uuid and added readonly props on password strengthmeter
 f91e9a2 feat: implement core frontend architecture including authentication, task management, audit logs, and UI components
-09c53c3 feat: initialize project codebase graphing with automated AST generation and configuration support
-5685a3f feat: implement ThemeProvider and useTheme hook for cross-component theme management
-bf8fd5a feat: implement responsive top navigation bar with user profile dropdown and theme toggle functionality
-f94a5d2 feat: implement task management dashboard with modals, task cards, and API hook integration
-bb8a58b feat: scaffold authentication system, notification hooks, and core dashboard UI components
-95a9002 feat: initialize project structure with authentication pages, dashboard components, and UI library modules
-40815db feat: implement core frontend architecture, authentication system, and task management UI components
-e0e97c1 feat: add top navigation, sidebar, and dashboard components; implement authentication context and routing
-95fb331 feat: add Playwright test generation instructions and agent configurations
-6f2fc34 refactor: initialize frontend project with Vite, React, and Tailwind CSS
-468914e Update MCP configuration to include shadcn server
-d9a9095 Remove unused files and components from the task-buddy project
-1d5f777 add agents,skills etc
-f7201be initial commit
 
 === HIGH-CHURN FILES (last 90 days, top 20) ===
-   9 src/components/audit-trail.tsx
-   8 src/App.tsx
-   7 src/components/dashboard.tsx
-   7 src/components/new-task-modal.tsx
-   7 src/components/task-card.tsx
-   7 src/components/topnav.tsx
-   6 src/components/sidebar.tsx
-   6 src/components/system-overview.tsx
-   6 src/index.css
-   6 src/pages/RegisterPage.tsx
-   6 src/hooks/useApi.ts
-   5 graphify-out/GRAPH_REPORT.md
-   5 graphify-out/graph.json
-   5 src/pages/LoginPage.tsx
-   5 src/contexts/AuthContext.tsx
-   5 src/pages/DashboardDemo.tsx
-   4 graphify-out/graph.html
-   4 src/components/auth/PasswordStrengthMeter.tsx
-   4 src/pages/AuditLogsPage.tsx
-   4 package-lock.json
+  10 src/components/audit-trail.tsx
+   9 src/App.tsx
+   9 src/components/topnav.tsx
+   8 graphify-out/GRAPH_REPORT.md
+   8 graphify-out/graph.json
+   8 src/components/dashboard.tsx
+   8 src/components/task-card.tsx
+   8 src/pages/RegisterPage.tsx
+   8 src/components/sidebar.tsx
+   8 src/components/new-task-modal.tsx
+   7 graphify-out/graph.html
+   7 src/components/system-overview.tsx
+   7 src/hooks/useApi.ts
+   7 src/index.css
+   7 src/pages/LoginPage.tsx
+   6 src/contexts/AuthContext.tsx
+   6 src/pages/DashboardDemo.tsx
+   5 package-lock.json
+   5 package.json
+   5 src/pages/AuditLogsPage.tsx
 
 === MONOREPO SIGNALS ===
 No monorepo signals detected.
 
 === CODE METRICS ===
-Total files scanned: 247
-Total lines of code: 28842
+Total files scanned: 321
+Total lines of code: 33081
 
 Files by language:
-  Other: 198
-  TypeScript/React: 34
-  TypeScript: 9
+  Other: 265
+  TypeScript/React: 37
+  TypeScript: 13
   JavaScript: 3
   Python: 3
 
 Top 10 largest files:
-playwright-report\index.html: 520.1KB
-graphify-out\graph.json: 388.9KB
-graphify-out\graph.html: 386.6KB
-package-lock.json: 335.4KB
+public\assets\login-bg.png: 751.6KB
+src\assets\images\auth-bg.png: 751.6KB
+public\assets\register-bg.png: 737.1KB
+playwright-report\index.html: 516.2KB
+graphify-out\graph.json: 462.0KB
+graphify-out\graph.html: 459.5KB
+package-lock.json: 375.1KB
 .agent\skills\ui-ux-pro-max\data\styles.csv: 94.3KB
 .agent\skills\ui-ux-pro-max\scripts\design_system.py: 42.6KB
 .agent\skills\ui-ux-pro-max\data\typography.csv: 31.1KB
-.agent\skills\ui-ux-pro-max\data\ui-reasoning.csv: 30.3KB
-.agent\skills\ui-ux-pro-max\data\products.csv: 29.1KB
-graphify-out\cache\ast\9206adce2492a3f2adc1dd3b097065709dc915820127b517ddc4de87c2c40672.json: 26.9KB
 
 === CI/CD PIPELINES ===
-No CI/CD pipelines detected.
+CI/CD: GitHub Actions
 
 === CONTAINERS & ORCHESTRATION ===
 No containerization configs detected.

@@ -18,14 +18,15 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { motion } from "framer-motion"
-import { Sparkles, Calendar, PencilLine, Layers } from "lucide-react"
-import { useGroups, type Task } from "@/hooks/useApi"
+import { Sparkles, Calendar, PencilLine, Layers, Tag, Flag } from "lucide-react"
+import { useGroups } from "@/hooks/useGroups"
+import type { Task, TaskPriority } from "@/lib/api"
 
 export interface NewTaskModalProps {
   readonly open: boolean
   readonly onOpenChange: (open: boolean) => void
   readonly onSubmit: (
-    taskData: Omit<Task, "id" | "created_at" | "user_id">
+    taskData: any // Simplified for now to allow tags as string[]
   ) => Promise<void>
   readonly isLoading: boolean
   readonly task?: Task | null
@@ -38,12 +39,14 @@ export function NewTaskModal({
   isLoading,
   task,
 }: Readonly<NewTaskModalProps>) {
-  const { groups } = useGroups()
+  const { data: groups = [] } = useGroups()
   const [title, setTitle] = useState(task?.title ?? "")
   const [description, setDescription] = useState(task?.description ?? "")
   const [groupId, setGroupId] = useState<string>(
     task?.group_id?.toString() ?? "none"
   )
+  const [priority, setPriority] = useState<TaskPriority>(task?.priority ?? "MEDIUM")
+  const [tags, setTags] = useState<string>(task?.tags?.map(t => t.name).join(", ") ?? "")
   
   // Format due_date for datetime-local input (YYYY-MM-DDThh:mm)
   const formatDateTimeForInput = (dateStr?: string) => {
@@ -51,7 +54,6 @@ export function NewTaskModal({
     try {
       const date = new Date(dateStr)
       if (isNaN(date.getTime())) return ""
-      // Adjust for local timezone offset to get local time in ISO format
       const localDate = new Date(date)
       localDate.setMinutes(date.getMinutes() - date.getTimezoneOffset())
       return localDate.toISOString().slice(0, 16)
@@ -62,17 +64,20 @@ export function NewTaskModal({
 
   const [dueDate, setDueDate] = useState(formatDateTimeForInput(task?.due_date))
 
-  // Update state when task prop changes (e.g. when opening modal to edit)
   useEffect(() => {
     if (task) {
       setTitle(task.title ?? "")
       setDescription(task.description ?? "")
       setGroupId(task.group_id?.toString() ?? "none")
+      setPriority(task.priority ?? "MEDIUM")
+      setTags(task.tags?.map(t => t.name).join(", ") ?? "")
       setDueDate(formatDateTimeForInput(task.due_date))
     } else {
       setTitle("")
       setDescription("")
       setGroupId("none")
+      setPriority("MEDIUM")
+      setTags("")
       setDueDate("")
     }
   }, [task, open])
@@ -84,12 +89,14 @@ export function NewTaskModal({
 
     if (!title.trim()) return
 
-    const taskData: Omit<Task, "id" | "created_at" | "user_id"> = {
+    const taskData = {
       title: title.trim(),
       description: description.trim() || undefined,
       group_id: groupId !== "none" ? parseInt(groupId) : undefined,
       due_date: dueDate ? new Date(dueDate).toISOString() : undefined,
       completed: task?.completed ?? false,
+      priority,
+      tags: tags.split(",").map(t => t.trim()).filter(t => t !== ""),
     }
 
     try {
@@ -98,6 +105,8 @@ export function NewTaskModal({
         setTitle("")
         setDescription("")
         setGroupId("none")
+        setPriority("MEDIUM")
+        setTags("")
         setDueDate("")
       }
       onOpenChange(false)
@@ -108,7 +117,7 @@ export function NewTaskModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[550px] overflow-hidden border-none bg-transparent p-0 shadow-none pointer-events-none">
+      <DialogContent className="sm:max-w-[600px] overflow-hidden border-none bg-transparent p-0 shadow-none pointer-events-none">
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -132,9 +141,9 @@ export function NewTaskModal({
               </DialogDescription>
             </DialogHeader>
 
-            <form onSubmit={handleSubmit} className="space-y-8">
+            <form onSubmit={handleSubmit} className="space-y-6">
               {/* Title Section */}
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <Label htmlFor="title" className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
                   Objective Title
                 </Label>
@@ -148,23 +157,10 @@ export function NewTaskModal({
                 />
               </div>
 
-              {/* Description Section */}
-              <div className="space-y-3">
-                <Label htmlFor="description" className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
-                  Contextual Details
-                </Label>
-                <textarea
-                  id="description"
-                  placeholder="Define scope and dependencies..."
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="flex min-h-[120px] w-full rounded-2xl border border-border bg-background/50 px-6 py-4 text-sm font-medium text-foreground placeholder:text-muted-foreground/30 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all outline-none resize-none"
-                />
-              </div>
-
               {/* Parameters Grid */}
-              <div className="grid grid-cols-1 gap-6">
-                <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-4">
+                {/* Group */}
+                <div className="space-y-2">
                   <Label htmlFor="groupId" className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
                     <Layers className="h-3 w-3" />
                     Group
@@ -192,10 +188,75 @@ export function NewTaskModal({
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Priority */}
+                <div className="space-y-2">
+                  <Label htmlFor="priority" className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
+                    <Flag className="h-3 w-3" />
+                    Priority
+                  </Label>
+                  <Select
+                    value={priority}
+                    onValueChange={(v: TaskPriority) => setPriority(v)}
+                  >
+                    <SelectTrigger id="priority" className="h-12 rounded-2xl border-border bg-background/50 px-4 font-semibold">
+                      <SelectValue placeholder="Select Priority" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl border-border bg-background/95 backdrop-blur-xl">
+                      <SelectItem value="LOW" className="rounded-xl focus:bg-muted font-medium">
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-2 rounded-full bg-blue-500" />
+                          Low
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="MEDIUM" className="rounded-xl focus:bg-muted font-medium">
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-2 rounded-full bg-amber-500" />
+                          Medium
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="HIGH" className="rounded-xl focus:bg-muted font-medium">
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-2 rounded-full bg-red-500" />
+                          High
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Tags Section */}
+              <div className="space-y-2">
+                <Label htmlFor="tags" className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
+                  <Tag className="h-3 w-3" />
+                  Tags
+                </Label>
+                <Input
+                  id="tags"
+                  placeholder="e.g., work, research, critical"
+                  value={tags}
+                  onChange={(e) => setTags(e.target.value)}
+                  className="h-12 rounded-2xl border-border bg-background/50 px-4 font-medium focus-visible:ring-primary/20 placeholder:text-muted-foreground/30"
+                />
+              </div>
+
+              {/* Description Section */}
+              <div className="space-y-2">
+                <Label htmlFor="description" className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
+                  Contextual Details
+                </Label>
+                <textarea
+                  id="description"
+                  placeholder="Define scope and dependencies..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="flex min-h-[100px] w-full rounded-2xl border border-border bg-background/50 px-6 py-4 text-sm font-medium text-foreground placeholder:text-muted-foreground/30 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all outline-none resize-none"
+                />
               </div>
 
               {/* Deadline */}
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <Label htmlFor="dueDate" className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
                   <Calendar className="h-3 w-3" />
                   Execution Deadline
@@ -206,12 +267,12 @@ export function NewTaskModal({
                     type="datetime-local"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
-                    className="h-14 rounded-2xl border-border bg-background/50 px-6 font-semibold focus-visible:ring-primary/20"
+                    className="h-12 rounded-2xl border-border bg-background/50 px-6 font-semibold focus-visible:ring-primary/20"
                   />
                 </div>
               </div>
 
-              <DialogFooter className="pt-8 mt-10 border-t border-border/50 gap-4 flex sm:justify-end">
+              <DialogFooter className="pt-6 border-t border-border/50 gap-4 flex sm:justify-end">
                 <Button
                   type="button"
                   variant="ghost"

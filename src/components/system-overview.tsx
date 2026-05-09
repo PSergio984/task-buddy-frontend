@@ -1,19 +1,35 @@
 import { motion } from "framer-motion"
 import { Card } from "@/components/ui/card"
-import { PieChart, Target, Zap, TrendingUp } from "lucide-react"
-import type { StatsOverview } from "@/hooks/useApi"
+import { Skeleton } from "@/components/ui/skeleton"
+import { PieChart, Target, Zap, TrendingUp, CheckCircle2 } from "lucide-react"
+import type { StatsOverview } from "@/lib/api"
 
 export function SystemOverview({ stats, loading }: Readonly<{ stats: StatsOverview | null, loading: boolean }>) {
   if (loading || !stats) {
     return (
-      <Card className="overflow-hidden border bg-background/50 p-8 shadow-2xl shadow-primary/5 backdrop-blur-xl rounded-[2.5rem] animate-pulse">
-        <div className="h-5 w-32 bg-muted rounded-full mb-8" />
+      <Card className="overflow-hidden border bg-background/50 p-8 shadow-2xl shadow-primary/5 backdrop-blur-xl rounded-[2.5rem]">
+        <div className="mb-8 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-10 w-10 rounded-xl" />
+            <Skeleton className="h-4 w-24" />
+          </div>
+          <Skeleton className="h-5 w-5" />
+        </div>
         <div className="space-y-8">
-          <div className="h-16 w-32 bg-muted rounded-2xl mx-auto" />
-          <div className="h-3 w-full bg-muted rounded-full" />
+          <div className="flex flex-col items-center gap-2">
+            <Skeleton className="h-16 w-32 rounded-2xl" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+          <div className="space-y-3">
+            <div className="flex justify-between">
+              <Skeleton className="h-2 w-12" />
+              <Skeleton className="h-2 w-16" />
+            </div>
+            <Skeleton className="h-3 w-full rounded-full" />
+          </div>
           <div className="grid grid-cols-2 gap-4">
-            <div className="h-20 bg-muted rounded-2xl" />
-            <div className="h-20 bg-muted rounded-2xl" />
+            <Skeleton className="h-20 rounded-2xl" />
+            <Skeleton className="h-20 rounded-2xl" />
           </div>
         </div>
       </Card>
@@ -140,5 +156,3 @@ export function SystemOverview({ stats, loading }: Readonly<{ stats: StatsOvervi
     </motion.div>
   )
 }
-
-import { CheckCircle2 } from "lucide-react"

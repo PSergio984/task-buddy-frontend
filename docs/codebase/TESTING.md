@@ -4,29 +4,29 @@
 
 ### 1) Test Stack and Commands
 
-- Primary test framework: Playwright
-- Assertion/mocking tools: Playwright builtin assertions (`expect`), possible MSW (not explicitly in dependencies).
+- Primary test framework: Vitest (Unit), Playwright (E2E)
+- Assertion/mocking tools: Vitest/RTL (Unit), Playwright builtin assertions (E2E).
 - Commands:
 
 ```bash
-npm run test:e2e
-npx playwright test --ui
-npx playwright test tests/auth.spec.ts
+npm test              # Run Unit tests
+npm run test:ui       # Unit tests UI
+npm run test:e2e      # Run E2E tests
 ```
 
 ### 2) Test Layout
 
-- Test file placement pattern: Separate `tests/` directory in root.
-- Naming convention: `*.spec.ts`
-- Setup files and where they run: `playwright.config.ts`
+- Test file placement pattern: `*.test.ts` next to source (Unit), `tests/` directory (E2E).
+- Naming convention: `*.test.ts` (Unit), `*.spec.ts` (E2E)
+- Setup files and where they run: `vitest.config.ts`, `src/test/setup.ts`, `playwright.config.ts`
 
 ### 3) Test Scope Matrix
 
 | Scope | Covered? | Typical target | Notes |
 |-------|----------|----------------|-------|
-| Unit | No | - | Not explicitly configured in `package.json` (no Vitest/Jest). |
+| Unit | Yes | Utils, Hooks, Components | Configured via Vitest. |
 | Integration | Partial | Component interaction | Covered by E2E tests. |
-| E2E | Yes | User flows (Login, Tasks, Landing) | `tests/auth.spec.ts`, `tests/landing.spec.ts`. |
+| E2E | Yes | User flows (Login, Tasks, Landing) | `tests/auth.spec.ts`, `tests/layout.spec.ts`. |
 
 ### 4) Mocking and Isolation Strategy
 

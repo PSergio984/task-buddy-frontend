@@ -9,7 +9,6 @@ import {
 } from "react"
 import axios from "axios"
 import {
-  extractAccessToken,
   getAuthErrorMessage,
   normalizeAuthUser,
   sanitizeEmail,
@@ -20,7 +19,6 @@ import {
 
 interface AuthContextType {
   user: AuthUser | null
-  token: string | null
   loading: boolean
   error: string | null
   /** username field carries the email value — OAuth2 spec field name */
@@ -39,8 +37,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000"
 
-const TOKEN_STORAGE_KEY = "auth_token"
 const USER_STORAGE_KEY = "auth_user"
+
+// Enable sending cookies with every request
+axios.defaults.withCredentials = true
 
 export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [user, setUser] = useState<AuthUser | null>(() => {
@@ -54,24 +54,13 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     }
   })
 
-  const [token, setToken] = useState<string | null>(() => {
-    return globalThis.localStorage.getItem(TOKEN_STORAGE_KEY)
-  })
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const refreshUser = useCallback(async () => {
-    if (!token) {
-      setUser(null)
-      setLoading(false)
-      return
-    }
-
     try {
       setLoading(true)
-      const response = await axios.get(`${API_BASE_URL}/api/v1/users/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      const response = await axios.get(`${API_BASE_URL}/api/v1/users/me`)
       const nextUser = normalizeAuthUser(response.data)
       if (nextUser) {
         setUser(nextUser)
@@ -81,10 +70,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         if (err.response?.status === 401) {
-          // Token is invalid/expired
-          setToken(null)
+          // Token is invalid/expired or not present
           setUser(null)
-          globalThis.localStorage.removeItem(TOKEN_STORAGE_KEY)
           globalThis.localStorage.removeItem(USER_STORAGE_KEY)
         } else {
           setError(err.response?.data?.detail || "Failed to refresh user profile")
@@ -95,17 +82,12 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     } finally {
       setLoading(false)
     }
-  }, [token])
+  }, [])
 
-  // user is initialized synchronously from localStorage above to keep the
-  // token/user initial states consistent and avoid transient authenticated
-  // but empty-user states.
-  // Then we refresh it on mount to ensure we have the latest data.
+  // On mount, attempt to refresh the user using the HttpOnly cookie
   useEffect(() => {
-    if (token) {
-      refreshUser()
-    }
-  }, []) // Only on mount
+    refreshUser()
+  }, [refreshUser])
 
   const login = useCallback(
     async (credentials: { username: string; password: string }) => {
@@ -125,18 +107,11 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
             },
           }
         )
-        const newToken = extractAccessToken(response.data)
-
-        if (!newToken) {
-          throw new Error("Login response did not include an access token.")
-        }
-
-        setToken(newToken)
-        globalThis.localStorage.setItem(TOKEN_STORAGE_KEY, newToken)
-
+        
+        // Backend now sets the HttpOnly cookie automatically.
+        // We just need to normalize the user data from the response.
         const nextUser = normalizeAuthUser(response.data)
         if (!nextUser) {
-          // Abort login if backend did not return a canonical user object
           throw new Error(
             "Login succeeded but user data is missing from the response."
           )
@@ -171,20 +146,14 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
           }
         )
 
-        // Prefer canonical user data from the backend. Do not invent an id
-        // client-side. If the registration response includes normalized user
-        // data, persist it; otherwise, do not set a client-side user and
-        // require the user to authenticate via the login flow.
+        // Note: register doesn't currently set a cookie in the backend,
+        // it just returns success. The user will need to log in or 
+        // the backend needs to be updated to set a cookie on register too.
+        // For now, we follow the existing behavior of normalizing user data if present.
         const nextUser = normalizeAuthUser(response.data)
         if (nextUser) {
           setUser(nextUser)
           globalThis.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextUser))
-        }
-
-        const newToken = extractAccessToken(response.data)
-        if (newToken) {
-          setToken(newToken)
-          globalThis.localStorage.setItem(TOKEN_STORAGE_KEY, newToken)
         }
       } catch (err) {
         setError(getAuthErrorMessage(err, "Registration failed."))
@@ -197,34 +166,25 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   )
 
   const logout = useCallback(async () => {
-    if (token) {
-      try {
-        await axios.post(`${API_BASE_URL}/api/v1/users/logout`, {}, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-      } catch (err) {
-        // Log the logout failure but continue with local state cleanup
-        // to ensure the user is logged out on the client side.
-        console.error("Logout request failed, cleaning up local session anyway.", err);
-      }
+    try {
+      await axios.post(`${API_BASE_URL}/api/v1/users/logout`, {});
+    } catch (err) {
+      console.error("Logout request failed, cleaning up local session anyway.", err);
     }
-    setToken(null)
     setUser(null)
     setError(null)
-    globalThis.localStorage.removeItem(TOKEN_STORAGE_KEY)
     globalThis.localStorage.removeItem(USER_STORAGE_KEY)
-  }, [token])
+  }, [])
 
   const value = useMemo(() => ({
     user,
-    token,
     loading,
     error,
     login,
     register,
     logout,
     refreshUser,
-  }), [user, token, loading, error, login, register, logout, refreshUser])
+  }), [user, loading, error, login, register, logout, refreshUser])
 
   return (
     <AuthContext.Provider value={value}>

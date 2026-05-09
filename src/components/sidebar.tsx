@@ -3,9 +3,11 @@ import { useNavigate, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { useAuth } from "@/contexts/AuthContext"
+import { useFilters } from "@/contexts/FilterContext"
 import { useToast } from "@/hooks/use-toast"
 import { LogoutDialog } from "@/components/logout-dialog"
-import { useGroups } from "@/hooks/useApi"
+import { useGroups } from "@/hooks/useGroups"
+import { useTags } from "@/hooks/useTags"
 import {
   Tooltip,
   TooltipContent,
@@ -20,25 +22,29 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Layers,
+  Tag,
 } from "lucide-react"
 
 export interface SidebarProps {
-  readonly activeFilter: string
-  readonly onFilterChange: (filter: string) => void
   readonly isCollapsed: boolean
   readonly onToggle: () => void
 }
 
 export function Sidebar({
-  activeFilter,
-  onFilterChange,
   isCollapsed,
   onToggle,
 }: Readonly<SidebarProps>) {
   const navigate = useNavigate()
   const location = useLocation()
   const { user: _user, logout } = useAuth()
-  const { groups } = useGroups()
+  const { 
+    activeSidebarFilter, 
+    setActiveSidebarFilter,
+    activeTagId,
+    setActiveTagId 
+  } = useFilters()
+  const { data: groups = [] } = useGroups()
+  const { data: tags = [] } = useTags()
   const { toast } = useToast()
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
 
@@ -188,7 +194,8 @@ export function Sidebar({
               onClick={() => {
                 if (location.pathname !== "/dashboard")
                   navigate("/dashboard")
-                onFilterChange("all")
+                setActiveSidebarFilter("all")
+                setActiveTagId(null)
               }}
               whileHover={{ x: isCollapsed ? 0 : 4 }}
               whileTap={{ scale: 0.98 }}
@@ -197,7 +204,7 @@ export function Sidebar({
                 isCollapsed
                   ? "mx-auto w-14 justify-center"
                   : "w-full justify-between",
-                activeFilter === "all"
+                activeSidebarFilter === "all" && activeTagId === null
                   ? "bg-accent/10 text-accent ring-1 ring-accent/30 shadow-lg shadow-accent/5"
                   : "text-muted-foreground hover:bg-muted/30 hover:text-foreground"
               )}
@@ -206,12 +213,12 @@ export function Sidebar({
                 <LayoutGrid
                   className={cn(
                     "h-5 w-5 transition-colors duration-300",
-                    activeFilter === "all" ? "text-accent" : "text-muted-foreground/20 group-hover:text-foreground"
+                    activeSidebarFilter === "all" && activeTagId === null ? "text-accent" : "text-muted-foreground/20 group-hover:text-foreground"
                   )}
                 />
                 {!isCollapsed && <span>Overview</span>}
               </div>
-              {!isCollapsed && activeFilter === "all" && (
+              {!isCollapsed && activeSidebarFilter === "all" && activeTagId === null && (
                 <div className="h-2 w-2 rounded-full bg-accent shadow-glow shadow-accent/50" />
               )}
             </motion.button>
@@ -237,14 +244,15 @@ export function Sidebar({
           <div className="flex flex-col gap-2">
             {groups.map((group) => {
               const filterId = `group:${group.id}`
-              const isActive = activeFilter === filterId
+              const isActive = activeSidebarFilter === filterId && activeTagId === null
               const content = (
                 <motion.button
                   key={group.id}
                   onClick={() => {
                     if (location.pathname !== "/dashboard")
                       navigate("/dashboard")
-                    onFilterChange(filterId)
+                    setActiveSidebarFilter(filterId)
+                    setActiveTagId(null)
                   }}
                   whileHover={{ x: isCollapsed ? 0 : 4 }}
                   whileTap={{ scale: 0.98 }}
@@ -282,6 +290,75 @@ export function Sidebar({
                     <TooltipTrigger asChild>{content}</TooltipTrigger>
                     <TooltipContent side="right" className="font-bold">
                       {group.name}
+                    </TooltipContent>
+                  </Tooltip>
+                )
+              }
+              return content
+            })}
+          </div>
+        </div>
+
+        {/* Tags Section */}
+        <div className="space-y-4">
+          <div
+            className={cn(
+              "flex items-center justify-between px-4",
+              isCollapsed && "justify-center"
+            )}
+          >
+            {!isCollapsed && (
+              <p className="text-[10px] font-bold tracking-[0.3em] text-muted-foreground/40 uppercase">
+                Browse Tags
+              </p>
+            )}
+            <Tag className={cn("text-muted-foreground/20", isCollapsed ? "h-4 w-4" : "h-3 w-3")} />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            {tags.map((tag) => {
+              const isActive = activeTagId === tag.id
+              const content = (
+                <motion.button
+                  key={tag.id}
+                  onClick={() => {
+                    if (location.pathname !== "/dashboard")
+                      navigate("/dashboard")
+                    setActiveTagId(isActive ? null : tag.id)
+                  }}
+                  whileHover={{ x: isCollapsed ? 0 : 4 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={cn(
+                    "group flex items-center rounded-2xl px-4 py-4 text-left text-sm font-bold transition-all duration-300",
+                    isCollapsed
+                      ? "mx-auto w-14 justify-center"
+                      : "w-full justify-between",
+                    isActive
+                      ? "bg-accent/10 text-accent ring-1 ring-accent/30 shadow-lg shadow-accent/5"
+                      : "text-muted-foreground hover:bg-muted/30 hover:text-foreground"
+                  )}
+                >
+                  <div className="flex items-center gap-4">
+                    <Tag
+                      className={cn(
+                        "h-5 w-5 transition-colors duration-300",
+                        isActive ? "text-accent" : "text-muted-foreground/20 group-hover:text-foreground"
+                      )}
+                    />
+                    {!isCollapsed && <span>{tag.name}</span>}
+                  </div>
+                  {!isCollapsed && isActive && (
+                    <div className="h-2 w-2 rounded-full bg-accent shadow-glow shadow-accent/50" />
+                  )}
+                </motion.button>
+              )
+
+              if (isCollapsed) {
+                return (
+                  <Tooltip key={tag.id}>
+                    <TooltipTrigger asChild>{content}</TooltipTrigger>
+                    <TooltipContent side="right" className="font-bold">
+                      {tag.name}
                     </TooltipContent>
                   </Tooltip>
                 )

@@ -2,7 +2,7 @@ import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import type { Task } from "@/hooks/useApi"
+import type { Task } from "@/lib/api"
 import { Trash2, Edit2, Calendar, X, Tag, MoreVertical, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
@@ -78,7 +78,7 @@ export function TaskCard({
               </div>
 
               <div className="min-w-0 flex-1 space-y-1">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center justify-between gap-3">
                   <h3
                     className={cn(
                       "font-heading text-lg font-bold tracking-tight text-foreground transition-all",
@@ -88,15 +88,32 @@ export function TaskCard({
                     {task.title}
                   </h3>
                   
-                  {task.group && (
-                    <div className="flex items-center gap-1.5 rounded-full bg-muted/50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                      <div 
-                        className="h-1.5 w-1.5 rounded-full" 
-                        style={{ backgroundColor: task.group.color || "gray" }} 
-                      />
-                      {task.group.name}
+                  <div className="flex items-center gap-2">
+                    {task.group && (
+                      <div className="flex items-center gap-1.5 rounded-full bg-muted/50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                        <div 
+                          className="h-1.5 w-1.5 rounded-full" 
+                          style={{ backgroundColor: task.group.color || "gray" }} 
+                        />
+                        {task.group.name}
+                      </div>
+                    )}
+                    
+                    <div className={cn(
+                      "flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+                      task.priority === 'HIGH' ? "bg-red-500/10 text-red-600" :
+                      task.priority === 'MEDIUM' ? "bg-amber-500/10 text-amber-600" :
+                      "bg-blue-500/10 text-blue-600"
+                    )}>
+                      <div className={cn(
+                        "h-1.5 w-1.5 rounded-full",
+                        task.priority === 'HIGH' ? "bg-red-500" :
+                        task.priority === 'MEDIUM' ? "bg-amber-500" :
+                        "bg-blue-500"
+                      )} />
+                      {task.priority}
                     </div>
-                  )}
+                  </div>
                 </div>
 
                 {task?.description && (

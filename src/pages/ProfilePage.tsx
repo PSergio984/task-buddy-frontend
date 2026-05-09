@@ -23,7 +23,7 @@ const PASSWORD_RULES = [
 ]
 
 export function ProfilePage() {
-  const { user, token, refreshUser, logout } = useAuth()
+  const { user, refreshUser, logout } = useAuth()
   const { toast } = useToast()
   const navigate = useNavigate()
   
@@ -62,7 +62,7 @@ export function ProfilePage() {
       await axios.patch(
         `${API_BASE_URL}/api/v1/users/me/username`,
         { username: sanitizeUsername(newUsername) },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { withCredentials: true }
       )
       await refreshUser()
       toast({
@@ -113,7 +113,7 @@ export function ProfilePage() {
           current_password: sanitizePassword(currentPassword),
           new_password: sanitizePassword(newPassword),
         },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { withCredentials: true }
       )
       setCurrentPassword("")
       setNewPassword("")

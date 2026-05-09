@@ -1,16 +1,14 @@
-import { useState, useCallback } from "react"
+import { useState } from "react"
 import { Outlet, useLocation, useNavigate } from "react-router-dom"
 import { Sidebar } from "@/components/sidebar"
 import { TopNav } from "@/components/topnav"
 import { NewTaskModal } from "@/components/new-task-modal"
-import { useCreateTask, useUpdateTask, useTasks, useStats } from "@/hooks/useApi"
-import type { Task } from "@/hooks/useApi"
+import { useCreateTask, useUpdateTask } from "@/hooks/useTasks"
+import type { Task } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 
 export function MainLayout() {
   const [isCollapsed, setIsCollapsed] = useState(false)
-  const [activeSidebarFilter, setActiveSidebarFilter] = useState("all")
-  const [activeStatus, setActiveStatus] = useState("all")
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   
@@ -18,20 +16,8 @@ export function MainLayout() {
   const navigate = useNavigate()
   const { toast } = useToast()
 
-  // Parse filters for useTasks hook
-  const isGroupFilter = activeSidebarFilter.startsWith("group:")
-  const filterParam = activeStatus === "all" ? undefined : activeStatus
-  const groupIdParam = isGroupFilter ? parseInt(activeSidebarFilter.split(":")[1]) : undefined
-
-  // Lifted data state to ensure consistency and prevent redundant fetches
-  const { tasks, loading: loadingTasks, refreshTasks } = useTasks(filterParam, groupIdParam)
-  const { stats, loading: loadingStats, refreshStats } = useStats()
-  const { createTask, loading: isCreating } = useCreateTask()
-  const { updateTask, loading: isUpdating } = useUpdateTask()
-
-  const handleRefresh = useCallback(async () => {
-    await Promise.all([refreshTasks(), refreshStats()])
-  }, [refreshTasks, refreshStats])
+  const { mutateAsync: createTask, isPending: isCreating } = useCreateTask()
+  const { mutateAsync: updateTask, isPending: isUpdating } = useUpdateTask()
 
   const handleOpenNewTask = () => {
     setEditingTask(null)
@@ -48,7 +34,7 @@ export function MainLayout() {
   ) => {
     try {
       if (editingTask) {
-        await updateTask(editingTask.id, taskData)
+        await updateTask({ id: editingTask.id, updates: taskData })
         toast({
           title: "Task updated",
           description: "Your changes have been synchronized.",
@@ -65,7 +51,6 @@ export function MainLayout() {
       
       setIsModalOpen(false)
       setEditingTask(null)
-      await handleRefresh()
       
       // If we're not on dashboard, navigation to it provides better UX after creation
       if (location.pathname !== "/dashboard") {
@@ -87,8 +72,6 @@ export function MainLayout() {
       <Sidebar 
         isCollapsed={isCollapsed} 
         onToggle={() => setIsCollapsed(!isCollapsed)}
-        activeFilter={activeSidebarFilter}
-        onFilterChange={setActiveSidebarFilter}
       />
 
       {/* Main Content Wrapper */}
@@ -102,13 +85,6 @@ export function MainLayout() {
         <main className="flex-1 overflow-y-auto">
           <div className="w-full">
             <Outlet context={{ 
-              tasks, 
-              loadingTasks, 
-              stats, 
-              loadingStats, 
-              activeStatus, 
-              setActiveStatus, 
-              handleRefresh,
               handleEditTask
             }} />
           </div>
@@ -127,4 +103,3 @@ export function MainLayout() {
     </div>
   )
 }
-

@@ -7,6 +7,7 @@
 | System | Type (API/DB/Queue/etc) | Purpose | Auth model | Criticality | Evidence |
 |--------|---------------------------|---------|------------|-------------|----------|
 | Task Buddy Backend | REST API | Primary backend service | JWT Token | High | `README.md`, `src/hooks/useApi.ts` |
+| (Note: The backend is maintained in a separate repository: `task-buddy-backend`) | | | | | |
 | Fontsource (Geist) | Fonts | Typography | None | Low | `package.json` |
 
 ### 2) Data Stores

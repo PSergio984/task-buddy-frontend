@@ -33,6 +33,7 @@ List only high-impact production dependencies (frameworks, data, transport, auth
 | Tool | Purpose | Evidence |
 |------|---------|----------|
 | vite | Build & Dev Server | `package.json` |
+| vitest | Unit Testing | `package.json`, `vitest.config.ts` |
 | typescript | Static typing | `package.json` |
 | eslint | Linting | `package.json` |
 | prettier | Formatting | `package.json` |

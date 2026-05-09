@@ -6,8 +6,6 @@
 
 | Severity | Concern | Evidence | Impact | Suggested action |
 |----------|---------|----------|--------|------------------|
-| High | Security: JWT in LocalStorage | `src/contexts/AuthContext.tsx` | Vulnerable to XSS theft if a vulnerability is exploited. | Move token to an HttpOnly cookie or use an in-memory store with Refresh Tokens. |
-| Med | Lack of Unit Tests | `package.json` (no vitest/jest) | Regressions in business logic might go unnoticed. | Set up Vitest or Jest for unit testing hooks and utils. |
 | Med | Architecture: Component Bloat | `src/App.tsx` | Harder to maintain as the application grows. | Decompose `App.tsx` and core layout components into smaller features. |
 | Med | Large Bundle Size potential | `README.md` (minified size mentioned) | Slower load times for users | Monitor bundle size and use dynamic imports for larger components. |
 
@@ -26,7 +24,7 @@ List the most important debt items only.
 | Risk | OWASP category (if applicable) | Evidence | Current mitigation | Gap |
 |------|--------------------------------|----------|--------------------|-----|
 | XSS via user input | A03: Injection | [TODO] | React's default escaping | Verify no use of `dangerouslySetInnerHTML` with unsanitized data. |
-| Insecure token storage | [N/A] | `localStorage.setItem` | React's escaping | No protection against script access to the token. |
+| Insecure token storage (Resolved) | [N/A] | `src/contexts/AuthContext.tsx` | HttpOnly Cookies | Verification via E2E testing of the cookie-based flow. |
 
 ### 4) Performance and Scaling Concerns
 
@@ -48,7 +46,7 @@ Add unresolved intent-dependent questions as a numbered list.
 
 1. [ASK USER] Should we implement a global state management library beyond Zustand if complexity grows?
 2. [ASK USER] What is the priority for mobile responsiveness (PWA, dedicated styles, etc.)?
-3. [ASK USER] Should we move from LocalStorage to HttpOnly cookies for session security?
+3. [ASK USER] Should we implement server-side session management (Redis) for JWT blacklisting on logout?
 
 ### 7) Evidence
 
