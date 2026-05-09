@@ -1,11 +1,9 @@
 import { motion } from "framer-motion"
 import { useNavigate, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
-import { useState } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useFilters } from "@/contexts/FilterContext"
-import { useToast } from "@/hooks/use-toast"
-import { LogoutDialog } from "@/components/logout-dialog"
+import { CreateGroupModal } from "@/components/create-group-modal"
 import { useGroups } from "@/hooks/useGroups"
 import { useTags } from "@/hooks/useTags"
 import {
@@ -17,16 +15,14 @@ import {
   CheckSquare2,
   LayoutDashboard,
   Clock,
-  LayoutGrid,
-  Filter,
   PanelLeftClose,
   PanelLeftOpen,
   Layers,
   Tag,
   ListChecks,
-  Settings,
-  CircleDot,
+  Plus,
 } from "lucide-react"
+import { useState } from "react"
 
 export interface SidebarProps {
   readonly isCollapsed: boolean
@@ -39,7 +35,7 @@ export function Sidebar({
 }: Readonly<SidebarProps>) {
   const navigate = useNavigate()
   const location = useLocation()
-  const { user: _user, logout } = useAuth()
+  const { user: _user } = useAuth()
   const { 
     activeSidebarFilter, 
     setActiveSidebarFilter,
@@ -48,19 +44,7 @@ export function Sidebar({
   } = useFilters()
   const { data: groups = [] } = useGroups()
   const { data: tags = [] } = useTags()
-  const { toast } = useToast()
-  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
-
-  const handleLogout = async () => {
-    setIsLogoutDialogOpen(false)
-    await logout()
-    toast({
-      title: "Securely Logged Out",
-      description: "Come back soon to stay on track.",
-      variant: "default",
-    })
-    navigate("/login")
-  }
+  const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false)
 
   const navLinks = [
     { id: "dashboard", path: "/dashboard", label: "Overview", icon: LayoutDashboard },
@@ -78,12 +62,14 @@ export function Sidebar({
       {/* Branding Section */}
       <div className="mb-12 flex items-center justify-between gap-4 px-2 relative">
         <div className="flex items-center gap-4 overflow-hidden">
-          <motion.div 
-            whileHover={{ rotate: 10, scale: 1.1 }}
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary via-primary to-accent shadow-2xl shadow-primary/30"
-          >
-            <CheckSquare2 className="h-7 w-7 text-primary-foreground" />
-          </motion.div>
+          {!isCollapsed && (
+            <motion.div 
+              whileHover={{ rotate: 10, scale: 1.1 }}
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary via-primary to-accent shadow-2xl shadow-primary/30"
+            >
+              <CheckSquare2 className="h-7 w-7 text-primary-foreground" />
+            </motion.div>
+          )}
           {!isCollapsed && (
             <motion.div
               initial={{ opacity: 0, x: -10 }}
@@ -105,8 +91,8 @@ export function Sidebar({
           whileTap={{ scale: 0.9 }}
           onClick={onToggle}
           className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-background/50 backdrop-blur-sm shadow-xl transition-all duration-300 cursor-pointer",
-            isCollapsed && "absolute -right-4 top-1/2 -translate-y-1/2 bg-primary text-primary-foreground border-none scale-75"
+            "absolute -right-5 top-10 z-50 flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-background backdrop-blur-md shadow-xl transition-all duration-300 cursor-pointer",
+            isCollapsed && "bg-primary text-primary-foreground border-none"
           )}
         >
           {isCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
@@ -184,7 +170,18 @@ export function Sidebar({
                 Workspaces
               </p>
             )}
-            <Layers className={cn("text-foreground/20", isCollapsed ? "h-4 w-4" : "h-3 w-3")} />
+            {!isCollapsed ? (
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setIsCreateGroupModalOpen(true)}
+                className="p-1 rounded-md hover:bg-white/10 text-foreground/40 hover:text-foreground transition-colors cursor-pointer"
+              >
+                <Plus className="h-4 w-4" />
+              </motion.button>
+            ) : (
+              <Layers className="h-4 w-4 text-foreground/20" />
+            )}
           </div>
 
           <div className="flex flex-col gap-2">
@@ -200,7 +197,6 @@ export function Sidebar({
                 <motion.button
                   key={group.id}
                   onClick={() => {
-                    if (location.pathname !== "/dashboard") navigate("/dashboard")
                     setActiveSidebarFilter(filterId)
                     setActiveTagId(null)
                   }}
@@ -251,105 +247,68 @@ export function Sidebar({
 
         {/* Tags Section */}
         <div className="space-y-4">
-          <div
-            className={cn(
-              "flex items-center justify-between px-4",
-              isCollapsed && "justify-center"
-            )}
-          >
+          <div className={cn("flex items-center justify-between px-4", isCollapsed && "justify-center")}>
             {!isCollapsed && (
               <p className="text-[10px] font-bold tracking-[0.3em] text-foreground/40 uppercase">
-                Labels
+                Focus Tags
               </p>
             )}
-            <Tag className={cn("text-foreground/20", isCollapsed ? "h-4 w-4" : "h-3 w-3")} />
+            {isCollapsed && <Tag className="h-4 w-4 text-foreground/20" />}
           </div>
 
-          <div className="flex flex-col gap-2">
-            {tags.map((tag) => {
-              const isActive = activeTagId === tag.id
-              const content = (
-                <motion.button
-                  key={tag.id}
-                  onClick={() => {
-                    if (location.pathname !== "/dashboard") navigate("/dashboard")
-                    setActiveTagId(isActive ? null : tag.id)
-                  }}
-                  whileHover={{ x: isCollapsed ? 0 : 4, backgroundColor: "rgba(255,255,255,0.05)" }}
-                  whileTap={{ scale: 0.98 }}
-                  className={cn(
-                    "group flex items-center rounded-2xl px-4 py-3.5 text-left text-sm font-bold transition-all duration-300",
-                    isCollapsed
-                      ? "mx-auto w-14 justify-center"
-                      : "w-full justify-between",
-                    isActive
-                      ? "bg-accent/10 text-accent ring-1 ring-accent/20 shadow-xl"
-                      : "text-foreground/50 hover:text-foreground"
-                  )}
-                >
-                  <div className="flex items-center gap-4">
-                    <Tag
-                      className={cn(
-                        "h-5 w-5 transition-all duration-300",
-                        isActive ? "text-accent scale-110" : "text-foreground/20 group-hover:text-accent group-hover:scale-110"
-                      )}
+          <div className="flex flex-col gap-1 px-2">
+            {tags.length === 0 && !isCollapsed && (
+              <div className="px-4 py-4 rounded-xl border border-dashed border-border/30 bg-white/5 text-center">
+                <p className="text-[10px] font-bold text-foreground/20 uppercase">No Tags</p>
+              </div>
+            )}
+            <div className={cn("flex flex-wrap gap-2", isCollapsed && "flex-col items-center")}>
+              {tags.map((tag) => {
+                const isActive = activeTagId === tag.id
+                const content = (
+                  <motion.button
+                    key={tag.id}
+                    onClick={() => {
+                      setActiveTagId(isActive ? null : tag.id)
+                      setActiveSidebarFilter("all")
+                    }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className={cn(
+                      "flex items-center gap-2 rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all shadow-sm",
+                      isActive
+                        ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
+                        : "bg-white/5 text-foreground/60 hover:bg-white/10 hover:text-foreground"
+                    )}
+                  >
+                    <div 
+                      className="h-2 w-2 rounded-full shadow-[0_0_5px_currentColor]" 
+                      style={{ backgroundColor: tag.color || "gray", color: tag.color || "gray" }} 
                     />
                     {!isCollapsed && <span>{tag.name}</span>}
-                  </div>
-                  {!isCollapsed && isActive && (
-                    <div className="h-1.5 w-1.5 rounded-full bg-accent shadow-glow shadow-accent/50" />
-                  )}
-                </motion.button>
-              )
-
-              if (isCollapsed) {
-                return (
-                  <Tooltip key={tag.id} delayDuration={0}>
-                    <TooltipTrigger asChild>{content}</TooltipTrigger>
-                    <TooltipContent side="right" className="font-bold border-none bg-primary text-primary-foreground px-4 py-2 rounded-xl shadow-2xl">
-                      {tag.name}
-                    </TooltipContent>
-                  </Tooltip>
+                  </motion.button>
                 )
-              }
-              return content
-            })}
+
+                if (isCollapsed) {
+                  return (
+                    <Tooltip key={tag.id} delayDuration={0}>
+                      <TooltipTrigger asChild>{content}</TooltipTrigger>
+                      <TooltipContent side="right" className="font-bold border-none bg-primary text-primary-foreground px-4 py-2 rounded-xl shadow-2xl">
+                        {tag.name}
+                      </TooltipContent>
+                    </Tooltip>
+                  )
+                }
+                return content
+              })}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* User Section - NEW & PREMIUM */}
-      <div className="mt-auto pt-6 border-t border-white/5">
-        <motion.div 
-          whileHover={{ backgroundColor: "rgba(255,255,255,0.05)" }}
-          className={cn(
-            "flex items-center gap-4 p-4 rounded-2xl cursor-pointer group/user",
-            isCollapsed ? "justify-center" : "justify-start"
-          )}
-          onClick={() => setIsLogoutDialogOpen(true)}
-        >
-          <div className="relative">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-tr from-accent to-purple-500 flex items-center justify-center text-white font-black text-xl shadow-xl">
-              {_user?.username?.charAt(0).toUpperCase() || "U"}
-            </div>
-            <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-green-500 border-2 border-background shadow-glow" />
-          </div>
-          {!isCollapsed && (
-            <div className="flex flex-1 flex-col overflow-hidden">
-              <p className="font-bold text-sm truncate text-foreground">{_user?.username || "Commander"}</p>
-              <p className="text-[10px] font-bold text-foreground/40 uppercase tracking-widest truncate">Pro Account</p>
-            </div>
-          )}
-          {!isCollapsed && (
-            <Settings className="h-4 w-4 text-foreground/20 group-hover/user:text-foreground transition-colors" />
-          )}
-        </motion.div>
-      </div>
-
-      <LogoutDialog 
-        open={isLogoutDialogOpen} 
-        onOpenChange={setIsLogoutDialogOpen} 
-        onConfirm={handleLogout} 
+      <CreateGroupModal 
+        open={isCreateGroupModalOpen} 
+        onOpenChange={setIsCreateGroupModalOpen} 
       />
     </motion.aside>
   )
