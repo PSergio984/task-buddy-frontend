@@ -26,7 +26,7 @@ test.describe("Advanced Tasks", () => {
 
     // Pre-seed authentication state to avoid redirect to login
     await page.addInitScript(() => {
-      window.localStorage.setItem('auth_user', JSON.stringify({ id: "1", username: "testuser", email: "test@example.com" }));
+      globalThis.localStorage.setItem('auth_user', JSON.stringify({ id: "1", username: "testuser", email: "test@example.com" }));
     });
 
     // Mock authentication
@@ -48,7 +48,7 @@ test.describe("Advanced Tasks", () => {
       if (method === "GET") {
           const tagId = url.searchParams.get("tag_id")
           if (tagId) {
-              const filtered = mockTasks.filter(t => t.tags?.some((tg: any) => tg.id === parseInt(tagId)))
+              const filtered = mockTasks.filter(t => t.tags?.some((tg: any) => tg.id === Number.parseInt(tagId)))
               return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(filtered) })
           }
           return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(mockTasks) })
@@ -70,7 +70,7 @@ test.describe("Advanced Tasks", () => {
       }
 
       if (method === "PUT" && url.pathname.includes("/subtask/")) {
-          const subtaskId = parseInt(url.pathname.split("/").pop() || "0")
+          const subtaskId = Number.parseInt(url.pathname.split("/").pop() || "0")
           const payload = route.request().postDataJSON()
           console.log(`MOCK: Updating subtask ${subtaskId} to completed=${payload.completed}`);
           
@@ -167,10 +167,10 @@ test.describe("Advanced Tasks", () => {
 
   test("can create a task with High Priority and Tags", async ({ page }) => {
       await test.step("Open New Task Modal", async () => {
-          const createButton = page.getByRole('button', { name: /create task/i })
+          const createButton = page.getByRole('button', { name: /create task/i }).first()
           await expect(createButton).toBeVisible()
           await createButton.click()
-          await expect(page.getByRole('heading', { name: /manifest task/i })).toBeVisible()
+          await expect(page.getByRole('heading', { name: /create task/i })).toBeVisible()
       })
 
       await test.step("Fill task details", async () => {
@@ -185,7 +185,7 @@ test.describe("Advanced Tasks", () => {
       })
 
       await test.step("Submit and verify", async () => {
-          await page.getByRole('button', { name: /finalize task/i }).click()
+          await page.getByRole('button', { name: /create task/i }).last().click()
           await expect(page.getByText("High Priority Task")).toBeVisible()
       })
   })

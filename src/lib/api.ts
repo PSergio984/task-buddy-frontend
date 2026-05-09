@@ -17,7 +17,7 @@ api.interceptors.response.use(
     
     if (error.response?.status === 401 && !isLogoutRequest) {
       // Dispatch a custom event to notify AuthContext
-      window.dispatchEvent(new CustomEvent("auth:unauthorized"))
+      globalThis.dispatchEvent(new CustomEvent("auth:unauthorized"))
     }
     return Promise.reject(error)
   }
@@ -100,9 +100,8 @@ export const tasksApi = {
       params.append("tag_id", tag_id.toString())
     }
     const queryString = params.toString()
-    const response = await api.get<Task[] | { items: Task[] }>(
-      `/api/v1/tasks/${queryString ? `?${queryString}` : ""}`
-    )
+    const url = queryString ? `/api/v1/tasks/?${queryString}` : "/api/v1/tasks/"
+    const response = await api.get<Task[] | { items: Task[] }>(url)
     const data = response.data
     return Array.isArray(data) ? data : data.items || []
   },

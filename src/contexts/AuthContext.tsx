@@ -97,9 +97,9 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       logout()
     }
 
-    window.addEventListener("auth:unauthorized", handleUnauthorized)
+    globalThis.addEventListener("auth:unauthorized", handleUnauthorized)
     return () => {
-      window.removeEventListener("auth:unauthorized", handleUnauthorized)
+      globalThis.removeEventListener("auth:unauthorized", handleUnauthorized)
     }
   }, [refreshUser, logout])
 

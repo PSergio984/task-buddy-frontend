@@ -77,7 +77,7 @@ test.describe("Main Layout & Navigation", () => {
       // Mark the sidebar with a custom attribute to verify it doesn't re-mount
       await page.evaluate(() => {
         const sidebar = document.querySelector('aside');
-        if (sidebar) sidebar.setAttribute('data-persistent', 'true');
+        if (sidebar) sidebar.dataset.persistent = 'true';
       });
 
       // Click Profile in sidebar (need to find the link)

@@ -29,7 +29,7 @@ export function TasksPage() {
 
   const isProjectFilter = activeSidebarFilter.startsWith("project:")
   const filterParam = activeStatus === "all" ? undefined : activeStatus
-  const projectIdParam = isProjectFilter ? parseInt(activeSidebarFilter.split(":")[1]) : undefined
+  const projectIdParam = isProjectFilter ? Number.parseInt(activeSidebarFilter.split(":")[1]) : undefined
 
   const { data: tasks = [], isLoading: loadingTasks, refetch: refreshTasks } = useTasks(
     filterParam, 
@@ -51,11 +51,13 @@ export function TasksPage() {
   const handleToggleComplete = async (id: number) => {
     const task = tasks.find((t: Task) => t.id === id)
     if (!task) return
+    
+    const nextStatus = !task.completed
     try {
-      await updateTask({ id, updates: { completed: !task.completed } })
+      await updateTask({ id, updates: { completed: nextStatus } })
       toast({
-        title: task.completed ? "Task restored" : "Task completed!",
-        description: task.completed ? "Task moved to pending." : "Great job!",
+        title: nextStatus ? "Task completed!" : "Task restored",
+        description: nextStatus ? "Great job!" : "Task moved to pending.",
         variant: "success",
       })
     } catch (err) {
@@ -63,7 +65,12 @@ export function TasksPage() {
         await logout()
         return
       }
-      toast({ title: "Action failed", variant: "destructive" })
+      console.error("Failed to toggle task status:", err)
+      toast({ 
+        title: "Action failed", 
+        description: "Could not update task status.",
+        variant: "destructive" 
+      })
     }
   }
 
@@ -72,6 +79,7 @@ export function TasksPage() {
       await deleteTask(id)
       toast({ title: "Task deleted", variant: "success" })
     } catch (err) {
+      console.error("Failed to delete task:", err)
       toast({ title: "Delete failed", variant: "destructive" })
     }
   }
@@ -81,6 +89,7 @@ export function TasksPage() {
       await updateSubtask({ id: subtaskId, updates: { completed } })
       refreshTasks()
     } catch (err) {
+      console.error("Failed to update subtask:", err)
       toast({ title: "Update failed", variant: "destructive" })
     }
   }
@@ -91,6 +100,7 @@ export function TasksPage() {
       toast({ title: "Subtask deleted", variant: "success" })
       refreshTasks()
     } catch (err) {
+      console.error("Failed to delete subtask:", err)
       toast({ title: "Delete failed", variant: "destructive" })
     }
   }
@@ -100,6 +110,7 @@ export function TasksPage() {
       await detachTag({ taskId, tagId })
       refreshTasks()
     } catch (err) {
+      console.error("Failed to detach tag:", err)
       toast({ title: "Detach failed", variant: "destructive" })
     }
   }
@@ -185,7 +196,9 @@ export function TasksPage() {
           <TabsContent key={status} value={status} className="mt-0 outline-none">
             {loadingTasks ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-[200px] rounded-[2.5rem]" />)}
+                {["t1", "t2", "t3", "t4"].map((id) => (
+                  <Skeleton key={id} className="h-[200px] rounded-[2.5rem]" />
+                ))}
               </div>
             ) : filteredTasks.length === 0 ? (
               <motion.div 

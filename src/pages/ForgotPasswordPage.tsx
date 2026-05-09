@@ -57,7 +57,37 @@ export function ForgotPasswordPage() {
           </Link>
           
           <AnimatePresence mode="wait">
-            {!isSubmitted ? (
+            {isSubmitted ? (
+              <motion.div
+                key="success"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center bg-background p-10 rounded-[2rem] border shadow-xl shadow-primary/5"
+              >
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-success/10 text-success mb-6">
+                  <Send className="h-8 w-8" />
+                </div>
+                <h2 className="text-2xl font-bold mb-4">Check your email</h2>
+                <p className="text-muted-foreground mb-8">
+                  We've sent a password reset link to <br />
+                  <span className="font-semibold text-primary">{email}</span>
+                </p>
+                <Link to="/login" className="w-full">
+                  <Button variant="outline" className="w-full h-12 rounded-xl">
+                    Back to login
+                  </Button>
+                </Link>
+                <p className="mt-6 text-sm text-muted-foreground">
+                  Didn't receive the email?{" "}
+                  <button
+                    onClick={() => setIsSubmitted(false)}
+                    className="font-medium text-accent hover:underline"
+                  >
+                    Click to try again
+                  </button>
+                </p>
+              </motion.div>
+            ) : (
               <motion.div
                 key="form"
                 initial={{ opacity: 0, x: -20 }}
@@ -103,36 +133,6 @@ export function ForgotPasswordPage() {
                     )}
                   </Button>
                 </form>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="success"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="text-center bg-background p-10 rounded-[2rem] border shadow-xl shadow-primary/5"
-              >
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-success/10 text-success mb-6">
-                  <Send className="h-8 w-8" />
-                </div>
-                <h2 className="text-2xl font-bold mb-4">Check your email</h2>
-                <p className="text-muted-foreground mb-8">
-                  We've sent a password reset link to <br />
-                  <span className="font-semibold text-primary">{email}</span>
-                </p>
-                <Link to="/login" className="w-full">
-                  <Button variant="outline" className="w-full h-12 rounded-xl">
-                    Back to login
-                  </Button>
-                </Link>
-                <p className="mt-6 text-sm text-muted-foreground">
-                  Didn't receive the email?{" "}
-                  <button
-                    onClick={() => setIsSubmitted(false)}
-                    className="font-medium text-accent hover:underline"
-                  >
-                    Click to try again
-                  </button>
-                </p>
               </motion.div>
             )}
           </AnimatePresence>

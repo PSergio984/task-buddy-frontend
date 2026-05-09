@@ -221,9 +221,9 @@ export function LandingPage() {
           </div>
           <p className="text-sm text-muted-foreground">© 2026 Task Buddy Inc. All rights reserved.</p>
           <div className="flex gap-6">
-            <a href="#" className="text-muted-foreground hover:text-primary">Twitter</a>
-            <a href="#" className="text-muted-foreground hover:text-primary">GitHub</a>
-            <a href="#" className="text-muted-foreground hover:text-primary">Privacy</a>
+            <a href="https://twitter.com/taskbuddy" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary">Twitter</a>
+            <a href="https://github.com/taskbuddy" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary">GitHub</a>
+            <a href="/privacy" className="text-muted-foreground hover:text-primary">Privacy</a>
           </div>
         </div>
       </footer>

@@ -42,7 +42,7 @@ export function TaskDetailPage() {
   const queryClient = useQueryClient()
   const [isDeleting, setIsDeleting] = useState(false)
 
-  const taskId = id ? parseInt(id) : 0
+  const taskId = id ? Number.parseInt(id) : 0
 
   const {
     data: task,
@@ -64,7 +64,7 @@ export function TaskDetailPage() {
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
       toast({
         title: "Status Updated",
-        description: `Task marked as ${!task?.completed ? "completed" : "pending"}.`,
+        description: `Task marked as ${task?.completed ? "pending" : "completed"}.`,
       })
     },
   })

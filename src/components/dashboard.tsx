@@ -36,10 +36,11 @@ export interface DashboardProps {
 }
 
 function TaskListSkeleton() {
+  const skeletonIds = ["skel-1", "skeleton-2", "skeleton-3", "skeleton-4"]
   return (
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-      {[...Array(4)].map((_, i) => (
-        <div key={i} className="h-[200px] rounded-[2.5rem] border-none bg-white dark:bg-zinc-900 p-8 space-y-4 shadow-sm">
+      {skeletonIds.map((id) => (
+        <div key={id} className="h-[200px] rounded-[2.5rem] border-none bg-white dark:bg-zinc-900 p-8 space-y-4 shadow-sm">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 space-y-3">
               <Skeleton className="h-7 w-3/4 rounded-lg" />
@@ -260,30 +261,20 @@ export function Dashboard({
           className="w-full"
         >
           <TabsList className="inline-flex h-14 items-center justify-center rounded-[2rem] border-none bg-white/5 p-1.5 backdrop-blur-2xl shadow-xl mb-10">
-            <TabsTrigger
-              value="all"
-              className="rounded-3xl px-10 text-[10px] font-black tracking-[0.3em] transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-2xl uppercase"
-            >
-              All
-            </TabsTrigger>
-            <TabsTrigger
-              value="today"
-              className="rounded-3xl px-10 text-[10px] font-black tracking-[0.3em] transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-2xl uppercase"
-            >
-              Today
-            </TabsTrigger>
-            <TabsTrigger
-              value="tomorrow"
-              className="rounded-3xl px-10 text-[10px] font-black tracking-[0.3em] transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-2xl uppercase"
-            >
-              Tomorrow
-            </TabsTrigger>
-            <TabsTrigger
-              value="week"
-              className="rounded-3xl px-10 text-[10px] font-black tracking-[0.3em] transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-2xl uppercase"
-            >
-              This Week
-            </TabsTrigger>
+            {[
+              { value: "all", label: "All" },
+              { value: "today", label: "Due Today" },
+              { value: "tomorrow", label: "Due Tomorrow" },
+              { value: "week", label: "Due This Week" },
+            ].map((tab) => (
+              <TabsTrigger
+                key={tab.value}
+                value={tab.value}
+                className="rounded-3xl px-10 text-[10px] font-black tracking-[0.3em] transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-2xl uppercase"
+              >
+                {tab.label}
+              </TabsTrigger>
+            ))}
           </TabsList>
 
           <TabsContent value={activeTab} className="mt-0 space-y-6 focus-visible:outline-none">    

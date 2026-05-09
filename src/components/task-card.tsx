@@ -99,20 +99,28 @@ export function TaskCard({
                       </div>
                     )}
                     
-                    <div className={cn(
-                      "flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider",
-                      task.priority === 'HIGH' ? "bg-red-500/10 text-red-600" :
-                      task.priority === 'MEDIUM' ? "bg-amber-500/10 text-amber-600" :
-                      "bg-blue-500/10 text-blue-600"
-                    )}>
-                      <div className={cn(
-                        "h-1.5 w-1.5 rounded-full",
-                        task.priority === 'HIGH' ? "bg-red-500" :
-                        task.priority === 'MEDIUM' ? "bg-amber-500" :
-                        "bg-blue-500"
-                      )} />
-                      {task.priority}
-                    </div>
+                    {(() => {
+                      let priorityClass = "bg-blue-500/10 text-blue-600"
+                      let dotClass = "bg-blue-500"
+                      
+                      if (task.priority === 'HIGH') {
+                        priorityClass = "bg-red-500/10 text-red-600"
+                        dotClass = "bg-red-500"
+                      } else if (task.priority === 'MEDIUM') {
+                        priorityClass = "bg-amber-500/10 text-amber-600"
+                        dotClass = "bg-amber-500"
+                      }
+
+                      return (
+                        <div className={cn(
+                          "flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+                          priorityClass
+                        )}>
+                          <div className={cn("h-1.5 w-1.5 rounded-full", dotClass)} />
+                          {task.priority}
+                        </div>
+                      )
+                    })()}
                   </div>
                 </div>
 

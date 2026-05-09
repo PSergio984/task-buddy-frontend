@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from "react"
+import { createContext, useContext, useState, useMemo, type ReactNode } from "react"
 
 interface FilterContextType {
   activeSidebarFilter: string
@@ -11,22 +11,22 @@ interface FilterContextType {
 
 const FilterContext = createContext<FilterContextType | undefined>(undefined)
 
-export function FilterProvider({ children }: { children: ReactNode }) {
+export function FilterProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [activeSidebarFilter, setActiveSidebarFilter] = useState("all")
   const [activeStatus, setActiveStatus] = useState("all")
   const [activeTagId, setActiveTagId] = useState<number | null>(null)
 
+  const value = useMemo(() => ({
+    activeSidebarFilter,
+    setActiveSidebarFilter,
+    activeStatus,
+    setActiveStatus,
+    activeTagId,
+    setActiveTagId,
+  }), [activeSidebarFilter, activeStatus, activeTagId])
+
   return (
-    <FilterContext.Provider
-      value={{
-        activeSidebarFilter,
-        setActiveSidebarFilter,
-        activeStatus,
-        setActiveStatus,
-        activeTagId,
-        setActiveTagId,
-      }}
-    >
+    <FilterContext.Provider value={value}>
       {children}
     </FilterContext.Provider>
   )

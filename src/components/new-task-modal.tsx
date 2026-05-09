@@ -89,7 +89,7 @@ export function NewTaskModal({
     const taskData = {
       title: title.trim(),
       description: description.trim() || undefined,
-      project_id: projectId !== "none" ? parseInt(projectId) : undefined,
+      project_id: projectId === "none" ? undefined : Number.parseInt(projectId),
       due_date: dueDate ? dueDate.toISOString() : undefined,
       completed: task?.completed ?? false,
       priority,

@@ -46,7 +46,7 @@ export function Loading() {
           className="mt-12 flex flex-col items-center text-center space-y-2"
         >
           <h2 className="text-2xl font-heading font-black tracking-tighter text-foreground uppercase flex items-center gap-2">
-            Task Buddy
+            Task Buddy{" "}
             <span className="h-2 w-2 rounded-full bg-accent animate-pulse" />
           </h2>
           <p className="text-xs font-bold tracking-[0.3em] text-muted-foreground uppercase">
@@ -56,11 +56,11 @@ export function Loading() {
 
         {/* Progress Indicator */}
         <div className="mt-8 flex gap-2">
-          {[0, 1, 2].map((i) => (
+          {["p1", "p2", "p3"].map((id, index) => (
             <motion.div
-              key={i}
+              key={id}
               animate={{ height: ["4px", "16px", "4px"], opacity: [0.3, 1, 0.3] }}
-              transition={{ repeat: Infinity, duration: 1.2, delay: i * 0.15, ease: "easeInOut" }}
+              transition={{ repeat: Infinity, duration: 1.2, delay: index * 0.15, ease: "easeInOut" }}
               className="w-1.5 rounded-full bg-primary"
             />
           ))}

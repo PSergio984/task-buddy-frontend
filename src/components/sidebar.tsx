@@ -1,7 +1,6 @@
 import { motion } from "framer-motion"
 import { useNavigate, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
-import { useAuth } from "@/contexts/AuthContext"
 import { useFilters } from "@/contexts/FilterContext"
 import { CreateProjectModal } from "@/components/create-project-modal"
 import { useProjects } from "@/hooks/useProjects"
@@ -35,7 +34,6 @@ export function Sidebar({
 }: Readonly<SidebarProps>) {
   const navigate = useNavigate()
   const location = useLocation()
-  const { user: _user } = useAuth()
   const { 
     activeSidebarFilter, 
     setActiveSidebarFilter,
@@ -60,16 +58,18 @@ export function Sidebar({
       className="relative hidden min-h-svh flex-col border-r border-white/5 bg-background/60 px-4 py-8 backdrop-blur-3xl md:flex shadow-[20px_0_50px_-20px_rgba(0,0,0,0.4)] group/sidebar z-50"
     >
       {/* Branding Section */}
-      <div className="mb-12 flex items-center justify-between gap-4 px-2 relative">
+      <div className="mb-12 flex items-center justify-between gap-4 px-2 relative min-h-[48px]">
         <div className="flex items-center gap-4 overflow-hidden">
-          {!isCollapsed && (
-            <motion.div 
-              whileHover={{ rotate: 10, scale: 1.1 }}
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary via-primary to-accent shadow-2xl shadow-primary/30"
-            >
-              <CheckSquare2 className="h-7 w-7 text-primary-foreground" />
-            </motion.div>
-          )}
+          <motion.div 
+            animate={{ 
+              opacity: isCollapsed ? 0 : 1,
+              scale: isCollapsed ? 0.8 : 1
+            }}
+            whileHover={{ rotate: 10, scale: 1.1 }}
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary via-primary to-accent shadow-2xl shadow-primary/30"
+          >
+            <CheckSquare2 className="h-7 w-7 text-primary-foreground" />
+          </motion.div>
           {!isCollapsed && (
             <motion.div
               initial={{ opacity: 0, x: -10 }}
@@ -170,7 +170,9 @@ export function Sidebar({
                 Projects
               </p>
             )}
-            {!isCollapsed ? (
+            {isCollapsed ? (
+              <Layers className="h-4 w-4 text-foreground/20" />
+            ) : (
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
@@ -179,8 +181,6 @@ export function Sidebar({
               >
                 <Plus className="h-4 w-4" />
               </motion.button>
-            ) : (
-              <Layers className="h-4 w-4 text-foreground/20" />
             )}
           </div>
 

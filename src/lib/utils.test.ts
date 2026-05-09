@@ -8,6 +8,10 @@ describe('cn utility', () => {
   })
 
   it('handles conditional classes', () => {
-    expect(cn('px-2', true && 'py-2', false && 'm-2')).toBe('px-2 py-2')
+    const isTrue = true
+    const isFalse = false
+    const result = cn('px-2', isTrue && 'py-2', isFalse && 'm-2')
+    const expected = 'px-2 py-2'
+    expect(result).toBe(expected)
   })
 })

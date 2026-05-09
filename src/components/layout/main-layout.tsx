@@ -44,7 +44,7 @@ export function MainLayout() {
         await createTask(taskData)
         toast({
           title: "Task created",
-          description: "New objective has been manifested.",
+          description: "New objective has been created.",
           variant: "success",
         })
       }
@@ -64,6 +64,11 @@ export function MainLayout() {
         variant: "destructive",
       })
     }
+  }
+
+  let modalKey = "closed"
+  if (isModalOpen) {
+    modalKey = editingTask ? `edit-${editingTask.id}` : "new"
   }
 
   return (
@@ -91,9 +96,9 @@ export function MainLayout() {
         </main>
       </div>
 
-      {/* Global Task Modal (Manifest/Refine) */}
+      {/* Global Task Modal (Create/Edit) */}
       <NewTaskModal
-        key={isModalOpen ? (editingTask ? `edit-${editingTask.id}` : "new") : "closed"}
+        key={modalKey}
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
         onSubmit={handleSaveTask}
