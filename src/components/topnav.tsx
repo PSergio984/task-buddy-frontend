@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { Plus, User, LogOut, ChevronDown, Bell, Clock } from "lucide-react"
+import { Plus, User, LogOut, ChevronDown, Bell } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useNavigate } from "react-router-dom"
@@ -108,7 +108,7 @@ export function TopNav({ onNewTask }: Readonly<TopNavProps>) {
                   initial={{ opacity: 0, y: 10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  className="absolute right-0 mt-3 w-64 rounded-[2rem] border bg-background/80 backdrop-blur-3xl p-3 shadow-2xl z-[100] border-primary/10"
+                  className="absolute right-0 mt-3 w-64 rounded-[2rem] border bg-background/98 backdrop-blur-3xl p-3 shadow-2xl z-[100] border-primary/10"
                 >
                   <div className="p-4 border-b border-border/50 mb-2 bg-primary/5 rounded-t-[1.5rem]">
                     <p className="text-[10px] font-bold text-primary uppercase tracking-[0.2em] mb-1">Signed In As</p>
@@ -122,13 +122,6 @@ export function TopNav({ onNewTask }: Readonly<TopNavProps>) {
                     >
                       <User className="h-4 w-4 text-muted-foreground/40 group-hover/item:text-primary transition-colors" />
                       Profile Settings
-                    </button>
-                    <button
-                      onClick={() => { navigate("/audit-logs"); setIsDropdownOpen(false); }}
-                      className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold text-muted-foreground hover:bg-accent/10 hover:text-accent transition-all group/item"
-                    >
-                      <Clock className="h-4 w-4 text-accent/40 group-hover/item:text-accent transition-colors" />
-                      History
                     </button>
                     <div className="h-px bg-border/50 my-2 mx-4" />
                     <button

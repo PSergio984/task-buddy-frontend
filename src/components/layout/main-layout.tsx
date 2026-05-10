@@ -3,13 +3,15 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom"
 import { Sidebar } from "@/components/sidebar"
 import { TopNav } from "@/components/topnav"
 import { NewTaskModal } from "@/components/new-task-modal"
-import { useCreateTask, useUpdateTask } from "@/hooks/useTasks"
+import { TaskDetailDrawer } from "@/components/task-detail-drawer"
+import { useCreateTask } from "@/hooks/useTasks"
 import type { Task } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 
 export function MainLayout() {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   
   const location = useLocation()
@@ -17,7 +19,6 @@ export function MainLayout() {
   const { toast } = useToast()
 
   const { mutateAsync: createTask, isPending: isCreating } = useCreateTask()
-  const { mutateAsync: updateTask, isPending: isUpdating } = useUpdateTask()
 
   const handleOpenNewTask = () => {
     setEditingTask(null)
@@ -26,28 +27,19 @@ export function MainLayout() {
 
   const handleEditTask = (task: Task) => {
     setEditingTask(task)
-    setIsModalOpen(true)
+    setIsDrawerOpen(true)
   }
 
   const handleSaveTask = async (
     taskData: Omit<Task, "id" | "created_at" | "user_id">
   ) => {
     try {
-      if (editingTask) {
-        await updateTask({ id: editingTask.id, updates: taskData })
-        toast({
-          title: "Task updated",
-          description: "Your changes have been synchronized.",
-          variant: "success",
-        })
-      } else {
-        await createTask(taskData)
-        toast({
-          title: "Task created",
-          description: "New objective has been created.",
-          variant: "success",
-        })
-      }
+      await createTask(taskData)
+      toast({
+        title: "Task created",
+        description: "New objective has been created.",
+        variant: "success",
+      })
       
       setIsModalOpen(false)
       setEditingTask(null)
@@ -64,11 +56,6 @@ export function MainLayout() {
         variant: "destructive",
       })
     }
-  }
-
-  let modalKey = "closed"
-  if (isModalOpen) {
-    modalKey = editingTask ? `edit-${editingTask.id}` : "new"
   }
 
   return (
@@ -96,14 +83,20 @@ export function MainLayout() {
         </main>
       </div>
 
-      {/* Global Task Modal (Create/Edit) */}
+      {/* Global Task Modal (Create Only) */}
       <NewTaskModal
-        key={modalKey}
+        key="new-task-modal"
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
         onSubmit={handleSaveTask}
-        isLoading={isCreating || isUpdating}
+        isLoading={isCreating}
+      />
+
+      {/* Global Task Detail Drawer (View/Edit) */}
+      <TaskDetailDrawer
         task={editingTask}
+        isOpen={isDrawerOpen}
+        onOpenChange={setIsDrawerOpen}
       />
     </div>
   )

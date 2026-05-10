@@ -4,7 +4,7 @@ import axios from "axios"
 import { Card } from "@/components/ui/card"
 import { 
   Search, AlertCircle, Clock, ChevronDown, Activity, Sparkles,
-  CheckCircle2, Folder, ListTodo, Shield, LogIn, LogOut, 
+  CheckCircle2, Folder, ListTodo, Shield,
   Trash2, Edit3, Plus, ExternalLink
 } from "lucide-react"
 import { api } from "@/lib/api"
@@ -27,6 +27,72 @@ interface AuditTrailProps {
   readonly limit?: number
   readonly hideCard?: boolean
   readonly className?: string
+}
+
+/** Returns a human-readable date group label */
+function getDateGroupLabel(dateStr: string): string {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const yesterday = new Date(today)
+  yesterday.setDate(yesterday.getDate() - 1)
+
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+
+  if (d.getTime() === today.getTime()) return "Today"
+  if (d.getTime() === yesterday.getTime()) return "Yesterday"
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+}
+
+/** Groups a flat array of log entries into date-keyed buckets */
+function groupByDate(logs: AuditEntry[]): { label: string; entries: AuditEntry[] }[] {
+  const map = new Map<string, AuditEntry[]>()
+  for (const log of logs) {
+    const label = getDateGroupLabel(log.created_at)
+    if (!map.has(label)) map.set(label, [])
+    map.get(label)!.push(log)
+  }
+  return Array.from(map.entries()).map(([label, entries]) => ({ label, entries }))
+}
+
+/** Converts a raw action string into a descriptive human-readable sentence */
+function describeAction(action: string, details: string, targetType: string, targetId?: number | null): string {
+  const act = action?.toLowerCase() || ""
+
+  if (act.includes("create_task") || (act.includes("create") && targetType === "TASK")) {
+    const name = details?.replace(/^Created task:\s*/i, "").trim()
+    return name ? `Created task "${name}"` : "Orchestrated a new task"
+  }
+  if (act.includes("update_task") || (act.includes("update") && targetType === "TASK")) {
+    const isCompleted = details?.toLowerCase().includes("completed: true") || details?.toLowerCase().includes("status: completed")
+    const name = details?.replace(/^Updated task:\s*/i, "").replace(/\(.*\)/, "").trim()
+    
+    if (isCompleted) {
+      return name ? `Completed task "${name}"` : "Marked a task as done"
+    }
+    return name ? `Refined task "${name}"` : "Updated a task"
+  }
+  if (act.includes("delete_task") || (act.includes("delete") && targetType === "TASK")) {
+    return "Removed a task"
+  }
+  if (act.includes("create") && targetType === "SUBTASK") return "Added a subtask"
+  if (act.includes("update") && targetType === "SUBTASK") return "Updated a subtask"
+  if (act.includes("delete") && targetType === "SUBTASK") return "Removed a subtask"
+  if (act.includes("create") && targetType === "GROUP") return "Created a project"
+  if (act.includes("update") && targetType === "GROUP") return "Renamed a project"
+  if (act.includes("delete") && targetType === "GROUP") return "Deleted a project"
+
+  // Fallback: humanize the raw action + original details
+  const humanAction = action?.replaceAll("_", " ") || "Activity"
+  return details || (targetId ? `${humanAction} on ${targetType} #${targetId}` : humanAction)
+}
+
+/** Actions to exclude from the history display */
+const EXCLUDED_ACTIONS = new Set(["login", "logout", "user_login", "user_logout"])
+
+function isExcluded(action: string): boolean {
+  const act = action?.toLowerCase() || ""
+  return Array.from(EXCLUDED_ACTIONS).some(ex => act.includes(ex))
 }
 
 export function AuditTrail({ 
@@ -74,20 +140,21 @@ export function AuditTrail({
   }, [fetchAuditLog])
 
   const filteredLogs = logs
+    .filter((log) => !isExcluded(log.action))
     .filter((log) => {
       const searchLower = search.toLowerCase()
+      if (!searchLower) return true
       const actionMatch = log.action?.toLowerCase().includes(searchLower) || false
       const detailsMatch = log.details?.toLowerCase().includes(searchLower) || false
       return actionMatch || detailsMatch
     })
     .slice(0, currentLimit)
 
+  const groupedLogs = useMemo(() => groupByDate(filteredLogs), [filteredLogs])
+
   const getIcon = (action: string, targetType: string) => {
     const act = action?.toLowerCase() || ""
     const type = targetType?.toUpperCase() || ""
-    
-    if (act.includes('login')) return <LogIn className="h-4 w-4 text-emerald-500" />
-    if (act.includes('logout')) return <LogOut className="h-4 w-4 text-rose-500" />
     
     switch (type) {
       case 'TASK':
@@ -123,7 +190,7 @@ export function AuditTrail({
             </h3>
             <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest flex items-center gap-1.5">
               <Shield className="h-3 w-3" />
-              Security Logs
+              Activity History
             </p>
           </div>
         </div>
@@ -131,7 +198,7 @@ export function AuditTrail({
         <div className="relative w-full sm:max-w-[240px]">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
           <Input 
-            placeholder="Filter logs..." 
+            placeholder="Filter history..." 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-11 pl-11 rounded-xl bg-background/50 border-border focus-visible:ring-accent/30 placeholder:text-muted-foreground/50 transition-all hover:bg-background/80"
@@ -157,57 +224,74 @@ export function AuditTrail({
         </div>
       ) : (
         <div className="flex-1 overflow-auto pr-2 custom-scrollbar">
-          <div className="space-y-6">
+          <div className="space-y-8">
             <AnimatePresence mode="popLayout">
-              {filteredLogs.length > 0 ? (
+              {groupedLogs.length > 0 ? (
                 <>
-                  {filteredLogs.map((log, index) => (
+                  {groupedLogs.map(({ label, entries }, groupIdx) => (
                     <motion.div
-                      key={log.id}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, scale: 0.98 }}
-                      transition={{ duration: 0.3, delay: index * 0.03 }}
-                      className="group relative flex gap-6"
+                      key={label}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.25, delay: groupIdx * 0.04 }}
+                      className="space-y-5"
                     >
-                      {/* Visual Connector */}
-                      {index !== filteredLogs.length - 1 && (
-                        <div className="absolute left-6 top-12 bottom-[-24px] w-[2px] bg-gradient-to-b from-border/80 via-border/30 to-transparent" />
-                      )}
-                      
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border bg-card shadow-sm transition-all group-hover:scale-110 group-hover:border-primary/40 group-hover:shadow-lg group-hover:shadow-primary/5">
-                        {getIcon(log.action, log.target_type)}
+                      {/* Date Group Header */}
+                      <div className="flex items-center gap-3">
+                        <span className="text-[10px] font-black tracking-[0.2em] uppercase text-muted-foreground/60">
+                          {label}
+                        </span>
+                        <div className="flex-1 h-px bg-border/50" />
                       </div>
-                      
-                      <div className="flex flex-col gap-1.5 py-1 flex-1">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <span className="text-sm font-bold tracking-tight text-foreground uppercase decoration-primary/20 decoration-2 underline-offset-4 group-hover:underline">
-                              {log.action?.replaceAll("_", " ") || "ACTIVITY"}
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted/50 px-2.5 py-0.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                              <Clock className="h-3 w-3" />
-                              {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          </div>
-                          {log.target_id && log.target_type === 'TASK' && (
-                            <button className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-primary">
-                              <ExternalLink className="h-3.5 w-3.5" />
-                            </button>
+
+                      {/* Log Entries in this group */}
+                      {entries.map((log, index) => (
+                        <motion.div
+                          key={log.id}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, scale: 0.98 }}
+                          transition={{ duration: 0.2, delay: index * 0.03 }}
+                          className="group relative flex gap-6"
+                        >
+                          {/* Visual Connector */}
+                          {index !== entries.length - 1 && (
+                            <div className="absolute left-6 top-12 bottom-[-20px] w-[2px] bg-gradient-to-b from-border/80 via-border/30 to-transparent" />
                           )}
-                        </div>
-                        <p className="text-sm leading-relaxed text-muted-foreground/80 group-hover:text-foreground transition-colors font-medium">
-                          {log.details || `Performed ${log.action} on ${log.target_type} #${log.target_id}`}
-                        </p>
-                      </div>
+                          
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border bg-card shadow-sm transition-all group-hover:scale-110 group-hover:border-primary/40 group-hover:shadow-lg group-hover:shadow-primary/5">
+                            {getIcon(log.action, log.target_type)}
+                          </div>
+                          
+                          <div className="flex flex-col gap-1.5 py-1 flex-1">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <span className="inline-flex items-center gap-1.5 rounded-full bg-muted/50 px-2.5 py-0.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                                  <Clock className="h-3 w-3" />
+                                  {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              </div>
+                              {log.target_id && log.target_type === 'TASK' && (
+                                <button className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-primary">
+                                  <ExternalLink className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                            </div>
+                            <p className="text-sm leading-relaxed text-foreground font-semibold group-hover:text-primary transition-colors">
+                              {describeAction(log.action, log.details, log.target_type, log.target_id)}
+                            </p>
+                          </div>
+                        </motion.div>
+                      ))}
                     </motion.div>
                   ))}
                   
-                  {logs.length >= currentLimit && !search && (
+                  {filteredLogs.length >= currentLimit && !search && (
                     <motion.div 
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="pt-8 flex justify-center"
+                      className="pt-4 flex justify-center"
                     >
                       <Button 
                         variant="ghost" 
@@ -215,7 +299,7 @@ export function AuditTrail({
                         className="h-10 px-6 rounded-full font-bold uppercase tracking-[0.2em] text-xs text-muted-foreground hover:bg-primary/5 hover:text-primary transition-all"
                       >
                         <ChevronDown className="mr-2 h-4 w-4 animate-bounce" />
-                        Explore More
+                        Load More
                       </Button>
                     </motion.div>
                   )}
@@ -226,7 +310,7 @@ export function AuditTrail({
                     <Sparkles className="h-8 w-8 text-muted-foreground/30" />
                   </div>
                   <p className="text-sm text-muted-foreground font-medium italic">
-                    {loading ? "Discovering history..." : "Silence. No logs found."}
+                    {loading ? "Discovering history..." : "Silence. No activity logged yet."}
                   </p>
                 </div>
               )}

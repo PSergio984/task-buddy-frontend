@@ -19,9 +19,9 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { motion } from "framer-motion"
-import { CalendarIcon, Sparkles, PencilLine, Layers, Tag, Flag, Clock } from "lucide-react"
+import { CalendarIcon, Sparkles, Layers, Tag, Flag, Clock } from "lucide-react"
 import { useProjects } from "@/hooks/useProjects"
-import type { Task, TaskPriority } from "@/lib/api"
+import type { TaskPriority } from "@/lib/api"
 import { format } from "date-fns"
 import { Calendar } from "@/components/ui/calendar"
 import {
@@ -35,10 +35,9 @@ export interface NewTaskModalProps {
   readonly open: boolean
   readonly onOpenChange: (open: boolean) => void
   readonly onSubmit: (
-    taskData: any // Simplified for now to allow tags as string[]
+    taskData: any
   ) => Promise<void>
   readonly isLoading: boolean
-  readonly task?: Task | null
 }
 
 export function NewTaskModal({
@@ -46,40 +45,26 @@ export function NewTaskModal({
   onOpenChange,
   onSubmit,
   isLoading,
-  task,
 }: Readonly<NewTaskModalProps>) {
   const { data: projects = [] } = useProjects()
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
-  const [projectId, setProjectId] = useState<string>(
-    task?.project_id?.toString() ?? "none"
-  )
-  const [priority, setPriority] = useState<TaskPriority>(task?.priority ?? "MEDIUM")
-  const [tags, setTags] = useState<string>(task?.tags?.map(t => t.name).join(", ") ?? "")
+  const [projectId, setProjectId] = useState<string>("none")
+  const [priority, setPriority] = useState<TaskPriority>("MEDIUM")
+  const [tags, setTags] = useState<string>("")
   
-  const [dueDate, setDueDate] = useState<Date | undefined>(
-    task?.due_date ? new Date(task.due_date) : undefined
-  )
+  const [dueDate, setDueDate] = useState<Date | undefined>(undefined)
 
   useEffect(() => {
-    if (task) {
-      setTitle(task.title ?? "")
-      setDescription(task.description ?? "")
-      setProjectId(task.project_id?.toString() ?? "none")
-      setPriority(task.priority ?? "MEDIUM")
-      setTags(task.tags?.map(t => t.name).join(", ") ?? "")
-      setDueDate(task.due_date ? new Date(task.due_date) : undefined)
-    } else {
-      setTitle("")
-      setDescription("")
-      setProjectId("none")
-      setPriority("MEDIUM")
-      setTags("")
-      setDueDate(undefined)
-    }
-  }, [task, open])
+    setTitle("")
+    setDescription("")
+    setProjectId("none")
+    setPriority("MEDIUM")
+    setTags("")
+    setDueDate(undefined)
+  }, [open])
 
-  const isEditMode = !!task
+  const isEditMode = false
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -91,7 +76,7 @@ export function NewTaskModal({
       description: description.trim() || undefined,
       project_id: projectId === "none" ? undefined : Number.parseInt(projectId),
       due_date: dueDate ? dueDate.toISOString() : undefined,
-      completed: task?.completed ?? false,
+      completed: false,
       priority,
       tags: tags.split(",").map(t => t.trim()).filter(t => t !== ""),
     }
@@ -113,7 +98,7 @@ export function NewTaskModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] overflow-hidden border-none bg-transparent p-0 shadow-none pointer-events-none">
+      <DialogContent className="sm:max-w-2xl overflow-hidden border-none bg-transparent p-0 shadow-none pointer-events-none">
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -124,16 +109,14 @@ export function NewTaskModal({
             <DialogHeader className="mb-10 text-left">
               <div className="flex items-center gap-3 mb-2">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  {isEditMode ? <PencilLine className="h-5 w-5" /> : <Sparkles className="h-5 w-5" />}
+                  <Sparkles className="h-5 w-5" />
                 </div>
                 <DialogTitle className="font-heading text-3xl font-black tracking-tight text-foreground">
-                  {isEditMode ? "Edit Task" : "Create Task"}
+                  New Task
                 </DialogTitle>
               </div>
               <DialogDescription className="text-sm font-medium text-muted-foreground tracking-wide ml-13">
-                {isEditMode 
-                  ? "Adjust the parameters of your existing commitment." 
-                  : "Articulate a new objective for your trajectory."}
+                Articulate a new objective for your trajectory.
               </DialogDescription>
             </DialogHeader>
 
@@ -168,10 +151,10 @@ export function NewTaskModal({
                     <SelectTrigger id="projectId" className="h-12 rounded-2xl border-border bg-muted/50 dark:bg-zinc-800/50 px-4 font-semibold">
                       <SelectValue placeholder="Select Project" />
                     </SelectTrigger>
-                    <SelectContent className="rounded-2xl border-border bg-background/95 backdrop-blur-xl">
-                      <SelectItem value="none" className="rounded-xl focus:bg-muted font-medium">No Project</SelectItem>
+                    <SelectContent className="rounded-2xl border-border bg-background shadow-2xl">
+                      <SelectItem value="none" className="rounded-xl focus:bg-primary/10 focus:text-primary dark:focus:bg-primary/20 font-medium">No Project</SelectItem>
                       {projects.map((project) => (
-                        <SelectItem key={project.id} value={project.id.toString()} className="rounded-xl focus:bg-muted font-medium">
+                        <SelectItem key={project.id} value={project.id.toString()} className="rounded-xl focus:bg-primary/10 focus:text-primary dark:focus:bg-primary/20 font-medium">
                           <div className="flex items-center gap-2">
                             <div 
                               className="h-2 w-2 rounded-full" 
@@ -198,20 +181,20 @@ export function NewTaskModal({
                     <SelectTrigger id="priority" className="h-12 rounded-2xl border-border bg-muted/50 dark:bg-zinc-800/50 px-4 font-semibold">
                       <SelectValue placeholder="Select Priority" />
                     </SelectTrigger>
-                    <SelectContent className="rounded-2xl border-border bg-background/95 backdrop-blur-xl">
-                      <SelectItem value="LOW" className="rounded-xl focus:bg-muted font-medium">
+                    <SelectContent className="rounded-2xl border-border bg-background shadow-2xl">
+                      <SelectItem value="LOW" className="rounded-xl focus:bg-primary/10 focus:text-primary dark:focus:bg-primary/20 font-medium">
                         <div className="flex items-center gap-2">
                           <div className="h-2 w-2 rounded-full bg-blue-500" />
                           Low
                         </div>
                       </SelectItem>
-                      <SelectItem value="MEDIUM" className="rounded-xl focus:bg-muted font-medium">
+                      <SelectItem value="MEDIUM" className="rounded-xl focus:bg-primary/10 focus:text-primary dark:focus:bg-primary/20 font-medium">
                         <div className="flex items-center gap-2">
                           <div className="h-2 w-2 rounded-full bg-amber-500" />
                           Medium
                         </div>
                       </SelectItem>
-                      <SelectItem value="HIGH" className="rounded-xl focus:bg-muted font-medium">
+                      <SelectItem value="HIGH" className="rounded-xl focus:bg-primary/10 focus:text-primary dark:focus:bg-primary/20 font-medium">
                         <div className="flex items-center gap-2">
                           <div className="h-2 w-2 rounded-full bg-red-500" />
                           High

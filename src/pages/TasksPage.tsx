@@ -1,18 +1,42 @@
-import { useState } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useTasks, useUpdateTask, useDeleteTask, useUpdateSubtask, useDeleteSubtask, useDetachTag } from "@/hooks/useTasks"
+import { cn } from "@/lib/utils"
 import { useFilters } from "@/contexts/FilterContext"
 import { useOutletContext } from "react-router-dom"
 import type { Task } from "@/lib/api"
 import { TaskCard } from "@/components/task-card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ListChecks, Search, Filter, Plus, LayoutGrid, List } from "lucide-react"
+import { ListChecks, Search, LayoutGrid, List, ArrowUpDown, Check, Filter, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import axios from "axios"
 import { useAuth } from "@/contexts/AuthContext"
+import { useProjects } from "@/hooks/useProjects"
+import { useTags } from "@/hooks/useTags"
+import { Badge } from "@/components/ui/badge"
+
+type SortMode = "priority" | "due_date" | "alpha"
+
+const SORT_LABELS: Record<SortMode, string> = {
+  priority: "Priority (High–Low)",
+  due_date: "Deadline (Soonest)",
+  alpha: "Alphabetical",
+}
+
+const PRIORITY_ORDER = { HIGH: 0, MEDIUM: 1, LOW: 2 }
+
+const LS_KEY = "tb_sort_preference"
 
 interface LayoutContext {
   handleEditTask: (task: Task) => void
@@ -20,16 +44,37 @@ interface LayoutContext {
 }
 
 export function TasksPage() {
-  const { handleEditTask, onNewTask } = useOutletContext<LayoutContext>()
+  const { handleEditTask } = useOutletContext<LayoutContext>()
   const { activeSidebarFilter, activeStatus, setActiveStatus, activeTagId } = useFilters()
   const [searchQuery, setSearchQuery] = useState("")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  const [sortBy, setSortBy] = useState<SortMode>(() => {
+    const saved = localStorage.getItem(LS_KEY)
+    return (saved as SortMode) || "due_date"
+  })
+  const [isFiltersExpanded, setIsFiltersExpanded] = useState(false)
+  const [selectedPriorities, setSelectedPriorities] = useState<string[]>([])
+  const [selectedProjects, setSelectedProjects] = useState<number[]>([])
+  const [selectedTags, setSelectedTags] = useState<number[]>([])
+  
+  const { data: projects = [] } = useProjects()
+  const { data: tags = [] } = useTags()
   const { logout } = useAuth()
   const { toast } = useToast()
+
+  useEffect(() => {
+    localStorage.setItem(LS_KEY, sortBy)
+  }, [sortBy])
 
   const isProjectFilter = activeSidebarFilter.startsWith("project:")
   const filterParam = activeStatus === "all" ? undefined : activeStatus
   const projectIdParam = isProjectFilter ? Number.parseInt(activeSidebarFilter.split(":")[1]) : undefined
+
+  // Determine date filtering
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const next7Days = new Date(today)
+  next7Days.setDate(today.getDate() + 7)
 
   const { data: tasks = [], isLoading: loadingTasks, refetch: refreshTasks } = useTasks(
     filterParam, 
@@ -43,10 +88,43 @@ export function TasksPage() {
   const { mutateAsync: deleteSubtask } = useDeleteSubtask()
   const { mutateAsync: detachTag } = useDetachTag()
 
-  const filteredTasks = tasks.filter(task => 
-    task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    task.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const filteredTasks = tasks.filter(task => {
+    const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      task.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    
+    const matchesPriority = selectedPriorities.length === 0 || selectedPriorities.includes(task.priority)
+    const matchesProject = selectedProjects.length === 0 || (task.project_id && selectedProjects.includes(task.project_id))
+    const matchesTags = selectedTags.length === 0 || task.tags?.some(tag => selectedTags.includes(tag.id))
+
+    // Sidebar Smart Filters
+    let matchesSidebar = true
+    if (activeSidebarFilter === "today") {
+      matchesSidebar = task.due_date ? new Date(task.due_date).getTime() >= today.getTime() && new Date(task.due_date).getTime() < today.getTime() + 86400000 : false
+    } else if (activeSidebarFilter === "upcoming") {
+      matchesSidebar = task.due_date ? new Date(task.due_date).getTime() >= today.getTime() && new Date(task.due_date).getTime() < next7Days.getTime() : false
+    } else if (activeSidebarFilter === "inbox") {
+      matchesSidebar = !task.project_id
+    }
+
+    return matchesSearch && matchesPriority && matchesProject && matchesTags && matchesSidebar
+  })
+
+  const sortedTasks = useMemo(() => {
+    return [...filteredTasks].sort((a, b) => {
+      if (sortBy === "priority") {
+        const pa = PRIORITY_ORDER[a.priority] ?? 99
+        const pb = PRIORITY_ORDER[b.priority] ?? 99
+        return pa - pb
+      }
+      if (sortBy === "due_date") {
+        if (!a.due_date && !b.due_date) return 0
+        if (!a.due_date) return 1
+        if (!b.due_date) return -1
+        return new Date(a.due_date).getTime() - new Date(b.due_date).getTime()
+      }
+      return a.title.localeCompare(b.title)
+    })
+  }, [filteredTasks, sortBy])
 
   const handleToggleComplete = async (id: number) => {
     const task = tasks.find((t: Task) => t.id === id)
@@ -125,21 +203,15 @@ export function TasksPage() {
         <div className="space-y-2">
           <div className="flex items-center gap-3 text-primary">
             <ListChecks className="h-8 w-8" />
-            <h1 className="text-4xl font-black tracking-tighter uppercase">Task Studio</h1>
+            <h1 className="text-4xl font-black tracking-tighter uppercase">Tasks</h1>
           </div>
           <p className="text-foreground/60 font-medium text-lg ml-11">
-            Refine, organize, and execute your vision.
+            {activeSidebarFilter === "all" ? "Your complete objective list." : "Refined focus for current mission."}
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <Button 
-            onClick={onNewTask}
-            className="h-14 px-8 rounded-2xl bg-primary text-primary-foreground font-bold shadow-2xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
-          >
-            <Plus className="h-5 w-5" />
-            New Task
-          </Button>
+          {/* Sort controls moved here — TopNav handles Create Task globally */}
         </div>
       </header>
 
@@ -172,12 +244,176 @@ export function TasksPage() {
             <List className="h-5 w-5" />
           </Button>
           <div className="w-[1px] h-6 bg-border mx-1" />
-          <Button variant="ghost" size="sm" className="font-bold text-xs tracking-widest text-foreground/40 uppercase flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
+            className={cn(
+              "font-bold text-xs tracking-widest uppercase flex items-center gap-2 transition-all",
+              isFiltersExpanded || selectedPriorities.length > 0 || selectedProjects.length > 0 || selectedTags.length > 0
+                ? "text-primary"
+                : "text-foreground/60 hover:text-foreground"
+            )}
+          >
             <Filter className="h-4 w-4" />
-            Sort
+            Filter
+            {(selectedPriorities.length + selectedProjects.length + selectedTags.length) > 0 && (
+              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+                {selectedPriorities.length + selectedProjects.length + selectedTags.length}
+              </span>
+            )}
           </Button>
+          <div className="w-[1px] h-6 bg-border mx-1" />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="font-bold text-xs tracking-widest uppercase flex items-center gap-2 text-foreground/60 hover:text-foreground">
+                <ArrowUpDown className="h-4 w-4" />
+                {SORT_LABELS[sortBy]}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52 rounded-2xl border-border bg-background shadow-2xl p-1">
+              <DropdownMenuLabel className="text-[10px] font-black tracking-widest uppercase text-muted-foreground px-3 py-2">Sort By</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {(Object.entries(SORT_LABELS) as [SortMode, string][]).map(([mode, label]) => (
+                <DropdownMenuItem
+                  key={mode}
+                  onClick={() => setSortBy(mode)}
+                  className="rounded-xl cursor-pointer flex items-center justify-between font-semibold text-sm px-3 py-2.5"
+                >
+                  {label}
+                  {sortBy === mode && <Check className="h-4 w-4 text-primary" />}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
+
+      {/* Advanced Filter Panel */}
+      <AnimatePresence>
+        {isFiltersExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6 rounded-[2rem] bg-background/40 border border-border/50 backdrop-blur-xl">
+              {/* Priority Filter */}
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 px-1">Priority</label>
+                <div className="flex flex-wrap gap-2">
+                  {["HIGH", "MEDIUM", "LOW"].map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => setSelectedPriorities(prev => 
+                        prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p]
+                      )}
+                      className={cn(
+                        "px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-all border",
+                        selectedPriorities.includes(p)
+                          ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20"
+                          : "bg-white/5 text-foreground/40 border-transparent hover:border-white/10"
+                      )}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Project Filter */}
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 px-1">Projects</label>
+                <div className="flex flex-wrap gap-2">
+                  {projects.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => setSelectedProjects(prev => 
+                        prev.includes(p.id) ? prev.filter(x => x !== p.id) : [...prev, p.id]
+                      )}
+                      className={cn(
+                        "px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-all border",
+                        selectedProjects.includes(p.id)
+                          ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20"
+                          : "bg-white/5 text-foreground/40 border-transparent hover:border-white/10"
+                      )}
+                    >
+                      {p.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tag Filter */}
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 px-1">Tags</label>
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => setSelectedTags(prev => 
+                        prev.includes(t.id) ? prev.filter(x => x !== t.id) : [...prev, t.id]
+                      )}
+                      className={cn(
+                        "px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-all border",
+                        selectedTags.includes(t.id)
+                          ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20"
+                          : "bg-white/5 text-foreground/40 border-transparent hover:border-white/10"
+                      )}
+                    >
+                      {t.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Active Filter Pills */}
+      {(selectedPriorities.length > 0 || selectedProjects.length > 0 || selectedTags.length > 0) && (
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-[10px] font-black uppercase tracking-widest text-foreground/40 mr-2">Active Filters:</p>
+          {selectedPriorities.map(p => (
+            <Badge key={p} variant="outline" className="rounded-full bg-primary/10 text-primary border-primary/20 gap-1 pl-3 pr-2 py-1 uppercase text-[10px] font-black">
+              {p}
+              <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setSelectedPriorities(prev => prev.filter(x => x !== p))} />
+            </Badge>
+          ))}
+          {selectedProjects.map(id => {
+            const name = projects.find(p => p.id === id)?.name
+            return (
+              <Badge key={id} variant="outline" className="rounded-full bg-primary/10 text-primary border-primary/20 gap-1 pl-3 pr-2 py-1 uppercase text-[10px] font-black">
+                {name}
+                <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setSelectedProjects(prev => prev.filter(x => x !== id))} />
+              </Badge>
+            )
+          })}
+          {selectedTags.map(id => {
+            const name = tags.find(t => t.id === id)?.name
+            return (
+              <Badge key={id} variant="outline" className="rounded-full bg-primary/10 text-primary border-primary/20 gap-1 pl-3 pr-2 py-1 uppercase text-[10px] font-black">
+                {name}
+                <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setSelectedTags(prev => prev.filter(x => x !== id))} />
+              </Badge>
+            )
+          })}
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => {
+              setSelectedPriorities([])
+              setSelectedProjects([])
+              setSelectedTags([])
+            }}
+            className="text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/10 rounded-full h-8 px-4"
+          >
+            Clear All
+          </Button>
+        </div>
+      )}
 
       <Tabs value={activeStatus} onValueChange={setActiveStatus} className="w-full">
         <TabsList className="inline-flex h-14 items-center justify-center rounded-[2rem] border bg-background/50 p-1.5 backdrop-blur-2xl shadow-xl mb-10">
@@ -200,7 +436,7 @@ export function TasksPage() {
                   <Skeleton key={id} className="h-[200px] rounded-[2.5rem]" />
                 ))}
               </div>
-            ) : filteredTasks.length === 0 ? (
+            ) : sortedTasks.length === 0 ? (
               <motion.div 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -215,7 +451,7 @@ export function TasksPage() {
             ) : (
               <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 gap-6" : "flex flex-col gap-4"}>
                 <AnimatePresence mode="popLayout">
-                  {filteredTasks.map((task, index) => (
+                  {sortedTasks.map((task, index) => (
                     <motion.div
                       key={task.id}
                       layout

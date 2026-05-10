@@ -20,6 +20,9 @@ import {
   Tag,
   ListChecks,
   Plus,
+  Calendar,
+  Inbox,
+  CalendarRange,
 } from "lucide-react"
 import { useState } from "react"
 
@@ -46,8 +49,14 @@ export function Sidebar({
 
   const navLinks = [
     { id: "dashboard", path: "/dashboard", label: "Overview", icon: LayoutDashboard },
-    { id: "tasks", path: "/tasks", label: "Task Studio", icon: ListChecks },
+    { id: "tasks", path: "/tasks", label: "Tasks", icon: ListChecks },
     { id: "history", path: "/audit-logs", label: "Activity", icon: Clock },
+  ]
+
+  const smartLinks = [
+    { id: "inbox", label: "Inbox", icon: Inbox, filter: "inbox" },
+    { id: "today", label: "Today", icon: Calendar, filter: "today" },
+    { id: "upcoming", label: "Next 7 Days", icon: CalendarRange, filter: "upcoming" },
   ]
 
   return (
@@ -87,12 +96,12 @@ export function Sidebar({
         </div>
 
         <motion.button
-          whileHover={{ scale: 1.1, backgroundColor: "var(--primary)", color: "var(--primary-foreground)" }}
-          whileTap={{ scale: 0.9 }}
+          whileHover={{ scale: 1.05, backgroundColor: "rgba(var(--primary-rgb), 0.1)" }}
+          whileTap={{ scale: 0.95 }}
           onClick={onToggle}
           className={cn(
-            "absolute -right-5 top-10 z-50 flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-background backdrop-blur-md shadow-xl transition-all duration-300 cursor-pointer",
-            isCollapsed && "bg-primary text-primary-foreground border-none"
+            "absolute -right-3 top-2 z-50 flex h-10 w-10 items-center justify-center rounded-xl border border-border/50 bg-background/80 backdrop-blur-md shadow-lg transition-all duration-300 cursor-pointer hover:border-primary/30 hover:text-primary",
+            isCollapsed && "bg-primary text-primary-foreground border-none shadow-primary/20"
           )}
         >
           {isCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
@@ -100,43 +109,47 @@ export function Sidebar({
       </div>
 
       <div className="flex flex-1 flex-col gap-10 overflow-y-auto no-scrollbar pr-1">
-        {/* Navigation Links */}
+        {/* Smart Lists */}
         <div className="space-y-4">
           {!isCollapsed && (
-            <p className="px-4 text-[10px] font-bold tracking-[0.3em] text-foreground/40 uppercase">
-              Control Center
-            </p>
+            <div className="flex items-center gap-2 px-4">
+              <ListChecks className="h-3 w-3 text-foreground/40" />
+              <p className="text-[10px] font-bold tracking-[0.3em] text-foreground/40 uppercase">
+                Smart Lists
+              </p>
+            </div>
           )}
-          <nav className="flex flex-col gap-2">
-            {navLinks.map(({ path, label, icon: Icon, id }) => {
-              const isActive = location.pathname === path
+          <nav className="flex flex-col gap-1">
+            {smartLinks.map(({ label, icon: Icon, id, filter }) => {
+              const isActive = activeSidebarFilter === filter
               const content = (
                 <button
                   key={id}
-                  onClick={() => navigate(path)}
+                  onClick={() => {
+                    setActiveSidebarFilter(filter)
+                    if (location.pathname !== "/tasks") navigate("/tasks")
+                  }}
                   className={cn(
-                    "group relative flex items-center rounded-2xl px-4 py-4 text-sm font-black tracking-wide transition-all duration-500",
+                    "group relative flex items-center rounded-xl px-4 py-2.5 text-sm font-bold transition-all duration-300",
                     isCollapsed
-                      ? "mx-auto w-14 justify-center"
+                      ? "mx-auto w-12 justify-center"
                       : "w-full justify-start gap-4",
                     isActive
-                      ? "bg-primary text-primary-foreground shadow-[0_15px_40px_-10px_rgba(var(--primary-rgb),0.5)] scale-[1.02]"
-                      : "text-foreground/50 hover:bg-white/10 hover:text-foreground hover:scale-[1.01]"
+                      ? "bg-primary/10 text-primary shadow-sm ring-1 ring-primary/20"
+                      : "text-foreground/50 hover:bg-white/5 hover:text-foreground"
                   )}
                 >
                   <Icon
                     className={cn(
-                      "h-5 w-5 transition-transform duration-500 group-hover:scale-110",
-                      isActive
-                        ? "text-primary-foreground"
-                        : "text-foreground/40 group-hover:text-primary"
+                      "h-4 w-4 transition-transform duration-300 group-hover:scale-110",
+                      isActive ? "text-primary" : "text-foreground/40"
                     )}
                   />
                   {!isCollapsed && <span>{label}</span>}
                   {!isCollapsed && isActive && (
                     <motion.div 
-                      layoutId="sidebar-active-indicator"
-                      className="absolute right-4 h-2 w-2 rounded-full bg-primary-foreground shadow-[0_0_10px_white]" 
+                      layoutId="smart-active-indicator"
+                      className="absolute right-4 h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.6)]" 
                     />
                   )}
                 </button>
@@ -146,7 +159,59 @@ export function Sidebar({
                 return (
                   <Tooltip key={id} delayDuration={0}>
                     <TooltipTrigger asChild>{content}</TooltipTrigger>
-                    <TooltipContent side="right" className="font-bold border-none bg-primary text-primary-foreground px-4 py-2 rounded-xl shadow-2xl">
+                    <TooltipContent side="right" className="font-bold border-none bg-primary text-primary-foreground px-4 py-2 rounded-xl">
+                      {label}
+                    </TooltipContent>
+                  </Tooltip>
+                )
+              }
+              return content
+            })}
+          </nav>
+        </div>
+
+        {/* Workspaces */}
+        <div className="space-y-4">
+          {!isCollapsed && (
+            <div className="flex items-center gap-2 px-4">
+              <LayoutDashboard className="h-3 w-3 text-foreground/40" />
+              <p className="text-[10px] font-bold tracking-[0.3em] text-foreground/40 uppercase">
+                Workspaces
+              </p>
+            </div>
+          )}
+          <nav className="flex flex-col gap-1">
+            {navLinks.map(({ path, label, icon: Icon, id }) => {
+              const isActive = location.pathname === path
+              const content = (
+                <button
+                  key={id}
+                  onClick={() => navigate(path)}
+                  className={cn(
+                    "group relative flex items-center rounded-xl px-4 py-2.5 text-sm font-bold transition-all duration-300",
+                    isCollapsed
+                      ? "mx-auto w-12 justify-center"
+                      : "w-full justify-start gap-4",
+                    isActive
+                      ? "bg-primary text-primary-foreground shadow-[0_10px_25px_-5px_rgba(var(--primary-rgb),0.4)]"
+                      : "text-foreground/50 hover:bg-white/5 hover:text-foreground"
+                  )}
+                >
+                  <Icon
+                    className={cn(
+                      "h-4 w-4 transition-transform duration-300 group-hover:scale-110",
+                      isActive ? "text-primary-foreground" : "text-foreground/40"
+                    )}
+                  />
+                  {!isCollapsed && <span>{label}</span>}
+                </button>
+              )
+
+              if (isCollapsed) {
+                return (
+                  <Tooltip key={id} delayDuration={0}>
+                    <TooltipTrigger asChild>{content}</TooltipTrigger>
+                    <TooltipContent side="right" className="font-bold border-none bg-primary text-primary-foreground px-4 py-2 rounded-xl">
                       {label}
                     </TooltipContent>
                   </Tooltip>
@@ -166,9 +231,12 @@ export function Sidebar({
             )}
           >
             {!isCollapsed && (
-              <p className="text-[10px] font-bold tracking-[0.3em] text-foreground/40 uppercase">
-                Projects
-              </p>
+              <div className="flex items-center gap-2">
+                <Layers className="h-3 w-3 text-foreground/40" />
+                <p className="text-[10px] font-bold tracking-[0.3em] text-foreground/40 uppercase">
+                  Projects
+                </p>
+              </div>
             )}
             {isCollapsed ? (
               <Layers className="h-4 w-4 text-foreground/20" />
@@ -249,9 +317,12 @@ export function Sidebar({
         <div className="space-y-4">
           <div className={cn("flex items-center justify-between px-4", isCollapsed && "justify-center")}>
             {!isCollapsed && (
-              <p className="text-[10px] font-bold tracking-[0.3em] text-foreground/40 uppercase">
-                Focus Tags
-              </p>
+              <div className="flex items-center gap-2">
+                <Tag className="h-3 w-3 text-foreground/40" />
+                <p className="text-[10px] font-bold tracking-[0.3em] text-foreground/40 uppercase">
+                  Focus Tags
+                </p>
+              </div>
             )}
             {isCollapsed && <Tag className="h-4 w-4 text-foreground/20" />}
           </div>
