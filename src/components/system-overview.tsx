@@ -2,9 +2,19 @@ import { motion } from "framer-motion"
 import { Card } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { PieChart, Target, Zap, TrendingUp, CheckCircle2 } from "lucide-react"
-import type { StatsOverview } from "@/lib/api"
+import type { StatsOverview, Task } from "@/lib/api"
 
-export function SystemOverview({ stats, loading }: Readonly<{ stats: StatsOverview | null, loading: boolean }>) {
+export function SystemOverview({
+  stats,
+  loading,
+  timeframeTasks,
+  timeframeLabel,
+}: Readonly<{
+  stats: StatsOverview | null
+  loading: boolean
+  timeframeTasks?: Task[]
+  timeframeLabel?: string
+}>) {
   if (loading || !stats) {
     return (
       <Card className="overflow-hidden border bg-background/50 p-8 shadow-2xl shadow-primary/5 backdrop-blur-xl rounded-[2.5rem]">
@@ -102,16 +112,24 @@ export function SystemOverview({ stats, loading }: Readonly<{ stats: StatsOvervi
           <div className="grid grid-cols-2 gap-4">
             <div className="group relative overflow-hidden rounded-2xl border bg-card/50 p-4 transition-all hover:bg-card">
               <p className="text-2xl font-bold text-foreground">
-                {task_stats.pending_tasks}
+                {timeframeTasks
+                  ? timeframeTasks.filter(t => !t.completed).length
+                  : task_stats.pending_tasks}
               </p>
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Remaining</p>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                Remaining{timeframeLabel && timeframeLabel !== "All Time" ? ` · ${timeframeLabel}` : ""}
+              </p>
               <Zap className="absolute -right-2 -bottom-2 h-12 w-12 text-primary/5 transition-transform group-hover:scale-110" />
             </div>
             <div className="group relative overflow-hidden rounded-2xl border border-accent/20 bg-accent/5 p-4 transition-all hover:bg-accent/10">
               <p className="text-2xl font-bold text-accent">
-                {task_stats.completed_tasks}
+                {timeframeTasks
+                  ? timeframeTasks.filter(t => t.completed).length
+                  : task_stats.completed_tasks}
               </p>
-              <p className="text-[10px] font-bold text-accent/60 uppercase tracking-wider">Achieved</p>
+              <p className="text-[10px] font-bold text-accent/60 uppercase tracking-wider">
+                Achieved{timeframeLabel && timeframeLabel !== "All Time" ? ` · ${timeframeLabel}` : ""}
+              </p>
                <CheckCircle2 className="absolute -right-2 -bottom-2 h-12 w-12 text-accent/10 transition-transform group-hover:scale-110" />
             </div>
           </div>

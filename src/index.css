@@ -157,3 +157,26 @@
     @apply font-sans;
   }
 }
+
+/* Snappy drawer transition */
+[data-radix-scroll-area-viewport],
+[data-radix-dialog-content],
+[data-vaul-drawer],
+[role="dialog"] {
+  --radix-sheet-animation-duration: 150ms;
+}
+
+/* Override shadcn Sheet slide animation speed */
+.sheet-content-right {
+  animation-duration: 150ms !important;
+  transition-duration: 150ms !important;
+}
+
+/* No scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

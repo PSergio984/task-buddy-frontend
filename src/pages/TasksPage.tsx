@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { useTasks, useUpdateTask, useDeleteTask, useUpdateSubtask, useDeleteSubtask, useDetachTag } from "@/hooks/useTasks"
+import { useTasks, useUpdateTask, useUpdateSubtask, useDeleteSubtask, useDetachTag } from "@/hooks/useTasks"
 import { cn } from "@/lib/utils"
 import { useFilters } from "@/contexts/FilterContext"
 import { useOutletContext } from "react-router-dom"
@@ -83,7 +83,6 @@ export function TasksPage() {
   )
 
   const { mutateAsync: updateTask } = useUpdateTask()
-  const { mutateAsync: deleteTask } = useDeleteTask()
   const { mutateAsync: updateSubtask } = useUpdateSubtask()
   const { mutateAsync: deleteSubtask } = useDeleteSubtask()
   const { mutateAsync: detachTag } = useDetachTag()
@@ -152,15 +151,6 @@ export function TasksPage() {
     }
   }
 
-  const handleDelete = async (id: number) => {
-    try {
-      await deleteTask(id)
-      toast({ title: "Task deleted", variant: "success" })
-    } catch (err) {
-      console.error("Failed to delete task:", err)
-      toast({ title: "Delete failed", variant: "destructive" })
-    }
-  }
 
   const handleToggleSubtask = async (subtaskId: number, completed: boolean) => {
     try {
@@ -197,8 +187,10 @@ export function TasksPage() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-1 flex-col gap-8 p-6 lg:p-10"
+      className="flex flex-1 flex-col gap-8 p-6 lg:p-10 relative"
     >
+      {/* Top accent bar */}
+      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-600 via-sky-400 to-blue-600 opacity-80" />
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">
           <div className="flex items-center gap-3 text-primary">
@@ -222,7 +214,7 @@ export function TasksPage() {
             placeholder="Search tasks..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-14 pl-12 pr-4 rounded-2xl border-border bg-background/50 backdrop-blur-xl text-lg focus-visible:ring-primary/30"
+            className="h-14 pl-12 pr-4 rounded-2xl border-white/10 bg-white/5 backdrop-blur-xl text-lg focus-visible:ring-primary/30 shadow-2xl shadow-black/10 transition-all hover:bg-white/10"
           />
         </div>
 
@@ -249,16 +241,16 @@ export function TasksPage() {
             size="sm"
             onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
             className={cn(
-              "font-bold text-xs tracking-widest uppercase flex items-center gap-2 transition-all",
+              "font-black text-[10px] tracking-widest uppercase flex items-center gap-2 transition-all h-10 px-4 rounded-xl",
               isFiltersExpanded || selectedPriorities.length > 0 || selectedProjects.length > 0 || selectedTags.length > 0
-                ? "text-primary"
-                : "text-foreground/60 hover:text-foreground"
+                ? "bg-primary/10 text-primary border border-primary/20"
+                : "text-foreground/60 hover:text-foreground hover:bg-white/5"
             )}
           >
-            <Filter className="h-4 w-4" />
+            <Filter className="h-3.5 w-3.5" />
             Filter
             {(selectedPriorities.length + selectedProjects.length + selectedTags.length) > 0 && (
-              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-white font-black">
                 {selectedPriorities.length + selectedProjects.length + selectedTags.length}
               </span>
             )}
@@ -313,7 +305,7 @@ export function TasksPage() {
                         "px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-all border",
                         selectedPriorities.includes(p)
                           ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20"
-                          : "bg-white/5 text-foreground/40 border-transparent hover:border-white/10"
+                          : "bg-muted text-muted-foreground border-border/50 hover:border-primary/30 hover:bg-muted/80"
                       )}
                     >
                       {p}
@@ -336,7 +328,7 @@ export function TasksPage() {
                         "px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-all border",
                         selectedProjects.includes(p.id)
                           ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20"
-                          : "bg-white/5 text-foreground/40 border-transparent hover:border-white/10"
+                          : "bg-muted text-muted-foreground border-border/50 hover:border-primary/30 hover:bg-muted/80"
                       )}
                     >
                       {p.name}
@@ -359,7 +351,7 @@ export function TasksPage() {
                         "px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-all border",
                         selectedTags.includes(t.id)
                           ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20"
-                          : "bg-white/5 text-foreground/40 border-transparent hover:border-white/10"
+                          : "bg-muted text-muted-foreground border-border/50 hover:border-primary/30 hover:bg-muted/80"
                       )}
                     >
                       {t.name}
@@ -463,7 +455,6 @@ export function TasksPage() {
                       <TaskCard
                         task={task}
                         onToggleComplete={handleToggleComplete}
-                        onDelete={handleDelete}
                         onEdit={handleEditTask}
                         onToggleSubtask={handleToggleSubtask}
                         onDeleteSubtask={handleDeleteSubtask}

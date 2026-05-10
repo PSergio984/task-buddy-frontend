@@ -16,7 +16,6 @@ import {
 } from "date-fns"
 import {
   useUpdateTask,
-  useDeleteTask,
   useUpdateSubtask,
   useDeleteSubtask,
   useDetachTag,
@@ -71,7 +70,6 @@ export function Dashboard({
 }: Readonly<DashboardProps>) {
   const { logout } = useAuth()
   const { mutateAsync: updateTask } = useUpdateTask()
-  const { mutateAsync: deleteTask } = useDeleteTask()
   const { mutateAsync: updateSubtask } = useUpdateSubtask()
   const { mutateAsync: deleteSubtask } = useDeleteSubtask()
   const { mutateAsync: detachTag } = useDetachTag()
@@ -129,31 +127,6 @@ export function Dashboard({
       }
     },
     [tasks, updateTask, toast, logout]
-  )
-
-  const handleDelete = useCallback(
-    async (id: number) => {
-      try {
-        await deleteTask(id)
-        toast({
-          title: "Task deleted",
-          description: "The task has been permanently removed.",
-          variant: "success",
-        })
-      } catch (err: unknown) {
-        if (axios.isAxiosError(err) && err.response?.status === 401) {
-          await logout()
-          return
-        }
-        toast({
-          title: "Delete failed",
-          description: "Could not delete the task. Please try again.",
-          variant: "destructive",
-        })
-        console.error("Failed to delete task:", err)
-      }
-    },
-    [deleteTask, toast, logout]
   )
 
   const handleToggleSubtask = useCallback(
@@ -232,7 +205,16 @@ export function Dashboard({
       {/* Primary: Stats & Audit */}
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-3">
         <div className="lg:col-span-1">
-          <SystemOverview stats={stats} loading={loadingStats} />
+          <SystemOverview
+            stats={stats}
+            loading={loadingStats}
+            timeframeTasks={filteredTasks}
+            timeframeLabel={
+              activeTab === "all" ? "All Time" :
+              activeTab === "today" ? "Today" :
+              activeTab === "tomorrow" ? "Tomorrow" : "This Week"
+            }
+          />
         </div>
         <div className="lg:col-span-2">
           <AuditTrail limit={5} />
@@ -304,7 +286,6 @@ export function Dashboard({
                       <TaskCard
                         task={task}
                         onToggleComplete={handleToggleComplete}
-                        onDelete={handleDelete}
                         onEdit={onEdit}
                         onToggleSubtask={handleToggleSubtask}
                         onDeleteSubtask={handleDeleteSubtask}

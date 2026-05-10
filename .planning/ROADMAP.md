@@ -11,6 +11,8 @@ The frontend roadmap focuses on transforming the application from an "AI-generat
 - [ ] **Phase 3: Performance & Accessibility** - Optimization, a11y audit, and mobile responsiveness polish.
 - [x] **Phase 4: Premium UX Hardening & Descriptive History** - Command-palette modals, sorting persistence, and refined timeline.
 - [x] **Phase 4.1: Advanced UI/UX & Feature Refinement** - Boxed sidebar toggle, Task Drawer, and Advanced Filtering.
+- [ ] **Phase 4.2: High-Velocity Polish & Feature Hardening** - Subtask fixes, interaction refinements, and searchable creation.
+- [ ] **Phase 4.3: Task Interaction Precision & Information Density** - Full creation support (subtasks/tags), time-aware deadlines, color-coding, and layout polish.
 
 
 ## Phase Details
@@ -51,6 +53,29 @@ Plans:
   2. Task viewing/editing uses a premium 2-column Side-Drawer.
   3. Filtering hub is a dedicated expandable bar with multi-select support.
   4. Search-and-create inline flow for Tags/Projects is functional.
+
+### Phase 4.2: High-Velocity Polish & Feature Hardening
+**Goal**: Resolve functional gaps from 4.1 (subtasks, search-and-create) and refine UX for high-velocity usage.
+**Depends on**: Phase 4.1
+**Requirements**: UI-17, UI-18, UI-19, UI-20
+**Success Criteria**:
+  1. Subtask creation and updates are fully functional in the Task Drawer.
+  2. Clicking anywhere on a task card opens the viewing/editing drawer.
+  3. Dashboard status widgets provide granular time-based filtering.
+  4. Tags and Projects support "Search and Create" (Press Enter to create).
+  5. Audit Trail descriptions are natural and concise.
+
+### Phase 4.3: Task Interaction Precision & Information Density
+**Goal**: Finalize premium task interactions with full field support during creation, time-aware deadlines, and visual color-coding for projects/tags.
+**Depends on**: Phase 4.2
+**Requirements**: UI-21, UI-22, UI-23, UI-24, UI-25, UI-26, UI-27
+**Success Criteria**:
+  1. Task creation flow supports subtasks and tags with "Search and Create" functionality.
+  2. Due dates include time selection; past dates/times are disabled in the picker.
+  3. Tags and Projects feature distinct icons and user-defined color coding.
+  4. Activity history specifies exactly which task was created/updated/deleted.
+  5. UI contrast in filtering and sidebars meets high-readability standards.
+  6. Layout includes the requested blue gradient accent and optimized title padding.
 
 ---
 *Roadmap updated: 2026-05-11*

@@ -1,21 +1,15 @@
 import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Button } from "@/components/ui/button"
 import type { Task } from "@/lib/api"
-import { Trash2, Edit2, Calendar, X, Tag, MoreVertical, CheckCircle2 } from "lucide-react"
+import { Trash2, Calendar, X, Tag, CheckCircle2, Layers } from "lucide-react"
 import { cn } from "@/lib/utils"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import * as LucideIcons from "lucide-react"
 
 export interface TaskCardProps {
   readonly task: Task
   readonly onToggleComplete: (id: number) => void
-  readonly onDelete: (id: number) => void
   readonly onEdit: (task: Task) => void
   readonly onToggleSubtask?: (subtaskId: number, completed: boolean) => void
   readonly onDeleteSubtask?: (subtaskId: number) => void
@@ -25,7 +19,6 @@ export interface TaskCardProps {
 export function TaskCard({
   task,
   onToggleComplete,
-  onDelete,
   onEdit,
   onToggleSubtask,
   onDeleteSubtask,
@@ -52,15 +45,16 @@ export function TaskCard({
     >
       <Card
         className={cn(
-          "group relative overflow-hidden border-none bg-white dark:bg-zinc-900 shadow-sm transition-all duration-300 hover:shadow-xl rounded-[2rem]",
+          "group relative overflow-hidden border-none bg-white dark:bg-zinc-900 shadow-sm transition-all duration-300 hover:shadow-xl rounded-[2rem] cursor-pointer",
           task.completed && "opacity-75"
         )}
+        onClick={() => onEdit(task)}
       >
         <CardContent className="p-6">
           <div className="flex items-start justify-between gap-6">
             <div className="flex flex-1 items-start gap-4">
               {/* Custom Checkbox Wrapper */}
-              <div className="relative mt-1">
+              <div className="relative mt-1" onClick={(e) => e.stopPropagation()}>
                 <Checkbox
                   checked={task.completed}
                   onCheckedChange={() => onToggleComplete(task.id)}
@@ -91,10 +85,10 @@ export function TaskCard({
                   <div className="flex items-center gap-2">
                     {task.project && (
                       <div className="flex items-center gap-1.5 rounded-full bg-muted/50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                        <div 
-                          className="h-1.5 w-1.5 rounded-full" 
-                          style={{ backgroundColor: task.project.color || "gray" }} 
-                        />
+                        {(() => {
+                          const ProjectIcon = (LucideIcons as any)[task.project.icon || "Layers"] || Layers
+                          return <ProjectIcon className="h-2.5 w-2.5" style={{ color: task.project.color || "gray" }} />
+                        })()}
                         {task.project.name}
                       </div>
                     )}
@@ -142,44 +136,36 @@ export function TaskCard({
                     </div>
                   )}
 
-                  {task?.tags?.map((tag) => (
-                    <div
-                      key={tag.id}
-                      className="group/tag flex items-center gap-1.5 rounded-lg bg-primary/5 px-2 py-1 text-[10px] font-bold text-primary/70 transition-colors hover:bg-primary/10"
-                    >
-                      <Tag className="h-3 w-3" />
-                      {tag.name}
-                      <button
-                        onClick={() => onDetachTag?.(task.id, tag.id)}
-                        className="ml-0.5 rounded-full p-0.5 opacity-0 transition-opacity group-hover/tag:opacity-100 hover:bg-primary/20"
+                  {task?.tags?.map((tag) => {
+                    const TagIconComp = (LucideIcons as any)[tag.icon || "Tag"] || Tag
+                    return (
+                      <div
+                        key={tag.id}
+                        className="group/tag flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-bold transition-all"
+                        style={{ 
+                          backgroundColor: tag.color ? `${tag.color}15` : undefined,
+                          color: tag.color || "inherit",
+                          border: tag.color ? `1px solid ${tag.color}30` : "1px solid transparent"
+                        }}
                       >
-                        <X className="h-2 w-2" />
-                      </button>
-                    </div>
-                  ))}
+                        <TagIconComp className="h-3 w-3" />
+                        {tag.name}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onDetachTag?.(task.id, tag.id)
+                          }}
+                          className="ml-0.5 rounded-full p-0.5 opacity-0 transition-opacity group-hover/tag:opacity-100 hover:bg-black/10 dark:hover:bg-white/10"
+                        >
+                          <X className="h-2 w-2" />
+                        </button>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-muted/50">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-40 rounded-xl border bg-background/80 backdrop-blur-xl">
-                  <DropdownMenuItem onClick={() => onEdit(task)} className="gap-2 rounded-lg cursor-pointer">
-                    <Edit2 className="h-4 w-4 text-primary" />
-                    <span>Edit Task</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onDelete(task.id)} className="gap-2 rounded-lg text-destructive cursor-pointer focus:bg-destructive/10 focus:text-destructive">
-                    <Trash2 className="h-4 w-4" />
-                    <span>Delete</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
           </div>
 
           {/* Subtasks Section */}

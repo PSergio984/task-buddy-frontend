@@ -30,6 +30,7 @@ export interface Project {
   id: number
   name: string
   color?: string
+  icon?: string
   user_id: number
   created_at: string
 }
@@ -63,6 +64,7 @@ export interface Tag {
   id: number
   name: string
   color?: string
+  icon?: string
   user_id: number
   created_at: string
 }
@@ -82,6 +84,22 @@ export interface TagDistribution {
 export interface StatsOverview {
   task_stats: TaskStats
   tag_distribution: TagDistribution[]
+}
+
+export interface TaskCreateData {
+  title: string
+  description?: string
+  completed?: boolean
+  priority?: TaskPriority
+  project_id?: number
+  due_date?: string
+  tags?: string[]
+  subtasks?: Array<{
+    title: string
+    description?: string
+    due_date?: string
+    completed?: boolean
+  }>
 }
 
 // Raw API functions
@@ -105,7 +123,7 @@ export const tasksApi = {
     const data = response.data
     return Array.isArray(data) ? data : data.items || []
   },
-  create: async (taskData: Omit<Task, "id" | "created_at" | "user_id">) => {
+  create: async (taskData: TaskCreateData) => {
     const response = await api.post<Task>("/api/v1/tasks/", taskData)
     return response.data
   },
@@ -131,11 +149,11 @@ export const projectsApi = {
     const data = response.data
     return Array.isArray(data) ? data : data.items || []
   },
-  create: async (projectData: { name: string; color?: string }) => {
+  create: async (projectData: { name: string; color?: string; icon?: string }) => {
     const response = await api.post<Project>("/api/v1/projects/", projectData)
     return response.data
   },
-  update: async (id: number, updates: { name?: string; color?: string }) => {
+  update: async (id: number, updates: { name?: string; color?: string; icon?: string }) => {
     const response = await api.put<Project>(`/api/v1/projects/${id}`, updates)
     return response.data
   },
@@ -143,8 +161,14 @@ export const projectsApi = {
     await api.delete(`/api/v1/projects/${id}`)
   },
 }
-
 export const subtasksApi = {
+  create: async (taskId: number, data: { title: string }) => {
+    const response = await api.post<Subtask>(`/api/v1/tasks/subtask`, {
+      ...data,
+      task_id: taskId,
+    })
+    return response.data
+  },
   update: async (id: number, updates: Partial<Subtask>) => {
     const response = await api.put<Subtask>(`/api/v1/tasks/subtask/${id}`, updates)
     return response.data
@@ -160,10 +184,17 @@ export const tagsApi = {
     const data = response.data
     return Array.isArray(data) ? data : data.items || []
   },
+  create: async (data: { name: string; color?: string; icon?: string }) => {
+    const response = await api.post<Tag>("/api/v1/tasks/tags/", data)
+    return response.data
+  },
   delete: async (id: number) => {
     await api.delete(`/api/v1/tasks/tags/${id}`)
   },
   detach: async (taskId: number, tagId: number) => {
     await api.delete(`/api/v1/tasks/${taskId}/tags/${tagId}`)
+  },
+  attach: async (taskId: number, tagId: number) => {
+    await api.post(`/api/v1/tasks/${taskId}/tags/${tagId}`)
   },
 }

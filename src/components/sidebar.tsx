@@ -113,8 +113,8 @@ export function Sidebar({
         <div className="space-y-4">
           {!isCollapsed && (
             <div className="flex items-center gap-2 px-4">
-              <ListChecks className="h-3 w-3 text-foreground/40" />
-              <p className="text-[10px] font-bold tracking-[0.3em] text-foreground/40 uppercase">
+              <ListChecks className="h-3 w-3 text-foreground/60" />
+              <p className="text-[10px] font-bold tracking-[0.3em] text-foreground/80 uppercase">
                 Smart Lists
               </p>
             </div>
@@ -136,13 +136,13 @@ export function Sidebar({
                       : "w-full justify-start gap-4",
                     isActive
                       ? "bg-primary/10 text-primary shadow-sm ring-1 ring-primary/20"
-                      : "text-foreground/50 hover:bg-white/5 hover:text-foreground"
+                      : "text-foreground/70 hover:bg-white/5 hover:text-foreground"
                   )}
                 >
                   <Icon
                     className={cn(
                       "h-4 w-4 transition-transform duration-300 group-hover:scale-110",
-                      isActive ? "text-primary" : "text-foreground/40"
+                      isActive ? "text-primary" : "text-foreground/50"
                     )}
                   />
                   {!isCollapsed && <span>{label}</span>}
@@ -174,8 +174,8 @@ export function Sidebar({
         <div className="space-y-4">
           {!isCollapsed && (
             <div className="flex items-center gap-2 px-4">
-              <LayoutDashboard className="h-3 w-3 text-foreground/40" />
-              <p className="text-[10px] font-bold tracking-[0.3em] text-foreground/40 uppercase">
+              <LayoutDashboard className="h-3 w-3 text-foreground/60" />
+              <p className="text-[10px] font-bold tracking-[0.3em] text-foreground/60 uppercase">
                 Workspaces
               </p>
             </div>
@@ -194,13 +194,13 @@ export function Sidebar({
                       : "w-full justify-start gap-4",
                     isActive
                       ? "bg-primary text-primary-foreground shadow-[0_10px_25px_-5px_rgba(var(--primary-rgb),0.4)]"
-                      : "text-foreground/50 hover:bg-white/5 hover:text-foreground"
+                      : "text-foreground/70 hover:bg-white/5 hover:text-foreground"
                   )}
                 >
                   <Icon
                     className={cn(
                       "h-4 w-4 transition-transform duration-300 group-hover:scale-110",
-                      isActive ? "text-primary-foreground" : "text-foreground/40"
+                      isActive ? "text-primary-foreground" : "text-foreground/50"
                     )}
                   />
                   {!isCollapsed && <span>{label}</span>}
@@ -232,8 +232,8 @@ export function Sidebar({
           >
             {!isCollapsed && (
               <div className="flex items-center gap-2">
-                <Layers className="h-3 w-3 text-foreground/40" />
-                <p className="text-[10px] font-bold tracking-[0.3em] text-foreground/40 uppercase">
+                <Layers className="h-3 w-3 text-foreground/60" />
+                <p className="text-[10px] font-bold tracking-[0.3em] text-foreground/60 uppercase">
                   Projects
                 </p>
               </div>
@@ -318,8 +318,8 @@ export function Sidebar({
           <div className={cn("flex items-center justify-between px-4", isCollapsed && "justify-center")}>
             {!isCollapsed && (
               <div className="flex items-center gap-2">
-                <Tag className="h-3 w-3 text-foreground/40" />
-                <p className="text-[10px] font-bold tracking-[0.3em] text-foreground/40 uppercase">
+                <Tag className="h-3 w-3 text-foreground/60" />
+                <p className="text-[10px] font-bold tracking-[0.3em] text-foreground/60 uppercase">
                   Focus Tags
                 </p>
               </div>

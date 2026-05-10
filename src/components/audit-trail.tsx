@@ -55,37 +55,73 @@ function groupByDate(logs: AuditEntry[]): { label: string; entries: AuditEntry[]
   return Array.from(map.entries()).map(([label, entries]) => ({ label, entries }))
 }
 
-/** Converts a raw action string into a descriptive human-readable sentence */
 function describeAction(action: string, details: string, targetType: string, targetId?: number | null): string {
   const act = action?.toLowerCase() || ""
+  const target = targetType?.toUpperCase() || ""
 
-  if (act.includes("create_task") || (act.includes("create") && targetType === "TASK")) {
+  if (act.includes("create") && target === "TASK") {
     const name = details?.replace(/^Created task:\s*/i, "").trim()
-    return name ? `Created task "${name}"` : "Orchestrated a new task"
+    return name ? `Created task "${name}"` : "Created a new task"
   }
-  if (act.includes("update_task") || (act.includes("update") && targetType === "TASK")) {
+  if (act.includes("update") && target === "TASK") {
     const isCompleted = details?.toLowerCase().includes("completed: true") || details?.toLowerCase().includes("status: completed")
-    const name = details?.replace(/^Updated task:\s*/i, "").replace(/\(.*\)/, "").trim()
+    const isUncompleted = details?.toLowerCase().includes("completed: false")
+    const isTagAttached = details?.toLowerCase().includes("attached tag")
+    const isTagDetached = details?.toLowerCase().includes("detached tag")
     
-    if (isCompleted) {
-      return name ? `Completed task "${name}"` : "Marked a task as done"
+    // Try to extract task name
+    const nameMatch = details?.match(/task:\s*["']?([^"',(]+)/i) ||
+                      details?.match(/^Updated task:\s*(.+?)(?:\s*\(|$)/i) ||
+                      details?.match(/^Refined task:\s*["']?([^"']+)/i)
+    const name = nameMatch?.[1]?.trim()
+
+    if (isCompleted) return name ? `Marked "${name}" as done` : "Marked a task as done"
+    if (isUncompleted) return name ? `Reopened "${name}"` : "Reopened a task"
+    if (isTagAttached) {
+      const tagMatch = details?.match(/tag\s*['"]?([^'":]+)['"]?/i)
+      const tagName = tagMatch?.[1]?.trim()
+      return tagName ? `Added tag "${tagName}" to ${name || 'task'}` : `Added tag to ${name || 'task'}`
     }
-    return name ? `Refined task "${name}"` : "Updated a task"
+    if (isTagDetached) return `Removed a tag from ${name || 'task'}`
+    
+    return name ? `Updated task "${name}"` : "Updated a task"
   }
-  if (act.includes("delete_task") || (act.includes("delete") && targetType === "TASK")) {
-    return "Removed a task"
+  if (act.includes("delete") && target === "TASK") {
+    const nameMatch = details?.match(/task:\s*["']?([^"',(]+)/i) ||
+                      details?.match(/^Deleted task:\s*(.+?)(?:\s*\(|$)/i)
+    const name = nameMatch?.[1]?.trim()
+    return name ? `Deleted task "${name}"` : "Deleted a task"
   }
-  if (act.includes("create") && targetType === "SUBTASK") return "Added a subtask"
-  if (act.includes("update") && targetType === "SUBTASK") return "Updated a subtask"
-  if (act.includes("delete") && targetType === "SUBTASK") return "Removed a subtask"
-  if (act.includes("create") && targetType === "GROUP") return "Created a project"
-  if (act.includes("update") && targetType === "GROUP") return "Renamed a project"
-  if (act.includes("delete") && targetType === "GROUP") return "Deleted a project"
+
+  if (target === "SUBTASK") {
+    const subtaskMatch = details?.match(/subtask\s*['"]?([^'":]+)['"]?/i)
+    const subName = subtaskMatch?.[1]?.trim()
+    const taskMatch = details?.match(/task\s*(\d+)/i)
+    const taskId = taskMatch?.[1]
+
+    if (act.includes("create")) return subName ? `Added subtask "${subName}"` : "Added a subtask"
+    if (act.includes("update")) {
+      const isCompleted = details?.toLowerCase().includes("completed: true")
+      if (isCompleted) return subName ? `Finished subtask "${subName}"` : "Finished a subtask"
+      return subName ? `Updated subtask "${subName}"` : "Updated a subtask"
+    }
+    if (act.includes("delete")) return subName ? `Removed subtask "${subName}"` : "Removed a subtask"
+  }
+
+  if (target === "PROJECT" || target === "GROUP") {
+    const projMatch = details?.match(/project\s*['"]?([^'":]+)['"]?/i)
+    const projName = projMatch?.[1]?.trim()
+    
+    if (act.includes("create")) return projName ? `Created project "${projName}"` : "Created a project"
+    if (act.includes("update")) return projName ? `Updated project "${projName}"` : "Updated a project"
+    if (act.includes("delete")) return projName ? `Deleted project "${projName}"` : "Deleted a project"
+  }
 
   // Fallback: humanize the raw action + original details
   const humanAction = action?.replaceAll("_", " ") || "Activity"
   return details || (targetId ? `${humanAction} on ${targetType} #${targetId}` : humanAction)
 }
+
 
 /** Actions to exclude from the history display */
 const EXCLUDED_ACTIONS = new Set(["login", "logout", "user_login", "user_logout"])
@@ -166,8 +202,10 @@ export function AuditTrail({
         if (act.includes('delete')) return <Trash2 className="h-4 w-4 text-rose-400" />
         if (act.includes('create')) return <Plus className="h-4 w-4 text-indigo-400" />
         return <ListTodo className="h-4 w-4 text-indigo-400" />
+      case 'PROJECT':
       case 'GROUP':
         if (act.includes('delete')) return <Trash2 className="h-4 w-4 text-rose-400" />
+        if (act.includes('create')) return <Plus className="h-4 w-4 text-emerald-400" />
         return <Folder className="h-4 w-4 text-amber-400" />
       case 'USER':
         return <Shield className="h-4 w-4 text-purple-400" />

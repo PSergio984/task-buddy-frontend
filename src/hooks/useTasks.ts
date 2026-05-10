@@ -115,6 +115,41 @@ export function useDeleteSubtask() {
   })
 }
 
+export function useCreateSubtask() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ taskId, title }: { taskId: number; title: string }) =>
+      subtasksApi.create(taskId, { title }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] })
+    },
+  })
+}
+
+export function useCreateTag() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (data: { name: string; color?: string; icon?: string }) => tagsApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tags"] })
+    },
+  })
+}
+
+export function useAttachTag() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ taskId, tagId }: { taskId: number; tagId: number }) =>
+      tagsApi.attach(taskId, tagId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] })
+    },
+  })
+}
+
 export function useDetachTag() {
   const queryClient = useQueryClient()
   
