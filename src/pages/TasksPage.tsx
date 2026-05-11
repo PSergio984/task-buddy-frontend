@@ -87,9 +87,10 @@ export function TasksPage() {
   const { mutateAsync: deleteSubtask } = useDeleteSubtask()
   const { mutateAsync: detachTag } = useDetachTag()
 
-  const filteredTasks = tasks.filter(task => {
-    const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      task.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  const matchesTask = (task: Task) => {
+    const query = searchQuery.toLowerCase()
+    const matchesSearch = task.title.toLowerCase().includes(query) ||
+      task.description?.toLowerCase().includes(query)
     
     const matchesPriority = selectedPriorities.length === 0 || selectedPriorities.includes(task.priority)
     const matchesProject = selectedProjects.length === 0 || (task.project_id && selectedProjects.includes(task.project_id))
@@ -98,15 +99,19 @@ export function TasksPage() {
     // Sidebar Smart Filters
     let matchesSidebar = true
     if (activeSidebarFilter === "today") {
-      matchesSidebar = task.due_date ? new Date(task.due_date).getTime() >= today.getTime() && new Date(task.due_date).getTime() < today.getTime() + 86400000 : false
+      const taskDate = task.due_date ? new Date(task.due_date) : null
+      matchesSidebar = taskDate ? taskDate.getTime() >= today.getTime() && taskDate.getTime() < today.getTime() + 86400000 : false
     } else if (activeSidebarFilter === "upcoming") {
-      matchesSidebar = task.due_date ? new Date(task.due_date).getTime() >= today.getTime() && new Date(task.due_date).getTime() < next7Days.getTime() : false
+      const taskDate = task.due_date ? new Date(task.due_date) : null
+      matchesSidebar = taskDate ? taskDate.getTime() >= today.getTime() && taskDate.getTime() < next7Days.getTime() : false
     } else if (activeSidebarFilter === "inbox") {
       matchesSidebar = !task.project_id
     }
 
     return matchesSearch && matchesPriority && matchesProject && matchesTags && matchesSidebar
-  })
+  }
+
+  const filteredTasks = tasks.filter(matchesTask)
 
   const sortedTasks = useMemo(() => {
     return [...filteredTasks].sort((a, b) => {
@@ -124,6 +129,42 @@ export function TasksPage() {
       return a.title.localeCompare(b.title)
     })
   }, [filteredTasks, sortBy])
+
+  const togglePriority = (p: string) => {
+    setSelectedPriorities(prev => 
+      prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p]
+    )
+  }
+
+  const toggleProject = (id: number) => {
+    setSelectedProjects(prev => 
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    )
+  }
+
+  const toggleTag = (id: number) => {
+    setSelectedTags(prev => 
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    )
+  }
+
+  const removePriority = (p: string) => {
+    setSelectedPriorities(prev => prev.filter(x => x !== p))
+  }
+
+  const removeProject = (id: number) => {
+    setSelectedProjects(prev => prev.filter(x => x !== id))
+  }
+
+  const removeTag = (id: number) => {
+    setSelectedTags(prev => prev.filter(x => x !== id))
+  }
+
+  const clearAllFilters = () => {
+    setSelectedPriorities([])
+    setSelectedProjects([])
+    setSelectedTags([])
+  }
 
   const handleToggleComplete = async (id: number) => {
     const task = tasks.find((t: Task) => t.id === id)
@@ -298,9 +339,7 @@ export function TasksPage() {
                   {["HIGH", "MEDIUM", "LOW"].map((p) => (
                     <button
                       key={p}
-                      onClick={() => setSelectedPriorities(prev => 
-                        prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p]
-                      )}
+                      onClick={() => togglePriority(p)}
                       className={cn(
                         "px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-all border",
                         selectedPriorities.includes(p)
@@ -321,9 +360,7 @@ export function TasksPage() {
                   {projects.map((p) => (
                     <button
                       key={p.id}
-                      onClick={() => setSelectedProjects(prev => 
-                        prev.includes(p.id) ? prev.filter(x => x !== p.id) : [...prev, p.id]
-                      )}
+                      onClick={() => toggleProject(p.id)}
                       className={cn(
                         "px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-all border",
                         selectedProjects.includes(p.id)
@@ -344,9 +381,7 @@ export function TasksPage() {
                   {tags.map((t) => (
                     <button
                       key={t.id}
-                      onClick={() => setSelectedTags(prev => 
-                        prev.includes(t.id) ? prev.filter(x => x !== t.id) : [...prev, t.id]
-                      )}
+                      onClick={() => toggleTag(t.id)}
                       className={cn(
                         "px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-all border",
                         selectedTags.includes(t.id)
@@ -371,7 +406,7 @@ export function TasksPage() {
           {selectedPriorities.map(p => (
             <Badge key={p} variant="outline" className="rounded-full bg-primary/10 text-primary border-primary/20 gap-1 pl-3 pr-2 py-1 uppercase text-[10px] font-black">
               {p}
-              <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setSelectedPriorities(prev => prev.filter(x => x !== p))} />
+              <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => removePriority(p)} />
             </Badge>
           ))}
           {selectedProjects.map(id => {
@@ -379,7 +414,7 @@ export function TasksPage() {
             return (
               <Badge key={id} variant="outline" className="rounded-full bg-primary/10 text-primary border-primary/20 gap-1 pl-3 pr-2 py-1 uppercase text-[10px] font-black">
                 {name}
-                <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setSelectedProjects(prev => prev.filter(x => x !== id))} />
+                <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => removeProject(id)} />
               </Badge>
             )
           })}
@@ -388,18 +423,14 @@ export function TasksPage() {
             return (
               <Badge key={id} variant="outline" className="rounded-full bg-primary/10 text-primary border-primary/20 gap-1 pl-3 pr-2 py-1 uppercase text-[10px] font-black">
                 {name}
-                <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setSelectedTags(prev => prev.filter(x => x !== id))} />
+                <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => removeTag(id)} />
               </Badge>
             )
           })}
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={() => {
-              setSelectedPriorities([])
-              setSelectedProjects([])
-              setSelectedTags([])
-            }}
+            onClick={clearAllFilters}
             className="text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/10 rounded-full h-8 px-4"
           >
             Clear All

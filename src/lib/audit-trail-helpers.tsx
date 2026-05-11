@@ -1,0 +1,207 @@
+import React from "react"
+import { 
+  Trash2, Plus, Edit3, CheckCircle2, ListTodo, Folder, Shield, Activity 
+} from "lucide-react"
+
+export interface AuditEntry {
+  id: number
+  action: string
+  details: string
+  created_at: string
+  user_id: number
+  target_type: string
+  target_id?: number | null
+}
+
+const bold = (text: string) => <span className="font-bold text-foreground">"{text}"</span>
+
+/** Returns a human-readable date group label */
+export function getDateGroupLabel(dateStr: string): string {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const yesterday = new Date(today)
+  yesterday.setDate(yesterday.getDate() - 1)
+
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+
+  if (d.getTime() === today.getTime()) return "Today"
+  if (d.getTime() === yesterday.getTime()) return "Yesterday"
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+}
+
+/** Groups a flat array of log entries into date-keyed buckets */
+export function groupByDate(logs: AuditEntry[]): { label: string; entries: AuditEntry[] }[] {
+  const map = new Map<string, AuditEntry[]>()
+  for (const log of logs) {
+    const label = getDateGroupLabel(log.created_at)
+    if (!map.has(label)) map.set(label, [])
+    map.get(label)!.push(log)
+  }
+  return Array.from(map.entries()).map(([label, entries]) => ({ label, entries }))
+}
+
+function getTargetName(details: string, type: string): string {
+  if (!details) return ""
+  const patterns = [
+    new RegExp(`${type}\\s*['"]?([^'":,]+)['"]?`, 'i'),
+    new RegExp(`^Updated ${type}:\\s*(.+?)(?:\\s*\\(|$)`, 'i'),
+    new RegExp(`^Refined ${type}:\\s*["']?([^"']+)`, 'i'),
+    new RegExp(`${type}:\\s*["']?([^"',(]+)`, 'i')
+  ]
+  for (const p of patterns) {
+    const m = details.match(p)
+    if (m?.[1]) return m[1].trim()
+  }
+  return ""
+}
+
+function handleTaskUpdate(detLow: string, details: string, name: string): React.ReactNode {
+  if (detLow.includes("completed: true") || detLow.includes("status: completed")) 
+    return <span>Marked {name ? bold(name) : "a task"} as done</span>
+  
+  if (detLow.includes("completed: false")) 
+    return <span>Reopened {name ? bold(name) : "a task"}</span>
+  
+  if (detLow.includes("attached tag")) {
+    const tagMatch = details?.match(/tag\s*['"]?([^'":]+)['"]?/i)
+    const tagName = tagMatch?.[1]?.trim()
+    return <span>Added tag {tagName ? bold(tagName) : "a tag"} to {name ? bold(name) : "task"}</span>
+  }
+  
+  if (detLow.includes("detached tag")) 
+    return <span>Removed a tag from {name ? bold(name) : "task"}</span>
+  
+  const fieldsMatch = details?.match(/\(fields:\s*([^)]+)\)/i)
+  if (fieldsMatch) {
+    const fieldChanges = fieldsMatch[1].split(",").map(f => f.trim())
+    return (
+      <span>
+        Updated task {name ? bold(name) : ""}
+        <span className="text-muted-foreground ml-1">
+          ({fieldChanges.map((change, i) => <span key={i}>{i > 0 && ", "}{change}</span>)})
+        </span>
+      </span>
+    )
+  }
+  
+  return <span>Updated task {name ? bold(name) : ""}</span>
+}
+
+export function describeTaskAction(act: string, details: string): React.ReactNode {
+  const name = getTargetName(details, "task")
+  
+  if (act.includes("create")) {
+    const createdName = details?.replace(/^Created task:\s*/i, "").trim()
+    return createdName ? <span>Created task {bold(createdName)}</span> : "Created a new task"
+  }
+  
+  if (act.includes("update")) return handleTaskUpdate(details?.toLowerCase() || "", details, name)
+  if (act.includes("delete")) return <span>Deleted task {name ? bold(name) : "a task"}</span>
+  
+  return null
+}
+
+export function describeSubtaskAction(act: string, details: string): React.ReactNode {
+  const subName = getTargetName(details, "subtask")
+  const parentMatch = details?.match(/(?:to|on|from)\s*task\s*['"]?([^'":,]+)['"]?/i)
+  const parentName = parentMatch?.[1]?.trim()
+
+  if (act.includes("create")) 
+    return <span>Added subtask {subName ? bold(subName) : "a subtask"} to {parentName ? bold(parentName) : "task"}</span>
+  
+  if (act.includes("update")) {
+    if (details?.toLowerCase().includes("marked completed")) 
+      return <span>Finished subtask {subName ? bold(subName) : "a subtask"}</span>
+    
+    const fieldsMatch = details?.match(/\(([^)]+)\)$/i) || details?.match(/\(fields:\s*([^)]+)\)/i)
+    const fieldChangesRaw = fieldsMatch?.[1]
+    return (
+      <span>
+        Updated {subName ? bold(subName) : "subtask"} on {parentName ? bold(parentName) : "task"}
+        {fieldChangesRaw && <span className="text-muted-foreground ml-1">({fieldChangesRaw})</span>}
+      </span>
+    )
+  }
+  
+  if (act.includes("delete")) 
+    return <span>Removed subtask {subName ? bold(subName) : "a subtask"} from {parentName ? bold(parentName) : "task"}</span>
+  
+  return null
+}
+
+export function describeProjectAction(act: string, details: string): React.ReactNode {
+  const projName = getTargetName(details, "project")
+  if (act.includes("create")) return <span>Created project {projName ? bold(projName) : "a project"}</span>
+  if (act.includes("update")) return <span>Updated project {projName ? bold(projName) : "a project"}</span>
+  if (act.includes("delete")) return <span>Deleted project {projName ? bold(projName) : "a project"}</span>
+  return null
+}
+
+export function describeAction(action: string, details: string, targetType: string, targetId?: number | null): React.ReactNode {
+  const act = action?.toLowerCase() || ""
+  const target = targetType?.toUpperCase() || ""
+
+  if (target === "TASK") return describeTaskAction(act, details) || details
+  if (target === "SUBTASK") return describeSubtaskAction(act, details) || details
+  if (target === "PROJECT" || target === "GROUP") return describeProjectAction(act, details) || details
+
+  const humanAction = action?.replaceAll("_", " ") || "Activity"
+  return details || (targetId ? `${humanAction} on ${targetType} #${targetId}` : humanAction)
+}
+
+export const EXCLUDED_ACTIONS = new Set(["login", "logout", "user_login", "user_logout"])
+
+export function isExcluded(action: string): boolean {
+  const act = action?.toLowerCase() || ""
+  return Array.from(EXCLUDED_ACTIONS).some(ex => act.includes(ex))
+}
+
+interface IconConfig {
+  delete?: React.ReactNode
+  create?: React.ReactNode
+  update?: React.ReactNode
+  default: React.ReactNode
+}
+
+export function getAuditIcon(action: string, targetType: string) {
+  const act = action?.toLowerCase() || ""
+  const type = targetType?.toUpperCase() || ""
+  
+  const iconMap: Record<string, IconConfig> = {
+    TASK: {
+      delete: <Trash2 className="h-4 w-4 text-rose-400" />,
+      create: <Plus className="h-4 w-4 text-emerald-400" />,
+      update: <Edit3 className="h-4 w-4 text-sky-400" />,
+      default: <CheckCircle2 className="h-4 w-4 text-blue-400" />
+    },
+    SUBTASK: {
+      delete: <Trash2 className="h-4 w-4 text-rose-400" />,
+      create: <Plus className="h-4 w-4 text-indigo-400" />,
+      default: <ListTodo className="h-4 w-4 text-indigo-400" />
+    },
+    PROJECT: {
+      delete: <Trash2 className="h-4 w-4 text-rose-400" />,
+      create: <Plus className="h-4 w-4 text-emerald-400" />,
+      default: <Folder className="h-4 w-4 text-amber-400" />
+    },
+    GROUP: {
+      delete: <Trash2 className="h-4 w-4 text-rose-400" />,
+      create: <Plus className="h-4 w-4 text-emerald-400" />,
+      default: <Folder className="h-4 w-4 text-amber-400" />
+    },
+    USER: {
+      delete: <Shield className="h-4 w-4 text-purple-400" />,
+      create: <Shield className="h-4 w-4 text-purple-400" />,
+      default: <Shield className="h-4 w-4 text-purple-400" />
+    }
+  }
+
+  const config = iconMap[type]
+  if (!config) return <Activity className="h-4 w-4 text-muted-foreground" />
+  
+  if (act.includes('delete')) return config.delete
+  if (act.includes('create')) return config.create
+  if (act.includes('update') && config.update) return config.update
+  return config.default
+}
