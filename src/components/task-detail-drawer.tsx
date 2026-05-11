@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { Flag, Sparkles } from "lucide-react"
+import * as Icons from "lucide-react"
 import { type Task } from "@/lib/api"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -8,6 +9,17 @@ import { useTaskDrawerState } from "@/hooks/useTaskDrawerState"
 import { SubtaskSection } from "./task-drawer/SubtaskSection"
 import { MetaSidebar } from "./task-drawer/MetaSidebar"
 import { ActionFooter } from "./task-drawer/ActionFooter"
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export interface TaskDetailDrawerProps {
   readonly task: Task | null
@@ -19,19 +31,32 @@ export interface TaskDetailDrawerProps {
 export function TaskDetailDrawer({ task: initialTask, mode, isOpen, onOpenChange }: TaskDetailDrawerProps) {
   const state = useTaskDrawerState({ initialTask, mode, isOpen, onOpenChange })
   const [subtasksLimit, setSubtasksLimit] = useState(5)
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false)
   
-  const allSubtasks = state.isCreate ? state.pendingSubtasks : (state.task?.subtasks || [])
+  const allSubtasks = state.isCreate ? state.pendingSubtasks : state.localSubtasks
   const visibleSubtasks = allSubtasks.slice(0, subtasksLimit)
 
-  return (
-    <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="right"
-        className="w-full sm:max-w-3xl p-0 flex flex-col bg-background/95 backdrop-blur-2xl border-l border-white/5 shadow-2xl"
-      >
-        <div className="h-1.5 bg-gradient-to-r from-blue-600 via-indigo-500 to-cyan-400 shrink-0 shadow-[0_1px_10px_rgba(37,99,235,0.3)]" />
+  const handleSafeClose = (open: boolean) => {
+    if (!open && state.hasChanges) {
+      setShowDiscardConfirm(true)
+    } else {
+      onOpenChange(open)
+    }
+  }
 
-        <DrawerHeader isCreate={state.isCreate} />
+  const handleConfirmDiscard = () => {
+    setShowDiscardConfirm(false)
+    onOpenChange(false)
+  }
+
+  return (
+    <>
+      <Sheet open={isOpen} onOpenChange={handleSafeClose}>
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-3xl p-0 flex flex-col bg-background/95 backdrop-blur-2xl border-l border-white/5 shadow-2xl"
+        >
+          <DrawerHeader isCreate={state.isCreate} onClose={() => handleSafeClose(false)} />
 
         <div className="flex-1 flex overflow-hidden">
           <div className="flex-[0.65] flex flex-col p-8 gap-6 overflow-y-auto border-r border-white/5 no-scrollbar">
@@ -43,6 +68,7 @@ export function TaskDetailDrawer({ task: initialTask, mode, isOpen, onOpenChange
               setTitle={state.setTitle}
               task={state.task}
               handleUpdate={state.handleUpdate}
+              isDirty={state.isTitleDirty}
             />
 
             <DescriptionSection 
@@ -51,6 +77,7 @@ export function TaskDetailDrawer({ task: initialTask, mode, isOpen, onOpenChange
               setDescription={state.setDescription}
               task={state.task}
               handleUpdate={state.handleUpdate}
+              isDirty={state.isDescriptionDirty}
             />
 
             <SubtaskSection
@@ -70,62 +97,103 @@ export function TaskDetailDrawer({ task: initialTask, mode, isOpen, onOpenChange
               pendingSubtasks={state.pendingSubtasks}
               setPendingSubtasks={state.setPendingSubtasks}
               task={state.task}
+              isDirty={state.isSubtasksDirty}
             />
           </div>
 
-          <MetaSidebar
+            <MetaSidebar
+              isCreate={state.isCreate}
+              projectId={state.projectId}
+              setProjectId={state.setProjectId}
+              projects={state.projects}
+              priority={state.priority}
+              setPriority={state.setPriority}
+              completed={state.completed}
+              setCompleted={state.setCompleted}
+              dueDate={state.dueDate}
+              handleDateSelect={state.handleDateSelect}
+              currentTags={state.currentTags}
+              handleDetachTag={state.handleDetachTag}
+              isTagPickerOpen={state.isTagPickerOpen}
+              setIsTagPickerOpen={state.setIsTagPickerOpen}
+              tagSearch={state.tagSearch}
+              setTagSearch={state.setTagSearch}
+              filteredTags={state.filteredTags}
+              handleAttachTag={state.handleAttachTag}
+              canCreateTag={state.canCreateTag}
+              handleCreateAndAttachTag={state.handleCreateAndAttachTag}
+              newTagColor={state.newTagColor}
+              setNewTagColor={state.setNewTagColor}
+              newTagIcon={state.newTagIcon}
+              setNewTagIcon={state.setNewTagIcon}
+              isProjectPickerOpen={state.isProjectPickerOpen}
+              setIsProjectPickerOpen={state.setIsProjectPickerOpen}
+              projectSearch={state.projectSearch}
+              setProjectSearch={state.setProjectSearch}
+              handleCreateProject={state.handleCreateProject}
+              newProjectColor={state.newProjectColor}
+              setNewProjectColor={state.setNewProjectColor}
+              newProjectIcon={state.newProjectIcon}
+              setNewProjectIcon={state.setNewProjectIcon}
+              task={state.task}
+              handleUpdate={state.handleUpdate}
+              toast={state.toast}
+              dirtySections={{
+                dueDate: state.isDueDateDirty ?? undefined,
+                status: state.isStatusDirty ?? undefined,
+                priority: state.isPriorityDirty ?? undefined,
+                project: state.isProjectDirty ?? undefined,
+                tags: state.isTagsDirty ?? undefined
+              }}
+            />
+          </div>
+ 
+          <ActionFooter
             isCreate={state.isCreate}
-            projectId={state.projectId}
-            setProjectId={state.setProjectId}
-            projects={state.projects}
-            priority={state.priority}
-            setPriority={state.setPriority}
-            dueDate={state.dueDate}
-            handleDateSelect={state.handleDateSelect}
-            currentTags={state.currentTags}
-            handleDetachTag={state.handleDetachTag}
-            isTagPickerOpen={state.isTagPickerOpen}
-            setIsTagPickerOpen={state.setIsTagPickerOpen}
-            tagSearch={state.tagSearch}
-            setTagSearch={state.setTagSearch}
-            filteredTags={state.filteredTags}
-            handleAttachTag={state.handleAttachTag}
-            canCreateTag={state.canCreateTag}
-            handleCreateAndAttachTag={state.handleCreateAndAttachTag}
-            newTagColor={state.newTagColor}
-            setNewTagColor={state.setNewTagColor}
-            newTagIcon={state.newTagIcon}
-            setNewTagIcon={state.setNewTagIcon}
-            isProjectPickerOpen={state.isProjectPickerOpen}
-            setIsProjectPickerOpen={state.setIsProjectPickerOpen}
-            projectSearch={state.projectSearch}
-            setProjectSearch={state.setProjectSearch}
-            handleCreateProject={state.handleCreateProject}
-            newProjectColor={state.newProjectColor}
-            setNewProjectColor={state.setNewProjectColor}
-            newProjectIcon={state.newProjectIcon}
-            setNewProjectIcon={state.setNewProjectIcon}
-            task={state.task}
-            handleUpdate={state.handleUpdate}
-            toast={state.toast}
+            isDirty={state.isCreate ? !!state.title.trim() : state.hasChanges}
+            onOpenChange={handleSafeClose}
+            handleCreate={state.handleCreate}
+            handleUpdate={state.handleConfirmUpdate}
+            showDeleteConfirm={state.showDeleteConfirm}
+            setShowDeleteConfirm={state.setShowDeleteConfirm}
+            handleDelete={state.handleDelete}
+            showSaveConfirm={state.showSaveConfirm}
+            setShowSaveConfirm={state.setShowSaveConfirm}
           />
-        </div>
-
-        <ActionFooter
-          isCreate={state.isCreate}
-          isDirty={!!state.title.trim()}
-          onOpenChange={onOpenChange}
-          handleCreate={state.handleCreate}
-          showDeleteConfirm={state.showDeleteConfirm}
-          setShowDeleteConfirm={state.setShowDeleteConfirm}
-          handleDelete={state.handleDelete}
-        />
       </SheetContent>
     </Sheet>
+
+    <AlertDialog open={showDiscardConfirm} onOpenChange={setShowDiscardConfirm}>
+      <AlertDialogContent className="bg-background/95 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] max-w-[400px] p-8">
+        <AlertDialogHeader className="items-center text-center space-y-6">
+          <div className="h-20 w-20 rounded-full bg-amber-500/10 flex items-center justify-center animate-pulse">
+            <Icons.AlertTriangle className="h-10 w-10 text-amber-500" />
+          </div>
+          <div className="space-y-3">
+            <AlertDialogTitle className="text-3xl font-black tracking-tight leading-tight">Unsaved Changes</AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground text-base font-medium leading-relaxed px-4">
+              You've made some edits to this task. Are you sure you want to discard them?
+            </AlertDialogDescription>
+          </div>
+        </AlertDialogHeader>
+        <AlertDialogFooter className="flex-col sm:flex-col gap-3 mt-8">
+          <AlertDialogAction 
+            onClick={handleConfirmDiscard}
+            className="w-full h-14 rounded-2xl bg-destructive text-destructive-foreground hover:bg-destructive/90 font-black uppercase tracking-widest text-xs shadow-xl shadow-destructive/20 transition-all active:scale-[0.98]"
+          >
+            Discard Changes
+          </AlertDialogAction>
+          <AlertDialogCancel className="w-full h-14 rounded-2xl border-white/5 bg-white/5 hover:bg-white/10 font-black uppercase tracking-widest text-xs transition-all active:scale-[0.98]">
+            Go Back
+          </AlertDialogCancel>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   )
 }
 
-function DrawerHeader({ isCreate }: Readonly<{ isCreate: boolean }>) {
+function DrawerHeader({ isCreate, onClose }: Readonly<{ isCreate: boolean; onClose: () => void }>) {
   return (
     <div className="flex items-center justify-between px-8 py-6 border-b border-white/5 shrink-0">
       <div className="flex items-center gap-3">
@@ -136,6 +204,12 @@ function DrawerHeader({ isCreate }: Readonly<{ isCreate: boolean }>) {
           {isCreate ? "New Task" : "Task Details"}
         </span>
       </div>
+      <button 
+        onClick={onClose}
+        className="h-8 w-8 flex items-center justify-center rounded-xl hover:bg-white/5 transition-colors text-foreground/40 hover:text-foreground"
+      >
+        <Icons.X className="h-4 w-4" />
+      </button>
     </div>
   )
 }
@@ -148,12 +222,13 @@ interface TitleSectionProps {
   readonly setTitle: (val: string) => void
   readonly task: Task | null
   readonly handleUpdate: (updates: Partial<Task>) => void
+  readonly isDirty: boolean
 }
 
-function TitleSection({ isCreate, isEditingTitle, setIsEditingTitle, title, setTitle, task, handleUpdate }: Readonly<TitleSectionProps>) {
+function TitleSection({ isCreate, isEditingTitle, setIsEditingTitle, title, setTitle, task, handleUpdate, isDirty }: Readonly<TitleSectionProps>) {
   if (isCreate || isEditingTitle) {
     return (
-      <div className="space-y-4 pt-4 px-1">
+      <div className="pt-2">
         <Input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -165,7 +240,7 @@ function TitleSection({ isCreate, isEditingTitle, setIsEditingTitle, title, setT
           }}
           onKeyDown={(e) => { if (e.key === "Enter" && !isCreate) setIsEditingTitle(false) }}
           placeholder="Task Title..."
-          className="text-4xl font-black bg-transparent border-none focus-visible:ring-0 p-0 h-auto placeholder:text-foreground/10"
+          className="text-4xl font-black bg-white/5 border border-white/10 focus-visible:ring-2 focus-visible:ring-primary/20 p-5 rounded-2xl shadow-2xl h-auto placeholder:text-foreground/10"
           autoFocus={isCreate}
         />
       </div>
@@ -173,16 +248,22 @@ function TitleSection({ isCreate, isEditingTitle, setIsEditingTitle, title, setT
   }
 
   return (
-    <div className="space-y-4 pt-4 px-1">
-      <h2 className="text-4xl font-black tracking-tighter text-foreground leading-tight">
-        <button
-          onClick={() => setIsEditingTitle(true)}
-          className="text-left w-full cursor-text hover:text-primary transition-all duration-300 focus:outline-none focus:text-primary"
-          aria-label={`Edit title: ${task?.title}`}
-        >
-          {task?.title}
-        </button>
-      </h2>
+    <div className="pt-2 space-y-2">
+      <div className="flex items-center justify-between px-1">
+        <span className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Title</span>
+        {isDirty && <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
+      </div>
+      <div className="p-5 bg-white/5 border border-white/5 rounded-2xl shadow-xl hover:bg-white/10 transition-all duration-300 group">
+        <h2 className="text-4xl font-black tracking-tighter text-foreground leading-tight">
+          <button
+            onClick={() => setIsEditingTitle(true)}
+            className="text-left w-full cursor-text group-hover:text-primary transition-all duration-300 focus:outline-none focus:text-primary"
+            aria-label={`Edit title: ${task?.title}`}
+          >
+            {task?.title}
+          </button>
+        </h2>
+      </div>
     </div>
   )
 }
@@ -193,12 +274,16 @@ interface DescriptionSectionProps {
   readonly setDescription: (val: string) => void
   readonly task: Task | null
   readonly handleUpdate: (updates: Partial<Task>) => void
+  readonly isDirty: boolean
 }
 
-function DescriptionSection({ isCreate, description, setDescription, task, handleUpdate }: Readonly<DescriptionSectionProps>) {
+function DescriptionSection({ isCreate, description, setDescription, task, handleUpdate, isDirty }: Readonly<DescriptionSectionProps>) {
   return (
     <div className="space-y-3">
-      <label htmlFor="task-notes" className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Notes</label>
+      <div className="flex items-center justify-between">
+        <label htmlFor="task-notes" className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Notes</label>
+        {isDirty && <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
+      </div>
       <Textarea
         id="task-notes"
         placeholder="Add notes, context, or details..."

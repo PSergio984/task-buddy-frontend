@@ -1,12 +1,7 @@
+import * as React from "react"
 import { Clock } from "lucide-react"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+import { Input } from "@/components/ui/input"
 
 export interface TimePickerProps {
   readonly id?: string
@@ -16,54 +11,51 @@ export interface TimePickerProps {
 }
 
 export function TimePicker({ id, value, onChange, className }: TimePickerProps) {
-  const [hours, minutes] = (value || "09:00").split(":")
-  
-  const hourOptions = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, "0"))
-  const minuteOptions = Array.from({ length: 12 }, (_, i) => (i * 5).toString().padStart(2, "0"))
+  const [inputValue, setInputValue] = React.useState(value || "")
+  const [prevValue, setPrevValue] = React.useState(value)
 
-  const handleHourChange = (newHour: string) => {
-    onChange(`${newHour}:${minutes}`)
+  if (value !== prevValue) {
+    setInputValue(value || "")
+    setPrevValue(value)
   }
 
-  const handleMinuteChange = (newMinute: string) => {
-    onChange(`${hours}:${newMinute}`)
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value.replace(/[^0-9:]/g, "")
+    
+    if (val.length === 2 && !val.includes(":") && !inputValue.includes(":")) {
+      val = val + ":"
+    }
+    
+    if (val.length <= 5) {
+      setInputValue(val)
+      if (/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(val)) {
+        onChange(val)
+      }
+    }
+  }
+
+  const handleBlur = () => {
+    if (!/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(inputValue)) {
+      setInputValue(value || "")
+    }
   }
 
   return (
-    <div className={cn("flex items-center gap-3 bg-muted/20 p-2 rounded-[1.5rem] border border-white/5", className)}>
-      <div className="flex items-center gap-1.5 px-3">
-        <Clock className="h-4 w-4 text-primary/50" />
-        <span className="text-[10px] font-black uppercase tracking-widest text-foreground/30">Set Time</span>
-      </div>
-      
-      <div className="flex items-center gap-1.5 flex-1">
-        <Select value={hours} onValueChange={handleHourChange}>
-          <SelectTrigger id={id} className="h-10 w-20 rounded-xl border-none bg-background/50 backdrop-blur-md px-3 font-bold tracking-tight text-sm transition-all hover:bg-background/80 focus:ring-1 focus:ring-primary/20">
-            <SelectValue placeholder="HH" />
-          </SelectTrigger>
-          <SelectContent className="rounded-2xl border-white/10 bg-background/95 backdrop-blur-xl shadow-2xl max-h-[300px]">
-            {hourOptions.map((h) => (
-              <SelectItem key={h} value={h} className="rounded-xl focus:bg-primary/10 focus:text-primary font-bold text-xs">
-                {h}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <span className="text-primary/20 font-bold">:</span>
-
-        <Select value={minutes} onValueChange={handleMinuteChange}>
-          <SelectTrigger className="h-10 w-20 rounded-xl border-none bg-background/50 backdrop-blur-md px-3 font-bold tracking-tight text-sm transition-all hover:bg-background/80 focus:ring-1 focus:ring-primary/20">
-            <SelectValue placeholder="MM" />
-          </SelectTrigger>
-          <SelectContent className="rounded-2xl border-white/10 bg-background/95 backdrop-blur-xl shadow-2xl max-h-[300px]">
-            {minuteOptions.map((m) => (
-              <SelectItem key={m} value={m} className="rounded-xl focus:bg-primary/10 focus:text-primary font-bold text-xs">
-                {m}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+    <div className={cn("flex flex-col gap-2", className)}>
+      <div className="relative group">
+        <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary z-10" />
+        <Input
+          id={id}
+          value={inputValue}
+          onChange={handleInputChange}
+          onBlur={handleBlur}
+          onFocus={(e) => e.target.select()}
+          className="pl-9 pr-4 h-11 rounded-xl bg-white text-black border-none text-lg font-black tracking-tight focus:ring-4 focus:ring-primary/20 transition-all shadow-lg placeholder:text-black/20"
+          placeholder="00:00"
+        />
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+          <span className="text-[8px] font-black uppercase tracking-tighter text-black/40 bg-black/5 px-1 py-0.5 rounded">24h</span>
+        </div>
       </div>
     </div>
   )

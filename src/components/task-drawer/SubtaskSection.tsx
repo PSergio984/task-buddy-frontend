@@ -22,6 +22,7 @@ interface SubtaskSectionProps {
   readonly pendingSubtasks: readonly string[]
   readonly setPendingSubtasks: React.Dispatch<React.SetStateAction<string[]>>
   readonly task: Task | null
+  readonly isDirty?: boolean
 }
 
 export function SubtaskSection({
@@ -29,20 +30,23 @@ export function SubtaskSection({
   newSubtaskTitle, setNewSubtaskTitle, handleAddSubtask,
   visibleSubtasks, allSubtasks, handleToggleSubtask, handleDeleteSubtask,
   subtaskInputRef, subtasksLimit, setSubtasksLimit, pendingSubtasks, setPendingSubtasks,
-  task
+  task, isDirty
 }: SubtaskSectionProps) {
   const hasMoreSubtasks = allSubtasks.length > subtasksLimit
 
   return (
     <div className="space-y-3">
-      <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40">
-        Sub-Tasks
-        {(isCreate ? pendingSubtasks.length : (task?.subtasks?.length ?? 0)) > 0 && (
-          <span className="ml-2 text-primary">
-            {isCreate ? `0/${pendingSubtasks.length}` : `${task?.subtasks?.filter(s => s.completed).length}/${task?.subtasks?.length}`}
-          </span>
-        )}
-      </label>
+      <div className="flex items-center justify-between">
+        <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40">
+          Sub-Tasks
+          {(isCreate ? pendingSubtasks.length : (task?.subtasks?.length ?? 0)) > 0 && (
+            <span className="ml-2 text-primary">
+              {isCreate ? `0/${pendingSubtasks.length}` : `${task?.subtasks?.filter(s => s.completed).length}/${task?.subtasks?.length}`}
+            </span>
+          )}
+        </label>
+        {isDirty && <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
+      </div>
 
       <div className="space-y-2">
         <AnimatePresence>
@@ -106,6 +110,7 @@ function SubtaskItem({ sub, idx, handleToggleSubtask, handleDeleteSubtask, setPe
   const isPending = typeof sub === "string"
   const subTitle = isPending ? sub : sub.title
   const isCompleted = !isPending && sub.completed
+  const [confirmDelete, setConfirmDelete] = React.useState(false)
 
   return (
     <motion.div
@@ -138,16 +143,40 @@ function SubtaskItem({ sub, idx, handleToggleSubtask, handleDeleteSubtask, setPe
       )}>
         {subTitle}
       </span>
-      <button
-        onClick={() => isPending 
-          ? setPendingSubtasks((prev: string[]) => prev.filter((_, i) => i !== idx))
-          : handleDeleteSubtask(sub.id)
-        }
-        aria-label={`Delete subtask: ${subTitle}`}
-        className="opacity-0 group-hover/sub:opacity-100 transition-opacity text-foreground/20 hover:text-red-500 focus-visible:opacity-100 outline-none"
-      >
-        <Trash2 className="h-3.5 w-3.5" />
-      </button>
+      
+      {confirmDelete ? (
+        <div className="flex items-center gap-1 animate-in slide-in-from-right-2 duration-200">
+          <button
+            onClick={() => {
+              if (isPending) {
+                setPendingSubtasks((prev: string[]) => prev.filter((_, i) => i !== idx))
+              } else {
+                handleDeleteSubtask(sub.id)
+              }
+              setConfirmDelete(false)
+            }}
+            className="p-1 text-red-500 hover:bg-red-500/10 rounded-md transition-colors"
+            aria-label="Confirm delete"
+          >
+            <Check className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={() => setConfirmDelete(false)}
+            className="p-1 text-foreground/30 hover:bg-white/10 rounded-md transition-colors"
+            aria-label="Cancel delete"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={() => setConfirmDelete(true)}
+          aria-label={`Delete subtask: ${subTitle}`}
+          className="opacity-0 group-hover/sub:opacity-100 transition-opacity text-foreground/20 hover:text-red-500 focus-visible:opacity-100 outline-none"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      )}
     </motion.div>
   )
 }
