@@ -1,9 +1,10 @@
+import { useState } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import type { Task } from "@/lib/api"
-import { Trash2, Calendar, X, Tag, CheckCircle2, Layers } from "lucide-react"
+import { Trash2, Calendar, X, Tag, CheckCircle2, Layers, ChevronDown, ChevronUp } from "lucide-react"
 import { cn } from "@/lib/utils"
 import * as LucideIcons from "lucide-react"
 
@@ -24,6 +25,7 @@ export function TaskCard({
   onDeleteSubtask,
   onDetachTag,
 }: TaskCardProps) {
+  const [showAllSubtasks, setShowAllSubtasks] = useState(false)
   const formatDueDate = (dateStr: string) => {
     const date = new Date(dateStr)
     return new Intl.DateTimeFormat(undefined, {
@@ -180,34 +182,71 @@ export function TaskCard({
                 </span>
               </div>
               <div className="space-y-2">
-                {task.subtasks?.map((subtask) => (
-                  <div
-                    key={subtask.id}
-                    className="group/sub flex items-center justify-between gap-3 rounded-xl bg-muted/20 px-3 py-2 transition-colors hover:bg-muted/40"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Checkbox
-                        checked={subtask.completed}
-                        onCheckedChange={(checked) => onToggleSubtask?.(subtask.id, !!checked)}
-                        className="h-4 w-4 rounded-md border-2 border-primary/20"
-                      />
-                      <span className={cn(
-                        "text-xs font-medium transition-all",
-                        subtask.completed ? "text-muted-foreground/40 line-through" : "text-muted-foreground"
-                      )}>
-                        {subtask.title}
-                      </span>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onDeleteSubtask?.(subtask.id)}
-                      className="h-6 w-6 rounded-lg opacity-0 transition-opacity group-hover/sub:opacity-100 hover:bg-destructive/10 hover:text-destructive"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                ))}
+                {(() => {
+                  const limit = 3
+                  const hasMore = (task.subtasks?.length ?? 0) > limit
+                  const displayedSubtasks = showAllSubtasks ? task.subtasks : task.subtasks?.slice(0, limit)
+                  
+                  return (
+                    <>
+                      {displayedSubtasks?.map((subtask) => (
+                        <div
+                          key={subtask.id}
+                          className="group/sub flex items-center justify-between gap-3 rounded-xl bg-muted/20 px-3 py-2 transition-colors hover:bg-muted/40"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Checkbox
+                              checked={subtask.completed}
+                              onCheckedChange={(checked) => onToggleSubtask?.(subtask.id, !!checked)}
+                              className="h-4 w-4 rounded-md border-2 border-primary/20"
+                            />
+                            <span className={cn(
+                              "text-xs font-medium transition-all",
+                              subtask.completed ? "text-muted-foreground/40 line-through" : "text-muted-foreground"
+                            )}>
+                              {subtask.title}
+                            </span>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onDeleteSubtask?.(subtask.id)
+                            }}
+                            className="h-6 w-6 rounded-lg opacity-0 transition-opacity group-hover/sub:opacity-100 hover:bg-destructive/10 hover:text-destructive"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      ))}
+                      
+                      {hasMore && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setShowAllSubtasks(!showAllSubtasks)
+                          }}
+                          className="mt-2 w-full gap-2 rounded-xl border border-dashed border-border/50 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70 hover:bg-muted/50 hover:text-primary"
+                        >
+                          {showAllSubtasks ? (
+                            <>
+                              <ChevronUp className="h-3 w-3" />
+                              Show Less
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown className="h-3 w-3" />
+                              View {(task.subtasks?.length ?? 0) - limit} More Subtasks
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </>
+                  )
+                })()}
               </div>
             </div>
           )}

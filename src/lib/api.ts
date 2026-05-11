@@ -127,6 +127,10 @@ export const tasksApi = {
     const response = await api.post<Task>("/api/v1/tasks/", taskData)
     return response.data
   },
+  get: async (id: number) => {
+    const response = await api.get<Task>(`/api/v1/tasks/${id}`)
+    return response.data
+  },
   update: async (id: number, updates: Partial<Task>) => {
     const response = await api.put<Task>(`/api/v1/tasks/${id}`, updates)
     return response.data

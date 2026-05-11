@@ -12,6 +12,16 @@ export function useTasks(filter?: string, project_id?: number, tag_id?: number) 
   })
 }
 
+export function useTask(id: number | null) {
+  const { user } = useAuth()
+  
+  return useQuery({
+    queryKey: ["task", id],
+    queryFn: () => id ? tasksApi.get(id) : null,
+    enabled: !!user && !!id,
+  })
+}
+
 export function useCreateTask() {
   const queryClient = useQueryClient()
   
@@ -55,10 +65,10 @@ export function useUpdateTask() {
         queryClient.setQueryData(["tasks"], context.previousTasks)
       }
     },
-    // Always refetch after error or success:
-    onSettled: () => {
+    onSettled: (_data, _error, variables) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
       queryClient.invalidateQueries({ queryKey: ["stats"] })
+      queryClient.invalidateQueries({ queryKey: ["task", variables.id] })
     },
   })
 }
@@ -100,6 +110,7 @@ export function useUpdateSubtask() {
       subtasksApi.update(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      queryClient.invalidateQueries({ queryKey: ["task"] })
     },
   })
 }
@@ -111,6 +122,7 @@ export function useDeleteSubtask() {
     mutationFn: subtasksApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      queryClient.invalidateQueries({ queryKey: ["task"] })
     },
   })
 }
@@ -121,8 +133,9 @@ export function useCreateSubtask() {
   return useMutation({
     mutationFn: ({ taskId, title }: { taskId: number; title: string }) =>
       subtasksApi.create(taskId, { title }),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] })
     },
   })
 }
@@ -144,8 +157,9 @@ export function useAttachTag() {
   return useMutation({
     mutationFn: ({ taskId, tagId }: { taskId: number; tagId: number }) =>
       tagsApi.attach(taskId, tagId),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] })
     },
   })
 }
@@ -156,8 +170,9 @@ export function useDetachTag() {
   return useMutation({
     mutationFn: ({ taskId, tagId }: { taskId: number; tagId: number }) =>
       tagsApi.detach(taskId, tagId),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] })
     },
   })
 }

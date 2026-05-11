@@ -30,6 +30,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
+import { TimePicker } from "@/components/ui/time-picker"
 
 export interface NewTaskModalProps {
   readonly open: boolean
@@ -241,17 +242,14 @@ export function NewTaskModal({
                     <Clock className="h-3 w-3" />
                     Deadline Time
                   </Label>
-                  <Input
-                    id="time"
-                    type="time"
-                    value={dueDate ? format(dueDate, "HH:mm") : ""}
-                    onChange={(e) => {
-                      const [hours, minutes] = e.target.value.split(":").map(Number);
+                  <TimePicker
+                    value={dueDate ? format(dueDate, "HH:mm") : "09:00"}
+                    onChange={(timeStr) => {
+                      const [hours, minutes] = timeStr.split(":").map(Number);
                       const newDate = dueDate ? new Date(dueDate) : new Date();
                       newDate.setHours(hours, minutes);
                       setDueDate(newDate);
                     }}
-                    className="h-12 rounded-2xl border-border bg-muted/50 dark:bg-zinc-800/50 px-4 font-semibold focus-visible:ring-primary/20"
                   />
                 </div>
               </div>

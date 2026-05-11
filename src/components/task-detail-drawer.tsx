@@ -14,7 +14,7 @@ import {
   Calendar, Flag, Layers, CheckCircle2, Circle, Plus, Trash2, Sparkles, Tag as TagIcon, X, Check
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useUpdateTask, useDeleteTask, useCreateTask, useCreateSubtask, useUpdateSubtask, useDeleteSubtask, useCreateTag, useAttachTag, useDetachTag } from "@/hooks/useTasks"
+import { useTask, useUpdateTask, useDeleteTask, useCreateTask, useCreateSubtask, useUpdateSubtask, useDeleteSubtask, useCreateTag, useAttachTag, useDetachTag } from "@/hooks/useTasks"
 import { useTags } from "@/hooks/useTags"
 import { useProjects } from "@/hooks/useProjects"
 import { type Task, type TaskPriority, type Tag, api } from "@/lib/api"
@@ -25,6 +25,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { format } from "date-fns"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
+import { TimePicker } from "@/components/ui/time-picker"
 import { Calendar as CalendarPicker } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { motion, AnimatePresence } from "framer-motion"
@@ -44,8 +45,15 @@ const PRIORITY_STYLES = {
   LOW: "text-blue-500 bg-blue-500/10 border-blue-500/20",
 }
 
-export function TaskDetailDrawer({ task, mode, isOpen, onOpenChange }: TaskDetailDrawerProps) {
+export function TaskDetailDrawer({ task: initialTask, mode, isOpen, onOpenChange }: TaskDetailDrawerProps) {
   const { toast } = useToast()
+  
+  // Use a query to fetch the latest task data for reactivity
+  const { data: fetchedTask } = useTask(initialTask?.id ?? null)
+  
+  // Use fetchedTask if available, otherwise fallback to initialTask (important for 'create' mode or initial render)
+  const task = fetchedTask || initialTask
+
   const updateTask = useUpdateTask()
   const deleteTask = useDeleteTask()
   const createTask = useCreateTask()
@@ -114,6 +122,12 @@ export function TaskDetailDrawer({ task, mode, isOpen, onOpenChange }: TaskDetai
     setProjectSearch("")
     setIsProjectPickerOpen(false)
   }, [task, isCreate, isOpen])
+
+  // Subtask pagination logic
+  const [subtasksLimit, setSubtasksLimit] = useState(5)
+  const allSubtasks = isCreate ? pendingSubtasks : (task?.subtasks || [])
+  const visibleSubtasks = allSubtasks.slice(0, subtasksLimit)
+  const hasMoreSubtasks = allSubtasks.length > subtasksLimit
 
   // Focus subtask input when shown
   useEffect(() => {
@@ -399,41 +413,68 @@ export function TaskDetailDrawer({ task, mode, isOpen, onOpenChange }: TaskDetai
 
                 <div className="space-y-2">
                   <AnimatePresence>
-                    {(isCreate ? pendingSubtasks : task?.subtasks)?.map((sub, idx) => (
-                      <motion.div
-                        key={isCreate ? `pending-${idx}` : (sub as any).id}
-                        initial={{ opacity: 0, y: -8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        className="flex items-center gap-3 p-3 rounded-xl bg-white/5 group/sub"
-                      >
-                        <div 
-                          className="shrink-0 cursor-pointer hover:text-primary transition-colors"
-                          onClick={() => !isCreate && handleToggleSubtask((sub as any).id, !(sub as any).completed)}
+                    {visibleSubtasks.map((sub, idx) => {
+                      const isPending = typeof sub === "string"
+                      const subId = isPending ? `pending-${idx}` : sub.id
+                      const subTitle = isPending ? sub : sub.title
+                      const isCompleted = !isPending && sub.completed
+
+                      return (
+                        <motion.div
+                          key={subId}
+                          initial={{ opacity: 0, y: -8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, x: -20 }}
+                          className="flex items-center gap-3 p-3 rounded-xl bg-white/5 group/sub"
                         >
-                          {!isCreate && (sub as any).completed
-                            ? <CheckCircle2 className="h-4 w-4 text-primary" />
-                            : <Circle className="h-4 w-4 text-foreground/30" />
-                          }
-                        </div>
-                        <span className={cn(
-                          "text-sm flex-1 transition-all",
-                          !isCreate && (sub as any).completed && "line-through text-foreground/30"
-                        )}>
-                          {isCreate ? (sub as string) : (sub as any).title}
-                        </span>
-                        <button
-                          onClick={() => isCreate 
-                            ? setPendingSubtasks(prev => prev.filter((_, i) => i !== idx))
-                            : handleDeleteSubtask((sub as any).id)
-                          }
-                          className="opacity-0 group-hover/sub:opacity-100 transition-opacity text-foreground/20 hover:text-red-500"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </motion.div>
-                    ))}
+                          <div 
+                            className="shrink-0 cursor-pointer hover:text-primary transition-colors"
+                            onClick={() => !isPending && handleToggleSubtask(sub.id, !isCompleted)}
+                          >
+                            {!isPending && isCompleted
+                              ? <CheckCircle2 className="h-4 w-4 text-primary" />
+                              : <Circle className="h-4 w-4 text-foreground/30" />
+                            }
+                          </div>
+                          <span className={cn(
+                            "text-sm flex-1 transition-all",
+                            isCompleted && "line-through text-foreground/30"
+                          )}>
+                            {subTitle}
+                          </span>
+                          <button
+                            onClick={() => isPending 
+                              ? setPendingSubtasks(prev => prev.filter((_, i) => i !== idx))
+                              : handleDeleteSubtask((sub as any).id)
+                            }
+                            className="opacity-0 group-hover/sub:opacity-100 transition-opacity text-foreground/20 hover:text-red-500"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </motion.div>
+                      )
+                    })}
                   </AnimatePresence>
+
+                  {hasMoreSubtasks && (
+                    <Button
+                      variant="ghost"
+                      className="w-full h-10 rounded-xl text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all"
+                      onClick={() => setSubtasksLimit(prev => prev + 5)}
+                    >
+                      Load More Subtasks ({allSubtasks.length - subtasksLimit} remaining)
+                    </Button>
+                  )}
+                  
+                  {subtasksLimit > 5 && (
+                    <Button
+                      variant="ghost"
+                      className="w-full h-10 rounded-xl text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all"
+                      onClick={() => setSubtasksLimit(5)}
+                    >
+                      Show Less
+                    </Button>
+                  )}
 
                     {/* Add subtask inline input */}
                     <AnimatePresence>
@@ -469,13 +510,24 @@ export function TaskDetailDrawer({ task, mode, isOpen, onOpenChange }: TaskDetai
                     </AnimatePresence>
 
                     {!isAddingSubtask && (
-                      <button
-                        onClick={() => setIsAddingSubtask(true)}
-                        className="flex items-center gap-2 text-xs text-primary font-bold px-3 py-2 hover:bg-primary/10 rounded-xl transition-all"
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                        Add sub-task
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setIsAddingSubtask(true)}
+                          className="flex items-center gap-2 text-xs text-primary font-bold px-3 py-2 hover:bg-primary/10 rounded-xl transition-all"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                          Add sub-task
+                        </button>
+                        
+                        {hasMoreSubtasks && (
+                          <button
+                            onClick={() => setSubtasksLimit(prev => prev + 10)}
+                            className="text-[10px] uppercase tracking-widest font-black text-foreground/20 hover:text-primary transition-colors ml-auto"
+                          >
+                            View {allSubtasks.length - visibleSubtasks.length} More
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -536,7 +588,7 @@ export function TaskDetailDrawer({ task, mode, isOpen, onOpenChange }: TaskDetai
                   <PopoverTrigger asChild>
                     <button className="flex items-center gap-3 w-full p-3 rounded-xl bg-white/5 text-sm font-bold text-foreground/60 border border-white/5 hover:bg-white/10 transition-colors text-left">
                       <Layers className="h-4 w-4 text-primary shrink-0" />
-                      {projectId === "none" ? "No Project" : projects.find(p => p.id.toString() === projectId)?.name || "No Project"}
+                      {projectId === "none" ? "Inbox" : projects.find(p => p.id.toString() === projectId)?.name || "Inbox"}
                     </button>
                   </PopoverTrigger>
                   <PopoverContent className="w-56 p-2 rounded-xl border-white/10 bg-background/95 backdrop-blur-xl" align="start">
@@ -559,7 +611,7 @@ export function TaskDetailDrawer({ task, mode, isOpen, onOpenChange }: TaskDetai
                         className="w-full text-left px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-white/5 transition-colors flex items-center gap-2"
                       >
                         <Layers className="h-3 w-3 text-foreground/20" />
-                        No Project
+                        Inbox
                       </button>
                       {projects
                         .filter(p => p.name.toLowerCase().includes(projectSearch.toLowerCase()))
@@ -633,24 +685,15 @@ export function TaskDetailDrawer({ task, mode, isOpen, onOpenChange }: TaskDetai
                         })()}
                       </div>
                       <div className="relative group/time">
-                        <Input
-                          type="time"
-                          className={cn(
-                            "w-36 bg-white/5 border-white/10 h-10 text-sm font-black rounded-xl focus-visible:ring-primary/30 transition-all hover:bg-white/10 px-4",
-                            (() => {
-                              const date = isCreate ? dueDate : (task?.due_date ? new Date(task.due_date) : undefined)
-                              const now = new Date()
-                              if (date && date < now && date.toDateString() === now.toDateString()) return "text-red-500 border-red-500/50"
-                              return ""
-                            })()
-                          )}
+                        <TimePicker
+                          className="w-48"
                           value={(() => {
                             const date = isCreate ? dueDate : (task?.due_date ? new Date(task.due_date) : undefined)
                             if (!date) return "09:00"
                             return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
                           })()}
-                          onChange={(e) => {
-                            const [hours, minutes] = e.target.value.split(':').map(Number)
+                          onChange={(timeStr) => {
+                            const [hours, minutes] = timeStr.split(':').map(Number)
                             const current = isCreate ? (dueDate || new Date()) : (task?.due_date ? new Date(task.due_date) : new Date())
                             const newDate = new Date(current)
                             newDate.setHours(hours)
@@ -673,7 +716,7 @@ export function TaskDetailDrawer({ task, mode, isOpen, onOpenChange }: TaskDetai
 
               {/* Tags */}
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Labels</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Tags</label>
                 <div className="flex flex-wrap gap-2">
                   {currentTags?.map((tag) => {
                     const TagIconComp = (Icons as any)[tag.icon || "Tag"] || TagIcon

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react"
+import React, { useState, useEffect, useMemo, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import axios from "axios"
 import { Card } from "@/components/ui/card"
@@ -55,68 +55,112 @@ function groupByDate(logs: AuditEntry[]): { label: string; entries: AuditEntry[]
   return Array.from(map.entries()).map(([label, entries]) => ({ label, entries }))
 }
 
-function describeAction(action: string, details: string, targetType: string, targetId?: number | null): string {
+function describeAction(action: string, details: string, targetType: string, targetId?: number | null): React.ReactNode {
   const act = action?.toLowerCase() || ""
   const target = targetType?.toUpperCase() || ""
 
+  const bold = (text: string) => <span className="font-bold text-foreground">"{text}"</span>
+
   if (act.includes("create") && target === "TASK") {
     const name = details?.replace(/^Created task:\s*/i, "").trim()
-    return name ? `Created task "${name}"` : "Created a new task"
+    return name ? <span>Created task {bold(name)}</span> : "Created a new task"
   }
+  
   if (act.includes("update") && target === "TASK") {
     const isCompleted = details?.toLowerCase().includes("completed: true") || details?.toLowerCase().includes("status: completed")
     const isUncompleted = details?.toLowerCase().includes("completed: false")
     const isTagAttached = details?.toLowerCase().includes("attached tag")
     const isTagDetached = details?.toLowerCase().includes("detached tag")
     
-    // Try to extract task name
-    const nameMatch = details?.match(/task:\s*["']?([^"',(]+)/i) ||
+    const nameMatch = details?.match(/task\s*['"]?([^'":,]+)['"]?/i) ||
                       details?.match(/^Updated task:\s*(.+?)(?:\s*\(|$)/i) ||
                       details?.match(/^Refined task:\s*["']?([^"']+)/i)
     const name = nameMatch?.[1]?.trim()
 
-    if (isCompleted) return name ? `Marked "${name}" as done` : "Marked a task as done"
-    if (isUncompleted) return name ? `Reopened "${name}"` : "Reopened a task"
+    if (isCompleted) return <span>Marked {name ? bold(name) : "a task"} as done</span>
+    if (isUncompleted) return <span>Reopened {name ? bold(name) : "a task"}</span>
+    
     if (isTagAttached) {
       const tagMatch = details?.match(/tag\s*['"]?([^'":]+)['"]?/i)
       const tagName = tagMatch?.[1]?.trim()
-      return tagName ? `Added tag "${tagName}" to ${name || 'task'}` : `Added tag to ${name || 'task'}`
+      return <span>Added tag {tagName ? bold(tagName) : "a tag"} to {name ? bold(name) : "task"}</span>
     }
-    if (isTagDetached) return `Removed a tag from ${name || 'task'}`
+    if (isTagDetached) return <span>Removed a tag from {name ? bold(name) : "task"}</span>
     
-    return name ? `Updated task "${name}"` : "Updated a task"
+    const fieldsMatch = details?.match(/\(fields:\s*([^)]+)\)/i)
+    if (fieldsMatch) {
+      const fieldsRaw = fieldsMatch[1]
+      // Split by comma but ignore commas inside quotes if possible (simplifying for now)
+      const fieldChanges = fieldsRaw.split(",").map(f => f.trim())
+      
+      return (
+        <span>
+          Updated task {name ? bold(name) : ""}
+          <span className="text-muted-foreground ml-1">
+            ({fieldChanges.map((change, i) => (
+              <span key={i}>
+                {i > 0 && ", "}
+                {change}
+              </span>
+            ))})
+          </span>
+        </span>
+      )
+    }
+    
+    return <span>Updated task {name ? bold(name) : ""}</span>
   }
+
   if (act.includes("delete") && target === "TASK") {
     const nameMatch = details?.match(/task:\s*["']?([^"',(]+)/i) ||
                       details?.match(/^Deleted task:\s*(.+?)(?:\s*\(|$)/i)
     const name = nameMatch?.[1]?.trim()
-    return name ? `Deleted task "${name}"` : "Deleted a task"
+    return <span>Deleted task {name ? bold(name) : "a task"}</span>
   }
 
   if (target === "SUBTASK") {
     const subtaskMatch = details?.match(/subtask\s*['"]?([^'":]+)['"]?/i)
     const subName = subtaskMatch?.[1]?.trim()
+    
+    const parentMatch = details?.match(/(?:to|on|from)\s*task\s*['"]?([^'":,]+)['"]?/i)
+    const parentName = parentMatch?.[1]?.trim()
 
-    if (act.includes("create")) return subName ? `Added subtask "${subName}"` : "Added a subtask"
+    const fieldsMatch = details?.match(/\(([^)]+)\)$/i) || details?.match(/\(fields:\s*([^)]+)\)/i)
+    const fieldChangesRaw = fieldsMatch?.[1]
+
+    if (act.includes("create")) {
+      return <span>Added subtask {subName ? bold(subName) : "a subtask"} to {parentName ? bold(parentName) : "task"}</span>
+    }
 
     if (act.includes("update")) {
-      const isCompleted = details?.toLowerCase().includes("completed: true")
-      if (isCompleted) return subName ? `Finished subtask "${subName}"` : "Finished a subtask"
-      return subName ? `Updated subtask "${subName}"` : "Updated a subtask"
+      const isCompleted = details?.toLowerCase().includes("marked completed")
+      if (isCompleted) return <span>Finished subtask {subName ? bold(subName) : "a subtask"}</span>
+      
+      return (
+        <span>
+          Updated {subName ? bold(subName) : "subtask"} on {parentName ? bold(parentName) : "task"}
+          {fieldChangesRaw && (
+            <span className="text-muted-foreground ml-1">
+              ({fieldChangesRaw})
+            </span>
+          )}
+        </span>
+      )
     }
-    if (act.includes("delete")) return subName ? `Removed subtask "${subName}"` : "Removed a subtask"
+    if (act.includes("delete")) {
+      return <span>Removed subtask {subName ? bold(subName) : "a subtask"} from {parentName ? bold(parentName) : "task"}</span>
+    }
   }
 
   if (target === "PROJECT" || target === "GROUP") {
     const projMatch = details?.match(/project\s*['"]?([^'":]+)['"]?/i)
     const projName = projMatch?.[1]?.trim()
     
-    if (act.includes("create")) return projName ? `Created project "${projName}"` : "Created a project"
-    if (act.includes("update")) return projName ? `Updated project "${projName}"` : "Updated a project"
-    if (act.includes("delete")) return projName ? `Deleted project "${projName}"` : "Deleted a project"
+    if (act.includes("create")) return <span>Created project {projName ? bold(projName) : "a project"}</span>
+    if (act.includes("update")) return <span>Updated project {projName ? bold(projName) : "a project"}</span>
+    if (act.includes("delete")) return <span>Deleted project {projName ? bold(projName) : "a project"}</span>
   }
 
-  // Fallback: humanize the raw action + original details
   const humanAction = action?.replaceAll("_", " ") || "Activity"
   return details || (targetId ? `${humanAction} on ${targetType} #${targetId}` : humanAction)
 }

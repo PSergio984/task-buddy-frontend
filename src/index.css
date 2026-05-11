@@ -29,6 +29,19 @@
   --color-toast-success-bg: var(--toast-success-bg);
   --color-toast-success-border: var(--toast-success-border);
   --color-toast-success-text: var(--toast-success-text);
+  --color-toast-warning-bg: var(--toast-warning-bg);
+  --color-toast-warning-border: var(--toast-warning-border);
+  --color-toast-warning-text: var(--toast-warning-text);
+  --color-toast-info-bg: var(--toast-info-bg);
+  --color-toast-info-border: var(--toast-info-border);
+  --color-toast-info-text: var(--toast-info-text);
+  --color-toast-success-text: var(--toast-success-text);
+  --color-toast-warning-bg: var(--toast-warning-bg);
+  --color-toast-warning-border: var(--toast-warning-border);
+  --color-toast-warning-text: var(--toast-warning-text);
+  --color-toast-info-bg: var(--toast-info-bg);
+  --color-toast-info-border: var(--toast-info-border);
+  --color-toast-info-text: var(--toast-info-text);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -99,6 +112,12 @@
   --toast-success-bg: #f0fdf4;
   --toast-success-border: #bbf7d0;
   --toast-success-text: #166534;
+  --toast-warning-bg: #fffbeb;
+  --toast-warning-border: #fef3c7;
+  --toast-warning-text: #92400e;
+  --toast-info-bg: #eff6ff;
+  --toast-info-border: #dbeafe;
+  --toast-info-text: #1e40af;
 }
 
 
@@ -144,6 +163,12 @@
   --toast-success-bg: #064e3b;
   --toast-success-border: #065f46;
   --toast-success-text: #f0fdf4;
+  --toast-warning-bg: #451a03;
+  --toast-warning-border: #78350f;
+  --toast-warning-text: #fef3c7;
+  --toast-info-bg: #1e3a8a;
+  --toast-info-border: #1e40af;
+  --toast-info-text: #eff6ff;
 }
 
 @layer base {
