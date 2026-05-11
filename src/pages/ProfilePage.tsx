@@ -1,11 +1,16 @@
 import React, { useState } from "react"
 import { motion } from "framer-motion"
 import { useAuth } from "@/contexts/AuthContext"
+import { useSettings, type TimeFormat } from "@/contexts/SettingsContext"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { User, KeyRound, Save, ArrowLeft, CheckCircle2, Circle, ShieldCheck, BadgeCheck, Eye, EyeOff } from "lucide-react"
+import { 
+  User, KeyRound, Save, ArrowLeft, CheckCircle2, 
+  Circle, ShieldCheck, BadgeCheck, Eye, EyeOff, 
+  Settings2, Clock
+} from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { sanitizeUsername, sanitizePassword, validatePassword } from "@/lib/auth"
 import { useToast } from "@/hooks/use-toast"
@@ -59,10 +64,58 @@ export function ProfilePage() {
 
         <div className="grid gap-8">
           <UsernameCard />
+          <PreferencesCard />
           <SecurityCard />
         </div>
       </motion.div>
     </div>
+  )
+}
+
+function PreferencesCard() {
+  const { timeFormat, setTimeFormat } = useSettings()
+
+  return (
+    <Card className="overflow-hidden border bg-background/50 p-8 shadow-2xl shadow-primary/5 backdrop-blur-xl rounded-[2rem]">
+      <div className="mb-8 flex items-center gap-4">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-500">
+          <Settings2 className="h-6 w-6" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold">Preferences</h2>
+          <p className="text-sm text-muted-foreground">Customize your workspace experience.</p>
+        </div>
+      </div>
+
+      <div className="space-y-6">
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 ml-1">
+            <Clock className="h-4 w-4 text-muted-foreground" />
+            <Label className="text-sm font-semibold">Time Display Format</Label>
+          </div>
+          
+          <div className="flex p-1.5 bg-muted/30 rounded-2xl w-fit">
+            {(["12h", "24h"] as const).map((format) => (
+              <button
+                key={format}
+                onClick={() => setTimeFormat(format)}
+                className={cn(
+                  "px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300",
+                  timeFormat === format 
+                    ? "bg-background text-foreground shadow-lg scale-100" 
+                    : "text-muted-foreground hover:text-foreground hover:bg-white/5 scale-95"
+                )}
+              >
+                {format === "12h" ? "12-Hour (AM/PM)" : "24-Hour"}
+              </button>
+            ))}
+          </div>
+          <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider ml-1">
+            Affects timestamps in activity logs and task due dates.
+          </p>
+        </div>
+      </div>
+    </Card>
   )
 }
 

@@ -12,6 +12,7 @@ import { TasksPage } from "@/pages/TasksPage"
 import { MainLayout } from "@/components/layout/main-layout"
 import { ProtectedRoute, PublicRoute } from "@/contexts/ProtectedRoute"
 import { FilterProvider } from "@/contexts/FilterContext"
+import { SettingsProvider } from "@/contexts/SettingsContext"
 import { useAuth } from "@/contexts/AuthContext"
 import { Toaster } from "@/components/ui/toaster"
 import { TooltipProvider } from "@/components/ui/tooltip"
@@ -23,62 +24,64 @@ export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider delayDuration={0}>
-        <FilterProvider>
-          <Router>
-            <Routes>
-              {/* Landing Page */}
-              <Route
-                path="/"
-                element={
-                  user ? <Navigate to="/dashboard" replace /> : <LandingPage />
-                }
-              />
+        <SettingsProvider>
+          <FilterProvider>
+            <Router>
+              <Routes>
+                {/* Landing Page */}
+                <Route
+                  path="/"
+                  element={
+                    user ? <Navigate to="/dashboard" replace /> : <LandingPage />
+                  }
+                />
 
-              {/* Public Auth Routes */}
-              <Route
-                path="/login"
-                element={
-                  <PublicRoute>
-                    <LoginPage />
-                  </PublicRoute>
-                }
-              />
-              <Route
-                path="/register"
-                element={
-                  <PublicRoute>
-                    <RegisterPage />
-                  </PublicRoute>
-                }
-              />
-              <Route
-                path="/forgot-password"
-                element={
-                  <PublicRoute>
-                    <ForgotPasswordPage />
-                  </PublicRoute>
-                }
-              />
-              {/* Protected Routes with Persistent Layout */}
-              <Route
-                element={
-                  <ProtectedRoute>
-                    <MainLayout />
-                  </ProtectedRoute>
-                }
-              >
-                <Route path="/dashboard" element={<DashboardDemo />} />
-                <Route path="/tasks" element={<TasksPage />} />
-                <Route path="/profile" element={<ProfilePage />} />
-                <Route path="/audit-logs" element={<AuditLogsPage />} />
-              </Route>
+                {/* Public Auth Routes */}
+                <Route
+                  path="/login"
+                  element={
+                    <PublicRoute>
+                      <LoginPage />
+                    </PublicRoute>
+                  }
+                />
+                <Route
+                  path="/register"
+                  element={
+                    <PublicRoute>
+                      <RegisterPage />
+                    </PublicRoute>
+                  }
+                />
+                <Route
+                  path="/forgot-password"
+                  element={
+                    <PublicRoute>
+                      <ForgotPasswordPage />
+                    </PublicRoute>
+                  }
+                />
+                {/* Protected Routes with Persistent Layout */}
+                <Route
+                  element={
+                    <ProtectedRoute>
+                      <MainLayout />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route path="/dashboard" element={<DashboardDemo />} />
+                  <Route path="/tasks" element={<TasksPage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/audit-logs" element={<AuditLogsPage />} />
+                </Route>
 
-              {/* Fallback */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-            <Toaster />
-          </Router>
-        </FilterProvider>
+                {/* Fallback */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+              <Toaster />
+            </Router>
+          </FilterProvider>
+        </SettingsProvider>
       </TooltipProvider>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
