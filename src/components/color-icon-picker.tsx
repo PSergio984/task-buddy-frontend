@@ -45,8 +45,8 @@ export function ColorIconPicker({ color = "#6366f1", icon = "Tag", onSelect, tri
         )}
       </PopoverTrigger>
       <PopoverContent className="w-64 p-4 rounded-2xl border-white/10 bg-background/95 backdrop-blur-xl space-y-4" align="start">
-        <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Color</label>
+        <fieldset className="space-y-2">
+          <legend className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Color</legend>
           <div className="grid grid-cols-8 gap-2">
             {PRESET_COLORS.map((c) => (
               <button
@@ -62,10 +62,10 @@ export function ColorIconPicker({ color = "#6366f1", icon = "Tag", onSelect, tri
               </button>
             ))}
           </div>
-        </div>
+        </fieldset>
 
-        <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Icon</label>
+        <fieldset className="space-y-2">
+          <legend className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Icon</legend>
           <div className="grid grid-cols-6 gap-2">
             {PRESET_ICONS.map((i) => {
               const Icon = (Icons as unknown as Record<string, Icons.LucideIcon>)[i]
@@ -83,7 +83,7 @@ export function ColorIconPicker({ color = "#6366f1", icon = "Tag", onSelect, tri
               )
             })}
           </div>
-        </div>
+        </fieldset>
       </PopoverContent>
     </Popover>
   )

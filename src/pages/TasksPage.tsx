@@ -453,49 +453,59 @@ export function TasksPage() {
 
         {["all", "pending", "completed"].map((status) => (
           <TabsContent key={status} value={status} className="mt-0 outline-none">
-            {loadingTasks ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {["t1", "t2", "t3", "t4"].map((id) => (
-                  <Skeleton key={id} className="h-[200px] rounded-[2.5rem]" />
-                ))}
-              </div>
-            ) : sortedTasks.length === 0 ? (
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex h-96 flex-col items-center justify-center rounded-[3rem] border-2 border-dashed border-border bg-background/20 text-center"
-              >
-                <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[2rem] bg-muted/50">
-                  <ListChecks className="h-10 w-10 text-muted-foreground/20" />
+            {(() => {
+              if (loadingTasks) {
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {["t1", "t2", "t3", "t4"].map((id) => (
+                      <Skeleton key={id} className="h-[200px] rounded-[2.5rem]" />
+                    ))}
+                  </div>
+                )
+              }
+              
+              if (sortedTasks.length === 0) {
+                return (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex h-96 flex-col items-center justify-center rounded-[3rem] border-2 border-dashed border-border bg-background/20 text-center"
+                  >
+                    <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[2rem] bg-muted/50">
+                      <ListChecks className="h-10 w-10 text-muted-foreground/20" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-foreground mb-2">No tasks found</h3>
+                    <p className="text-muted-foreground font-medium">Clear as a summer sky. Ready for new ideas?</p>
+                  </motion.div>
+                )
+              }
+
+              return (
+                <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 gap-6" : "flex flex-col gap-4"}>
+                  <AnimatePresence mode="popLayout">
+                    {sortedTasks.map((task, index) => (
+                      <motion.div
+                        key={task.id}
+                        layout
+                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9, y: -20 }}
+                        transition={{ delay: index * 0.05, type: "spring", stiffness: 260, damping: 20 }}
+                      >
+                        <TaskCard
+                          task={task}
+                          onToggleComplete={handleToggleComplete}
+                          onEdit={handleEditTask}
+                          onToggleSubtask={handleToggleSubtask}
+                          onDeleteSubtask={handleDeleteSubtask}
+                          onDetachTag={handleDetachTag}
+                        />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
                 </div>
-                <h3 className="text-2xl font-bold text-foreground mb-2">No tasks found</h3>
-                <p className="text-muted-foreground font-medium">Clear as a summer sky. Ready for new ideas?</p>
-              </motion.div>
-            ) : (
-              <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 gap-6" : "flex flex-col gap-4"}>
-                <AnimatePresence mode="popLayout">
-                  {sortedTasks.map((task, index) => (
-                    <motion.div
-                      key={task.id}
-                      layout
-                      initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.9, y: -20 }}
-                      transition={{ delay: index * 0.05, type: "spring", stiffness: 260, damping: 20 }}
-                    >
-                      <TaskCard
-                        task={task}
-                        onToggleComplete={handleToggleComplete}
-                        onEdit={handleEditTask}
-                        onToggleSubtask={handleToggleSubtask}
-                        onDeleteSubtask={handleDeleteSubtask}
-                        onDetachTag={handleDetachTag}
-                      />
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </div>
-            )}
+              )
+            })()}
           </TabsContent>
         ))}
       </Tabs>

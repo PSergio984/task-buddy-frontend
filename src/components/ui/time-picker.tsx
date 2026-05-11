@@ -9,12 +9,13 @@ import {
 import { cn } from "@/lib/utils"
 
 export interface TimePickerProps {
+  readonly id?: string
   readonly value?: string // "HH:mm"
   readonly onChange: (value: string) => void
   readonly className?: string
 }
 
-export function TimePicker({ value, onChange, className }: TimePickerProps) {
+export function TimePicker({ id, value, onChange, className }: TimePickerProps) {
   const [hours, minutes] = (value || "09:00").split(":")
   
   const hourOptions = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, "0"))
@@ -37,7 +38,7 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
       
       <div className="flex items-center gap-1.5 flex-1">
         <Select value={hours} onValueChange={handleHourChange}>
-          <SelectTrigger className="h-10 w-20 rounded-xl border-none bg-background/50 backdrop-blur-md px-3 font-bold tracking-tight text-sm transition-all hover:bg-background/80 focus:ring-1 focus:ring-primary/20">
+          <SelectTrigger id={id} className="h-10 w-20 rounded-xl border-none bg-background/50 backdrop-blur-md px-3 font-bold tracking-tight text-sm transition-all hover:bg-background/80 focus:ring-1 focus:ring-primary/20">
             <SelectValue placeholder="HH" />
           </SelectTrigger>
           <SelectContent className="rounded-2xl border-white/10 bg-background/95 backdrop-blur-xl shadow-2xl max-h-[300px]">

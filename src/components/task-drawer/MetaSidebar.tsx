@@ -12,40 +12,40 @@ import { ColorIconPicker } from "../color-icon-picker"
 import { cn } from "@/lib/utils"
 
 interface MetaSidebarProps {
-  isCreate: boolean
-  projectId: string
-  setProjectId: (v: string) => void
-  projects: Project[]
-  priority: string
-  setPriority: (v: TaskPriority) => void
-  dueDate: Date | undefined
-  handleDateSelect: (d: Date | undefined) => void
-  currentTags: Tag[]
-  handleDetachTag: (id: number) => void
-  isTagPickerOpen: boolean
-  setIsTagPickerOpen: (v: boolean) => void
-  tagSearch: string
-  setTagSearch: (v: string) => void
-  filteredTags: Tag[]
-  handleAttachTag: (id: number) => void
-  canCreateTag: boolean
-  handleCreateAndAttachTag: () => void
-  newTagColor: string
-  setNewTagColor: (v: string) => void
-  newTagIcon: string
-  setNewTagIcon: (v: string) => void
-  isProjectPickerOpen: boolean
-  setIsProjectPickerOpen: (v: boolean) => void
-  projectSearch: string
-  setProjectSearch: (v: string) => void
-  handleCreateProject: () => void
-  newProjectColor: string
-  setNewProjectColor: (v: string) => void
-  newProjectIcon: string
-  setNewProjectIcon: (v: string) => void
-  task: Task | null
-  handleUpdate: (updates: Partial<Task>) => void
-  toast: { (props: { title?: string; description?: string; variant?: "default" | "destructive" | "success" }): void }
+  readonly isCreate: boolean
+  readonly projectId: string
+  readonly setProjectId: (v: string) => void
+  readonly projects: readonly Project[]
+  readonly priority: string
+  readonly setPriority: (v: TaskPriority) => void
+  readonly dueDate: Date | undefined
+  readonly handleDateSelect: (d: Date | undefined) => void
+  readonly currentTags: readonly Tag[]
+  readonly handleDetachTag: (id: number) => void
+  readonly isTagPickerOpen: boolean
+  readonly setIsTagPickerOpen: (v: boolean) => void
+  readonly tagSearch: string
+  readonly setTagSearch: (v: string) => void
+  readonly filteredTags: readonly Tag[]
+  readonly handleAttachTag: (id: number) => void
+  readonly canCreateTag: boolean
+  readonly handleCreateAndAttachTag: () => void
+  readonly newTagColor: string
+  readonly setNewTagColor: (v: string) => void
+  readonly newTagIcon: string
+  readonly setNewTagIcon: (v: string) => void
+  readonly isProjectPickerOpen: boolean
+  readonly setIsProjectPickerOpen: (v: boolean) => void
+  readonly projectSearch: string
+  readonly setProjectSearch: (v: string) => void
+  readonly handleCreateProject: () => void
+  readonly newProjectColor: string
+  readonly setNewProjectColor: (v: string) => void
+  readonly newProjectIcon: string
+  readonly setNewProjectIcon: (v: string) => void
+  readonly task: Task | null
+  readonly handleUpdate: (updates: Partial<Task>) => void
+  readonly toast: (props: { title?: string; description?: string; variant?: "default" | "destructive" | "success" }) => void
 }
 
 const PRIORITY_STYLES = {
@@ -66,16 +66,16 @@ export function MetaSidebar(props: MetaSidebarProps) {
   )
 }
 
-function StatusSection({ isCreate, task, handleUpdate }: MetaSidebarProps) {
+function StatusSection({ isCreate, task, handleUpdate }: Readonly<MetaSidebarProps>) {
   if (isCreate || !task) return null
   return (
     <div className="space-y-2">
-      <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Status</label>
+      <label htmlFor="status-select" className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Status</label>
       <Select
         value={task.completed ? "COMPLETED" : "PENDING"}
         onValueChange={(val) => handleUpdate({ completed: val === "COMPLETED" })}
       >
-        <SelectTrigger className="w-full bg-white/5 border-none rounded-xl h-10 font-bold">
+        <SelectTrigger id="status-select" className="w-full bg-white/5 border-none rounded-xl h-10 font-bold">
           <SelectValue />
         </SelectTrigger>
         <SelectContent className="bg-background/95 backdrop-blur-xl border-white/10">
@@ -87,11 +87,11 @@ function StatusSection({ isCreate, task, handleUpdate }: MetaSidebarProps) {
   )
 }
 
-function PrioritySection({ isCreate, priority, setPriority, task, handleUpdate }: MetaSidebarProps) {
+function PrioritySection({ isCreate, priority, setPriority, task, handleUpdate }: Readonly<MetaSidebarProps>) {
   const currentPriority = (isCreate ? priority : task?.priority) as TaskPriority || "MEDIUM"
   return (
     <div className="space-y-2">
-      <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Priority</label>
+      <label htmlFor="priority-select" className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Priority</label>
       <Select
         value={currentPriority}
         onValueChange={(val) => {
@@ -99,7 +99,7 @@ function PrioritySection({ isCreate, priority, setPriority, task, handleUpdate }
           else handleUpdate({ priority: val as TaskPriority })
         }}
       >
-        <SelectTrigger className={cn(
+        <SelectTrigger id="priority-select" className={cn(
           "w-full border-none rounded-xl h-10 font-bold",
           PRIORITY_STYLES[currentPriority]
         )}>
@@ -122,12 +122,12 @@ function ProjectSection({
   isCreate, projectId, setProjectId, projects, isProjectPickerOpen, setIsProjectPickerOpen,
   projectSearch, setProjectSearch, handleCreateProject, newProjectColor, setNewProjectColor,
   newProjectIcon, setNewProjectIcon, handleUpdate
-}: MetaSidebarProps) {
+}: Readonly<MetaSidebarProps>) {
   const selectedProject = projects.find(p => p.id.toString() === projectId)
   
   return (
     <div className="space-y-2">
-      <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Project</label>
+      <label htmlFor="project-search" className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Project</label>
       <Popover open={isProjectPickerOpen} onOpenChange={setIsProjectPickerOpen}>
         <PopoverTrigger asChild>
           <button className="flex items-center gap-3 w-full p-3 rounded-xl bg-white/5 text-sm font-bold text-foreground/60 border border-white/5 hover:bg-white/10 transition-colors text-left">
@@ -137,6 +137,7 @@ function ProjectSection({
         </PopoverTrigger>
         <PopoverContent className="w-56 p-2 rounded-xl border-white/10 bg-background/95 backdrop-blur-xl" align="start">
           <input
+            id="project-search"
             value={projectSearch}
             onChange={(e) => setProjectSearch(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleCreateProject()}
@@ -197,13 +198,13 @@ function ProjectSection({
   )
 }
 
-function DueDateSection({ isCreate, dueDate, handleDateSelect, handleUpdate }: MetaSidebarProps) {
+function DueDateSection({ isCreate, dueDate, handleDateSelect, handleUpdate }: Readonly<MetaSidebarProps>) {
   return (
     <div className="space-y-2">
-      <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Due Date</label>
+      <label htmlFor="due-date-trigger" className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Due Date</label>
       <Popover>
         <PopoverTrigger asChild>
-          <button className="flex items-center gap-3 w-full p-3 rounded-xl bg-white/5 text-sm font-bold text-foreground/60 border border-white/5 hover:bg-white/10 transition-colors text-left">
+          <button id="due-date-trigger" className="flex items-center gap-3 w-full p-3 rounded-xl bg-white/5 text-sm font-bold text-foreground/60 border border-white/5 hover:bg-white/10 transition-colors text-left">
             <Calendar className="h-4 w-4 text-primary shrink-0" />
             {dueDate ? format(dueDate, "EEE, MMM d 'at' HH:mm") : "No deadline"}
           </button>
@@ -218,12 +219,13 @@ function DueDateSection({ isCreate, dueDate, handleDateSelect, handleUpdate }: M
           />
           <div className="flex items-center justify-between border-t border-white/5 pt-4">
             <div className="space-y-0.5">
-              <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Set Time</label>
-              {dueDate && dueDate.toDateString() === new Date().toDateString() && (
+              <label htmlFor="time-picker" className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Set Time</label>
+              {dueDate?.toDateString() === new Date().toDateString() && (
                 <p className="text-[8px] text-amber-500/70 font-bold uppercase">Today: Future times only</p>
               )}
             </div>
             <TimePicker
+              id="time-picker"
               className="w-48"
               value={dueDate ? `${dueDate.getHours().toString().padStart(2, '0')}:${dueDate.getMinutes().toString().padStart(2, '0')}` : "09:00"}
               onChange={(timeStr) => {
@@ -247,10 +249,10 @@ function TagsSection({
   currentTags, handleDetachTag, isTagPickerOpen, setIsTagPickerOpen,
   tagSearch, setTagSearch, filteredTags, handleAttachTag, canCreateTag,
   handleCreateAndAttachTag, newTagColor, setNewTagColor, newTagIcon, setNewTagIcon
-}: MetaSidebarProps) {
+}: Readonly<MetaSidebarProps>) {
   return (
     <div className="space-y-2">
-      <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Tags</label>
+      <label htmlFor="tag-search" className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Tags</label>
       <div className="flex flex-wrap gap-2">
         {currentTags?.map((tag) => (
           <TagBadge key={tag.id} tag={tag} onDetach={() => handleDetachTag(tag.id)} />
@@ -263,6 +265,7 @@ function TagsSection({
           </PopoverTrigger>
           <PopoverContent className="w-56 p-2 rounded-xl border-white/10 bg-background/95 backdrop-blur-xl" align="start">
             <input
+              id="tag-search"
               value={tagSearch}
               onChange={(e) => setTagSearch(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && canCreateTag && handleCreateAndAttachTag()}
@@ -307,7 +310,7 @@ function TagsSection({
   )
 }
 
-function TagBadge({ tag, onDetach }: { tag: Tag; onDetach: () => void }) {
+function TagBadge({ tag, onDetach }: Readonly<{ tag: Tag; onDetach: () => void }>) {
   const TagIconComp = (Icons as unknown as Record<string, React.ElementType>)[tag.icon || "Tag"] || TagIcon
   return (
     <Badge

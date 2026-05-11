@@ -1,4 +1,4 @@
-import { useState } from "react"
+import React, { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Link } from "react-router-dom"
 import { CheckCircle2, ArrowLeft, Mail, Loader2, Send } from "lucide-react"
@@ -13,7 +13,7 @@ export function ForgotPasswordPage() {
   const [isSubmitted, setIsSubmitted] = useState(false)
   const { toast } = useToast()
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
@@ -29,9 +29,13 @@ export function ForgotPasswordPage() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: axios.isAxiosError(error)
-          ? (error.response?.data as { detail?: string })?.detail || error.message
-          : error instanceof Error ? error.message : "Something went wrong. Please try again.",
+        description: (() => {
+          if (axios.isAxiosError(error)) {
+            return (error.response?.data as { detail?: string })?.detail || error.message
+          }
+          if (error instanceof Error) return error.message
+          return "Something went wrong. Please try again."
+        })(),
       })
     } finally {
       setIsLoading(false)

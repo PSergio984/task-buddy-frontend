@@ -29,7 +29,7 @@ interface AuthContextType {
     email: string
     password: string
   }) => Promise<void>
-  logout: () => void
+  logout: () => Promise<void>
   refreshUser: () => Promise<void>
 }
 

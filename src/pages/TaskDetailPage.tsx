@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { tasksApi, api, type Task, type TaskPriority } from "@/lib/api"
+import { tasksApi, api, type Task, type TaskPriority, type Subtask, type Tag } from "@/lib/api"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   ArrowLeft,
@@ -35,7 +35,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
-import type { Subtask, Tag } from "@/lib/api"
+
 
 export function TaskDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -125,7 +125,7 @@ export function TaskDetailPage() {
     HIGH: "bg-destructive/10 text-destructive border-destructive/20",
   }
   const priorityColor =
-    priorityColors[task.priority as TaskPriority] ||
+    priorityColors[task.priority] ||
     "bg-muted text-muted-foreground"
 
   return (

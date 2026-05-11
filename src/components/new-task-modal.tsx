@@ -1,4 +1,4 @@
-import { useState } from "react"
+import React, { useState } from "react"
 import {
   Dialog,
   DialogContent,
@@ -73,7 +73,7 @@ export function NewTaskModal({
 
   const isEditMode = false
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault()
 
     if (!title.trim()) return
@@ -249,6 +249,7 @@ export function NewTaskModal({
                     Deadline Time
                   </Label>
                   <TimePicker
+                    id="time"
                     value={dueDate ? format(dueDate, "HH:mm") : "09:00"}
                     onChange={(timeStr) => {
                       const [hours, minutes] = timeStr.split(":").map(Number);

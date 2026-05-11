@@ -12,7 +12,7 @@ export function SystemOverview({
 }: Readonly<{
   stats: StatsOverview | null
   loading: boolean
-  timeframeTasks?: Task[]
+  timeframeTasks?: readonly Task[]
   timeframeLabel?: string
 }>) {
   if (loading || !stats) {

@@ -63,12 +63,12 @@ export function AuditTrail({
 function AuditContent({ 
   groupedLogs, filteredLogs, currentLimit, setCurrentLimit, search, loading 
 }: { 
-  groupedLogs: { label: string; entries: AuditEntry[] }[]; 
-  filteredLogs: AuditEntry[];
-  currentLimit: number;
-  setCurrentLimit: (v: number | ((p: number) => number)) => void;
-  search: string;
-  loading: boolean;
+  readonly groupedLogs: readonly { readonly label: string; readonly entries: readonly AuditEntry[] }[]; 
+  readonly filteredLogs: readonly AuditEntry[];
+  readonly currentLimit: number;
+  readonly setCurrentLimit: (v: number | ((p: number) => number)) => void;
+  readonly search: string;
+  readonly loading: boolean;
 }) {
   return (
     <div className="flex-1 overflow-auto pr-2 custom-scrollbar">
@@ -94,7 +94,7 @@ function AuditContent({
 }
 
 
-function AuditHeader({ search, onSearchChange }: { search: string; onSearchChange: (v: string) => void }) {
+function AuditHeader({ search, onSearchChange }: Readonly<{ search: string; onSearchChange: (v: string) => void }>) {
   return (
     <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
       <div className="flex items-center gap-4">
@@ -123,7 +123,7 @@ function AuditHeader({ search, onSearchChange }: { search: string; onSearchChang
   )
 }
 
-function AuditError({ error, onRetry }: { error: string; onRetry: () => void }) {
+function AuditError({ error, onRetry }: Readonly<{ error: string; onRetry: () => void }>) {
   return (
     <div className="flex flex-1 items-center justify-center rounded-[2rem] border border-destructive/20 bg-destructive/5 p-12 text-center backdrop-blur-sm">
       <div className="space-y-4 max-w-xs mx-auto">
@@ -143,7 +143,7 @@ function AuditError({ error, onRetry }: { error: string; onRetry: () => void }) 
   )
 }
 
-function AuditEmpty({ loading }: { loading: boolean }) {
+function AuditEmpty({ loading }: Readonly<{ loading: boolean }>) {
   return (
     <div className="flex flex-col h-48 items-center justify-center text-center space-y-4">
       <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-muted/30">
@@ -156,7 +156,7 @@ function AuditEmpty({ loading }: { loading: boolean }) {
   )
 }
 
-function LoadMoreButton({ onClick }: { onClick: () => void }) {
+function LoadMoreButton({ onClick }: Readonly<{ onClick: () => void }>) {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pt-4 flex justify-center">
       <Button 
@@ -171,7 +171,7 @@ function LoadMoreButton({ onClick }: { onClick: () => void }) {
   )
 }
 
-function AuditSkeleton({ limit, className }: { limit: number; className?: string }) {
+function AuditSkeleton({ limit, className }: Readonly<{ limit: number; className?: string }>) {
   const skeletonIds = Array.from({ length: limit }, (_, i) => `audit-skeleton-${i}`)
   return (
     <Card className={cn("overflow-hidden border bg-background/50 p-8 shadow-2xl shadow-primary/5 backdrop-blur-xl rounded-[2.5rem] h-full flex flex-col", className)}>
@@ -197,7 +197,7 @@ function AuditSkeleton({ limit, className }: { limit: number; className?: string
   )
 }
 
-function AuditGroup({ label, entries, groupIdx }: { label: string; entries: AuditEntry[]; groupIdx: number }) {
+function AuditGroup({ label, entries, groupIdx }: Readonly<{ label: string; entries: readonly AuditEntry[]; groupIdx: number }>) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -223,7 +223,7 @@ function AuditGroup({ label, entries, groupIdx }: { label: string; entries: Audi
   )
 }
 
-function AuditItem({ log, index, isLast }: { log: AuditEntry; index: number; isLast: boolean }) {
+function AuditItem({ log, index, isLast }: Readonly<{ log: AuditEntry; index: number; isLast: boolean }>) {
   return (
     <motion.div
       initial={{ opacity: 0, x: -10 }}

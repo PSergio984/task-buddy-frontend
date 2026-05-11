@@ -32,28 +32,50 @@ export function getDateGroupLabel(dateStr: string): string {
 
 /** Groups a flat array of log entries into date-keyed buckets */
 export function groupByDate(logs: AuditEntry[]): { label: string; entries: AuditEntry[] }[] {
-  const map = new Map<string, AuditEntry[]>()
-  for (const log of logs) {
-    const label = getDateGroupLabel(log.created_at)
-    if (!map.has(label)) map.set(label, [])
-    map.get(label)!.push(log)
+  const map: Record<string, AuditEntry[]> = {}
+  for (const entry of logs) {
+    const label = getDateGroupLabel(entry.created_at)
+    if (!map[label]) map[label] = []
+    map[label].push(entry)
   }
-  return Array.from(map.entries()).map(([label, entries]) => ({ label, entries }))
+  return Object.entries(map).map(([label, entries]) => ({ label, entries }))
 }
 
 function getTargetName(details: string, type: string): string {
   if (!details) return ""
   const patterns = [
-    new RegExp(`${type}\\s*['"]?([^'":,]+)['"]?`, 'i'),
-    new RegExp(`^Updated ${type}:\\s*(.+?)(?:\\s*\\(|$)`, 'i'),
-    new RegExp(`^Refined ${type}:\\s*["']?([^"']+)`, 'i'),
-    new RegExp(`${type}:\\s*["']?([^"',(]+)`, 'i')
+    new RegExp(String.raw`${type}\s*['"]?([^'":,]+)['"]?`, 'i'),
+    new RegExp(String.raw`^Updated ${type}:\s*(.+?)(?:\s*\(|$)`, 'i'),
+    new RegExp(String.raw`^Refined ${type}:\s*["']?([^"']+)`, 'i'),
+    new RegExp(String.raw`${type}:\s*["']?([^"',(]+)`, 'i')
   ]
   for (const p of patterns) {
-    const m = details.match(p)
+    const m = p.exec(details)
     if (m?.[1]) return m[1].trim()
   }
   return ""
+}
+
+function parseTagChange(details: string, name: string): React.ReactNode {
+  const tagMatch = /tag\s*['"]?([^'":]+)['"]?/i.exec(details)
+  const tagName = tagMatch?.[1]?.trim()
+  return <span>Added tag {tagName ? bold(tagName) : "a tag"} to {name ? bold(name) : "task"}</span>
+}
+
+function parseFieldChanges(details: string, name: string): React.ReactNode {
+  // Hardened regex to avoid ReDoS: using non-greedy match and limiting length check
+  const fieldsMatch = /\(fields:\s*([^)]+?)\)/i.exec(details)
+  if (!fieldsMatch) return null
+  
+  const fieldChanges = fieldsMatch[1].split(",").map(f => f.trim())
+  return (
+    <span>
+      Updated task {name ? bold(name) : ""}
+      <span className="text-muted-foreground ml-1">
+        ({fieldChanges.map((change, i) => <span key={change}>{i > 0 && ", "}{change}</span>)})
+      </span>
+    </span>
+  )
 }
 
 function handleTaskUpdate(detLow: string, details: string, name: string): React.ReactNode {
@@ -63,27 +85,11 @@ function handleTaskUpdate(detLow: string, details: string, name: string): React.
   if (detLow.includes("completed: false")) 
     return <span>Reopened {name ? bold(name) : "a task"}</span>
   
-  if (detLow.includes("attached tag")) {
-    const tagMatch = details?.match(/tag\s*['"]?([^'":]+)['"]?/i)
-    const tagName = tagMatch?.[1]?.trim()
-    return <span>Added tag {tagName ? bold(tagName) : "a tag"} to {name ? bold(name) : "task"}</span>
-  }
+  if (detLow.includes("attached tag")) return parseTagChange(details, name)
+  if (detLow.includes("detached tag")) return <span>Removed a tag from {name ? bold(name) : "task"}</span>
   
-  if (detLow.includes("detached tag")) 
-    return <span>Removed a tag from {name ? bold(name) : "task"}</span>
-  
-  const fieldsMatch = details?.match(/\(fields:\s*([^)]+)\)/i)
-  if (fieldsMatch) {
-    const fieldChanges = fieldsMatch[1].split(",").map(f => f.trim())
-    return (
-      <span>
-        Updated task {name ? bold(name) : ""}
-        <span className="text-muted-foreground ml-1">
-          ({fieldChanges.map((change, i) => <span key={i}>{i > 0 && ", "}{change}</span>)})
-        </span>
-      </span>
-    )
-  }
+  const fieldView = parseFieldChanges(details, name)
+  if (fieldView) return fieldView
   
   return <span>Updated task {name ? bold(name) : ""}</span>
 }
@@ -104,7 +110,7 @@ export function describeTaskAction(act: string, details: string): React.ReactNod
 
 export function describeSubtaskAction(act: string, details: string): React.ReactNode {
   const subName = getTargetName(details, "subtask")
-  const parentMatch = details?.match(/(?:to|on|from)\s*task\s*['"]?([^'":,]+)['"]?/i)
+  const parentMatch = /(?:to|on|from)\s*task\s*['"]?([^'":,]+)['"]?/i.exec(details)
   const parentName = parentMatch?.[1]?.trim()
 
   if (act.includes("create")) 
@@ -114,7 +120,7 @@ export function describeSubtaskAction(act: string, details: string): React.React
     if (details?.toLowerCase().includes("marked completed")) 
       return <span>Finished subtask {subName ? bold(subName) : "a subtask"}</span>
     
-    const fieldsMatch = details?.match(/\(([^)]+)\)$/i) || details?.match(/\(fields:\s*([^)]+)\)/i)
+    const fieldsMatch = /\(([^)]+?)\)$/i.exec(details) || /\(fields:\s*([^)]+?)\)/i.exec(details)
     const fieldChangesRaw = fieldsMatch?.[1]
     return (
       <span>

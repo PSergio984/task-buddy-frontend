@@ -125,7 +125,7 @@ export function TaskDetailDrawer({ task: initialTask, mode, isOpen, onOpenChange
   )
 }
 
-function DrawerHeader({ isCreate }: { isCreate: boolean }) {
+function DrawerHeader({ isCreate }: Readonly<{ isCreate: boolean }>) {
   return (
     <div className="flex items-center justify-between px-8 py-6 border-b border-white/5 shrink-0">
       <div className="flex items-center gap-3">
@@ -141,16 +141,16 @@ function DrawerHeader({ isCreate }: { isCreate: boolean }) {
 }
 
 interface TitleSectionProps {
-  isCreate: boolean
-  isEditingTitle: boolean
-  setIsEditingTitle: (val: boolean) => void
-  title: string
-  setTitle: (val: string) => void
-  task: Task | null
-  handleUpdate: (updates: Partial<Task>) => void
+  readonly isCreate: boolean
+  readonly isEditingTitle: boolean
+  readonly setIsEditingTitle: (val: boolean) => void
+  readonly title: string
+  readonly setTitle: (val: string) => void
+  readonly task: Task | null
+  readonly handleUpdate: (updates: Partial<Task>) => void
 }
 
-function TitleSection({ isCreate, isEditingTitle, setIsEditingTitle, title, setTitle, task, handleUpdate }: TitleSectionProps) {
+function TitleSection({ isCreate, isEditingTitle, setIsEditingTitle, title, setTitle, task, handleUpdate }: Readonly<TitleSectionProps>) {
   if (isCreate || isEditingTitle) {
     return (
       <div className="space-y-4 pt-4 px-1">
@@ -174,26 +174,33 @@ function TitleSection({ isCreate, isEditingTitle, setIsEditingTitle, title, setT
 
   return (
     <div className="space-y-4 pt-4 px-1">
-      <h2 onClick={() => setIsEditingTitle(true)} className="text-4xl font-black tracking-tighter text-foreground cursor-text hover:text-primary transition-all duration-300 leading-tight">
-        {task?.title}
+      <h2 className="text-4xl font-black tracking-tighter text-foreground leading-tight">
+        <button
+          onClick={() => setIsEditingTitle(true)}
+          className="text-left w-full cursor-text hover:text-primary transition-all duration-300 focus:outline-none focus:text-primary"
+          aria-label={`Edit title: ${task?.title}`}
+        >
+          {task?.title}
+        </button>
       </h2>
     </div>
   )
 }
 
 interface DescriptionSectionProps {
-  isCreate: boolean
-  description: string
-  setDescription: (val: string) => void
-  task: Task | null
-  handleUpdate: (updates: Partial<Task>) => void
+  readonly isCreate: boolean
+  readonly description: string
+  readonly setDescription: (val: string) => void
+  readonly task: Task | null
+  readonly handleUpdate: (updates: Partial<Task>) => void
 }
 
-function DescriptionSection({ isCreate, description, setDescription, task, handleUpdate }: DescriptionSectionProps) {
+function DescriptionSection({ isCreate, description, setDescription, task, handleUpdate }: Readonly<DescriptionSectionProps>) {
   return (
     <div className="space-y-3">
-      <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Notes</label>
+      <label htmlFor="task-notes" className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Notes</label>
       <Textarea
+        id="task-notes"
         placeholder="Add notes, context, or details..."
         value={description}
         onChange={(e) => setDescription(e.target.value)}

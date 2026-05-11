@@ -2,13 +2,13 @@ import { Sparkles, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface ActionFooterProps {
-  isCreate: boolean
-  isDirty: boolean
-  onOpenChange: (v: boolean) => void
-  handleCreate: () => void
-  showDeleteConfirm: boolean
-  setShowDeleteConfirm: (v: boolean) => void
-  handleDelete: () => void
+  readonly isCreate: boolean
+  readonly isDirty: boolean
+  readonly onOpenChange: (v: boolean) => void
+  readonly handleCreate: () => void
+  readonly showDeleteConfirm: boolean
+  readonly setShowDeleteConfirm: (v: boolean) => void
+  readonly handleDelete: () => void
 }
 
 export function ActionFooter({
@@ -36,9 +36,9 @@ export function ActionFooter({
 }
 
 interface CreateModeFooterProps {
-  onCancel: () => void
-  onCreate: () => void
-  isDirty: boolean
+  readonly onCancel: () => void
+  readonly onCreate: () => void
+  readonly isDirty: boolean
 }
 
 function CreateModeFooter({ onCancel, onCreate, isDirty }: CreateModeFooterProps) {
@@ -59,10 +59,10 @@ function CreateModeFooter({ onCancel, onCreate, isDirty }: CreateModeFooterProps
 }
 
 interface EditModeFooterProps {
-  onOpenChange: (open: boolean) => void
-  showDeleteConfirm: boolean
-  setShowDeleteConfirm: (v: boolean) => void
-  handleDelete: () => void
+  readonly onOpenChange: (open: boolean) => void
+  readonly showDeleteConfirm: boolean
+  readonly setShowDeleteConfirm: (v: boolean) => void
+  readonly handleDelete: () => void
 }
 
 function EditModeFooter({ onOpenChange, showDeleteConfirm, setShowDeleteConfirm, handleDelete }: EditModeFooterProps) {
@@ -92,8 +92,8 @@ function EditModeFooter({ onOpenChange, showDeleteConfirm, setShowDeleteConfirm,
 }
 
 interface DeleteConfirmViewProps {
-  onConfirm: () => void
-  onCancel: () => void
+  readonly onConfirm: () => void
+  readonly onCancel: () => void
 }
 
 function DeleteConfirmView({ onConfirm, onCancel }: DeleteConfirmViewProps) {

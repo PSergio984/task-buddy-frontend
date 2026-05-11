@@ -26,7 +26,7 @@ import axios from "axios"
 import { LayoutDashboard, ListChecks, Calendar } from "lucide-react"
 
 export interface DashboardProps {
-  readonly tasks: Task[]
+  readonly tasks: readonly Task[]
   readonly loadingTasks?: boolean
   readonly onRefresh: () => void
   readonly onEdit: (task: Task) => void
@@ -209,11 +209,12 @@ export function Dashboard({
             stats={stats}
             loading={loadingStats}
             timeframeTasks={filteredTasks}
-            timeframeLabel={
-              activeTab === "all" ? "All Time" :
-              activeTab === "today" ? "Today" :
-              activeTab === "tomorrow" ? "Tomorrow" : "This Week"
-            }
+            timeframeLabel={(() => {
+              if (activeTab === "all") return "All Time"
+              if (activeTab === "today") return "Today"
+              if (activeTab === "tomorrow") return "Tomorrow"
+              return "This Week"
+            })()}
           />
         </div>
         <div className="lg:col-span-2">
@@ -260,42 +261,46 @@ export function Dashboard({
           </TabsList>
 
           <TabsContent value={activeTab} className="mt-0 space-y-6 focus-visible:outline-none">    
-            {loadingTasks ? (
-              <TaskListSkeleton />
-            ) : filteredTasks.length === 0 ? (
-              <div className="flex h-80 flex-col items-center justify-center rounded-[3rem] border-2 border-dashed border-border/30 bg-white/5 text-center animate-in fade-in zoom-in-95 duration-500">
-                <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[2rem] bg-muted/20">    
-                  <ListChecks className="h-10 w-10 text-muted-foreground/20" />
+            {(() => {
+              if (loadingTasks) return <TaskListSkeleton />
+              if (filteredTasks.length === 0) {
+                return (
+                  <div className="flex h-80 flex-col items-center justify-center rounded-[3rem] border-2 border-dashed border-border/30 bg-white/5 text-center animate-in fade-in zoom-in-95 duration-500">
+                    <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[2rem] bg-muted/20">    
+                      <ListChecks className="h-10 w-10 text-muted-foreground/20" />
+                    </div>
+                    <h3 className="text-xl font-bold text-foreground mb-2 uppercase tracking-tight">Agenda Clear</h3>
+                    <p className="text-muted-foreground font-medium italic">
+                      No critical objectives found in this view.
+                    </p>
+                  </div>
+                )
+              }
+              return (
+                <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+                  <AnimatePresence mode="popLayout">
+                    {filteredTasks.map((task: Task, index) => (
+                      <motion.div
+                        key={task.id}
+                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9, y: -20 }}
+                        transition={{ delay: index * 0.05, type: "spring", stiffness: 260, damping: 20 }}
+                      >
+                        <TaskCard
+                          task={task}
+                          onToggleComplete={handleToggleComplete}
+                          onEdit={onEdit}
+                          onToggleSubtask={handleToggleSubtask}
+                          onDeleteSubtask={handleDeleteSubtask}
+                          onDetachTag={handleDetachTag}
+                        />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
                 </div>
-                <h3 className="text-xl font-bold text-foreground mb-2 uppercase tracking-tight">Agenda Clear</h3>
-                <p className="text-muted-foreground font-medium italic">
-                  No critical objectives found in this view.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-                <AnimatePresence mode="popLayout">
-                  {filteredTasks.map((task: Task, index) => (
-                    <motion.div
-                      key={task.id}
-                      initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.9, y: -20 }}
-                      transition={{ delay: index * 0.05, type: "spring", stiffness: 260, damping: 20 }}
-                    >
-                      <TaskCard
-                        task={task}
-                        onToggleComplete={handleToggleComplete}
-                        onEdit={onEdit}
-                        onToggleSubtask={handleToggleSubtask}
-                        onDeleteSubtask={handleDeleteSubtask}
-                        onDetachTag={handleDetachTag}
-                      />
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </div>
-            )}
+              )
+            })()}
           </TabsContent>
         </Tabs>
       </motion.div>

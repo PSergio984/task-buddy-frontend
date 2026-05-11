@@ -6,22 +6,22 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 interface SubtaskSectionProps {
-  isCreate: boolean
-  isAddingSubtask: boolean
-  setIsAddingSubtask: (v: boolean) => void
-  newSubtaskTitle: string
-  setNewSubtaskTitle: (v: string) => void
-  handleAddSubtask: () => void
-  visibleSubtasks: (Subtask | string)[]
-  allSubtasks: (Subtask | string)[]
-  handleToggleSubtask: (id: number, completed: boolean) => void
-  handleDeleteSubtask: (id: number) => void
-  subtaskInputRef: React.RefObject<HTMLInputElement | null>
-  subtasksLimit: number
-  setSubtasksLimit: (v: number) => void
-  pendingSubtasks: string[]
-  setPendingSubtasks: React.Dispatch<React.SetStateAction<string[]>>
-  task: Task | null
+  readonly isCreate: boolean
+  readonly isAddingSubtask: boolean
+  readonly setIsAddingSubtask: (v: boolean) => void
+  readonly newSubtaskTitle: string
+  readonly setNewSubtaskTitle: (v: string) => void
+  readonly handleAddSubtask: () => void
+  readonly visibleSubtasks: readonly (Subtask | string)[]
+  readonly allSubtasks: readonly (Subtask | string)[]
+  readonly handleToggleSubtask: (id: number, completed: boolean) => void
+  readonly handleDeleteSubtask: (id: number) => void
+  readonly subtaskInputRef: React.RefObject<HTMLInputElement | null>
+  readonly subtasksLimit: number
+  readonly setSubtasksLimit: (v: number) => void
+  readonly pendingSubtasks: readonly string[]
+  readonly setPendingSubtasks: React.Dispatch<React.SetStateAction<string[]>>
+  readonly task: Task | null
 }
 
 export function SubtaskSection({
@@ -95,11 +95,11 @@ export function SubtaskSection({
 }
 
 interface SubtaskItemProps {
-  sub: Subtask | string
-  idx: number
-  handleToggleSubtask: (id: number, completed: boolean) => void
-  handleDeleteSubtask: (id: number) => void
-  setPendingSubtasks: React.Dispatch<React.SetStateAction<string[]>>
+  readonly sub: Subtask | string
+  readonly idx: number
+  readonly handleToggleSubtask: (id: number, completed: boolean) => void
+  readonly handleDeleteSubtask: (id: number) => void
+  readonly setPendingSubtasks: React.Dispatch<React.SetStateAction<string[]>>
 }
 
 function SubtaskItem({ sub, idx, handleToggleSubtask, handleDeleteSubtask, setPendingSubtasks }: SubtaskItemProps) {
@@ -115,8 +115,17 @@ function SubtaskItem({ sub, idx, handleToggleSubtask, handleDeleteSubtask, setPe
       className="flex items-center gap-3 p-3 rounded-xl bg-white/5 group/sub"
     >
       <div 
-        className="shrink-0 cursor-pointer hover:text-primary transition-colors"
+        role="button"
+        tabIndex={0}
+        aria-label={isCompleted ? "Mark subtask as incomplete" : "Mark subtask as complete"}
+        className="shrink-0 cursor-pointer hover:text-primary transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full"
         onClick={() => !isPending && handleToggleSubtask(sub.id, !isCompleted)}
+        onKeyDown={(e) => {
+          if ((e.key === "Enter" || e.key === " ") && !isPending) {
+            e.preventDefault()
+            handleToggleSubtask(sub.id, !isCompleted)
+          }
+        }}
       >
         {!isPending && isCompleted
           ? <CheckCircle2 className="h-4 w-4 text-primary" />
@@ -134,7 +143,8 @@ function SubtaskItem({ sub, idx, handleToggleSubtask, handleDeleteSubtask, setPe
           ? setPendingSubtasks((prev: string[]) => prev.filter((_, i) => i !== idx))
           : handleDeleteSubtask(sub.id)
         }
-        className="opacity-0 group-hover/sub:opacity-100 transition-opacity text-foreground/20 hover:text-red-500"
+        aria-label={`Delete subtask: ${subTitle}`}
+        className="opacity-0 group-hover/sub:opacity-100 transition-opacity text-foreground/20 hover:text-red-500 focus-visible:opacity-100 outline-none"
       >
         <Trash2 className="h-3.5 w-3.5" />
       </button>
@@ -143,11 +153,11 @@ function SubtaskItem({ sub, idx, handleToggleSubtask, handleDeleteSubtask, setPe
 }
 
 interface SubtaskInputProps {
-  subtaskInputRef: React.RefObject<HTMLInputElement | null>
-  newSubtaskTitle: string
-  setNewSubtaskTitle: (v: string) => void
-  handleAddSubtask: () => void
-  setIsAddingSubtask: (v: boolean) => void
+  readonly subtaskInputRef: React.RefObject<HTMLInputElement | null>
+  readonly newSubtaskTitle: string
+  readonly setNewSubtaskTitle: (v: string) => void
+  readonly handleAddSubtask: () => void
+  readonly setIsAddingSubtask: (v: boolean) => void
 }
 
 function SubtaskInput({ subtaskInputRef, newSubtaskTitle, setNewSubtaskTitle, handleAddSubtask, setIsAddingSubtask }: SubtaskInputProps) {
@@ -170,12 +180,13 @@ function SubtaskInput({ subtaskInputRef, newSubtaskTitle, setNewSubtaskTitle, ha
           }
         }}
         placeholder="Sub-task title... (Enter to add)"
+        aria-label="New sub-task title"
         className="flex-1 bg-white/5 border border-primary/30 rounded-xl px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/60"
       />
-      <button onClick={handleAddSubtask} className="text-primary hover:text-primary/80">
+      <button onClick={handleAddSubtask} className="text-primary hover:text-primary/80" aria-label="Confirm add subtask">
         <Check className="h-4 w-4" />
       </button>
-      <button onClick={() => { setIsAddingSubtask(false); setNewSubtaskTitle("") }} className="text-foreground/30 hover:text-foreground">
+      <button onClick={() => { setIsAddingSubtask(false); setNewSubtaskTitle("") }} className="text-foreground/30 hover:text-foreground" aria-label="Cancel add subtask">
         <X className="h-4 w-4" />
       </button>
     </motion.div>

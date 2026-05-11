@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from "react"
+import React, { useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { motion } from "framer-motion"
 import { useAuth } from "@/contexts/AuthContext"
@@ -31,7 +31,7 @@ export function LoginPage() {
   const showEmailError = submitAttempted || email.length > 0
   const showPasswordError = submitAttempted || password.length > 0
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
     setSubmitAttempted(true)
 
@@ -50,9 +50,12 @@ export function LoginPage() {
       })
       navigate("/dashboard")
     } catch (err: unknown) {
-      const detail = axios.isAxiosError(err) 
-        ? (err.response?.data as { detail?: string })?.detail || err.message 
-        : err instanceof Error ? err.message : "Invalid credentials. Please try again."
+      let detail = "Invalid credentials. Please try again."
+      if (axios.isAxiosError(err)) {
+        detail = (err.response?.data as { detail?: string })?.detail || err.message
+      } else if (err instanceof Error) {
+        detail = err.message
+      }
       
       toast({
         title: "Authentication failed",

@@ -153,7 +153,7 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onOpenChange }: 
         title: title.trim(),
         description: description.trim() || undefined,
         priority,
-        project_id: projectId === "none" ? undefined : parseInt(projectId),
+        project_id: projectId === "none" ? undefined : Number.parseInt(projectId, 10),
         due_date: dueDate?.toISOString(),
         completed: false,
         tags: pendingTags.map(t => t.name),
@@ -215,7 +215,13 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onOpenChange }: 
       else handleUpdate({ due_date: undefined })
       return
     }
-    const current = isCreate ? dueDate : (task?.due_date ? new Date(task.due_date) : undefined)
+    let current: Date | undefined
+    if (isCreate) {
+      current = dueDate
+    } else if (task?.due_date) {
+      current = new Date(task.due_date)
+    }
+
     const newDate = new Date(d)
     if (current) {
       newDate.setHours(current.getHours())

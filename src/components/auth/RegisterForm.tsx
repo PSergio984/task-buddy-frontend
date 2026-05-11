@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from "react"
+import React, { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { motion } from "framer-motion"
 import { useAuth } from "@/contexts/AuthContext"
@@ -50,7 +50,7 @@ export function RegisterForm() {
   const isFormValid =
     !usernameError && !emailError && !passwordError && !confirmPasswordError
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault()
     setSubmitAttempted(true)
 

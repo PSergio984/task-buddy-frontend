@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react"
+import React, { useState } from "react"
 import { motion } from "framer-motion"
 import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
@@ -82,7 +82,7 @@ function UsernameCard() {
   const isUsernameValid = newUsername.trim().length > 0 && /^[A-Za-z0-9._@\- ]+$/.test(newUsername)
   const hasUsernameChanged = user && newUsername !== user.username && isUsernameValid
 
-  const handleUpdateUsername = async (e: FormEvent) => {
+  const handleUpdateUsername = async (e: React.SubmitEvent) => {
     e.preventDefault()
     if (!hasUsernameChanged) return
     
@@ -177,7 +177,7 @@ function SecurityCard() {
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
-  const handleUpdatePassword = async (e: FormEvent) => {
+  const handleUpdatePassword = async (e: React.SubmitEvent) => {
     e.preventDefault()
     if (newPassword !== confirmPassword) {
       toast({
@@ -294,15 +294,15 @@ function SecurityCard() {
 }
 
 interface PasswordFieldProps {
-  id: string
-  label: string
-  value: string
-  onChange: (val: string) => void
-  show: boolean
-  onToggleShow: () => void
+  readonly id: string
+  readonly label: string
+  readonly value: string
+  readonly onChange: (val: string) => void
+  readonly show: boolean
+  readonly onToggleShow: () => void
 }
 
-function PasswordField({ id, label, value, onChange, show, onToggleShow }: PasswordFieldProps) {
+function PasswordField({ id, label, value, onChange, show, onToggleShow }: Readonly<PasswordFieldProps>) {
   return (
     <div className="space-y-2">
       <Label htmlFor={id} className="text-sm font-semibold ml-1">{label}</Label>
@@ -328,7 +328,7 @@ function PasswordField({ id, label, value, onChange, show, onToggleShow }: Passw
   )
 }
 
-function PasswordRules({ password }: { password: string }) {
+function PasswordRules({ password }: Readonly<{ password: string }>) {
   return (
     <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 px-1">
       {PASSWORD_RULES.map((rule) => {
