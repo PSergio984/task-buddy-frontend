@@ -1,4 +1,5 @@
 import { motion } from "framer-motion"
+import { useMemo } from "react"
 import { Card } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { PieChart, Target, Zap, TrendingUp, CheckCircle2 } from "lucide-react"
@@ -48,6 +49,36 @@ export function SystemOverview({
 
   const { task_stats, tag_distribution } = stats
 
+  // Local calculation for timeframe-specific stats
+  const timeframeStats = useMemo(() => {
+    if (!timeframeTasks) return null
+    
+    const total = timeframeTasks.length
+    const completed = timeframeTasks.filter(t => t.completed).length
+    const pending = total - completed
+    const percentage = total > 0 ? (completed / total) * 100 : 0
+
+    // Calculate tag distribution from timeframeTasks
+    const tagMap: Record<string, number> = {}
+    timeframeTasks.forEach(task => {
+      task.tags?.forEach(tag => {
+        tagMap[tag.name] = (tagMap[tag.name] || 0) + 1
+      })
+    })
+    
+    const distribution = Object.entries(tagMap)
+      .map(([name, count]) => ({ tag_name: name, task_count: count }))
+      .sort((a, b) => b.task_count - a.task_count)
+
+    return { total, completed, pending, percentage, distribution }
+  }, [timeframeTasks])
+
+  const displayPercentage = timeframeStats ? timeframeStats.percentage : task_stats.completion_percentage
+  const displayCompleted = timeframeStats ? timeframeStats.completed : task_stats.completed_tasks
+  const displayTotal = timeframeStats ? timeframeStats.total : task_stats.total_tasks
+  const displayPending = timeframeStats ? timeframeStats.pending : task_stats.pending_tasks
+  const displayDistribution = timeframeStats ? timeframeStats.distribution : tag_distribution
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
@@ -79,7 +110,7 @@ export function SystemOverview({
              <div className="absolute inset-0 bg-primary/5 blur-3xl rounded-full" />
              <div className="relative">
               <p className="font-heading text-6xl font-bold tracking-tighter text-foreground">
-                {Math.round(task_stats.completion_percentage)}%
+                {Math.round(displayPercentage)}%
               </p>
               <p className="mt-2 text-xs text-muted-foreground font-semibold uppercase tracking-widest">
                 Optimization Level
@@ -91,7 +122,7 @@ export function SystemOverview({
           <div className="space-y-3">
             <div className="flex items-center justify-between px-1">
                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Momentum</span>
-               <span className="text-[10px] font-bold text-primary">{task_stats.completed_tasks} / {task_stats.total_tasks}</span>
+               <span className="text-[10px] font-bold text-primary">{displayCompleted} / {displayTotal}</span>
             </div>
             <motion.div
               initial={{ opacity: 0 }}
@@ -102,7 +133,7 @@ export function SystemOverview({
               <motion.div
                 className="h-full rounded-full bg-gradient-to-r from-primary via-accent to-primary bg-[length:200%_100%] animate-shimmer"
                 initial={{ width: 0 }}
-                animate={{ width: `${task_stats.completion_percentage}%` }}
+                animate={{ width: `${displayPercentage}%` }}
                 transition={{ duration: 1.2, ease: [0.34, 1.56, 0.64, 1] as const }}
               />
             </motion.div>
@@ -112,9 +143,7 @@ export function SystemOverview({
           <div className="grid grid-cols-2 gap-4">
             <div className="group relative overflow-hidden rounded-2xl border bg-card/50 p-4 transition-all hover:bg-card">
               <p className="text-2xl font-bold text-foreground">
-                {timeframeTasks
-                  ? timeframeTasks.filter(t => !t.completed).length
-                  : task_stats.pending_tasks}
+                {displayPending}
               </p>
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                 Remaining{timeframeLabel && timeframeLabel !== "All Time" ? ` · ${timeframeLabel}` : ""}
@@ -123,9 +152,7 @@ export function SystemOverview({
             </div>
             <div className="group relative overflow-hidden rounded-2xl border border-accent/20 bg-accent/5 p-4 transition-all hover:bg-accent/10">
               <p className="text-2xl font-bold text-accent">
-                {timeframeTasks
-                  ? timeframeTasks.filter(t => t.completed).length
-                  : task_stats.completed_tasks}
+                {displayCompleted}
               </p>
               <p className="text-[10px] font-bold text-accent/60 uppercase tracking-wider">
                 Achieved{timeframeLabel && timeframeLabel !== "All Time" ? ` · ${timeframeLabel}` : ""}
@@ -135,7 +162,7 @@ export function SystemOverview({
           </div>
 
           {/* Tag Distribution */}
-          {tag_distribution.length > 0 && (
+          {displayDistribution.length > 0 && (
             <div className="space-y-4 pt-6 border-t border-border/50">
               <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                 <div className="flex items-center gap-2">
@@ -144,7 +171,7 @@ export function SystemOverview({
                 </div>
               </div>
               <div className="grid grid-cols-1 gap-3">
-                {tag_distribution.slice(0, 3).map((tag, idx) => (
+                {displayDistribution.slice(0, 3).map((tag: { tag_name: string; task_count: number }, idx: number) => (
                   <motion.div 
                     key={tag.tag_name} 
                     initial={{ x: -10, opacity: 0 }}
@@ -159,7 +186,7 @@ export function SystemOverview({
                     <div className="h-1.5 w-full bg-muted/50 rounded-full overflow-hidden">
                       <motion.div 
                         initial={{ width: 0 }}
-                        animate={{ width: `${task_stats.total_tasks > 0 ? (tag.task_count / task_stats.total_tasks) * 100 : 0}%` }}
+                        animate={{ width: `${displayTotal > 0 ? (tag.task_count / displayTotal) * 100 : 0}%` }}
                         transition={{ duration: 0.8, delay: 0.5 + idx * 0.1 }}
                         className="h-full bg-primary/40 rounded-full" 
                       />

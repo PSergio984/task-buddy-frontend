@@ -117,6 +117,17 @@ function parseDateChange(details: string, name: string): React.ReactNode {
   )
 }
 
+function parseProjectChange(details: string, name: string): React.ReactNode {
+  const projMatch = /project\s*from\s*['"]?([^'"]+)['"]?\s*to\s*['"]?([^'"]+)['"]?/i.exec(details)
+  if (!projMatch) return null
+  
+  return (
+    <span>
+      Moved {name ? bold(name) : "task"} from {bold(projMatch[1])} to {bold(projMatch[2])}
+    </span>
+  )
+}
+
 function handleTaskUpdate(detLow: string, details: string, name: string): React.ReactNode {
   if (detLow.includes("completed: true") || detLow.includes("status: completed")) 
     return <span>Marked {name ? bold(name) : "a task"} as done</span>
@@ -128,6 +139,7 @@ function handleTaskUpdate(detLow: string, details: string, name: string): React.
   if (detLow.includes("detached tag")) return <span>Removed a tag from {name ? bold(name) : "task"}</span>
   
   if (detLow.includes("due_date from")) return parseDateChange(details, name)
+  if (detLow.includes("project from")) return parseProjectChange(details, name)
 
   const fieldView = parseFieldChanges(details, name)
   if (fieldView) return fieldView

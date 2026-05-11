@@ -26,10 +26,8 @@
   - New CreateTagModal and direct sidebar access.
   - Natural language refinement for subtasks in Audit Trail.
   - Build and lint verified.
-- 2026-05-12: Phase 4.6: Advanced UI/UX Refinement completed.
-  - Upgraded CreateProjectModal with ColorIconPicker and icon support.
-  - Refined Sidebar with snappier 0.3s animations and tag icons.
-  - Improved Sidebar toggle visibility and accessibility.
-  - Added semantic Date/Time change parser to Audit Trail.
-  - Verified global 12h/24h time formatting consistency.
-  - Lint and type checks passing.
+- 2026-05-12: Phase 4.3 & 4.6 refinements finalized.
+  - Upgraded CreateProjectModal with ColorIconPicker.
+  - Dashboard stats (percentage, category flow) now responsive to time filters.
+  - Audit Trail expanded with parent-task context and specific field changes (Project/Date).
+  - Verified build stability and type safety.

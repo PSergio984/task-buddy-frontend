@@ -77,7 +77,7 @@ Plans:
   3. [x] "No Project" labeled as "Inbox" in the UI for a premium feel.
   4. [x] Subtasks list supports "Show more" expansion (initial 5 visible).
   5. [x] Toast notifications color-coded by status (`success`, `destructive`, `warning`, `info`).
-  6. [ ] Audit trail includes parent task info for subtasks and specific field change details.
+  6. [x] Audit trail includes parent task info for subtasks and specific field change details.
   7. [x] Tags and Projects feature distinct icons and user-defined color coding.
   8. [x] Task creation flow supports subtasks and tags with "Search and Create" functionality.
   9. [ ] UI contrast in filtering and sidebars meets high-readability standards.
