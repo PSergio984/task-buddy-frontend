@@ -96,10 +96,9 @@ function describeAction(action: string, details: string, targetType: string, tar
   if (target === "SUBTASK") {
     const subtaskMatch = details?.match(/subtask\s*['"]?([^'":]+)['"]?/i)
     const subName = subtaskMatch?.[1]?.trim()
-    const taskMatch = details?.match(/task\s*(\d+)/i)
-    const taskId = taskMatch?.[1]
 
     if (act.includes("create")) return subName ? `Added subtask "${subName}"` : "Added a subtask"
+
     if (act.includes("update")) {
       const isCompleted = details?.toLowerCase().includes("completed: true")
       if (isCompleted) return subName ? `Finished subtask "${subName}"` : "Finished a subtask"
