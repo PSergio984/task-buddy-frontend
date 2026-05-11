@@ -3,6 +3,8 @@ import { Outlet } from "react-router-dom"
 import { Sidebar } from "@/components/sidebar"
 import { TopNav } from "@/components/topnav"
 import { TaskDetailDrawer } from "@/components/task-detail-drawer"
+import { MobileNav } from "./mobile-nav"
+import { MobileDrawer } from "./mobile-drawer"
 import type { Task } from "@/lib/api"
 
 export function MainLayout() {
@@ -10,6 +12,9 @@ export function MainLayout() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [activeTask, setActiveTask] = useState<Task | null>(null)
   const [drawerMode, setDrawerMode] = useState<"view" | "create">("view")
+
+  // Mobile Workspace Drawer state
+  const [isMobileWorkspaceOpen, setIsMobileWorkspaceOpen] = useState(false)
 
   const handleOpenNewTask = () => {
     setActiveTask(null)
