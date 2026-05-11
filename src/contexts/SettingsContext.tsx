@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useMemo, ReactNode } from "react"
+import { createContext, useContext, useState, useMemo, type ReactNode } from "react"
 
 export type TimeFormat = "12h" | "24h"
 

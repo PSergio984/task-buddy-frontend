@@ -154,10 +154,10 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onOpenChange }: 
         id: task.id,
         updates: {
           title: title.trim(),
-          description: description.trim() || null,
+          description: description.trim() || undefined,
           priority,
           completed,
-          project_id: projectId === "none" ? null : Number.parseInt(projectId, 10),
+          project_id: projectId === "none" ? undefined : Number.parseInt(projectId, 10),
           due_date: dueDate?.toISOString(),
         }
       })

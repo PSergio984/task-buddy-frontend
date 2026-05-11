@@ -105,14 +105,14 @@ export function Sidebar({
       {/* Branding Section */}
       <div className={cn(
         "mb-12 flex items-center justify-between gap-4 px-2 relative min-h-[48px]",
-        isCollapsed && "justify-center"
+        isCollapsed && "flex-col justify-center items-center gap-6"
       )}>
-        <div className="flex items-center gap-4 overflow-hidden">
+        <div className={cn("flex items-center gap-4 overflow-hidden", isCollapsed && "justify-center")}>
           <motion.div 
             animate={{ 
-              opacity: isCollapsed ? 0 : 1,
-              scale: isCollapsed ? 0.8 : 1,
-              x: isCollapsed ? 8 : 0
+              opacity: 1,
+              scale: isCollapsed ? 0.9 : 1,
+              x: 0
             }}
             whileHover={{ rotate: 10, scale: 1.1 }}
             className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary via-primary to-accent shadow-2xl shadow-primary/30"
@@ -140,10 +140,10 @@ export function Sidebar({
           whileTap={{ scale: 0.95 }}
           onClick={onToggle}
           className={cn(
-            "absolute z-50 flex h-10 w-10 items-center justify-center rounded-xl border border-border/50 bg-background/80 backdrop-blur-md shadow-lg transition-all duration-300 cursor-pointer hover:border-primary/30 hover:text-primary",
+            "z-50 flex h-10 w-10 items-center justify-center rounded-xl border border-border/50 bg-background/80 backdrop-blur-md shadow-lg transition-all duration-300 cursor-pointer hover:border-primary/30 hover:text-primary",
             isCollapsed 
-              ? "right-1/2 translate-x-1/2 top-2 bg-primary text-primary-foreground border-none shadow-primary/20" 
-              : "-right-3 top-2"
+              ? "relative bg-primary text-primary-foreground border-none shadow-primary/20" 
+              : "absolute -right-3 top-2"
           )}
         >
           {isCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
@@ -430,7 +430,6 @@ export function Sidebar({
                   <div className={cn("flex flex-wrap gap-2", isCollapsed && "flex-col items-center")}>
                     {tags.map((tag) => {
                       const isActive = activeTagId === tag.id
-                      const TagIconComponent = (LucideIcons as any)[tag.icon || "Tag"] || LucideIcons.Tag
                       const content = (
                         <motion.button
                           key={tag.id}

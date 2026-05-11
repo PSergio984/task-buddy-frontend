@@ -1,7 +1,7 @@
 import React, { useState } from "react"
 import { motion } from "framer-motion"
 import { useAuth } from "@/contexts/AuthContext"
-import { useSettings, type TimeFormat } from "@/contexts/SettingsContext"
+import { useSettings } from "@/contexts/SettingsContext"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
@@ -62,7 +62,7 @@ export function ProfilePage() {
           </p>
         </header>
 
-        <div className="grid gap-8">
+        <div className="grid gap-12">
           <UsernameCard />
           <PreferencesCard />
           <SecurityCard />
