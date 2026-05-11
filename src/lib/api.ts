@@ -1,4 +1,5 @@
 import axios from "axios"
+import { toast } from "@/hooks/use-toast"
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"
@@ -8,7 +9,7 @@ export const api = axios.create({
   withCredentials: true,
 })
 
-// Add a response interceptor to handle 401 errors
+// Add a response interceptor to handle 401 and 429 errors
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -19,6 +20,16 @@ api.interceptors.response.use(
       // Dispatch a custom event to notify AuthContext
       globalThis.dispatchEvent(new CustomEvent("auth:unauthorized"))
     }
+
+    if (error.response?.status === 429) {
+      const detail = error.response.data?.detail || "Too many attempts. Please try again later."
+      toast({
+        title: "Slow down",
+        description: detail,
+        variant: "warning",
+      })
+    }
+
     return Promise.reject(error)
   }
 )

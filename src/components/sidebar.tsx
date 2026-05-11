@@ -148,17 +148,17 @@ export function Sidebar({
         </div>
 
         <motion.button
-          whileHover={{ scale: 1.05, backgroundColor: "rgba(var(--primary-rgb), 0.1)" }}
+          whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={onToggle}
           className={cn(
-            "z-50 flex h-10 w-10 items-center justify-center rounded-xl border border-border/50 bg-background/80 backdrop-blur-md shadow-lg transition-all duration-300 cursor-pointer hover:border-primary/30 hover:text-primary",
+            "z-50 flex items-center justify-center rounded-xl border transition-all duration-500 cursor-pointer shadow-2xl backdrop-blur-xl",
             isCollapsed 
-              ? "relative bg-primary text-primary-foreground border-none shadow-primary/20 mt-2" 
-              : "absolute -right-3 top-2"
+              ? "relative bg-primary text-primary-foreground border-none shadow-primary/40 mt-4 h-12 w-12" 
+              : "absolute -right-4 top-2 h-10 w-10 bg-background/95 border-primary/20 text-primary hover:border-primary/50 hover:bg-primary/10 hover:shadow-primary/20"
           )}
         >
-          {isCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          {isCollapsed ? <PanelLeftOpen className="h-6 w-6" /> : <PanelLeftClose className="h-5 w-5" />}
         </motion.button>
       </div>
 
@@ -167,8 +167,8 @@ export function Sidebar({
         <div className="space-y-4">
           {!isCollapsed && (
             <div className="flex items-center gap-2 px-4">
-              <ListChecks className="h-3 w-3 text-foreground/60" />
-              <p className="text-[10px] font-bold tracking-[0.3em] text-foreground/80 uppercase">
+              <ListChecks className="h-3 w-3 text-accent/60" />
+              <p className="text-[10px] font-bold tracking-[0.3em] text-accent/80 uppercase">
                 Smart Lists
               </p>
             </div>
@@ -225,8 +225,8 @@ export function Sidebar({
         <div className="space-y-4">
           {!isCollapsed && (
             <div className="flex items-center gap-2 px-4">
-              <LayoutDashboard className="h-3 w-3 text-foreground/60" />
-              <p className="text-[10px] font-bold tracking-[0.3em] text-foreground/60 uppercase">
+              <LayoutDashboard className="h-3 w-3 text-accent/60" />
+              <p className="text-[10px] font-bold tracking-[0.3em] text-accent/80 uppercase">
                 Workspaces
               </p>
             </div>
@@ -286,12 +286,12 @@ export function Sidebar({
               <div className="flex items-center gap-2">
                 <ChevronDown 
                   className={cn(
-                    "h-3 w-3 text-foreground/40 transition-transform duration-300",
+                    "h-3 w-3 text-accent/40 transition-transform duration-300",
                     isProjectsCollapsed && "-rotate-90"
                   )} 
                 />
-                <Layers className="h-3 w-3 text-foreground/60" />
-                <p className="text-[10px] font-bold tracking-[0.3em] text-foreground/60 uppercase">
+                <Layers className="h-3 w-3 text-accent/60" />
+                <p className="text-[10px] font-bold tracking-[0.3em] text-accent/80 uppercase">
                   Projects
                 </p>
               </div>
@@ -397,12 +397,12 @@ export function Sidebar({
               <div className="flex items-center gap-2">
                 <ChevronDown 
                   className={cn(
-                    "h-3 w-3 text-foreground/40 transition-transform duration-300",
+                    "h-3 w-3 text-accent/40 transition-transform duration-300",
                     isTagsCollapsed && "-rotate-90"
                   )} 
                 />
-                <Tag className="h-3 w-3 text-foreground/60" />
-                <p className="text-[10px] font-bold tracking-[0.3em] text-foreground/60 uppercase">
+                <Tag className="h-3 w-3 text-accent/60" />
+                <p className="text-[10px] font-bold tracking-[0.3em] text-accent/80 uppercase">
                   Focus Tags
                 </p>
               </div>

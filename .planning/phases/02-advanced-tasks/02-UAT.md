@@ -12,10 +12,10 @@ updated: 2026-05-09T14:55:00Z
 
 ## Current Test
 
-number: 1
-name: Cold Start Smoke Test
+number: 2
+name: Logout & Session Invalidation
 expected: |
-  Kill any running server/service. Clear ephemeral state (temp DBs, caches, lock files). Start the application from scratch using `docker-compose up`. Server boots without errors, Redis connects, migrations complete, and the frontend loads successfully at `http://localhost:3000`.
+  Logging out should blacklist the JWT in Redis (backend) and delete the cookie (frontend). Attempting to access `/me` or other protected routes after logout should return a 401 Unauthorized error.
 awaiting: user response
 
 ## Tests
@@ -23,7 +23,7 @@ awaiting: user response
 ### 1. Cold Start Smoke Test
 expected: |
   Kill any running server/service. Clear ephemeral state (temp DBs, caches, lock files). Start the application from scratch using `docker-compose up`. Server boots without errors, Redis connects, migrations complete, and the frontend loads successfully at `http://localhost:3000`.
-result: [pending]
+result: pass
 
 ### 2. Logout & Session Invalidation
 expected: |
@@ -63,9 +63,9 @@ result: [pending]
 ## Summary
 
 total: 8
-passed: 0
+passed: 1
 issues: 0
-pending: 8
+pending: 7
 skipped: 0
 
 ## Gaps

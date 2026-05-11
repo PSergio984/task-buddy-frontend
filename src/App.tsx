@@ -9,6 +9,7 @@ import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage"
 import { ProfilePage } from "@/pages/ProfilePage"
 import { AuditLogsPage } from "@/pages/AuditLogsPage"
 import { TasksPage } from "@/pages/TasksPage"
+import { ResetPasswordPage } from "@/pages/ResetPasswordPage"
 import { MainLayout } from "@/components/layout/main-layout"
 import { ProtectedRoute, PublicRoute } from "@/contexts/ProtectedRoute"
 import { FilterProvider } from "@/contexts/FilterContext"
@@ -58,6 +59,14 @@ export function App() {
                   element={
                     <PublicRoute>
                       <ForgotPasswordPage />
+                    </PublicRoute>
+                  }
+                />
+                <Route
+                  path="/reset-password/:token"
+                  element={
+                    <PublicRoute>
+                      <ResetPasswordPage />
                     </PublicRoute>
                   }
                 />

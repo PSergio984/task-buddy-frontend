@@ -16,6 +16,29 @@ export function SystemOverview({
   timeframeTasks?: readonly Task[]
   timeframeLabel?: string
 }>) {
+  const timeframeStats = useMemo(() => {
+    if (!timeframeTasks) return null
+    
+    const total = timeframeTasks.length
+    const completed = timeframeTasks.filter(t => t.completed).length
+    const pending = total - completed
+    const percentage = total > 0 ? (completed / total) * 100 : 0
+
+    // Calculate tag distribution from timeframeTasks
+    const tagMap: Record<string, number> = {}
+    timeframeTasks.forEach(task => {
+      task.tags?.forEach(tag => {
+        tagMap[tag.name] = (tagMap[tag.name] || 0) + 1
+      })
+    })
+    
+    const distribution = Object.entries(tagMap)
+      .map(([name, count]) => ({ tag_name: name, task_count: count }))
+      .sort((a, b) => b.task_count - a.task_count)
+
+    return { total, completed, pending, percentage, distribution }
+  }, [timeframeTasks])
+
   if (loading || !stats) {
     return (
       <Card className="overflow-hidden border bg-background/50 p-8 shadow-2xl shadow-primary/5 backdrop-blur-xl rounded-[2.5rem]">
@@ -50,28 +73,6 @@ export function SystemOverview({
   const { task_stats, tag_distribution } = stats
 
   // Local calculation for timeframe-specific stats
-  const timeframeStats = useMemo(() => {
-    if (!timeframeTasks) return null
-    
-    const total = timeframeTasks.length
-    const completed = timeframeTasks.filter(t => t.completed).length
-    const pending = total - completed
-    const percentage = total > 0 ? (completed / total) * 100 : 0
-
-    // Calculate tag distribution from timeframeTasks
-    const tagMap: Record<string, number> = {}
-    timeframeTasks.forEach(task => {
-      task.tags?.forEach(tag => {
-        tagMap[tag.name] = (tagMap[tag.name] || 0) + 1
-      })
-    })
-    
-    const distribution = Object.entries(tagMap)
-      .map(([name, count]) => ({ tag_name: name, task_count: count }))
-      .sort((a, b) => b.task_count - a.task_count)
-
-    return { total, completed, pending, percentage, distribution }
-  }, [timeframeTasks])
 
   const displayPercentage = timeframeStats ? timeframeStats.percentage : task_stats.completion_percentage
   const displayCompleted = timeframeStats ? timeframeStats.completed : task_stats.completed_tasks

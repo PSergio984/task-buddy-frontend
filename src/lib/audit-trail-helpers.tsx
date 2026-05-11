@@ -45,10 +45,11 @@ export function groupByDate(logs: AuditEntry[]): { label: string; entries: Audit
 function getTargetName(details: string, type: string): string {
   if (!details) return ""
   const patterns = [
-    new RegExp(String.raw`${type}\s*['"]?([^'":,]+)['"]?`, 'i'),
-    new RegExp(String.raw`^Updated ${type}:\s*(.+?)(?:\s*\(|$)`, 'i'),
-    new RegExp(String.raw`^Refined ${type}:\s*["']?([^"']+)`, 'i'),
-    new RegExp(String.raw`${type}:\s*["']?([^"',(]+)`, 'i')
+    // Support "Action type: Name | Changes"
+    new RegExp(String.raw`${type}:\s*([^|:,(]+)`, 'i'),
+    new RegExp(String.raw`${type}\s*['"]?([^'":,|]+)['"]?`, 'i'),
+    new RegExp(String.raw`^Updated ${type}:\s*(.+?)(?:\s*[|(|]|$)`, 'i'),
+    new RegExp(String.raw`^Refined ${type}:\s*["']?([^"']+)`, 'i')
   ]
   for (const p of patterns) {
     const m = p.exec(details)
@@ -58,22 +59,41 @@ function getTargetName(details: string, type: string): string {
 }
 
 function parseTagChange(details: string, name: string): React.ReactNode {
-  const tagMatch = /tag\s*['"]?([^'":]+)['"]?/i.exec(details)
+  const tagMatch = /tag\s*['"]?([^'":|]+)['"]?/i.exec(details)
   const tagName = tagMatch?.[1]?.trim()
   return <span>Added tag {tagName ? bold(tagName) : "a tag"} to {name ? bold(name) : "task"}</span>
 }
 
 function parseFieldChanges(details: string, name: string): React.ReactNode {
-  // Hardened regex to avoid ReDoS: using non-greedy match and limiting length check
-  const fieldsMatch = /\(fields:\s*([^)]+?)\)/i.exec(details)
+  // Support both (fields: ...) and | Changes: ...
+  const fieldsMatch = /\| Changes:\s*(.+)$/i.exec(details) || /\(fields:\s*([^)]+?)\)/i.exec(details)
   if (!fieldsMatch) return null
   
   const fieldChanges = fieldsMatch[1].split(",").map(f => f.trim())
+  
+  // Custom parsing for better readability of "field: 'old' -> 'new'"
+  const parsedChanges = fieldChanges.map(change => {
+    const match = /^([^:]+):\s*['"]?([^'"]*)['"]?\s*->\s*['"]?([^'"]*)['"]?$/i.exec(change)
+    if (match) {
+      const field = match[1].trim()
+      const from = match[2].trim()
+      const to = match[3].trim()
+      
+      // Special handling for specific fields
+      if (field === 'due_date') return `Rescheduled from ${formatAuditDate(from)} to ${formatAuditDate(to)}`
+      if (field === 'project_id' || field === 'project') return `Moved project`
+      if (field === 'completed') return to === 'True' ? 'Marked as done' : 'Reopened'
+      
+      return `${field}: ${from} → ${to}`
+    }
+    return change
+  })
+
   return (
     <span>
-      Updated task {name ? bold(name) : ""}
+      Updated {name ? bold(name) : "task"}
       <span className="text-muted-foreground ml-1">
-        ({fieldChanges.map((change, i) => <span key={change}>{i > 0 && ", "}{change}</span>)})
+        ({parsedChanges.map((change, i) => <span key={i}>{i > 0 && ", "}{change}</span>)})
       </span>
     </span>
   )
@@ -151,8 +171,7 @@ export function describeTaskAction(act: string, details: string): React.ReactNod
   const name = getTargetName(details, "task")
   
   if (act.includes("create")) {
-    const createdName = details?.replace(/^Created task:\s*/i, "").trim()
-    return createdName ? <span>Created task {bold(createdName)}</span> : "Created a new task"
+    return name ? <span>Created task {bold(name)}</span> : "Created a new task"
   }
   
   if (act.includes("update")) return handleTaskUpdate(details?.toLowerCase() || "", details, name)
@@ -164,7 +183,7 @@ export function describeTaskAction(act: string, details: string): React.ReactNod
 export function describeSubtaskAction(act: string, details: string): React.ReactNode {
   const subName = getTargetName(details, "subtask")
   // Refined regex to capture parent task name more reliably
-  const parentMatch = /(?:to|on|from|in)\s*task\s*['"]?([^'":,]+)['"]?/i.exec(details)
+  const parentMatch = /(?:to|on|from|in)\s*task\s*['"]?([^'":,|]+)['"]?/i.exec(details)
   const parentName = parentMatch?.[1]?.trim()
 
   const subNode = subName ? bold(subName) : "subtask"
@@ -174,20 +193,12 @@ export function describeSubtaskAction(act: string, details: string): React.React
     return <span>Added subtask {subNode}{parentNode}</span>
   
   if (act.includes("update")) {
-    if (details?.toLowerCase().includes("marked completed")) 
+    if (details?.toLowerCase().includes("marked completed") || details?.toLowerCase().includes("completed: false -> true")) 
       return <span>Finished subtask {subNode}{parentNode}</span>
     
-    const fieldsMatch = /\(([^)]+?)\)$/i.exec(details) || /\(fields:\s*([^)]+?)\)/i.exec(details)
-    const fieldChangesRaw = fieldsMatch?.[1]
+    const fieldView = parseFieldChanges(details, subName)
+    if (fieldView) return fieldView
     
-    if (fieldChangesRaw) {
-      return (
-        <span>
-          Updated {subNode}{parentNode}
-          <span className="text-muted-foreground ml-1">({fieldChangesRaw})</span>
-        </span>
-      )
-    }
     return <span>Updated subtask {subNode}{parentNode}</span>
   }
   
@@ -198,10 +209,14 @@ export function describeSubtaskAction(act: string, details: string): React.React
 }
 
 export function describeProjectAction(act: string, details: string): React.ReactNode {
-  const projName = getTargetName(details, "project")
-  if (act.includes("create")) return <span>Created project {projName ? bold(projName) : "a project"}</span>
-  if (act.includes("update")) return <span>Updated project {projName ? bold(projName) : "a project"}</span>
-  if (act.includes("delete")) return <span>Deleted project {projName ? bold(projName) : "a project"}</span>
+  const name = getTargetName(details, "project")
+  if (act.includes("create")) return <span>Created project {name ? bold(name) : "a project"}</span>
+  if (act.includes("update")) {
+    const fieldView = parseFieldChanges(details, name)
+    if (fieldView) return fieldView
+    return <span>Updated project {name ? bold(name) : "a project"}</span>
+  }
+  if (act.includes("delete")) return <span>Deleted project {name ? bold(name) : "a project"}</span>
   return null
 }
 
