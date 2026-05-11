@@ -1,8 +1,9 @@
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { useNavigate, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import { useFilters } from "@/contexts/FilterContext"
 import { CreateProjectModal } from "@/components/create-project-modal"
+import { CreateTagModal } from "@/components/create-tag-modal"
 import { useProjects } from "@/hooks/useProjects"
 import { useTags } from "@/hooks/useTags"
 import {
@@ -23,7 +24,9 @@ import {
   Calendar,
   Inbox,
   CalendarRange,
+  ChevronDown,
 } from "lucide-react"
+import * as LucideIcons from "lucide-react"
 import { useState } from "react"
 
 export interface SidebarProps {
@@ -46,6 +49,9 @@ export function Sidebar({
   const { data: projects = [] } = useProjects()
   const { data: tags = [] } = useTags()
   const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = useState(false)
+  const [isCreateTagModalOpen, setIsCreateTagModalOpen] = useState(false)
+  const [isProjectsCollapsed, setIsProjectsCollapsed] = useState(false)
+  const [isTagsCollapsed, setIsTagsCollapsed] = useState(false)
 
   const navLinks = [
     { id: "dashboard", path: "/dashboard", label: "Overview", icon: LayoutDashboard },
@@ -59,6 +65,36 @@ export function Sidebar({
     { id: "upcoming", label: "Next 7 Days", icon: CalendarRange, filter: "upcoming" },
   ]
 
+  const handleSidebarFilterClick = (filter: string) => {
+    if (activeSidebarFilter === filter) {
+      setActiveSidebarFilter("all")
+    } else {
+      setActiveSidebarFilter(filter)
+    }
+    if (location.pathname !== "/tasks") navigate("/tasks")
+  }
+
+  const handleProjectClick = (projectId: number) => {
+    const filterId = `project:${projectId}`
+    if (activeSidebarFilter === filterId && activeTagId === null) {
+      setActiveSidebarFilter("all")
+    } else {
+      setActiveSidebarFilter(filterId)
+      setActiveTagId(null)
+    }
+    if (location.pathname !== "/tasks") navigate("/tasks")
+  }
+
+  const handleTagClick = (tagId: number) => {
+    if (activeTagId === tagId) {
+      setActiveTagId(null)
+    } else {
+      setActiveTagId(tagId)
+      setActiveSidebarFilter("all")
+    }
+    if (location.pathname !== "/tasks") navigate("/tasks")
+  }
+
   return (
     <motion.aside
       initial={false}
@@ -67,12 +103,16 @@ export function Sidebar({
       className="relative hidden min-h-svh flex-col border-r border-white/5 bg-background/60 px-4 py-8 backdrop-blur-3xl md:flex shadow-[20px_0_50px_-20px_rgba(0,0,0,0.4)] group/sidebar z-50"
     >
       {/* Branding Section */}
-      <div className="mb-12 flex items-center justify-between gap-4 px-2 relative min-h-[48px]">
+      <div className={cn(
+        "mb-12 flex items-center justify-between gap-4 px-2 relative min-h-[48px]",
+        isCollapsed && "justify-center"
+      )}>
         <div className="flex items-center gap-4 overflow-hidden">
           <motion.div 
             animate={{ 
               opacity: isCollapsed ? 0 : 1,
-              scale: isCollapsed ? 0.8 : 1
+              scale: isCollapsed ? 0.8 : 1,
+              x: isCollapsed ? 8 : 0
             }}
             whileHover={{ rotate: 10, scale: 1.1 }}
             className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary via-primary to-accent shadow-2xl shadow-primary/30"
@@ -100,8 +140,10 @@ export function Sidebar({
           whileTap={{ scale: 0.95 }}
           onClick={onToggle}
           className={cn(
-            "absolute -right-3 top-2 z-50 flex h-10 w-10 items-center justify-center rounded-xl border border-border/50 bg-background/80 backdrop-blur-md shadow-lg transition-all duration-300 cursor-pointer hover:border-primary/30 hover:text-primary",
-            isCollapsed && "bg-primary text-primary-foreground border-none shadow-primary/20"
+            "absolute z-50 flex h-10 w-10 items-center justify-center rounded-xl border border-border/50 bg-background/80 backdrop-blur-md shadow-lg transition-all duration-300 cursor-pointer hover:border-primary/30 hover:text-primary",
+            isCollapsed 
+              ? "right-1/2 translate-x-1/2 top-2 bg-primary text-primary-foreground border-none shadow-primary/20" 
+              : "-right-3 top-2"
           )}
         >
           {isCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
@@ -125,10 +167,7 @@ export function Sidebar({
               const content = (
                 <button
                   key={id}
-                  onClick={() => {
-                    setActiveSidebarFilter(filter)
-                    if (location.pathname !== "/tasks") navigate("/tasks")
-                  }}
+                  onClick={() => handleSidebarFilterClick(filter)}
                   className={cn(
                     "group relative flex items-center rounded-xl px-4 py-2.5 text-sm font-bold transition-all duration-300",
                     isCollapsed
@@ -226,12 +265,19 @@ export function Sidebar({
         <div className="space-y-4">
           <div
             className={cn(
-              "flex items-center justify-between px-4",
+              "flex items-center justify-between px-4 group/header cursor-pointer select-none",
               isCollapsed && "justify-center"
             )}
+            onClick={() => !isCollapsed && setIsProjectsCollapsed(!isProjectsCollapsed)}
           >
             {!isCollapsed && (
               <div className="flex items-center gap-2">
+                <ChevronDown 
+                  className={cn(
+                    "h-3 w-3 text-foreground/40 transition-transform duration-300",
+                    isProjectsCollapsed && "-rotate-90"
+                  )} 
+                />
                 <Layers className="h-3 w-3 text-foreground/60" />
                 <p className="text-[10px] font-bold tracking-[0.3em] text-foreground/60 uppercase">
                   Projects
@@ -244,7 +290,10 @@ export function Sidebar({
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                onClick={() => setIsCreateProjectModalOpen(true)}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setIsCreateProjectModalOpen(true)
+                }}
                 className="p-1 rounded-md hover:bg-white/10 text-foreground/40 hover:text-foreground transition-colors cursor-pointer"
               >
                 <Plus className="h-4 w-4" />
@@ -252,134 +301,186 @@ export function Sidebar({
             )}
           </div>
 
-          <div className="flex flex-col gap-2">
-            {projects.length === 0 && !isCollapsed && (
-              <div className="px-4 py-6 rounded-2xl border border-dashed border-border/50 bg-white/5 text-center">
-                <p className="text-[10px] font-bold text-foreground/40 uppercase">No Projects</p>
-              </div>
-            )}
-            {projects.map((project) => {
-              const filterId = `project:${project.id}`
-              const isActive = activeSidebarFilter === filterId && activeTagId === null
-              const content = (
-                <motion.button
-                  key={project.id}
-                  onClick={() => {
-                    setActiveSidebarFilter(filterId)
-                    setActiveTagId(null)
-                  }}
-                  whileHover={{ x: isCollapsed ? 0 : 4, backgroundColor: "rgba(255,255,255,0.05)" }}
-                  whileTap={{ scale: 0.98 }}
-                  className={cn(
-                    "group flex items-center rounded-2xl px-4 py-3.5 text-left text-sm font-bold transition-all duration-300",
-                    isCollapsed
-                      ? "mx-auto w-14 justify-center"
-                      : "w-full justify-between",
-                    isActive
-                      ? "bg-primary/5 text-primary ring-1 ring-primary/20 shadow-xl"
-                      : "text-foreground/50 hover:text-foreground"
-                  )}
-                >
-                  <div className="flex items-center gap-4">
-                    <div 
-                      className={cn(
-                        "h-6 w-6 rounded-lg flex items-center justify-center transition-all duration-300 shadow-lg",
-                        isActive ? "scale-110" : "opacity-40 group-hover:opacity-100 group-hover:scale-110"
-                      )}
-                      style={{ backgroundColor: project.color || "gray" }}
-                    >
-                      <Layers className="h-3.5 w-3.5 text-white" />
+          <AnimatePresence initial={false}>
+            {(!isProjectsCollapsed || isCollapsed) && (
+              <motion.div
+                initial={isCollapsed ? { opacity: 1, height: "auto" } : { opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                className="overflow-hidden"
+              >
+                <div className="flex flex-col gap-2">
+                  {projects.length === 0 && !isCollapsed && (
+                    <div className="px-4 py-6 rounded-2xl border border-dashed border-border/50 bg-white/5 text-center mx-4">
+                      <p className="text-[10px] font-bold text-foreground/40 uppercase">No Projects</p>
                     </div>
-                    {!isCollapsed && <span>{project.name}</span>}
-                  </div>
-                  {!isCollapsed && isActive && (
-                    <div className="h-1.5 w-1.5 rounded-full bg-primary shadow-glow shadow-primary/50" />
                   )}
-                </motion.button>
-              )
+                  {projects.map((project) => {
+                    const filterId = `project:${project.id}`
+                    const isActive = activeSidebarFilter === filterId && activeTagId === null
+                    const ProjectIcon = (LucideIcons as unknown as Record<string, LucideIcons.LucideIcon>)[project.icon || "Layers"] || LucideIcons.Layers
+                    const content = (
+                      <motion.button
+                        key={project.id}
+                        onClick={() => handleProjectClick(project.id)}
+                        whileHover={{ x: isCollapsed ? 0 : 4, backgroundColor: "rgba(255,255,255,0.05)" }}
+                        whileTap={{ scale: 0.98 }}
+                        className={cn(
+                          "group flex items-center rounded-2xl px-4 py-3.5 text-left text-sm font-bold transition-all duration-300",
+                          isCollapsed
+                            ? "mx-auto w-14 justify-center"
+                            : "w-full justify-between",
+                          isActive
+                            ? "bg-primary/5 text-primary ring-1 ring-primary/20 shadow-xl"
+                            : "text-foreground/50 hover:text-foreground"
+                        )}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div 
+                            className={cn(
+                              "h-6 w-6 rounded-lg flex items-center justify-center transition-all duration-300 shadow-lg",
+                              isActive ? "scale-110" : "opacity-40 group-hover:opacity-100 group-hover:scale-110"
+                            )}
+                            style={{ backgroundColor: project.color || "gray" }}
+                          >
+                            <ProjectIcon className="h-3.5 w-3.5 text-white" />
+                          </div>
+                          {!isCollapsed && <span className="truncate max-w-[140px]">{project.name}</span>}
+                        </div>
+                        {!isCollapsed && isActive && (
+                          <div className="h-1.5 w-1.5 rounded-full bg-primary shadow-glow shadow-primary/50" />
+                        )}
+                      </motion.button>
+                    )
 
-              if (isCollapsed) {
-                return (
-                  <Tooltip key={project.id} delayDuration={0}>
-                    <TooltipTrigger asChild>{content}</TooltipTrigger>
-                    <TooltipContent side="right" className="font-bold border-none bg-primary text-primary-foreground px-4 py-2 rounded-xl shadow-2xl">
-                      {project.name}
-                    </TooltipContent>
-                  </Tooltip>
-                )
-              }
-              return content
-            })}
-          </div>
+                    if (isCollapsed) {
+                      return (
+                        <Tooltip key={project.id} delayDuration={0}>
+                          <TooltipTrigger asChild>{content}</TooltipTrigger>
+                          <TooltipContent side="right" className="font-bold border-none bg-primary text-primary-foreground px-4 py-2 rounded-xl shadow-2xl">
+                            {project.name}
+                          </TooltipContent>
+                        </Tooltip>
+                      )
+                    }
+                    return content
+                  })}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Tags Section */}
         <div className="space-y-4">
-          <div className={cn("flex items-center justify-between px-4", isCollapsed && "justify-center")}>
+          <div 
+            className={cn(
+              "flex items-center justify-between px-4 group/header cursor-pointer select-none", 
+              isCollapsed && "justify-center"
+            )}
+            onClick={() => !isCollapsed && setIsTagsCollapsed(!isTagsCollapsed)}
+          >
             {!isCollapsed && (
               <div className="flex items-center gap-2">
+                <ChevronDown 
+                  className={cn(
+                    "h-3 w-3 text-foreground/40 transition-transform duration-300",
+                    isTagsCollapsed && "-rotate-90"
+                  )} 
+                />
                 <Tag className="h-3 w-3 text-foreground/60" />
                 <p className="text-[10px] font-bold tracking-[0.3em] text-foreground/60 uppercase">
                   Focus Tags
                 </p>
               </div>
             )}
-            {isCollapsed && <Tag className="h-4 w-4 text-foreground/20" />}
-          </div>
-
-          <div className="flex flex-col gap-1 px-2">
-            {tags.length === 0 && !isCollapsed && (
-              <div className="px-4 py-4 rounded-xl border border-dashed border-border/30 bg-white/5 text-center">
-                <p className="text-[10px] font-bold text-foreground/20 uppercase">No Tags</p>
-              </div>
+            {isCollapsed ? (
+              <Tag className="h-4 w-4 text-foreground/20" />
+            ) : (
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setIsCreateTagModalOpen(true)
+                }}
+                className="p-1 rounded-md hover:bg-white/10 text-foreground/40 hover:text-foreground transition-colors cursor-pointer"
+              >
+                <Plus className="h-4 w-4" />
+              </motion.button>
             )}
-            <div className={cn("flex flex-wrap gap-2", isCollapsed && "flex-col items-center")}>
-              {tags.map((tag) => {
-                const isActive = activeTagId === tag.id
-                const content = (
-                  <motion.button
-                    key={tag.id}
-                    onClick={() => {
-                      setActiveTagId(isActive ? null : tag.id)
-                      setActiveSidebarFilter("all")
-                    }}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className={cn(
-                      "flex items-center gap-2 rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all shadow-sm",
-                      isActive
-                        ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
-                        : "bg-white/5 text-foreground/60 hover:bg-white/10 hover:text-foreground"
-                    )}
-                  >
-                    <div 
-                      className="h-2 w-2 rounded-full shadow-[0_0_5px_currentColor]" 
-                      style={{ backgroundColor: tag.color || "gray", color: tag.color || "gray" }} 
-                    />
-                    {!isCollapsed && <span>{tag.name}</span>}
-                  </motion.button>
-                )
-
-                if (isCollapsed) {
-                  return (
-                    <Tooltip key={tag.id} delayDuration={0}>
-                      <TooltipTrigger asChild>{content}</TooltipTrigger>
-                      <TooltipContent side="right" className="font-bold border-none bg-primary text-primary-foreground px-4 py-2 rounded-xl shadow-2xl">
-                        {tag.name}
-                      </TooltipContent>
-                    </Tooltip>
-                  )
-                }
-                return content
-              })}
-            </div>
           </div>
+
+          <AnimatePresence initial={false}>
+            {(!isTagsCollapsed || isCollapsed) && (
+              <motion.div
+                initial={isCollapsed ? { opacity: 1, height: "auto" } : { opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                className="overflow-hidden"
+              >
+                <div className="flex flex-col gap-1 px-2">
+                  {tags.length === 0 && !isCollapsed && (
+                    <div className="px-4 py-4 rounded-xl border border-dashed border-border/30 bg-white/5 text-center mx-2">
+                      <p className="text-[10px] font-bold text-foreground/20 uppercase">No Tags</p>
+                    </div>
+                  )}
+                  <div className={cn("flex flex-wrap gap-2", isCollapsed && "flex-col items-center")}>
+                    {tags.map((tag) => {
+                      const isActive = activeTagId === tag.id
+                      const TagIconComponent = (LucideIcons as any)[tag.icon || "Tag"] || LucideIcons.Tag
+                      const content = (
+                        <motion.button
+                          key={tag.id}
+                          onClick={() => handleTagClick(tag.id)}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          className={cn(
+                            "flex items-center gap-2 rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all shadow-sm",
+                            isActive
+                              ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
+                              : "bg-white/5 text-foreground/60 hover:bg-white/10 hover:text-foreground"
+                          )}
+                        >
+                          <div 
+                            className="h-2 w-2 rounded-full shadow-[0_0_5px_currentColor] flex items-center justify-center" 
+                            style={{ backgroundColor: tag.color || "gray", color: tag.color || "gray" }} 
+                          >
+                             {/* Optional: we could show a tiny icon if we wanted, but the 2x2 dot is cleaner */}
+                          </div>
+                          {!isCollapsed && <span>{tag.name}</span>}
+                        </motion.button>
+                      )
+
+                      if (isCollapsed) {
+                        return (
+                          <Tooltip key={tag.id} delayDuration={0}>
+                            <TooltipTrigger asChild>{content}</TooltipTrigger>
+                            <TooltipContent side="right" className="font-bold border-none bg-primary text-primary-foreground px-4 py-2 rounded-xl shadow-2xl">
+                              {tag.name}
+                            </TooltipContent>
+                          </Tooltip>
+                        )
+                      }
+                      return content
+                    })}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
       <CreateProjectModal 
         open={isCreateProjectModalOpen} 
         onOpenChange={setIsCreateProjectModalOpen} 
+      />
+      <CreateTagModal
+        open={isCreateTagModalOpen}
+        onOpenChange={setIsCreateTagModalOpen}
       />
     </motion.aside>
   )
