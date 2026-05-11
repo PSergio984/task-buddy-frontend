@@ -10,6 +10,7 @@ import { TimePicker } from "@/components/ui/time-picker"
 import { Calendar as CalendarPicker } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { ColorIconPicker } from "../color-icon-picker"
+import { useSettings } from "@/contexts/SettingsContext"
 import { cn } from "@/lib/utils"
 
 interface DirtySections {
@@ -216,6 +217,8 @@ function ProjectSection({
 
 function DueDateSection({ dueDate, handleDateSelect, dirtySections }: MetaSidebarProps) {
   const [popoverOpen, setPopoverOpen] = React.useState(false)
+  const { timeFormat } = useSettings()
+  const is12h = timeFormat === "12h"
 
   const quickDates = [
     { label: "Today", value: new Date() },
@@ -236,7 +239,7 @@ function DueDateSection({ dueDate, handleDateSelect, dirtySections }: MetaSideba
             dueDate ? "bg-primary/10 text-primary border-primary/20 shadow-lg shadow-primary/5" : "text-foreground/40 border-white/5"
           )}>
             <Calendar className={cn("h-3.5 w-3.5 shrink-0", dueDate ? "text-primary" : "text-foreground/20")} />
-            {dueDate ? format(dueDate, "EEE, MMM d 'at' HH:mm") : "No deadline"}
+            {dueDate ? format(dueDate, is12h ? "EEE, MMM d 'at' hh:mm a" : "EEE, MMM d 'at' HH:mm") : "No deadline"}
           </button>
         </PopoverTrigger>
         <PopoverContent className="w-[320px] p-4 rounded-[1.5rem] border-white/10 bg-background/95 backdrop-blur-3xl flex flex-col gap-6 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)]" align="start" side="bottom" sideOffset={8}>
