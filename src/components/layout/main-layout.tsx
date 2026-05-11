@@ -32,7 +32,7 @@ export function MainLayout() {
       />
 
       {/* Main Content Wrapper */}
-      <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
+      <div className="flex flex-1 flex-col min-w-0 overflow-hidden pb-24 md:pb-0">
         {/* Persistent Top Navigation */}
         <TopNav onNewTask={handleOpenNewTask} />
 
@@ -42,7 +42,19 @@ export function MainLayout() {
             <Outlet context={{ handleEditTask }} />
           </div>
         </main>
+
+        {/* Mobile Navigation */}
+        <MobileNav 
+          onNewTask={handleOpenNewTask} 
+          onOpenWorkspace={() => setIsMobileWorkspaceOpen(true)} 
+        />
       </div>
+
+      {/* Mobile Workspace Drawer */}
+      <MobileDrawer 
+        open={isMobileWorkspaceOpen} 
+        onOpenChange={setIsMobileWorkspaceOpen} 
+      />
 
       {/* Global Task Drawer — handles both Create and View/Edit */}
       <TaskDetailDrawer
