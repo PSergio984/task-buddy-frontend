@@ -10,6 +10,7 @@ import {
   type AuditEntry, describeAction, getAuditIcon 
 } from "@/lib/audit-trail-helpers"
 import { useAuditTrail } from "@/hooks/useAuditTrail"
+import { useSettings } from "@/contexts/SettingsContext"
 
 interface AuditTrailProps {
   readonly limit?: number
@@ -224,6 +225,9 @@ function AuditGroup({ label, entries, groupIdx }: Readonly<{ label: string; entr
 }
 
 function AuditItem({ log, index, isLast }: Readonly<{ log: AuditEntry; index: number; isLast: boolean }>) {
+  const { timeFormat } = useSettings()
+  const is12h = timeFormat === '12h'
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -10 }}
@@ -245,7 +249,11 @@ function AuditItem({ log, index, isLast }: Readonly<{ log: AuditEntry; index: nu
           <div className="flex items-center gap-3">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-muted/50 px-2.5 py-0.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
               <Clock className="h-3 w-3" />
-              {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {new Date(log.created_at).toLocaleTimeString([], { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: is12h
+              })}
             </span>
           </div>
           {log.target_id && log.target_type === 'TASK' && (

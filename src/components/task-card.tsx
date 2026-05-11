@@ -7,6 +7,7 @@ import type { Task } from "@/lib/api"
 import { Trash2, Calendar, X, Tag, CheckCircle2, Layers, ChevronDown, ChevronUp } from "lucide-react"
 import { cn } from "@/lib/utils"
 import * as LucideIcons from "lucide-react"
+import { useSettings } from "@/contexts/SettingsContext"
 
 export interface TaskCardProps {
   readonly task: Task
@@ -25,7 +26,10 @@ export function TaskCard({
   onDeleteSubtask,
   onDetachTag,
 }: TaskCardProps) {
+  const { timeFormat } = useSettings()
+  const is12h = timeFormat === '12h'
   const [showAllSubtasks, setShowAllSubtasks] = useState(false)
+
   const formatDueDate = (dateStr: string) => {
     const date = new Date(dateStr)
     return new Intl.DateTimeFormat(undefined, {
@@ -33,6 +37,7 @@ export function TaskCard({
       day: 'numeric',
       hour: 'numeric',
       minute: 'numeric',
+      hour12: is12h
     }).format(date)
   }
 

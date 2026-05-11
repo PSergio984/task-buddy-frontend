@@ -110,30 +110,38 @@ export function describeTaskAction(act: string, details: string): React.ReactNod
 
 export function describeSubtaskAction(act: string, details: string): React.ReactNode {
   const subName = getTargetName(details, "subtask")
-  const parentMatch = /(?:to|on|from)\s*task\s*['"]?([^'":,]+)['"]?/i.exec(details)
+  // Refined regex to capture parent task name more reliably
+  const parentMatch = /(?:to|on|from|in)\s*task\s*['"]?([^'":,]+)['"]?/i.exec(details)
   const parentName = parentMatch?.[1]?.trim()
 
+  const subNode = subName ? bold(subName) : "subtask"
+  const parentNode = parentName ? <> to task {bold(parentName)}</> : ""
+
   if (act.includes("create")) 
-    return <span>Added subtask {subName ? bold(subName) : "a subtask"} to {parentName ? bold(parentName) : "task"}</span>
+    return <span>Added subtask {subNode}{parentNode}</span>
   
   if (act.includes("update")) {
     if (details?.toLowerCase().includes("marked completed")) 
-      return <span>Finished subtask {subName ? bold(subName) : "a subtask"}</span>
+      return <span>Finished subtask {subNode}{parentNode}</span>
     
     const fieldsMatch = /\(([^)]+?)\)$/i.exec(details) || /\(fields:\s*([^)]+?)\)/i.exec(details)
     const fieldChangesRaw = fieldsMatch?.[1]
-    return (
-      <span>
-        Updated {subName ? bold(subName) : "subtask"} on {parentName ? bold(parentName) : "task"}
-        {fieldChangesRaw && <span className="text-muted-foreground ml-1">({fieldChangesRaw})</span>}
-      </span>
-    )
+    
+    if (fieldChangesRaw) {
+      return (
+        <span>
+          Updated {subNode}{parentNode}
+          <span className="text-muted-foreground ml-1">({fieldChangesRaw})</span>
+        </span>
+      )
+    }
+    return <span>Updated subtask {subNode}{parentNode}</span>
   }
   
   if (act.includes("delete")) 
-    return <span>Removed subtask {subName ? bold(subName) : "a subtask"} from {parentName ? bold(parentName) : "task"}</span>
+    return <span>Removed subtask {subNode}{parentNode}</span>
   
-  return null
+  return <span>Activity on subtask {subNode}{parentNode}</span>
 }
 
 export function describeProjectAction(act: string, details: string): React.ReactNode {
