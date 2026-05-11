@@ -13,6 +13,7 @@ The frontend roadmap focuses on transforming the application from an "AI-generat
 - [x] **Phase 4.1: Advanced UI/UX & Feature Refinement** - Boxed sidebar toggle, Task Drawer, and Advanced Filtering.
 - [ ] **Phase 4.2: High-Velocity Polish & Feature Hardening** - Subtask fixes, interaction refinements, and searchable creation.
 - [ ] **Phase 4.3: Task Interaction Precision & Information Density** - Full creation support (subtasks/tags), time-aware deadlines, color-coding, and layout polish.
+- [ ] **Phase 4.5: UI/UX & Functional Refinement** - Sidebar workspace controls, activity history context, and profile settings.
 
 
 ## Phase Details
@@ -76,6 +77,19 @@ Plans:
   4. Activity history specifies exactly which task was created/updated/deleted.
   5. UI contrast in filtering and sidebars meets high-readability standards.
   6. Layout includes the requested blue gradient accent and optimized title padding.
+
+### Phase 4.5: UI/UX & Functional Refinement
+**Goal**: Elevate the user experience through sidebar workspace controls, activity history context, and personalized profile settings.
+**Depends on**: Phase 4.3
+**Requirements**: UI-28, UI-29, UI-30, UI-31, UI-32, UI-33, UI-34, UI-35
+**Success Criteria**:
+  1. Sidebar "Projects" and "Focus Tags" sections are individually collapsible.
+  2. Projects and Tags render their custom user-selected icons and colors in the Sidebar.
+  3. Clicking an active Sidebar filter reverts the view to "All Tasks".
+  4. "Create Tag" action is accessible directly from the Sidebar.
+  5. Audit Trail uses natural language for updates and preserves parent-task context for subtasks.
+  6. User can toggle between 12h and 24h time formats in Profile settings.
+  7. Collapsed sidebar icon is perfectly centered and aligned.
 
 ---
 *Roadmap updated: 2026-05-11*
