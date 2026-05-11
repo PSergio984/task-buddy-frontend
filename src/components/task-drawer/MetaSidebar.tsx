@@ -4,12 +4,21 @@ import * as Icons from "lucide-react"
 import { format } from "date-fns"
 import { type Task, type TaskPriority, type Tag, type Project } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { TimePicker } from "@/components/ui/time-picker"
 import { Calendar as CalendarPicker } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { ColorIconPicker } from "../color-icon-picker"
 import { cn } from "@/lib/utils"
+
+interface DirtySections {
+  readonly status?: boolean
+  readonly priority?: boolean
+  readonly project?: boolean
+  readonly dueDate?: boolean
+  readonly tags?: boolean
+}
 
 interface MetaSidebarProps {
   readonly isCreate: boolean
@@ -18,8 +27,10 @@ interface MetaSidebarProps {
   readonly projects: readonly Project[]
   readonly priority: string
   readonly setPriority: (v: TaskPriority) => void
+  readonly completed: boolean
+  readonly setCompleted: (v: boolean) => void
   readonly dueDate: Date | undefined
-  readonly handleDateSelect: (d: Date | undefined) => void
+  readonly handleDateSelect: (d: Date | undefined, preserveTime?: boolean) => void
   readonly currentTags: readonly Tag[]
   readonly handleDetachTag: (id: number) => void
   readonly isTagPickerOpen: boolean
@@ -46,6 +57,7 @@ interface MetaSidebarProps {
   readonly task: Task | null
   readonly handleUpdate: (updates: Partial<Task>) => void
   readonly toast: (props: { title?: string; description?: string; variant?: "default" | "destructive" | "success" }) => void
+  readonly dirtySections?: DirtySections
 }
 
 const PRIORITY_STYLES = {
@@ -56,24 +68,26 @@ const PRIORITY_STYLES = {
 
 export function MetaSidebar(props: MetaSidebarProps) {
   return (
-    <div className="flex-[0.35] bg-white/[0.02] p-8 space-y-6 flex flex-col overflow-y-auto no-scrollbar">
+    <div className="flex-[0.35] bg-white/[0.02] p-8 space-y-6 flex flex-col overflow-y-auto no-scrollbar border-l border-white/5">
+      <DueDateSection {...props} />
       <StatusSection {...props} />
       <PrioritySection {...props} />
       <ProjectSection {...props} />
-      <DueDateSection {...props} />
       <TagsSection {...props} />
     </div>
   )
 }
 
-function StatusSection({ isCreate, task, handleUpdate }: Readonly<MetaSidebarProps>) {
-  if (isCreate || !task) return null
+function StatusSection({ completed, setCompleted, dirtySections }: Pick<MetaSidebarProps, "completed" | "setCompleted" | "dirtySections">) {
   return (
     <div className="space-y-2">
-      <label htmlFor="status-select" className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Status</label>
+      <div className="flex items-center justify-between">
+        <label htmlFor="status-select" className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Status</label>
+        {dirtySections?.status && <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
+      </div>
       <Select
-        value={task.completed ? "COMPLETED" : "PENDING"}
-        onValueChange={(val) => handleUpdate({ completed: val === "COMPLETED" })}
+        value={completed ? "COMPLETED" : "PENDING"}
+        onValueChange={(val) => setCompleted(val === "COMPLETED")}
       >
         <SelectTrigger id="status-select" className="w-full bg-white/5 border-none rounded-xl h-10 font-bold">
           <SelectValue />
@@ -87,55 +101,59 @@ function StatusSection({ isCreate, task, handleUpdate }: Readonly<MetaSidebarPro
   )
 }
 
-function PrioritySection({ isCreate, priority, setPriority, task, handleUpdate }: Readonly<MetaSidebarProps>) {
-  const currentPriority = (isCreate ? priority : task?.priority) as TaskPriority || "MEDIUM"
+function PrioritySection({ priority, setPriority, dirtySections }: Pick<MetaSidebarProps, "priority" | "setPriority" | "dirtySections">) {
+  const currentPriority = priority as TaskPriority || "MEDIUM"
   return (
     <div className="space-y-2">
-      <label htmlFor="priority-select" className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Priority</label>
+      <div className="flex items-center justify-between">
+        <label htmlFor="priority-select" className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Priority</label>
+        {dirtySections?.priority && <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
+      </div>
       <Select
         value={currentPriority}
-        onValueChange={(val) => {
-          if (isCreate) setPriority(val as TaskPriority)
-          else handleUpdate({ priority: val as TaskPriority })
-        }}
+        onValueChange={(val) => setPriority(val as TaskPriority)}
       >
         <SelectTrigger id="priority-select" className={cn(
-          "w-full border-none rounded-xl h-10 font-bold",
+          "w-full border-none rounded-xl h-10 font-bold text-xs uppercase tracking-widest",
           PRIORITY_STYLES[currentPriority]
         )}>
           <div className="flex items-center gap-2">
-            <Flag className="h-3.5 w-3.5" />
+            <Flag className="h-3 w-3" />
             <SelectValue />
           </div>
         </SelectTrigger>
         <SelectContent className="bg-background/95 backdrop-blur-xl border-white/10">
-          <SelectItem value="HIGH" className="text-red-500 font-bold">High</SelectItem>
-          <SelectItem value="MEDIUM" className="text-amber-500 font-bold">Medium</SelectItem>
-          <SelectItem value="LOW" className="text-blue-500 font-bold">Low</SelectItem>
+          <SelectItem value="HIGH" className="text-red-500 font-bold text-xs uppercase tracking-widest">High</SelectItem>
+          <SelectItem value="MEDIUM" className="text-amber-500 font-bold text-xs uppercase tracking-widest">Medium</SelectItem>
+          <SelectItem value="LOW" className="text-blue-500 font-bold text-xs uppercase tracking-widest">Low</SelectItem>
         </SelectContent>
       </Select>
     </div>
   )
 }
 
+
 function ProjectSection({
-  isCreate, projectId, setProjectId, projects, isProjectPickerOpen, setIsProjectPickerOpen,
+  projectId, setProjectId, projects, isProjectPickerOpen, setIsProjectPickerOpen,
   projectSearch, setProjectSearch, handleCreateProject, newProjectColor, setNewProjectColor,
-  newProjectIcon, setNewProjectIcon, handleUpdate
-}: Readonly<MetaSidebarProps>) {
+  newProjectIcon, setNewProjectIcon, dirtySections
+}: Pick<MetaSidebarProps, "projectId" | "setProjectId" | "projects" | "isProjectPickerOpen" | "setIsProjectPickerOpen" | "projectSearch" | "setProjectSearch" | "handleCreateProject" | "newProjectColor" | "setNewProjectColor" | "newProjectIcon" | "setNewProjectIcon" | "dirtySections">) {
   const selectedProject = projects.find(p => p.id.toString() === projectId)
   
   return (
     <div className="space-y-2">
-      <label htmlFor="project-search" className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Project</label>
+      <div className="flex items-center justify-between">
+        <label htmlFor="project-search" className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Project</label>
+        {dirtySections?.project && <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
+      </div>
       <Popover open={isProjectPickerOpen} onOpenChange={setIsProjectPickerOpen}>
         <PopoverTrigger asChild>
-          <button className="flex items-center gap-3 w-full p-3 rounded-xl bg-white/5 text-sm font-bold text-foreground/60 border border-white/5 hover:bg-white/10 transition-colors text-left">
-            <Layers className="h-4 w-4 text-primary shrink-0" />
+          <button className="flex items-center gap-3 w-full p-3 rounded-xl bg-white/5 text-xs font-black uppercase tracking-widest text-foreground/60 border border-white/5 hover:bg-white/10 transition-all text-left">
+            <Layers className="h-3.5 w-3.5 text-primary shrink-0" />
             {projectId === "none" ? "Inbox" : selectedProject?.name || "Inbox"}
           </button>
         </PopoverTrigger>
-        <PopoverContent className="w-56 p-2 rounded-xl border-white/10 bg-background/95 backdrop-blur-xl" align="start">
+        <PopoverContent className="w-56 p-2 rounded-xl border-white/10 bg-background/95 backdrop-blur-xl" align="end">
           <input
             id="project-search"
             value={projectSearch}
@@ -148,7 +166,6 @@ function ProjectSection({
             <button
               onClick={() => {
                 setProjectId("none")
-                if (!isCreate) handleUpdate({ project_id: undefined })
                 setIsProjectPickerOpen(false)
               }}
               className="w-full text-left px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-white/5 transition-colors flex items-center gap-2"
@@ -163,7 +180,6 @@ function ProjectSection({
                   key={p.id}
                   onClick={() => {
                     setProjectId(p.id.toString())
-                    if (!isCreate) handleUpdate({ project_id: p.id })
                     setIsProjectPickerOpen(false)
                   }}
                   className="w-full text-left px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-2"
@@ -198,46 +214,102 @@ function ProjectSection({
   )
 }
 
-function DueDateSection({ isCreate, dueDate, handleDateSelect, handleUpdate }: Readonly<MetaSidebarProps>) {
+function DueDateSection({ dueDate, handleDateSelect, dirtySections }: MetaSidebarProps) {
+  const [popoverOpen, setPopoverOpen] = React.useState(false)
+
+  const quickDates = [
+    { label: "Today", value: new Date() },
+    { label: "Tomorrow", value: new Date(new Date().setDate(new Date().getDate() + 1)) },
+    { label: "Next Week", value: new Date(new Date().setDate(new Date().getDate() + 7)) },
+  ]
+
   return (
     <div className="space-y-2">
-      <label htmlFor="due-date-trigger" className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Due Date</label>
-      <Popover>
+      <div className="flex items-center justify-between">
+        <label htmlFor="due-date-trigger" className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Due Date</label>
+        {dirtySections?.dueDate && <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
+      </div>
+      <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
         <PopoverTrigger asChild>
-          <button id="due-date-trigger" className="flex items-center gap-3 w-full p-3 rounded-xl bg-white/5 text-sm font-bold text-foreground/60 border border-white/5 hover:bg-white/10 transition-colors text-left">
-            <Calendar className="h-4 w-4 text-primary shrink-0" />
+          <button id="due-date-trigger" className={cn(
+            "flex items-center gap-3 w-full p-3 rounded-xl bg-white/5 text-xs font-black uppercase tracking-widest border transition-all hover:bg-white/10 text-left",
+            dueDate ? "bg-primary/10 text-primary border-primary/20 shadow-lg shadow-primary/5" : "text-foreground/40 border-white/5"
+          )}>
+            <Calendar className={cn("h-3.5 w-3.5 shrink-0", dueDate ? "text-primary" : "text-foreground/20")} />
             {dueDate ? format(dueDate, "EEE, MMM d 'at' HH:mm") : "No deadline"}
           </button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-4 rounded-2xl border-white/10 bg-background/95 backdrop-blur-xl flex flex-col gap-4" align="start">
-          <CalendarPicker
-            mode="single"
-            selected={dueDate}
-            onSelect={handleDateSelect}
-            disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-            initialFocus
-          />
-          <div className="flex items-center justify-between border-t border-white/5 pt-4">
-            <div className="space-y-0.5">
-              <label htmlFor="time-picker" className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Set Time</label>
-              {dueDate?.toDateString() === new Date().toDateString() && (
-                <p className="text-[8px] text-amber-500/70 font-bold uppercase">Today: Future times only</p>
-              )}
+        <PopoverContent className="w-[320px] p-4 rounded-[1.5rem] border-white/10 bg-background/95 backdrop-blur-3xl flex flex-col gap-6 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)]" align="start" side="bottom" sideOffset={8}>
+          {/* Quick Date Shortcuts */}
+          <div className="grid grid-cols-3 gap-2">
+            {quickDates.map((d) => (
+              <Button
+                key={d.label}
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  handleDateSelect(d.value)
+                }}
+                className="text-[10px] font-black uppercase tracking-tight h-8 rounded-lg bg-white/5 hover:bg-primary/10 hover:text-primary border border-white/5"
+              >
+                {d.label}
+              </Button>
+            ))}
+          </div>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 px-1">
+                <Icons.Clock className="h-3 w-3 text-primary" />
+                <span className="text-[9px] font-black uppercase tracking-widest text-foreground/40">Set Time</span>
+              </div>
+
+
+              <TimePicker
+                id="time-picker"
+                value={dueDate ? format(dueDate, "HH:mm") : ""}
+                onChange={(timeStr) => {
+                  const [hours, minutes] = timeStr.split(':').map(Number)
+                  const now = new Date()
+                  const current = dueDate || now
+                  const newDate = new Date(current)
+                  newDate.setHours(hours)
+                  newDate.setMinutes(minutes)
+                  handleDateSelect(newDate, false)
+                }}
+              />
             </div>
-            <TimePicker
-              id="time-picker"
-              className="w-48"
-              value={dueDate ? `${dueDate.getHours().toString().padStart(2, '0')}:${dueDate.getMinutes().toString().padStart(2, '0')}` : "09:00"}
-              onChange={(timeStr) => {
-                const [hours, minutes] = timeStr.split(':').map(Number)
-                const current = dueDate || new Date()
-                const newDate = new Date(current)
-                newDate.setHours(hours)
-                newDate.setMinutes(minutes)
-                if (isCreate) handleDateSelect(newDate)
-                else handleUpdate({ due_date: newDate.toISOString() })
+
+            <div className="border-t border-white/5 pt-4">
+              <CalendarPicker
+                mode="single"
+                selected={dueDate}
+                onSelect={(day) => handleDateSelect(day)}
+                disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                className="rounded-xl scale-[0.9] origin-top"
+              />
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-between gap-2 pt-2 border-t border-white/5">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                handleDateSelect(undefined)
+                setPopoverOpen(false)
               }}
-            />
+              className="text-[10px] font-bold text-destructive hover:bg-destructive/10"
+            >
+              Clear Date
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => setPopoverOpen(false)}
+              className="text-[10px] font-black uppercase tracking-widest h-8 px-4 rounded-lg bg-primary text-primary-foreground"
+            >
+              Set Deadline
+            </Button>
           </div>
         </PopoverContent>
       </Popover>
@@ -248,11 +320,15 @@ function DueDateSection({ isCreate, dueDate, handleDateSelect, handleUpdate }: R
 function TagsSection({
   currentTags, handleDetachTag, isTagPickerOpen, setIsTagPickerOpen,
   tagSearch, setTagSearch, filteredTags, handleAttachTag, canCreateTag,
-  handleCreateAndAttachTag, newTagColor, setNewTagColor, newTagIcon, setNewTagIcon
-}: Readonly<MetaSidebarProps>) {
+  handleCreateAndAttachTag, newTagColor, setNewTagColor, newTagIcon, setNewTagIcon,
+  dirtySections
+}: Pick<MetaSidebarProps, "currentTags" | "handleDetachTag" | "isTagPickerOpen" | "setIsTagPickerOpen" | "tagSearch" | "setTagSearch" | "filteredTags" | "handleAttachTag" | "canCreateTag" | "handleCreateAndAttachTag" | "newTagColor" | "setNewTagColor" | "newTagIcon" | "setNewTagIcon" | "dirtySections">) {
   return (
     <div className="space-y-2">
-      <label htmlFor="tag-search" className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Tags</label>
+      <div className="flex items-center justify-between">
+        <label htmlFor="tag-search" className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Tags</label>
+        {dirtySections?.tags && <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
+      </div>
       <div className="flex flex-wrap gap-2">
         {currentTags?.map((tag) => (
           <TagBadge key={tag.id} tag={tag} onDetach={() => handleDetachTag(tag.id)} />
@@ -263,7 +339,7 @@ function TagsSection({
               <Plus className="h-3 w-3 text-foreground/40" />
             </button>
           </PopoverTrigger>
-          <PopoverContent className="w-56 p-2 rounded-xl border-white/10 bg-background/95 backdrop-blur-xl" align="start">
+          <PopoverContent className="w-56 p-2 rounded-xl border-white/10 bg-background/95 backdrop-blur-xl" align="end">
             <input
               id="tag-search"
               value={tagSearch}
@@ -311,7 +387,7 @@ function TagsSection({
 }
 
 function TagBadge({ tag, onDetach }: Readonly<{ tag: Tag; onDetach: () => void }>) {
-  const TagIconComp = (Icons as unknown as Record<string, React.ElementType>)[tag.icon || "Tag"] || TagIcon
+  const TagIconComp = (Icons as unknown as Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>>)[tag.icon || "Tag"] || TagIcon
   return (
     <Badge
       className="bg-primary/5 text-primary border-primary/10 px-2.5 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1.5 group/tag transition-all hover:bg-primary/10"
