@@ -47,6 +47,7 @@ export function LoginPage() {
       toast({
         title: "Welcome back!",
         description: "Successfully signed in to your dashboard.",
+        variant: "success",
       })
       navigate("/dashboard")
     } catch (err: unknown) {

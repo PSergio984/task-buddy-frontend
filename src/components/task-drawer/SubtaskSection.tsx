@@ -32,7 +32,6 @@ export function SubtaskSection({
   subtaskInputRef, subtasksLimit, setSubtasksLimit, pendingSubtasks, setPendingSubtasks,
   task, isDirty
 }: SubtaskSectionProps) {
-  const hasMoreSubtasks = allSubtasks.length > subtasksLimit
 
   return (
     <div className="space-y-3">
@@ -62,7 +61,7 @@ export function SubtaskSection({
           ))}
         </AnimatePresence>
 
-        {hasMoreSubtasks && (
+        {allSubtasks.length > subtasksLimit && (
           <Button
             variant="ghost"
             className="w-full h-10 rounded-xl text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all"
@@ -71,7 +70,7 @@ export function SubtaskSection({
             Load More Subtasks ({allSubtasks.length - subtasksLimit} remaining)
           </Button>
         )}
-        
+
         {subtasksLimit > 5 && (
           <Button
             variant="ghost"

@@ -45,7 +45,18 @@ interface LayoutContext {
 
 export function TasksPage() {
   const { handleEditTask } = useOutletContext<LayoutContext>()
-  const { activeSidebarFilter, activeStatus, setActiveStatus, activeTagId } = useFilters()
+  const { 
+    activeSidebarFilter, 
+    activeStatus, 
+    setActiveStatus, 
+    activeTagId,
+    selectedPriorities,
+    setSelectedPriorities,
+    selectedProjects,
+    setSelectedProjects,
+    selectedTags,
+    setSelectedTags
+  } = useFilters()
   const [searchQuery, setSearchQuery] = useState("")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [sortBy, setSortBy] = useState<SortMode>(() => {
@@ -53,9 +64,6 @@ export function TasksPage() {
     return (saved as SortMode) || "due_date"
   })
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false)
-  const [selectedPriorities, setSelectedPriorities] = useState<string[]>([])
-  const [selectedProjects, setSelectedProjects] = useState<number[]>([])
-  const [selectedTags, setSelectedTags] = useState<number[]>([])
   
   const { data: projects = [] } = useProjects()
   const { data: tags = [] } = useTags()

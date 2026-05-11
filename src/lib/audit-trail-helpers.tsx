@@ -1,4 +1,5 @@
 import React from "react"
+import { format } from "date-fns"
 import { 
   Trash2, Plus, Edit3, CheckCircle2, ListTodo, Folder, Shield, Activity 
 } from "lucide-react"
@@ -78,6 +79,44 @@ function parseFieldChanges(details: string, name: string): React.ReactNode {
   )
 }
 
+function formatAuditDate(dateStr: string): string {
+  if (!dateStr) return "none"
+  try {
+    const date = new Date(dateStr)
+    const now = new Date()
+    const diff = date.getTime() - now.getTime()
+    const isToday = date.toDateString() === now.toDateString()
+    
+    if (isToday) return `Today ${format(date, "h:mm a")}`
+    
+    const tomorrow = new Date(now)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    if (date.toDateString() === tomorrow.toDateString()) return `Tomorrow ${format(date, "h:mm a")}`
+
+    if (Math.abs(diff) < 7 * 24 * 60 * 60 * 1000) {
+      return format(date, "EEEE h:mm a") // e.g. Wednesday 2:00 PM
+    }
+
+    return format(date, "MMM d, h:mm a")
+  } catch {
+    return dateStr
+  }
+}
+
+function parseDateChange(details: string, name: string): React.ReactNode {
+  const dateMatch = /due_date\s*from\s*['"]?([^'"]+)['"]?\s*to\s*['"]?([^'"]+)['"]?/i.exec(details)
+  if (!dateMatch) return null
+  
+  const from = formatAuditDate(dateMatch[1])
+  const to = formatAuditDate(dateMatch[2])
+  
+  return (
+    <span>
+      Rescheduled {name ? bold(name) : "task"} from {bold(from)} to {bold(to)}
+    </span>
+  )
+}
+
 function handleTaskUpdate(detLow: string, details: string, name: string): React.ReactNode {
   if (detLow.includes("completed: true") || detLow.includes("status: completed")) 
     return <span>Marked {name ? bold(name) : "a task"} as done</span>
@@ -88,6 +127,8 @@ function handleTaskUpdate(detLow: string, details: string, name: string): React.
   if (detLow.includes("attached tag")) return parseTagChange(details, name)
   if (detLow.includes("detached tag")) return <span>Removed a tag from {name ? bold(name) : "task"}</span>
   
+  if (detLow.includes("due_date from")) return parseDateChange(details, name)
+
   const fieldView = parseFieldChanges(details, name)
   if (fieldView) return fieldView
   

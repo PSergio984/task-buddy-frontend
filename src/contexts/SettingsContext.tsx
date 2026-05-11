@@ -27,6 +27,7 @@ export function SettingsProvider({ children }: { readonly children: ReactNode })
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useSettings() {
   const context = useContext(SettingsContext)
   if (context === undefined) {

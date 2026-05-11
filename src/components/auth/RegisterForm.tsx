@@ -65,6 +65,7 @@ export function RegisterForm() {
       toast({
         title: "Account created!",
         description: "Welcome to Task Buddy. Please log in to start your journey.",
+        variant: "success",
       })
       navigate("/login")
     } catch (err: unknown) {

@@ -150,6 +150,7 @@ function UsernameCard() {
       toast({
         title: "Username updated",
         description: "Your display name has been changed successfully.",
+        variant: "success",
       })
     } catch (err: unknown) {
       if (axios.isAxiosError(err) && err.response?.status === 401) {
@@ -267,6 +268,7 @@ function SecurityCard() {
       toast({
         title: "Password updated",
         description: "Your account password has been changed securely.",
+        variant: "success",
       })
     } catch (err: unknown) {
       if (axios.isAxiosError(err) && err.response?.status === 401) {

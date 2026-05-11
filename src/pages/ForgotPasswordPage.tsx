@@ -24,6 +24,7 @@ export function ForgotPasswordPage() {
       toast({
         title: "Reset link sent",
         description: "Check your email for instructions to reset your password.",
+        variant: "success",
       })
     } catch (error: unknown) {
       toast({

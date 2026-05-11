@@ -1,5 +1,6 @@
 import * as React from "react"
 import { Clock } from "lucide-react"
+import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { useSettings } from "@/contexts/SettingsContext"
@@ -137,7 +138,7 @@ export function TimePicker({ id, value, onChange, className }: TimePickerProps) 
       <Popover open={isOpen && suggestions.length > 0} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
           <div className="relative group">
-            <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary z-10" />
+            <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary z-10 transition-transform group-focus-within:scale-110" />
             <Input
               id={id}
               value={inputValue}
@@ -147,33 +148,41 @@ export function TimePicker({ id, value, onChange, className }: TimePickerProps) 
                 e.target.select()
                 setIsOpen(true)
               }}
-              className="pl-9 pr-4 h-11 rounded-xl bg-white text-black border-none text-lg font-black tracking-tight focus:ring-4 focus:ring-primary/20 transition-all shadow-lg placeholder:text-black/20"
+              className="pl-11 pr-12 h-12 rounded-2xl bg-white/5 text-foreground border border-white/10 text-lg font-black tracking-tight focus:ring-4 focus:ring-primary/20 transition-all shadow-2xl placeholder:text-foreground/20 hover:bg-white/10"
               placeholder={is12h ? "09:00 AM" : "09:00"}
               autoComplete="off"
             />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-              <span className="text-[8px] font-black uppercase tracking-tighter text-black/40 bg-black/5 px-1 py-0.5 rounded">
-                {timeFormat}
-              </span>
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1">
+              <div className="px-1.5 py-0.5 rounded-md bg-primary/10 border border-primary/20">
+                <span className="text-[9px] font-black uppercase tracking-widest text-primary">
+                  {timeFormat}
+                </span>
+              </div>
             </div>
           </div>
         </PopoverTrigger>
         <PopoverContent 
-          className="w-[200px] p-1 bg-white border-none shadow-2xl rounded-xl" 
+          className="w-[240px] p-2 bg-background/95 backdrop-blur-3xl border border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] rounded-[2rem] z-[100]" 
           align="start"
+          sideOffset={8}
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
-          <div className="max-h-[200px] overflow-y-auto">
+          <div className="max-h-[280px] overflow-y-auto no-scrollbar space-y-1 pr-1">
+            <div className="px-3 py-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/40">Suggested Times</p>
+            </div>
             {suggestions.map((suggestion) => (
               <button
                 key={suggestion}
                 onClick={() => selectSuggestion(suggestion)}
-                className="w-full text-left px-3 py-2 text-sm font-bold hover:bg-primary/10 hover:text-primary rounded-lg transition-colors flex items-center justify-between group"
+                className="w-full text-left px-4 py-3 text-sm font-bold text-foreground/70 hover:bg-primary/10 hover:text-primary rounded-xl transition-all flex items-center justify-between group"
               >
                 {suggestion}
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                </div>
+                <motion.div 
+                  initial={{ scale: 0 }}
+                  whileHover={{ scale: 1 }}
+                  className="h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.6)]" 
+                />
               </button>
             ))}
           </div>

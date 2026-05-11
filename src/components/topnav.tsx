@@ -28,7 +28,7 @@ export function TopNav({ onNewTask }: Readonly<TopNavProps>) {
     toast({
       title: "Securely Logged Out",
       description: "Come back soon to stay on track.",
-      variant: "default",
+      variant: "info",
     })
     navigate("/login")
   }

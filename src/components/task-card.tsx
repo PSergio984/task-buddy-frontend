@@ -105,15 +105,13 @@ export function TaskCard({
                   </h3>
                   
                   <div className="flex items-center gap-2">
-                    {task.project && (
-                      <div className="flex items-center gap-1.5 rounded-full bg-muted/50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                        {(() => {
-                          const ProjectIcon = (LucideIcons as unknown as Record<string, LucideIcons.LucideIcon>)[task.project?.icon || "Layers"] || Layers
-                          return <ProjectIcon className="h-2.5 w-2.5" style={{ color: task.project?.color || "gray" }} />
-                        })()}
-                        {task.project.name}
-                      </div>
-                    )}
+                    <div className="flex items-center gap-1.5 rounded-full bg-muted/50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                      {(() => {
+                        const ProjectIcon = (LucideIcons as unknown as Record<string, LucideIcons.LucideIcon>)[task.project?.icon || "Layers"] || Layers
+                        return <ProjectIcon className="h-2.5 w-2.5" style={{ color: task.project?.color || "gray" }} />
+                      })()}
+                      {task.project?.name || "Inbox"}
+                    </div>
                     
                     {(() => {
                       let priorityClass = "bg-blue-500/10 text-blue-600"

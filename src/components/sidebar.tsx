@@ -44,7 +44,10 @@ export function Sidebar({
     activeSidebarFilter, 
     setActiveSidebarFilter,
     activeTagId,
-    setActiveTagId 
+    setActiveTagId,
+    setSelectedPriorities,
+    setSelectedProjects,
+    setSelectedTags
   } = useFilters()
   const { data: projects = [] } = useProjects()
   const { data: tags = [] } = useTags()
@@ -65,11 +68,18 @@ export function Sidebar({
     { id: "upcoming", label: "Next 7 Days", icon: CalendarRange, filter: "upcoming" },
   ]
 
+  const clearHubFilters = () => {
+    setSelectedPriorities([])
+    setSelectedProjects([])
+    setSelectedTags([])
+  }
+
   const handleSidebarFilterClick = (filter: string) => {
     if (activeSidebarFilter === filter) {
       setActiveSidebarFilter("all")
     } else {
       setActiveSidebarFilter(filter)
+      clearHubFilters()
     }
     if (location.pathname !== "/tasks") navigate("/tasks")
   }
@@ -81,6 +91,7 @@ export function Sidebar({
     } else {
       setActiveSidebarFilter(filterId)
       setActiveTagId(null)
+      clearHubFilters()
     }
     if (location.pathname !== "/tasks") navigate("/tasks")
   }
@@ -91,6 +102,7 @@ export function Sidebar({
     } else {
       setActiveTagId(tagId)
       setActiveSidebarFilter("all")
+      clearHubFilters()
     }
     if (location.pathname !== "/tasks") navigate("/tasks")
   }
@@ -99,7 +111,7 @@ export function Sidebar({
     <motion.aside
       initial={false}
       animate={{ width: isCollapsed ? 96 : 320 }}
-      transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
       className="relative hidden min-h-svh flex-col border-r border-white/5 bg-background/60 px-4 py-8 backdrop-blur-3xl md:flex shadow-[20px_0_50px_-20px_rgba(0,0,0,0.4)] group/sidebar z-50"
     >
       {/* Branding Section */}
@@ -107,7 +119,7 @@ export function Sidebar({
         "mb-12 flex items-center justify-between gap-4 px-2 relative min-h-[48px]",
         isCollapsed && "flex-col justify-center items-center gap-6"
       )}>
-        <div className={cn("flex items-center gap-4 overflow-hidden", isCollapsed && "justify-center")}>
+        <div className={cn("flex items-center gap-4 overflow-hidden", isCollapsed && "justify-center px-0")}>
           <motion.div 
             animate={{ 
               opacity: 1,
@@ -142,7 +154,7 @@ export function Sidebar({
           className={cn(
             "z-50 flex h-10 w-10 items-center justify-center rounded-xl border border-border/50 bg-background/80 backdrop-blur-md shadow-lg transition-all duration-300 cursor-pointer hover:border-primary/30 hover:text-primary",
             isCollapsed 
-              ? "relative bg-primary text-primary-foreground border-none shadow-primary/20" 
+              ? "relative bg-primary text-primary-foreground border-none shadow-primary/20 mt-2" 
               : "absolute -right-3 top-2"
           )}
         >
@@ -430,6 +442,8 @@ export function Sidebar({
                   <div className={cn("flex flex-wrap gap-2", isCollapsed && "flex-col items-center")}>
                     {tags.map((tag) => {
                       const isActive = activeTagId === tag.id
+                      const TagIconComp = (LucideIcons as unknown as Record<string, LucideIcons.LucideIcon>)[tag.icon || "Tag"] || LucideIcons.Tag
+
                       const content = (
                         <motion.button
                           key={tag.id}
@@ -440,15 +454,15 @@ export function Sidebar({
                             "flex items-center gap-2 rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all shadow-sm",
                             isActive
                               ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
-                              : "bg-white/5 text-foreground/60 hover:bg-white/10 hover:text-foreground"
+                              : "bg-white/5 text-foreground/60 hover:bg-white/10 hover:text-foreground",
+                            isCollapsed && "px-2 py-2"
                           )}
                         >
+                          <TagIconComp className="h-3.5 w-3.5" style={{ color: isActive ? "inherit" : tag.color || "gray" }} />
                           <div 
-                            className="h-2 w-2 rounded-full shadow-[0_0_5px_currentColor] flex items-center justify-center" 
+                            className="h-1 w-1 rounded-full shadow-[0_0_5px_currentColor]" 
                             style={{ backgroundColor: tag.color || "gray", color: tag.color || "gray" }} 
-                          >
-                             {/* Optional: we could show a tiny icon if we wanted, but the 2x2 dot is cleaner */}
-                          </div>
+                          />
                           {!isCollapsed && <span>{tag.name}</span>}
                         </motion.button>
                       )
@@ -463,8 +477,10 @@ export function Sidebar({
                           </Tooltip>
                         )
                       }
+
                       return content
                     })}
+
                   </div>
                 </div>
               </motion.div>

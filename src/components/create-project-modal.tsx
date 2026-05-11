@@ -12,33 +12,27 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { motion } from "framer-motion"
 import { Layers, Palette } from "lucide-react"
+import * as LucideIcons from "lucide-react"
 import { useCreateProject } from "@/hooks/useProjects"
 import { useToast } from "@/hooks/use-toast"
+import { ColorIconPicker, PRESET_COLORS, PRESET_ICONS } from "@/components/color-icon-picker"
 
 export interface CreateProjectModalProps {
   readonly open: boolean
   readonly onOpenChange: (open: boolean) => void
 }
 
-const COLORS = [
-  "#3b82f6", // blue
-  "#10b981", // green
-  "#8b5cf6", // purple
-  "#f59e0b", // yellow
-  "#ef4444", // red
-  "#ec4899", // pink
-]
-
 export function CreateProjectModal({
   open,
   onOpenChange,
 }: Readonly<CreateProjectModalProps>) {
   const [name, setName] = useState("")
-  const [color, setColor] = useState(COLORS[0])
+  const [color, setColor] = useState(PRESET_COLORS[0])
+  const [icon, setIcon] = useState(PRESET_ICONS[0])
   const createProject = useCreateProject()
   const { toast } = useToast()
 
-  const handleSubmit = async (e: React.SubmitEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!name.trim()) return
@@ -47,13 +41,16 @@ export function CreateProjectModal({
       await createProject.mutateAsync({
         name: name.trim(),
         color,
+        icon,
       })
       setName("")
-      setColor(COLORS[0])
+      setColor(PRESET_COLORS[0])
+      setIcon(PRESET_ICONS[0])
       onOpenChange(false)
       toast({
         title: "Project Created",
         description: "Your new project is ready.",
+        variant: "success",
       })
     } catch (error) {
       console.error("Failed to create project:", error)
@@ -64,6 +61,8 @@ export function CreateProjectModal({
       })
     }
   }
+
+  const SelectedIcon = (LucideIcons as unknown as Record<string, LucideIcons.LucideIcon>)[icon] || LucideIcons.Layers
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -107,25 +106,32 @@ export function CreateProjectModal({
               <div className="space-y-3">
                 <Label className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
                   <Palette className="h-3 w-3" />
-                  Color Theme
+                  Appearance
                 </Label>
-                <div className="flex items-center gap-3 pl-1">
-                  {COLORS.map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => setColor(c)}
-                      className="relative h-8 w-8 rounded-full transition-all duration-300 hover:scale-110 focus:outline-none"
-                      style={{ backgroundColor: c }}
-                    >
-                      {color === c && (
-                        <motion.div
-                          layoutId="color-indicator"
-                          className="absolute inset-[-4px] rounded-full border-2 border-primary"
-                        />
-                      )}
-                    </button>
-                  ))}
+                <div className="pl-1">
+                  <ColorIconPicker 
+                    color={color} 
+                    icon={icon} 
+                    onSelect={(c, i) => {
+                      setColor(c)
+                      setIcon(i)
+                    }}
+                    trigger={
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        className="h-14 w-full justify-start gap-4 rounded-2xl border-border bg-muted/50 dark:bg-zinc-800/50 px-6 hover:bg-muted dark:hover:bg-zinc-800 transition-all"
+                      >
+                        <div className="h-6 w-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color}20` }}>
+                           <SelectedIcon className="h-4 w-4" style={{ color }} />
+                        </div>
+                        <span className="text-sm font-semibold text-foreground">Select Color & Icon</span>
+                        <div className="ml-auto flex items-center gap-2">
+                          <div className="h-3 w-3 rounded-full" style={{ backgroundColor: color }} />
+                        </div>
+                      </Button>
+                    }
+                  />
                 </div>
               </div>
 

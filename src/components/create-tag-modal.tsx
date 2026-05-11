@@ -50,6 +50,7 @@ export function CreateTagModal({
       toast({
         title: "Tag Created",
         description: "Your new tag is ready.",
+        variant: "success",
       })
     } catch (error) {
       console.error("Failed to create tag:", error)
