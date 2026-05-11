@@ -13,6 +13,7 @@ import {
   validatePassword,
 } from "@/lib/auth"
 import { useToast } from "@/hooks/use-toast"
+import axios from "axios"
 
 export function LoginPage() {
   const [email, setEmail] = useState("")
@@ -48,8 +49,11 @@ export function LoginPage() {
         description: "Successfully signed in to your dashboard.",
       })
       navigate("/dashboard")
-    } catch (err: any) {
-      const detail = err.response?.data?.detail || err.message || "Invalid credentials. Please try again."
+    } catch (err: unknown) {
+      const detail = axios.isAxiosError(err) 
+        ? (err.response?.data as { detail?: string })?.detail || err.message 
+        : err instanceof Error ? err.message : "Invalid credentials. Please try again."
+      
       toast({
         title: "Authentication failed",
         description: detail,

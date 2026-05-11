@@ -46,17 +46,32 @@ export function TaskCard({
       transition={{ duration: 0.2 }}
     >
       <Card
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault()
+            onEdit(task)
+          }
+        }}
         className={cn(
-          "group relative overflow-hidden border-none bg-white dark:bg-zinc-900 shadow-sm transition-all duration-300 hover:shadow-xl rounded-[2rem] cursor-pointer",
+          "group relative overflow-hidden border-none bg-white dark:bg-zinc-900 shadow-sm transition-all duration-300 hover:shadow-xl rounded-[2rem] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
           task.completed && "opacity-75"
         )}
-        onClick={() => onEdit(task)}
+        onClick={(e) => {
+          // Prevent opening drawer if clicking checkbox or buttons
+          const target = e.target as HTMLElement
+          if (target.closest('[role="checkbox"]') || target.closest("button")) {
+            return
+          }
+          onEdit(task)
+        }}
       >
         <CardContent className="p-6">
           <div className="flex items-start justify-between gap-6">
             <div className="flex flex-1 items-start gap-4">
               {/* Custom Checkbox Wrapper */}
-              <div className="relative mt-1" onClick={(e) => e.stopPropagation()}>
+              <div className="relative mt-1">
                 <Checkbox
                   checked={task.completed}
                   onCheckedChange={() => onToggleComplete(task.id)}
@@ -88,8 +103,8 @@ export function TaskCard({
                     {task.project && (
                       <div className="flex items-center gap-1.5 rounded-full bg-muted/50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                         {(() => {
-                          const ProjectIcon = (LucideIcons as any)[task.project.icon || "Layers"] || Layers
-                          return <ProjectIcon className="h-2.5 w-2.5" style={{ color: task.project.color || "gray" }} />
+                          const ProjectIcon = (LucideIcons as unknown as Record<string, LucideIcons.LucideIcon>)[task.project?.icon || "Layers"] || Layers
+                          return <ProjectIcon className="h-2.5 w-2.5" style={{ color: task.project?.color || "gray" }} />
                         })()}
                         {task.project.name}
                       </div>
@@ -139,7 +154,7 @@ export function TaskCard({
                   )}
 
                   {task?.tags?.map((tag) => {
-                    const TagIconComp = (LucideIcons as any)[tag.icon || "Tag"] || Tag
+                    const TagIconComp = (LucideIcons as unknown as Record<string, LucideIcons.LucideIcon>)[tag.icon || "Tag"] || Tag
                     return (
                       <div
                         key={tag.id}

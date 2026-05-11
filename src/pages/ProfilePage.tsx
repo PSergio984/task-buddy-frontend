@@ -1,4 +1,4 @@
-import { useState, useEffect, type FormEvent } from "react"
+import { useState, type FormEvent } from "react"
 import { motion } from "framer-motion"
 import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
@@ -41,14 +41,11 @@ export function ProfilePage() {
 
   const [isInitialized, setIsInitialized] = useState(false)
   
-  // Sync state when user data arrives or changes
-  useEffect(() => {
-    if (user && !isInitialized) {
-      // Use the normalized username which now already includes the fallback logic
-      setNewUsername(user.username || "")
-      setIsInitialized(true)
-    }
-  }, [user, isInitialized])
+  // Sync state when user data arrives or changes - doing it during render to avoid useEffect cascading updates
+  if (user && !isInitialized) {
+    setNewUsername(user.username || "")
+    setIsInitialized(true)
+  }
 
   const isUsernameValid = newUsername.trim().length > 0 && /^[A-Za-z0-9._@\- ]+$/.test(newUsername)
   const hasUsernameChanged = user && newUsername !== user.username && isUsernameValid
@@ -69,16 +66,24 @@ export function ProfilePage() {
         title: "Username updated",
         description: "Your display name has been changed successfully.",
       })
-    } catch (err: any) {
-      if (err.response?.status === 401) {
-        await logout()
-        return
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        if (err.response?.status === 401) {
+          await logout()
+          return
+        }
+        toast({
+          title: "Update failed",
+          description: (err.response?.data as { detail?: string })?.detail || err.message || "Failed to update username",
+          variant: "destructive",
+        })
+      } else {
+        toast({
+          title: "Update failed",
+          description: err instanceof Error ? err.message : "An unexpected error occurred",
+          variant: "destructive",
+        })
       }
-      toast({
-        title: "Update failed",
-        description: err.response?.data?.detail || err.message || "Failed to update username",
-        variant: "destructive",
-      })
     } finally {
       setIsUpdatingUsername(false)
     }
@@ -122,16 +127,24 @@ export function ProfilePage() {
         title: "Password updated",
         description: "Your account password has been changed securely.",
       })
-    } catch (err: any) {
-      if (err.response?.status === 401) {
-        await logout()
-        return
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        if (err.response?.status === 401) {
+          await logout()
+          return
+        }
+        toast({
+          title: "Update failed",
+          description: (err.response?.data as { detail?: string })?.detail || err.message || "Failed to update password",
+          variant: "destructive",
+        })
+      } else {
+        toast({
+          title: "Update failed",
+          description: err instanceof Error ? err.message : "An unexpected error occurred",
+          variant: "destructive",
+        })
       }
-      toast({
-        title: "Update failed",
-        description: err.response?.data?.detail || err.message || "Failed to update password",
-        variant: "destructive",
-      })
     } finally {
       setIsUpdatingPassword(false)
     }

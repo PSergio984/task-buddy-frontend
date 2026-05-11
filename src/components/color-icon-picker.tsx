@@ -4,6 +4,7 @@ import * as Icons from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const PRESET_COLORS = [
   "#6366f1", // Indigo
   "#ec4899", // Pink
@@ -15,6 +16,7 @@ export const PRESET_COLORS = [
   "#64748b", // Slate
 ]
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const PRESET_ICONS = [
   "Tag", "Bookmark", "Flag", "Zap", "Star", "Heart", 
   "Briefcase", "Home", "User", "Settings", "Calendar", 
@@ -36,7 +38,7 @@ export function ColorIconPicker({ color = "#6366f1", icon = "Tag", onSelect, tri
           <Button variant="outline" size="sm" className="h-8 gap-2 rounded-xl border-white/10 bg-white/5 hover:bg-white/10">
             <div className="h-3 w-3 rounded-full" style={{ backgroundColor: color }} />
             {icon && (() => {
-              const Icon = (Icons as any)[icon]
+              const Icon = (Icons as unknown as Record<string, Icons.LucideIcon>)[icon]
               return Icon ? <Icon className="h-3 w-3" style={{ color }} /> : null
             })()}
           </Button>
@@ -66,7 +68,7 @@ export function ColorIconPicker({ color = "#6366f1", icon = "Tag", onSelect, tri
           <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Icon</label>
           <div className="grid grid-cols-6 gap-2">
             {PRESET_ICONS.map((i) => {
-              const Icon = (Icons as any)[i]
+              const Icon = (Icons as unknown as Record<string, Icons.LucideIcon>)[i]
               return (
                 <button
                   key={i}

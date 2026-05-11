@@ -1,8 +1,8 @@
 import { test, expect } from "@playwright/test"
 
 test.describe("Advanced Tasks", () => {
-  let mockTasks: any[] = [];
-  let mockTags: any[] = [
+  let mockTasks: Record<string, unknown>[] = [];
+  const mockTags: Record<string, unknown>[] = [
     { id: 1, name: "Urgent", user_id: 1, created_at: new Date().toISOString() },
     { id: 2, name: "DeepWork", user_id: 1, created_at: new Date().toISOString() }
   ];
@@ -48,7 +48,7 @@ test.describe("Advanced Tasks", () => {
       if (method === "GET") {
           const tagId = url.searchParams.get("tag_id")
           if (tagId) {
-              const filtered = mockTasks.filter(t => t.tags?.some((tg: any) => tg.id === Number.parseInt(tagId)))
+              const filtered = mockTasks.filter(t => (t.tags as Record<string, unknown>[])?.some((tg: Record<string, unknown>) => tg.id === Number.parseInt(tagId)))
               return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(filtered) })
           }
           return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(mockTasks) })
@@ -75,7 +75,7 @@ test.describe("Advanced Tasks", () => {
           console.log(`MOCK: Updating subtask ${subtaskId} to completed=${payload.completed}`);
           
           mockTasks.forEach(t => {
-              t.subtasks?.forEach((s: any) => {
+              (t.subtasks as Record<string, unknown>[])?.forEach((s: Record<string, unknown>) => {
                   if (s.id === subtaskId) s.completed = payload.completed
               })
           })
@@ -108,7 +108,7 @@ test.describe("Advanced Tasks", () => {
           contentType: "application/json",
           body: JSON.stringify({
             task_stats: { total_tasks: mockTasks.length, completed_tasks: mockTasks.filter(t => t.completed).length, pending_tasks: mockTasks.filter(t => !t.completed).length, completion_percentage: 0 },
-            tag_distribution: mockTags.map(t => ({ tag_name: t.name, task_count: mockTasks.filter(tk => tk.tags?.some((tg: any) => tg.id === t.id)).length }))
+            tag_distribution: mockTags.map(t => ({ tag_name: t.name, task_count: mockTasks.filter(tk => (tk.tags as Record<string, unknown>[])?.some((tg: Record<string, unknown>) => tg.id === t.id)).length }))
           })
         })
       })

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import {
   Dialog,
   DialogContent,
@@ -36,7 +36,7 @@ export interface NewTaskModalProps {
   readonly open: boolean
   readonly onOpenChange: (open: boolean) => void
   readonly onSubmit: (
-    taskData: any
+    taskData: Record<string, unknown>
   ) => Promise<void>
   readonly isLoading: boolean
 }
@@ -56,14 +56,20 @@ export function NewTaskModal({
   
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined)
 
-  useEffect(() => {
+  const [lastOpen, setLastOpen] = useState(open)
+
+  // Reset state when modal opens - doing it during render to avoid useEffect cascading updates
+  if (open && !lastOpen) {
+    setLastOpen(true)
     setTitle("")
     setDescription("")
     setProjectId("none")
     setPriority("MEDIUM")
     setTags("")
     setDueDate(undefined)
-  }, [open])
+  } else if (!open && lastOpen) {
+    setLastOpen(false)
+  }
 
   const isEditMode = false
 

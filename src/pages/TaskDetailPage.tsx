@@ -34,6 +34,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { cn } from "@/lib/utils"
+import type { Subtask, Tag } from "@/lib/api"
 
 export function TaskDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -264,7 +266,7 @@ export function TaskDetailPage() {
             </div>
 
             <div className="grid gap-4">
-              {task.subtasks?.map((subtask: any) => (
+              {task.subtasks?.map((subtask: Subtask) => (
                 <div
                   key={subtask.id}
                   className="group flex items-center justify-between rounded-3xl border border-white/5 bg-white/5 p-6 transition-all hover:border-white/10"
@@ -361,7 +363,7 @@ export function TaskDetailPage() {
               <CardContent className="p-8 pt-0">
                 <div className="flex flex-wrap gap-2">
                   {task.tags?.length ? (
-                    task.tags.map((tag: any) => (
+                    task.tags.map((tag: Tag) => (
                       <Badge
                         key={tag.id}
                         className="rounded-xl bg-accent px-4 py-2 text-xs font-black tracking-tighter text-accent-foreground uppercase"
@@ -434,6 +436,3 @@ export function TaskDetailPage() {
   )
 }
 
-function cn(...classes: any[]) {
-  return classes.filter(Boolean).join(" ")
-}

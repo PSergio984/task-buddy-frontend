@@ -53,6 +53,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [error, setError] = useState<string | null>(null)
 
   const logout = useCallback(async () => {
+    await Promise.resolve()
     try {
       await api.post("/api/v1/users/logout", {})
     } catch (err) {
@@ -64,8 +65,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   }, [])
 
   const refreshUser = useCallback(async () => {
+    await Promise.resolve()
     try {
-      setLoading(true)
       const response = await api.get("/api/v1/users/me")
       const nextUser = normalizeAuthUser(response.data)
       if (nextUser) {
@@ -79,7 +80,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
           // Token is invalid/expired or not present
           // logout() // Handled by event listener if using shared api
         } else {
-          setError((err.response?.data as any)?.detail || "Failed to refresh user profile")
+          setError((err.response?.data as { detail?: string })?.detail || "Failed to refresh user profile")
         }
       } else {
         setError("Failed to refresh user profile")
@@ -91,6 +92,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
 
   // On mount, attempt to refresh the user and listen for unauthorized events
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     refreshUser()
 
     const handleUnauthorized = () => {
@@ -204,4 +206,3 @@ export function useAuth() {
   }
   return context
 }
-

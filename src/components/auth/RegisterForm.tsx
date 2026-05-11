@@ -35,7 +35,7 @@ export function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [submitAttempted, setSubmitAttempted] = useState(false)
-  const { register, loading, error: _error } = useAuth()
+  const { register, loading } = useAuth()
   const { toast } = useToast()
   const navigate = useNavigate()
 

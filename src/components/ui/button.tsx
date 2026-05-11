@@ -55,18 +55,18 @@ function Button({
   }) {
   const Comp = asChild ? Slot.Root : "button"
 
-  const isDisabled = Boolean((props as any).disabled)
+  const isDisabled = Boolean((props as unknown as { disabled: boolean }).disabled)
 
   // If rendering as a non-button element (via asChild) ensure disabled state
   // remains inaccessible: set aria-disabled, remove from tab order and
   // prevent default click handling.
-  const extraProps: Record<string, any> = {}
+  const extraProps: Record<string, unknown> = {}
   if (isDisabled && Comp !== "button") {
     extraProps.role = "button"
     extraProps["aria-disabled"] = true
     extraProps.tabIndex = -1
     // If caller provided an onClick, prevent it when disabled
-    extraProps.onClick = (e: any) => {
+    extraProps.onClick = (e: React.MouseEvent) => {
       e.preventDefault()
       e.stopPropagation()
     }

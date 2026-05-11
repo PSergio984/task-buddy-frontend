@@ -25,11 +25,13 @@ export function ForgotPasswordPage() {
         title: "Reset link sent",
         description: "Check your email for instructions to reset your password.",
       })
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.response?.data?.detail || "Something went wrong. Please try again.",
+        description: axios.isAxiosError(error)
+          ? (error.response?.data as { detail?: string })?.detail || error.message
+          : error instanceof Error ? error.message : "Something went wrong. Please try again.",
       })
     } finally {
       setIsLoading(false)

@@ -98,8 +98,14 @@ export function TaskDetailDrawer({ task: initialTask, mode, isOpen, onOpenChange
 
   const isCreate = mode === "create"
 
-  // Sync form when task changes
-  useEffect(() => {
+  const [lastTaskId, setLastTaskId] = useState<number | null>(task?.id ?? null)
+  const [lastIsOpen, setLastIsOpen] = useState(isOpen)
+
+  // Sync form when task or open state changes - doing it during render to avoid useEffect cascading updates
+  if (isOpen && (!lastIsOpen || (!isCreate && task?.id !== lastTaskId))) {
+    setLastIsOpen(true)
+    setLastTaskId(task?.id ?? null)
+
     if (task && !isCreate) {
       setTitle(task.title)
       setDescription(task.description ?? "")
@@ -121,7 +127,15 @@ export function TaskDetailDrawer({ task: initialTask, mode, isOpen, onOpenChange
     setIsTagPickerOpen(false)
     setProjectSearch("")
     setIsProjectPickerOpen(false)
-  }, [task, isCreate, isOpen])
+  } else if (!isOpen && lastIsOpen) {
+    setLastIsOpen(false)
+  }
+
+  // Snapshot task info for delete dialog to prevent "undefined" during optimistic delete
+  const [deleteSnapshot, setDeleteSnapshot] = useState<{ title: string } | null>(null)
+  if (isOpen && task && (!deleteSnapshot || deleteSnapshot.title !== task.title)) {
+    setDeleteSnapshot({ title: task.title })
+  }
 
   // Subtask pagination logic
   const [subtasksLimit, setSubtasksLimit] = useState(5)
@@ -133,12 +147,6 @@ export function TaskDetailDrawer({ task: initialTask, mode, isOpen, onOpenChange
   useEffect(() => {
     if (isAddingSubtask) subtaskInputRef.current?.focus()
   }, [isAddingSubtask])
-
-  // Snapshot task info for delete dialog to prevent "undefined" during optimistic delete
-  const [deleteSnapshot, setDeleteSnapshot] = useState<{ title: string } | null>(null)
-  useEffect(() => {
-    if (task) setDeleteSnapshot({ title: task.title })
-  }, [task])
 
   const handleUpdate = (updates: Partial<Task>) => {
     if (!task) return
@@ -445,7 +453,7 @@ export function TaskDetailDrawer({ task: initialTask, mode, isOpen, onOpenChange
                           <button
                             onClick={() => isPending 
                               ? setPendingSubtasks(prev => prev.filter((_, i) => i !== idx))
-                              : handleDeleteSubtask((sub as any).id)
+                              : handleDeleteSubtask(sub.id)
                             }
                             className="opacity-0 group-hover/sub:opacity-100 transition-opacity text-foreground/20 hover:text-red-500"
                           >
@@ -719,7 +727,7 @@ export function TaskDetailDrawer({ task: initialTask, mode, isOpen, onOpenChange
                 <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Tags</label>
                 <div className="flex flex-wrap gap-2">
                   {currentTags?.map((tag) => {
-                    const TagIconComp = (Icons as any)[tag.icon || "Tag"] || TagIcon
+                    const TagIconComp = (Icons as unknown as Record<string, Icons.LucideIcon>)[tag.icon || "Tag"] || TagIcon
                     return (
                       <Badge
                         key={tag.id}

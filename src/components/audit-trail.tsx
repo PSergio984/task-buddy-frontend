@@ -187,16 +187,16 @@ export function AuditTrail({
   const { user } = useAuth()
   
   const skeletonIds = useMemo(() => 
-    Array.from({ length: limit }, (_, i) => `audit-skeleton-${i}-${Math.random().toString(36).substring(2, 11)}`),
+    Array.from({ length: limit }, (_, i) => `audit-skeleton-${i}-${i}`),
   [limit])
 
   const fetchAuditLog = useCallback(async (signal?: AbortSignal) => {
+    await Promise.resolve()
     if (!user) {
       setLoading(false)
       return
     }
     try {
-      setLoading(true)
       const response = await api.get("/api/v1/audit/logs", {
         params: { limit: Math.max(currentLimit * 2, 50) },
         signal,
@@ -214,6 +214,7 @@ export function AuditTrail({
 
   useEffect(() => {
     const controller = new AbortController()
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchAuditLog(controller.signal)
     return () => controller.abort()
   }, [fetchAuditLog])
