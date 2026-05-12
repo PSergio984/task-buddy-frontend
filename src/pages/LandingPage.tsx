@@ -25,6 +25,11 @@ const itemVariants = {
 }
 
 export function LandingPage() {
+  const scrollToPwa = () => {
+    const element = document.getElementById("pwa-install")
+    element?.scrollIntoView({ behavior: "smooth" })
+  }
+
   return (
     <div className="flex min-h-svh flex-col bg-background selection:bg-accent/30 selection:text-accent">
       {/* Navigation */}
@@ -84,12 +89,15 @@ export function LandingPage() {
                   Start for Free <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <PwaInstallButton 
-                variant="outline" 
+              <Button 
                 size="lg" 
-                className="h-14 rounded-full px-10 text-lg backdrop-blur-sm shadow-none border-foreground/10 hover:bg-foreground/5" 
-                isCollapsed={false}
-              />
+                variant="outline" 
+                className="h-14 rounded-full px-10 text-lg backdrop-blur-sm shadow-none border-foreground/10 hover:bg-foreground/5 gap-2"
+                onClick={scrollToPwa}
+              >
+                <Download className="h-5 w-5" />
+                Install App
+              </Button>
             </motion.div>
           </motion.div>
 
@@ -197,7 +205,7 @@ export function LandingPage() {
         </section>
 
         {/* PWA Installation Section */}
-        <section className="bg-background py-24 sm:py-32">
+        <section id="pwa-install" className="bg-background py-24 sm:py-32">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="relative overflow-hidden rounded-[3rem] bg-secondary/30 border p-8 md:p-16">
               <div className="flex flex-col lg:flex-row items-center gap-12">
@@ -207,7 +215,10 @@ export function LandingPage() {
                     Install Task Buddy as a desktop or mobile app. Enjoy faster load times, offline access, and a distraction-free environment tailored for high-performance work.
                   </p>
                   <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
-                    <PwaInstallButton className="h-14 rounded-full px-10 text-lg shadow-xl shadow-primary/20" />
+                    <PwaInstallButton 
+                      isCollapsed={false}
+                      className="h-14 rounded-full px-10 text-lg shadow-xl shadow-primary/20" 
+                    />
                     <p className="text-sm text-muted-foreground font-medium italic">
                       No App Store needed. Installs directly from your browser.
                     </p>

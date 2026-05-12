@@ -22,7 +22,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 interface PwaInstallButtonProps {
-  readonly isCollapsed: boolean
+  readonly isCollapsed?: boolean
   readonly variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link"
   readonly size?: "default" | "sm" | "lg" | "icon"
   readonly className?: string
