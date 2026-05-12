@@ -23,6 +23,7 @@ import {
   validatePassword,
   validatePasswordConfirmation,
   validateUsername,
+  getPasswordStrength,
 } from "@/lib/auth"
 import { useToast } from "@/hooks/use-toast"
 import { PasswordStrengthMeter } from "./PasswordStrengthMeter"
@@ -42,13 +43,15 @@ export function RegisterForm() {
   const usernameError = validateUsername(username)
   const emailError = validateEmail(email)
   const passwordError = validatePassword(password)
+  const passwordStrength = getPasswordStrength(password)
+  const isPasswordStrong = passwordStrength.score >= 4
   const confirmPasswordError = validatePasswordConfirmation(
     password,
     confirmPassword
   )
 
   const isFormValid =
-    !usernameError && !emailError && !passwordError && !confirmPasswordError
+    !usernameError && !emailError && !passwordError && !confirmPasswordError && isPasswordStrong
 
   const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault()
@@ -191,6 +194,8 @@ export function RegisterForm() {
       >
         {loading ? (
           <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="h-6 w-6 border-2 border-primary-foreground border-t-transparent rounded-full" />
+        ) : !isPasswordStrong && password.length > 0 ? (
+          "Password too weak"
         ) : (
           <span className="flex items-center gap-2">Create Account <ArrowRight className="h-5 w-5" /></span>
         )}

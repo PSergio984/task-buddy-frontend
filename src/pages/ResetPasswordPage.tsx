@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
 import { api } from "@/lib/api"
-import { getAuthErrorMessage } from "@/lib/auth"
+import { getAuthErrorMessage, getPasswordStrength } from "@/lib/auth"
+import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter"
 
 export function ResetPasswordPage() {
   const { token } = useParams<{ token: string }>()
@@ -17,6 +18,10 @@ export function ResetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+
+  const passwordStrength = getPasswordStrength(newPassword)
+  const isPasswordStrong = passwordStrength.score >= 4
+  const passwordsMatch = newPassword === confirmPassword && newPassword !== ""
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -117,6 +122,7 @@ export function ResetPasswordPage() {
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
+                <PasswordStrengthMeter password={newPassword} />
               </div>
 
               <div className="space-y-2">
@@ -141,10 +147,14 @@ export function ResetPasswordPage() {
             <Button
               type="submit"
               className="w-full h-12 rounded-xl text-lg font-semibold shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-              disabled={isLoading}
+              disabled={isLoading || !isPasswordStrong || !passwordsMatch}
             >
               {isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
+              ) : !isPasswordStrong ? (
+                "Password too weak"
+              ) : !passwordsMatch ? (
+                "Passwords mismatch"
               ) : (
                 <span className="flex items-center gap-2">Reset Password <Save className="h-4 w-4" /></span>
               )}

@@ -92,6 +92,10 @@ export function getPasswordStrength(value: string): PasswordStrength {
     score += 1
   }
 
+  if (variety >= 4) {
+    score += 1
+  }
+
   if (score > 4) {
     score = 4
   }
