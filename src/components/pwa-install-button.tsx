@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Download, Share, Smartphone } from "lucide-react"
+import { Download, Share, Smartphone, Laptop } from "lucide-react"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import {
@@ -157,12 +157,33 @@ export function PwaInstallButton({ isCollapsed }: Readonly<PwaInstallButtonProps
               Get the full experience by installing the app.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-3">
-              <p className="text-sm font-bold">Try one of the following:</p>
-              <ul className="text-xs space-y-2 list-disc pl-4 text-foreground/70 font-medium">
-                <li>Open your browser menu (usually <span className="text-primary">...</span> or <span className="text-primary">⋮</span>) and select <span className="text-primary">"Install Task Buddy"</span> or <span className="text-primary">"Save and Share &gt; Install App"</span>.</li>
-              </ul>
+          <div className="space-y-6 py-4">
+            <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-start gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                <Laptop className="h-5 w-5 text-primary" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-bold leading-tight">Desktop Users</p>
+                <p className="text-xs text-foreground/60 leading-relaxed font-medium">
+                  Click the <span className="text-primary italic">"Install"</span> icon in your address bar (next to the star icon).
+                </p>
+              </div>
+            </div>
+            
+            <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-start gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                <div className="flex flex-col gap-0.5 items-center justify-center">
+                  <div className="w-1 h-1 rounded-full bg-primary" />
+                  <div className="w-1 h-1 rounded-full bg-primary" />
+                  <div className="w-1 h-1 rounded-full bg-primary" />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-bold leading-tight">Other Browsers</p>
+                <p className="text-xs text-foreground/60 leading-relaxed font-medium">
+                  Open your browser menu and select <span className="text-primary italic">"Install Task Buddy"</span> or <span className="text-primary italic">"Save and Share > Install App"</span>.
+                </p>
+              </div>
             </div>
           </div>
         </DialogContent>
