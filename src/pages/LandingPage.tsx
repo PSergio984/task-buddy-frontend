@@ -84,9 +84,12 @@ export function LandingPage() {
                   Start for Free <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <Button size="lg" variant="outline" className="h-14 rounded-full px-10 text-lg backdrop-blur-sm">
-                Watch Demo
-              </Button>
+              <PwaInstallButton 
+                variant="outline" 
+                size="lg" 
+                className="h-14 rounded-full px-10 text-lg backdrop-blur-sm shadow-none border-foreground/10 hover:bg-foreground/5" 
+                isCollapsed={false}
+              />
             </motion.div>
           </motion.div>
 

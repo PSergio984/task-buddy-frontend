@@ -490,7 +490,6 @@ export function Sidebar({
 
       </div>
 
-
       <CreateProjectModal 
         open={isCreateProjectModalOpen} 
         onOpenChange={setIsCreateProjectModalOpen} 
