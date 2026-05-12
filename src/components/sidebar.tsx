@@ -489,10 +489,11 @@ export function Sidebar({
           </AnimatePresence>
         </div>
 
-        {/* PWA Install Action */}
-        <div className="mt-auto pt-4 border-t border-white/5 pb-4">
-          <PwaInstallButton isCollapsed={isCollapsed} />
-        </div>
+      </div>
+
+      {/* PWA Install Action - Fixed at bottom */}
+      <div className="mt-auto pt-6 border-t border-white/5">
+        <PwaInstallButton isCollapsed={isCollapsed} />
       </div>
 
       <CreateProjectModal 

@@ -181,7 +181,7 @@ export function PwaInstallButton({ isCollapsed }: Readonly<PwaInstallButtonProps
               <div className="space-y-1">
                 <p className="text-sm font-bold leading-tight">Other Browsers</p>
                 <p className="text-xs text-foreground/60 leading-relaxed font-medium">
-                  Open your browser menu and select <span className="text-primary italic">"Install Task Buddy"</span> or <span className="text-primary italic">"Save and Share > Install App"</span>.
+                  Open your browser menu and select <span className="text-primary italic">"Install Task Buddy"</span> or <span className="text-primary italic">"Save and Share &gt; Install App"</span>.
                 </p>
               </div>
             </div>
