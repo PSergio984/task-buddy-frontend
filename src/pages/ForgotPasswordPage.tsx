@@ -25,7 +25,7 @@ export function ForgotPasswordPage() {
     setIsLoading(true)
 
     try {
-      await api.post("/api/v1/users/forgot-password", { email })
+      await api.post("/api/v1/users/forgot-password/", { email })
       setIsSubmitted(true)
       toast({
         title: "Reset link sent",
