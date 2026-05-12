@@ -71,7 +71,7 @@ export function MetaSidebar(props: MetaSidebarProps) {
   return (
     <div className="flex-[0.35] bg-white/[0.02] p-8 space-y-6 flex flex-col overflow-y-auto no-scrollbar border-l border-white/5">
       <DueDateSection {...props} />
-      <StatusSection {...props} />
+      {!props.isCreate && <StatusSection {...props} />}
       <PrioritySection {...props} />
       <ProjectSection {...props} />
       <TagsSection {...props} />
