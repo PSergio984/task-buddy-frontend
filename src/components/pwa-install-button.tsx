@@ -35,14 +35,12 @@ export function PwaInstallButton({ isCollapsed }: Readonly<PwaInstallButtonProps
     return /iPad|iPhone|iPod/.test(ua) && !((window as unknown) as { MSStream: unknown }).MSStream
   })
   const [isStandalone] = useState(() => window.matchMedia("(display-mode: standalone)").matches)
-  const [showIOSInstructions, setShowIOSInstructions] = useState(false)
-  const [isVisible, setIsVisible] = useState(() => isIOS && !isStandalone)
+  const [showInstructions, setShowInstructions] = useState(false)
 
   useEffect(() => {
     const handler = (e: Event) => {
       e.preventDefault()
       setDeferredPrompt(e as BeforeInstallPromptEvent)
-      setIsVisible(true)
     }
 
     window.addEventListener("beforeinstallprompt", handler)
@@ -58,18 +56,20 @@ export function PwaInstallButton({ isCollapsed }: Readonly<PwaInstallButtonProps
       return
     }
 
-    if (!deferredPrompt) return
+    if (!deferredPrompt) {
+      setShowInstructions(true)
+      return
+    }
 
     await deferredPrompt.prompt()
     const { outcome } = await deferredPrompt.userChoice
     
     if (outcome === "accepted") {
       setDeferredPrompt(null)
-      setIsVisible(false)
     }
   }
 
-  if (!isVisible || isStandalone) return null
+  if (isStandalone) return null
 
   const label = isIOS ? "Add to Home" : (window.innerWidth > 768 ? "Desktop App" : "Install App")
   const Icon = isIOS ? Smartphone : (window.innerWidth > 768 ? Laptop : Download)
@@ -116,6 +116,7 @@ export function PwaInstallButton({ isCollapsed }: Readonly<PwaInstallButtonProps
         content
       )}
 
+      {/* iOS Instructions */}
       <Dialog open={showIOSInstructions} onOpenChange={setShowIOSInstructions}>
         <DialogContent className="sm:max-w-md rounded-[2rem] border-white/10 bg-background/95 backdrop-blur-3xl">
           <DialogHeader>
@@ -143,6 +144,29 @@ export function PwaInstallButton({ isCollapsed }: Readonly<PwaInstallButtonProps
               <p className="text-sm font-bold leading-tight">
                 2. Select <span className="text-primary italic">"Add to Home Screen"</span> from the menu.
               </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* General Browser Instructions */}
+      <Dialog open={showInstructions} onOpenChange={setShowInstructions}>
+        <DialogContent className="sm:max-w-md rounded-[2rem] border-white/10 bg-background/95 backdrop-blur-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Download className="h-5 w-5 text-primary" />
+              How to Install
+            </DialogTitle>
+            <DialogDescription className="text-sm font-medium">
+              Your browser hasn't suggested an automatic installation yet.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-3">
+              <p className="text-sm font-bold">Try one of the following:</p>
+              <ul className="text-xs space-y-2 list-disc pl-4 text-foreground/70 font-medium">
+                <li>Open your browser menu (usually <span className="text-primary">...</span> or <span className="text-primary">⋮</span>) and select <span className="text-primary">"Install Task Buddy"</span> or <span className="text-primary">"Save and Share &gt; Install App"</span>.</li>
+              </ul>
             </div>
           </div>
         </DialogContent>

@@ -1,7 +1,7 @@
 import React from "react"
 import { Calendar, Flag, Layers, Tag as TagIcon, X, Plus } from "lucide-react"
 import * as Icons from "lucide-react"
-import { format } from "date-fns"
+import { format, isValid } from "date-fns"
 import { type Task, type TaskPriority, type Tag, type Project } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -272,13 +272,24 @@ function DueDateSection({ dueDate, handleDateSelect, dirtySections }: MetaSideba
                 id="time-picker"
                 value={dueDate ? format(dueDate, "HH:mm") : ""}
                 onChange={(timeStr) => {
-                  const [hours, minutes] = timeStr.split(':').map(Number)
+                  if (!timeStr || !timeStr.includes(':')) return
+                  const [hoursStr, minutesStr] = timeStr.split(':')
+                  const hours = Number(hoursStr)
+                  const minutes = Number(minutesStr)
+                  
+                  if (isNaN(hours) || isNaN(minutes)) return
+
                   const now = new Date()
                   const current = dueDate || now
                   const newDate = new Date(current)
                   newDate.setHours(hours)
                   newDate.setMinutes(minutes)
-                  handleDateSelect(newDate, false)
+                  newDate.setSeconds(0)
+                  newDate.setMilliseconds(0)
+                  
+                  if (isValid(newDate)) {
+                    handleDateSelect(newDate, false)
+                  }
                 }}
               />
             </div>

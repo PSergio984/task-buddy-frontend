@@ -82,12 +82,33 @@ export function TimePicker({ id, value, onChange, className }: TimePickerProps) 
   }, [inputValue, displayFormat, is12h])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value
+    let val = e.target.value.replace(/[^\d:]/g, "")
+    
+    // Prevent multiple colons
+    const parts = val.split(":")
+    if (parts.length > 2) {
+      val = parts[0] + ":" + parts.slice(1).join("")
+    }
+
+    // Auto-colon if user types 2 digits and no colon
+    // But only if they are adding characters (not deleting)
+    const isAdding = val.length > (inputValue?.length || 0)
+    if (isAdding && val.length === 2 && !val.includes(":")) {
+      val = val + ":"
+    }
+
+    // Limit to 5 characters (HH:mm) for 24h, or more for 12h
+    const maxLength = is12h ? 8 : 5
+    if (val.length > maxLength) {
+      val = val.slice(0, maxLength)
+    }
+
     setInputValue(val)
     setIsOpen(true)
 
     // Try to parse and notify parent if it's a valid time
     try {
+      // Use parse with the current displayFormat (e.g. "HH:mm" or "hh:mm a")
       const date = parse(val, displayFormat, new Date())
       if (isValid(date)) {
         onChange(format(date, "HH:mm"))
