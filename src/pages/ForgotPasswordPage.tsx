@@ -6,12 +6,19 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
 import { api } from "@/lib/api"
+import axios from "axios"
 
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const { toast } = useToast()
+
+  const isValidEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+  }
+
+  const isButtonDisabled = isLoading || !email || !isValidEmail(email)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -130,7 +137,7 @@ export function ForgotPasswordPage() {
                   <Button
                     type="submit"
                     className="w-full h-12 rounded-xl text-lg font-semibold shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                    disabled={isLoading}
+                    disabled={isButtonDisabled}
                   >
                     {isLoading ? (
                       <Loader2 className="h-5 w-5 animate-spin" />

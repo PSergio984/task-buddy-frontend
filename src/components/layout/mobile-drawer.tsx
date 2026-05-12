@@ -40,7 +40,7 @@ export function MobileDrawer({ open, onOpenChange }: MobileDrawerProps) {
             <h3 className="px-2 text-[10px] font-black uppercase tracking-widest text-primary">Projects</h3>
             <div className="grid grid-cols-2 gap-3">
               {projects.map((p) => {
-                const Icon = (LucideIcons as any)[p.icon || "Layers"] || LucideIcons.Layers
+                const Icon = (LucideIcons as unknown as Record<string, LucideIcons.LucideIcon>)[p.icon || "Layers"] || LucideIcons.Layers
                 const isActive = activeSidebarFilter === `project:${p.id}`
                 return (
                   <button

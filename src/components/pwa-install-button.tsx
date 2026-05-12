@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react"
 import { Download, Share, Smartphone, Laptop } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import {
   Tooltip,
@@ -30,32 +30,22 @@ interface PwaInstallButtonProps {
 
 export function PwaInstallButton({ isCollapsed }: Readonly<PwaInstallButtonProps>) {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
-  const [isIOS, setIsIOS] = useState(false)
-  const [isStandalone, setIsStandalone] = useState(false)
+  const [isIOS] = useState(() => {
+    const ua = window.navigator.userAgent
+    return /iPad|iPhone|iPod/.test(ua) && !((window as unknown) as { MSStream: unknown }).MSStream
+  })
+  const [isStandalone] = useState(() => window.matchMedia("(display-mode: standalone)").matches)
   const [showIOSInstructions, setShowIOSInstructions] = useState(false)
-  const [isVisible, setIsVisible] = useState(false)
+  const [isVisible, setIsVisible] = useState(() => isIOS && !isStandalone)
 
   useEffect(() => {
-    // Detect platform
-    const ua = window.navigator.userAgent
-    const ios = /iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream
-    const standalone = window.matchMedia("(display-mode: standalone)").matches
-    
-    setIsIOS(ios)
-    setIsStandalone(standalone)
-
     const handler = (e: Event) => {
       e.preventDefault()
       setDeferredPrompt(e as BeforeInstallPromptEvent)
-      if (!standalone) setIsVisible(true)
+      setIsVisible(true)
     }
 
     window.addEventListener("beforeinstallprompt", handler)
-
-    // Show button for iOS if not already installed
-    if (ios && !standalone) {
-      setIsVisible(true)
-    }
 
     return () => {
       window.removeEventListener("beforeinstallprompt", handler)
