@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-import { Download, Share, Smartphone, Laptop } from "lucide-react"
+import { Download, Share, Smartphone } from "lucide-react"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import {
@@ -36,6 +36,7 @@ export function PwaInstallButton({ isCollapsed }: Readonly<PwaInstallButtonProps
   })
   const [isStandalone] = useState(() => window.matchMedia("(display-mode: standalone)").matches)
   const [showInstructions, setShowInstructions] = useState(false)
+  const [showIOSInstructions, setShowIOSInstructions] = useState(false)
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -71,8 +72,8 @@ export function PwaInstallButton({ isCollapsed }: Readonly<PwaInstallButtonProps
 
   if (isStandalone) return null
 
-  const label = isIOS ? "Add to Home" : (window.innerWidth > 768 ? "Desktop App" : "Install App")
-  const Icon = isIOS ? Smartphone : (window.innerWidth > 768 ? Laptop : Download)
+  const label = isIOS ? "Add to Home" : (window.innerWidth > 768 ? "Download App" : "Install App")
+  const Icon = isIOS ? Smartphone : Download
 
   const content = (
     <motion.button

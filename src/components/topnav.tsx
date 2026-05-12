@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom"
 import { useToast } from "@/hooks/use-toast"
 import { LogoutDialog } from "@/components/logout-dialog"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { PwaInstallButton } from "./pwa-install-button"
 import { cn } from "@/lib/utils"
 
 export interface TopNavProps {
@@ -123,6 +124,9 @@ export function TopNav({ onNewTask }: Readonly<TopNavProps>) {
                       <User className="h-4 w-4 text-muted-foreground/40 group-hover/item:text-primary transition-colors" />
                       Profile Settings
                     </button>
+                    <div className="px-1 py-1">
+                      <PwaInstallButton isCollapsed={false} />
+                    </div>
                     <div className="h-px bg-border/50 my-2 mx-4" />
                     <button
                       onClick={() => setIsLogoutDialogOpen(true)}

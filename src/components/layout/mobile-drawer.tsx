@@ -4,6 +4,7 @@ import { useTags } from "@/hooks/useTags"
 import { useFilters } from "@/contexts/FilterContext"
 import { cn } from "@/lib/utils"
 import * as LucideIcons from "lucide-react"
+import { PwaInstallButton } from "../pwa-install-button"
 
 interface MobileDrawerProps {
   open: boolean
@@ -77,6 +78,11 @@ export function MobileDrawer({ open, onOpenChange }: MobileDrawerProps) {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* PWA Install */}
+          <div className="pt-4 border-t border-white/5">
+            <PwaInstallButton isCollapsed={false} />
           </div>
         </div>
       </SheetContent>
