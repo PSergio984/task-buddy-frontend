@@ -9,6 +9,7 @@ The frontend roadmap focuses on transforming the application from an "AI-generat
 - [ ] **Phase 1: Frontend UX & Integration Rework** - Layout persistence, collapsible sidebar, design system alignment, and backend sync.
 - [ ] **Phase 2: Enhanced Interactivity & State** - Real-time updates, advanced filtering, and offline support.
 - [ ] **Phase 3: Performance & Accessibility** - Optimization, a11y audit, and mobile responsiveness polish.
+- [ ] **Phase 3.8: Sidebar Organization & DND** - Sidebar CRUD actions, DND reordering, and ellipsis menus.
 - [x] **Phase 4: Premium UX Hardening & Descriptive History** - Command-palette modals, sorting persistence, and refined timeline.
 - [x] **Phase 4.1: Advanced UI/UX & Feature Refinement** - Boxed sidebar toggle, Task Drawer, and Advanced Filtering.
 - [x] **Phase 4.2: High-Velocity Polish & Feature Hardening** - Subtask fixes, interaction refinements, and searchable creation.
@@ -34,6 +35,20 @@ Plans:
 - [x] 01-01-PLAN.md — Layout & Sidebar refactor (Persistence, Collapsibility, DS Foundation)
 - [x] 01-02-PLAN.md — Component UX, Copy, & Landing Page (Cleanup, Modern Loaders)
 - [x] 01-03-PLAN.md — Backend Sync & Verification (API Hooks, E2E Tests)
+
+### Phase 3: Performance & Accessibility
+**Goal**: Optimization, a11y audit, and mobile responsiveness polish.
+*(Details TBD)*
+
+### Phase 3.8: Sidebar Organization & DND
+**Goal**: Refine the sidebar with CRUD actions and Drag-and-Drop functionality for Projects and Tags.
+**Depends on**: Phase 3 (or current state)
+**Requirements**: 
+**Success Criteria**:
+  1. [ ] Projects and Tags can be reordered via drag-and-drop within their respective sections.
+  2. [ ] Projects and Tags can be edited and deleted via a "More" (ellipsis) dropdown menu on hover.
+  3. [ ] Active project/tag filter resets to "All Tasks" if the active item is deleted.
+  4. [ ] UI state remains consistent across all views after CRUD actions.
 
 ### Phase 4: Premium UX Hardening & Descriptive History
 **Goal**: Transform core interactions into a keyboard-centric command center style while cleaning up design "slop" and improving historical scannability.
