@@ -1,7 +1,7 @@
 # Graph Report - task-buddy-frontend  (2026-05-12)
 
 ## Corpus Check
-- 106 files · ~135,557 words
+- 106 files · ~135,556 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `2c9aa408`
+- Built from commit: `8b64e86f`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -164,21 +164,25 @@ Nodes (30): API Endpoints, Base URL Configuration, code:typescript (interface Ta
 
 ### Community 7 - "Testing & Validation"
 Cohesion: 0.1
-Nodes (21): RegisterForm(), validateEmail(), validatePasswordConfirmation(), validateUsername(), [confirmPassword, setConfirmPassword], confirmPasswordError, [email, setEmail], emailError (+13 more)
-
-### Community 8 - "API Documentation & Integration"
-Cohesion: 0.1
 Nodes (16): [category, setCategory], { data: groups = [] }, { data: projects = [] }, [description, setDescription], [dueDate, setDueDate], [groupId, setGroupId], { groups }, [lastOpen, setLastOpen] (+8 more)
 
-### Community 9 - "Main Application Shell"
+### Community 8 - "API Documentation & Integration"
 Cohesion: 0.09
 Nodes (21): Additional Forbidden Patterns, Anti-Patterns (Do NOT Use), Buttons, Cards, code:css (@import url('https://fonts.googleapis.com/css2?family=Fira+C), code:css (/* Primary Button */), code:css (.card {), code:css (.input {) (+13 more)
 
-### Community 10 - "Data Models & Entities"
+### Community 9 - "Main Application Shell"
 Cohesion: 0.15
 Nodes (10): { activeSidebarFilter, setActiveSidebarFilter, activeTagId, setActiveTagId }, { data: projects = [] }, { data: tags = [] }, MobileDrawerProps, cn(), result, InputProps, labelVariants (+2 more)
 
+### Community 10 - "Data Models & Entities"
+Cohesion: 0.11
+Nodes (19): [confirmPassword, setConfirmPassword], confirmPasswordError, [email, setEmail], emailError, handleSubmit(), met, navigate, PASSWORD_RULES (+11 more)
+
 ### Community 11 - "Linting Configuration"
+Cohesion: 0.12
+Nodes (19): [confirmPassword, setConfirmPassword], confirmPasswordError, [email, setEmail], emailError, [password, setPassword], passwordError, { register, loading }, { register, loading, error } (+11 more)
+
+### Community 12 - "Playwright Testing Config"
 Cohesion: 0.13
 Nodes (17): Tag, TaskPriority, {
     data: task,
@@ -186,29 +190,25 @@ Nodes (17): Tag, TaskPriority, {
     error,
   }, deleteMutation, { id }, [isDeleting, setIsDeleting], navigate, queryClient (+9 more)
 
-### Community 12 - "Playwright Testing Config"
+### Community 13 - "Tailwind CSS Styling"
 Cohesion: 0.11
 Nodes (18): bold(), createdName, date, fieldChanges, fieldsMatch, getAuditIcon(), handleTaskUpdate(), IconConfig (+10 more)
 
-### Community 13 - "Tailwind CSS Styling"
+### Community 14 - "Build & Vite Configuration"
 Cohesion: 0.1
 Nodes (19): A premium productivity application with a dual-identity design:, Brand Identity, Cards, clean & minimal in light mode, deep navy & warm amber in dark mode., Color Usage Rules, Component Patterns, Dual-Mode Identity, Empty States (+11 more)
 
-### Community 14 - "Build & Vite Configuration"
+### Community 15 - "Project Documentation"
 Cohesion: 0.11
 Nodes (18): [confirmPassword, setConfirmPassword], [currentPassword, setCurrentPassword], [isInitialized, setIsInitialized], [isUpdatingPassword, setIsUpdatingPassword], [isUpdatingUsername, setIsUpdatingUsername], { logout }, met, navigate (+10 more)
 
-### Community 15 - "Project Documentation"
-Cohesion: 0.12
-Nodes (17): [confirmPassword, setConfirmPassword], confirmPasswordError, [email, setEmail], emailError, handleSubmit(), navigate, [password, setPassword], passwordError (+9 more)
-
 ### Community 16 - "Community 16"
-Cohesion: 0.12
-Nodes (14): Project, DirtySections, [hours, minutes], MetaSidebar(), MetaSidebarProps, newDate, [popoverOpen, setPopoverOpen], PRIORITY_STYLES (+6 more)
-
-### Community 17 - "Community 17"
 Cohesion: 0.14
 Nodes (11): categoryConfig, priorityConfig, TaskCard(), TaskCardProps, SettingsContext, SettingsContextType, SettingsProvider(), { result } (+3 more)
+
+### Community 17 - "Community 17"
+Cohesion: 0.12
+Nodes (14): Project, DirtySections, [hours, minutes], MetaSidebar(), MetaSidebarProps, newDate, [popoverOpen, setPopoverOpen], PRIORITY_STYLES (+6 more)
 
 ### Community 18 - "Community 18"
 Cohesion: 0.14
@@ -264,7 +264,7 @@ Nodes (10): 1) Test Stack and Commands, 2) Test Layout, 3) Test Scope Matrix, 4)
 
 ### Community 31 - "Community 31"
 Cohesion: 0.27
-Nodes (10): getPasswordStrength(), normalizeText(), sanitizePassword(), sanitizeUsername(), validatePassword(), getErrorMessage(), handleUpdatePassword(), handleUpdateUsername() (+2 more)
+Nodes (10): handleSubmit(), navigate, getPasswordStrength(), normalizeText(), sanitizePassword(), sanitizeUsername(), validatePassword(), getErrorMessage() (+2 more)
 
 ### Community 32 - "Community 32"
 Cohesion: 0.2
@@ -408,11 +408,11 @@ Nodes (5): handleCreateProject(), handleDateSelect(), handleDescriptionBlur(), h
 
 ### Community 67 - "Community 67"
 Cohesion: 0.4
-Nodes (5): Accessibility, Modern React Patterns, Performance, State Management, Type Safety
+Nodes (5): API Integration, Architecture, code:block1 (src/), code:typescript (// Fetch all tasks), Project Structure
 
 ### Community 68 - "Community 68"
 Cohesion: 0.4
-Nodes (5): API Integration, Architecture, code:block1 (src/), code:typescript (// Fetch all tasks), Project Structure
+Nodes (5): Accessibility, Modern React Patterns, Performance, State Management, Type Safety
 
 ### Community 70 - "Community 70"
 Cohesion: 0.5
@@ -450,11 +450,11 @@ Nodes (3): Subtask Model, Tag Model, Task Model
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `cn()` connect `Data Models & Entities` to `Authentication & Authorization`, `Core UI Components`, `User Navigation & Theme`, `Audit & Activity Logging`, `Task Management Forms`, `State Management & Actions`, `Community 69`, `API Documentation & Integration`, `Linting Configuration`, `Build & Vite Configuration`, `Community 16`, `Community 17`, `Community 19`, `Community 21`?**
+- **Why does `cn()` connect `Main Application Shell` to `Authentication & Authorization`, `Core UI Components`, `User Navigation & Theme`, `Audit & Activity Logging`, `Task Management Forms`, `State Management & Actions`, `Community 69`, `Testing & Validation`, `Playwright Testing Config`, `Project Documentation`, `Community 16`, `Community 17`, `Community 19`, `Community 21`?**
   _High betweenness centrality (0.024) - this node is a cross-community bridge._
-- **Why does `useAuth()` connect `Core UI Components` to `Authentication & Authorization`, `Task Management Forms`, `State Management & Actions`, `Testing & Validation`, `Build & Vite Configuration`, `Project Documentation`, `Community 24`, `Community 28`, `Community 63`?**
+- **Why does `useAuth()` connect `Core UI Components` to `Authentication & Authorization`, `Task Management Forms`, `State Management & Actions`, `Data Models & Entities`, `Linting Configuration`, `Project Documentation`, `Community 24`, `Community 28`, `Community 63`?**
   _High betweenness centrality (0.015) - this node is a cross-community bridge._
-- **Why does `useToast()` connect `Core UI Components` to `Authentication & Authorization`, `User Navigation & Theme`, `Audit & Activity Logging`, `Task Management Forms`, `Testing & Validation`, `Linting Configuration`, `Build & Vite Configuration`, `Project Documentation`, `Community 24`?**
+- **Why does `useToast()` connect `Core UI Components` to `Authentication & Authorization`, `User Navigation & Theme`, `Audit & Activity Logging`, `Task Management Forms`, `Data Models & Entities`, `Linting Configuration`, `Playwright Testing Config`, `Project Documentation`, `Community 24`?**
   _High betweenness centrality (0.011) - this node is a cross-community bridge._
 - **What connects `AuditTrailProps`, `{
     loading, error, search, setSearch,

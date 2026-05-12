@@ -72,7 +72,7 @@ export function PwaInstallButton({ isCollapsed }: Readonly<PwaInstallButtonProps
 
   if (isStandalone) return null
 
-  const label = isIOS ? "Add to Home" : (window.innerWidth > 768 ? "Download App" : "Install App")
+  const label = isIOS ? "Add to Home" : "Install App"
   const Icon = isIOS ? Smartphone : Download
 
   const content = (
@@ -96,11 +96,6 @@ export function PwaInstallButton({ isCollapsed }: Readonly<PwaInstallButtonProps
         )}
       />
       {!isCollapsed && <span>{label}</span>}
-      {!isCollapsed && (
-        <div className="absolute right-4 px-1.5 py-0.5 rounded-md bg-primary text-[8px] text-primary-foreground uppercase tracking-widest font-black">
-          PWA
-        </div>
-      )}
     </motion.button>
   )
 
@@ -156,10 +151,10 @@ export function PwaInstallButton({ isCollapsed }: Readonly<PwaInstallButtonProps
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Download className="h-5 w-5 text-primary" />
-              How to Install
+              Install Task Buddy
             </DialogTitle>
             <DialogDescription className="text-sm font-medium">
-              Your browser hasn't suggested an automatic installation yet.
+              Get the full experience by installing the app.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
