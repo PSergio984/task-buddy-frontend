@@ -5,7 +5,8 @@ import { CheckCircle2, Lock, Loader2, Save, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
-import axios from "axios"
+import { api } from "@/lib/api"
+import { getAuthErrorMessage } from "@/lib/auth"
 
 export function ResetPasswordPage() {
   const { token } = useParams<{ token: string }>()
@@ -41,7 +42,7 @@ export function ResetPasswordPage() {
     setIsLoading(true)
 
     try {
-      await axios.post("/api/v1/users/reset-password", {
+      await api.post("/api/v1/users/reset-password", {
         token,
         new_password: newPassword,
       })
@@ -57,13 +58,7 @@ export function ResetPasswordPage() {
       toast({
         variant: "destructive",
         title: "Reset Failed",
-        description: (() => {
-          if (axios.isAxiosError(error)) {
-            return (error.response?.data as { detail?: string })?.detail || error.message
-          }
-          if (error instanceof Error) return error.message
-          return "Something went wrong. Please try again."
-        })(),
+        description: getAuthErrorMessage(error, "Something went wrong. Please try again."),
       })
     } finally {
       setIsLoading(false)

@@ -5,7 +5,7 @@ import { CheckCircle2, ArrowLeft, Mail, Loader2, Send } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
-import axios from "axios"
+import { api } from "@/lib/api"
 
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
@@ -13,13 +13,12 @@ export function ForgotPasswordPage() {
   const [isSubmitted, setIsSubmitted] = useState(false)
   const { toast } = useToast()
 
-  const handleSubmit = async (e: React.SubmitEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
     try {
-      // Mock API call - replace with actual backend call
-      await axios.post("/api/v1/users/forgot-password", { email })
+      await api.post("/api/v1/users/forgot-password", { email })
       setIsSubmitted(true)
       toast({
         title: "Reset link sent",
