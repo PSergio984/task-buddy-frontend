@@ -1,16 +1,16 @@
 # Graph Report - task-buddy-frontend  (2026-05-12)
 
 ## Corpus Check
-- 106 files · ~135,618 words
+- 106 files · ~135,621 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1105 nodes · 1762 edges · 88 communities (84 shown, 4 thin omitted)
+- 1105 nodes · 1762 edges · 86 communities (82 shown, 4 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 2 edges (avg confidence: 0.9)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `a97b6138`
+- Built from commit: `477d79e1`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -91,11 +91,9 @@
 - [[_COMMUNITY_Community 73|Community 73]]
 - [[_COMMUNITY_Community 74|Community 74]]
 - [[_COMMUNITY_Community 75|Community 75]]
-- [[_COMMUNITY_Community 76|Community 76]]
 - [[_COMMUNITY_Community 77|Community 77]]
-- [[_COMMUNITY_Community 79|Community 79]]
-- [[_COMMUNITY_Community 80|Community 80]]
-- [[_COMMUNITY_Community 87|Community 87]]
+- [[_COMMUNITY_Community 78|Community 78]]
+- [[_COMMUNITY_Community 85|Community 85]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `useAuth()` - 44 edges
@@ -121,7 +119,7 @@
 - `handleSubmit()` --calls--> `toast()`  [EXTRACTED]
   src/pages/ForgotPasswordPage.tsx → src/hooks/use-toast.ts
 
-## Communities (88 total, 4 thin omitted)
+## Communities (86 total, 4 thin omitted)
 
 ### Community 0 - "Authentication & Authorization"
 Cohesion: 0.06
@@ -166,21 +164,25 @@ Nodes (30): API Endpoints, Base URL Configuration, code:typescript (interface Ta
 
 ### Community 7 - "Testing & Validation"
 Cohesion: 0.1
-Nodes (21): RegisterForm(), validateEmail(), validatePasswordConfirmation(), validateUsername(), [confirmPassword, setConfirmPassword], confirmPasswordError, [email, setEmail], emailError (+13 more)
+Nodes (16): [category, setCategory], { data: groups = [] }, { data: projects = [] }, [description, setDescription], [dueDate, setDueDate], [groupId, setGroupId], { groups }, [lastOpen, setLastOpen] (+8 more)
 
 ### Community 8 - "API Documentation & Integration"
-Cohesion: 0.15
-Nodes (10): categoryConfig, priorityConfig, TaskCardProps, cn(), result, DropdownMenu(), InputProps, labelVariants (+2 more)
-
-### Community 9 - "Main Application Shell"
 Cohesion: 0.09
 Nodes (21): Additional Forbidden Patterns, Anti-Patterns (Do NOT Use), Buttons, Cards, code:css (@import url('https://fonts.googleapis.com/css2?family=Fira+C), code:css (/* Primary Button */), code:css (.card {), code:css (.input {) (+13 more)
 
+### Community 9 - "Main Application Shell"
+Cohesion: 0.15
+Nodes (10): { activeSidebarFilter, setActiveSidebarFilter, activeTagId, setActiveTagId }, { data: projects = [] }, { data: tags = [] }, MobileDrawerProps, cn(), result, InputProps, labelVariants (+2 more)
+
 ### Community 10 - "Data Models & Entities"
-Cohesion: 0.1
-Nodes (16): [category, setCategory], { data: groups = [] }, { data: projects = [] }, [description, setDescription], [dueDate, setDueDate], [groupId, setGroupId], { groups }, [lastOpen, setLastOpen] (+8 more)
+Cohesion: 0.11
+Nodes (19): [confirmPassword, setConfirmPassword], confirmPasswordError, [email, setEmail], emailError, handleSubmit(), met, navigate, PASSWORD_RULES (+11 more)
 
 ### Community 11 - "Linting Configuration"
+Cohesion: 0.12
+Nodes (19): [confirmPassword, setConfirmPassword], confirmPasswordError, [email, setEmail], emailError, [password, setPassword], passwordError, { register, loading }, { register, loading, error } (+11 more)
+
+### Community 12 - "Playwright Testing Config"
 Cohesion: 0.13
 Nodes (17): Tag, TaskPriority, {
     data: task,
@@ -188,21 +190,17 @@ Nodes (17): Tag, TaskPriority, {
     error,
   }, deleteMutation, { id }, [isDeleting, setIsDeleting], navigate, queryClient (+9 more)
 
-### Community 12 - "Playwright Testing Config"
+### Community 13 - "Tailwind CSS Styling"
 Cohesion: 0.11
 Nodes (18): bold(), createdName, date, fieldChanges, fieldsMatch, getAuditIcon(), handleTaskUpdate(), IconConfig (+10 more)
 
-### Community 13 - "Tailwind CSS Styling"
+### Community 14 - "Build & Vite Configuration"
 Cohesion: 0.1
 Nodes (19): A premium productivity application with a dual-identity design:, Brand Identity, Cards, clean & minimal in light mode, deep navy & warm amber in dark mode., Color Usage Rules, Component Patterns, Dual-Mode Identity, Empty States (+11 more)
 
-### Community 14 - "Build & Vite Configuration"
+### Community 15 - "Project Documentation"
 Cohesion: 0.11
 Nodes (18): [confirmPassword, setConfirmPassword], [currentPassword, setCurrentPassword], [isInitialized, setIsInitialized], [isUpdatingPassword, setIsUpdatingPassword], [isUpdatingUsername, setIsUpdatingUsername], { logout }, met, navigate (+10 more)
-
-### Community 15 - "Project Documentation"
-Cohesion: 0.12
-Nodes (17): [confirmPassword, setConfirmPassword], confirmPasswordError, [email, setEmail], emailError, handleSubmit(), navigate, [password, setPassword], passwordError (+9 more)
 
 ### Community 16 - "Community 16"
 Cohesion: 0.12
@@ -210,83 +208,83 @@ Nodes (14): Project, DirtySections, [hours, minutes], MetaSidebar(), MetaSidebar
 
 ### Community 17 - "Community 17"
 Cohesion: 0.14
-Nodes (10): ResolvedTheme, Theme, THEME_VALUES, ThemeProvider(), ThemeProviderContext, ThemeProviderProps, ThemeProviderState, useTheme() (+2 more)
+Nodes (11): categoryConfig, priorityConfig, TaskCard(), TaskCardProps, SettingsContext, SettingsContextType, SettingsProvider(), { result } (+3 more)
 
 ### Community 18 - "Community 18"
+Cohesion: 0.14
+Nodes (10): ResolvedTheme, Theme, THEME_VALUES, ThemeProvider(), ThemeProviderContext, ThemeProviderProps, ThemeProviderState, useTheme() (+2 more)
+
+### Community 19 - "Community 19"
+Cohesion: 0.12
+Nodes (10): SelectScrollDownButton, SelectScrollUpButton, SelectTrigger, [inputValue, setInputValue], [isOpen, setIsOpen], [prevValue, setPrevValue], suggestions, { timeFormat } (+2 more)
+
+### Community 20 - "Community 20"
 Cohesion: 0.12
 Nodes (16): code:html (<!-- In <head> -->), code:bash (git commit -m "chore: finalize mobile nav integration"), code:css (/* Add to end of src/index.css */), code:bash (git add index.html src/index.css), code:tsx (import { motion } from "framer-motion"), code:bash (git add src/components/layout/mobile-nav.tsx), code:tsx (import { Sheet, SheetContent, SheetHeader, SheetTitle } from), code:bash (git add src/components/layout/mobile-drawer.tsx) (+8 more)
 
-### Community 19 - "Community 19"
+### Community 21 - "Community 21"
 Cohesion: 0.13
 Nodes (11): BeforeInstallPromptEvent, [deferredPrompt, setDeferredPrompt], [isIOS], [isIOS, setIsIOS], [isStandalone], [isStandalone, setIsStandalone], [isVisible, setIsVisible], PwaInstallButtonProps (+3 more)
 
-### Community 20 - "Community 20"
+### Community 22 - "Community 22"
 Cohesion: 0.14
 Nodes (13): createButton, filtered, method, mockTags, mockTasks, newTask, payload, subtaskCheckbox (+5 more)
 
-### Community 21 - "Community 21"
+### Community 23 - "Community 23"
 Cohesion: 0.14
 Nodes (13): 1) Architectural Style, 2) System Flow, 3) Layer/Module Responsibilities, 4) Reused Patterns, 5) Graphify Insights (Core Abstractions), 5) Known Architectural Risks, 6) Evidence, 6) Known Architectural Risks (+5 more)
 
-### Community 22 - "Community 22"
+### Community 24 - "Community 24"
 Cohesion: 0.18
 Nodes (12): sanitizeEmail(), [email, setEmail], emailError, handleSubmit(), { login, loading }, { login, loading, error }, navigate, [password, setPassword] (+4 more)
 
-### Community 23 - "Community 23"
-Cohesion: 0.15
-Nodes (7): [inputValue, setInputValue], [isOpen, setIsOpen], [prevValue, setPrevValue], suggestions, { timeFormat }, TimePicker(), TimePickerProps
-
-### Community 24 - "Community 24"
+### Community 25 - "Community 25"
 Cohesion: 0.15
 Nodes (12): Browser Support, code:env (# API Configuration), Color Palette, Contributing, Design System, Environment Variables, License, Overview (+4 more)
 
-### Community 25 - "Community 25"
+### Community 26 - "Community 26"
 Cohesion: 0.15
 Nodes (12): Audit Trail Context & Time Formatting Implementation Plan, code:typescript (// src/lib/audit-trail-helpers.tsx), code:bash (git add src/lib/audit-trail-helpers.tsx), code:typescript (// src/components/audit-trail.tsx), code:bash (git add src/components/audit-trail.tsx), code:typescript (// src/components/task-card.tsx), code:bash (git add src/components/task-card.tsx), code:bash (npm run lint) (+4 more)
 
-### Community 26 - "Community 26"
+### Community 27 - "Community 27"
 Cohesion: 0.15
 Nodes (12): code:typescript (import { renderHook, act } from "@testing-library/react"), code:typescript (import React, { createContext, useContext, useState, useEffe), code:bash (git add src/contexts/SettingsContext.tsx src/contexts/Settin), code:typescript (// src/App.tsx), code:bash (git add src/App.tsx), code:typescript (// src/pages/ProfilePage.tsx), code:typescript (export function ProfilePage() {), code:bash (git add src/pages/ProfilePage.tsx) (+4 more)
 
-### Community 27 - "Community 27"
+### Community 28 - "Community 28"
 Cohesion: 0.27
 Nodes (9): AuthContext, AuthContextType, AuthUser, BackendErrorDetail, extractAccessToken(), formatFirstBackendError(), getAuthErrorMessage(), normalizeAuthUser() (+1 more)
 
-### Community 28 - "Community 28"
+### Community 29 - "Community 29"
 Cohesion: 0.18
 Nodes (10): 1) Naming Rules, 2) Formatting and Linting, 3) Import and Module Conventions, 4) Error and Logging Conventions, 5) Testing Conventions, 6) Evidence, code:bash (npm run lint), Coding Conventions (+2 more)
 
-### Community 29 - "Community 29"
+### Community 30 - "Community 30"
 Cohesion: 0.18
 Nodes (10): 1) Test Stack and Commands, 2) Test Layout, 3) Test Scope Matrix, 4) Mocking and Isolation Strategy, 5) Coverage and Quality Signals, 6) Evidence, code:bash (npm test              # Run Unit tests), Core Sections (Required) (+2 more)
 
-### Community 30 - "Community 30"
-Cohesion: 0.27
-Nodes (10): getPasswordStrength(), normalizeText(), sanitizePassword(), sanitizeUsername(), validatePassword(), getErrorMessage(), handleUpdatePassword(), handleUpdateUsername() (+2 more)
-
 ### Community 31 - "Community 31"
-Cohesion: 0.2
-Nodes (10): Build, code:bash (# Install dependencies), code:env (VITE_API_BASE_URL=http://127.0.0.1:8000), code:bash (# Start dev server), code:bash (# Build for production), Configuration, Development, Getting Started (+2 more)
+Cohesion: 0.27
+Nodes (10): handleSubmit(), navigate, getPasswordStrength(), normalizeText(), sanitizePassword(), sanitizeUsername(), validatePassword(), getErrorMessage() (+2 more)
 
 ### Community 32 - "Community 32"
 Cohesion: 0.2
-Nodes (9): Color Overrides, Component Overrides, Layout Overrides, Page-Specific Components, Page-Specific Rules, Recommendations, Spacing Overrides, Tasks Page Overrides (+1 more)
+Nodes (10): Build, code:bash (# Install dependencies), code:env (VITE_API_BASE_URL=http://127.0.0.1:8000), code:bash (# Start dev server), code:bash (# Build for production), Configuration, Development, Getting Started (+2 more)
 
 ### Community 33 - "Community 33"
 Cohesion: 0.2
-Nodes (9): 1) Top Risks (Prioritized), 2) Technical Debt, 3) Security Concerns, 4) Performance and Scaling Concerns, 5) Fragile/High-Churn Areas, 6) `[ASK USER]` Questions, 7) Evidence, Codebase Concerns (+1 more)
+Nodes (9): Color Overrides, Component Overrides, Layout Overrides, Page-Specific Components, Page-Specific Rules, Recommendations, Spacing Overrides, Tasks Page Overrides (+1 more)
 
 ### Community 34 - "Community 34"
 Cohesion: 0.2
-Nodes (9): 1) Integration Inventory, 2) Data Stores, 3) Secrets and Credentials Handling, 4) Reliability and Failure Behavior, 5) Observability for Integrations, 6) Evidence, Core Sections (Required), Extended Sections (Optional) (+1 more)
+Nodes (9): 1) Top Risks (Prioritized), 2) Technical Debt, 3) Security Concerns, 4) Performance and Scaling Concerns, 5) Fragile/High-Churn Areas, 6) `[ASK USER]` Questions, 7) Evidence, Codebase Concerns (+1 more)
 
 ### Community 35 - "Community 35"
 Cohesion: 0.2
-Nodes (9): 1) Runtime Summary, 2) Production Frameworks and Dependencies, 3) Development Toolchain, 4) Key Commands, 5) Environment and Config, 6) Evidence, code:bash (npm install), Core Sections (Required) (+1 more)
+Nodes (9): 1) Integration Inventory, 2) Data Stores, 3) Secrets and Credentials Handling, 4) Reliability and Failure Behavior, 5) Observability for Integrations, 6) Evidence, Core Sections (Required), Extended Sections (Optional) (+1 more)
 
 ### Community 36 - "Community 36"
 Cohesion: 0.2
-Nodes (9): code:block1 (TypeError: Cannot read properties of null (reading 'complete), code:block2 (Error: page.waitForTimeout: Target page, context or browser ), code:yaml (- generic [ref=e2]:), code:ts (42  |     await page.route("**/api/v1/tasks/**", async (rout), Error details, Instructions, Page snapshot, Test info (+1 more)
+Nodes (9): 1) Runtime Summary, 2) Production Frameworks and Dependencies, 3) Development Toolchain, 4) Key Commands, 5) Environment and Config, 6) Evidence, code:bash (npm install), Core Sections (Required) (+1 more)
 
 ### Community 37 - "Community 37"
 Cohesion: 0.2
@@ -294,15 +292,15 @@ Nodes (9): code:block1 (TypeError: Cannot read properties of null (reading 'comp
 
 ### Community 38 - "Community 38"
 Cohesion: 0.2
-Nodes (9): code:block1 (Test timeout of 30000ms exceeded.), code:block2 (Error: locator.fill: Test timeout of 30000ms exceeded.), code:yaml (- generic [ref=e2]:), code:ts (1   | import { test, expect } from "@playwright/test"), Error details, Instructions, Page snapshot, Test info (+1 more)
+Nodes (9): code:block1 (TypeError: Cannot read properties of null (reading 'complete), code:block2 (Error: page.waitForTimeout: Target page, context or browser ), code:yaml (- generic [ref=e2]:), code:ts (42  |     await page.route("**/api/v1/tasks/**", async (rout), Error details, Instructions, Page snapshot, Test info (+1 more)
 
 ### Community 39 - "Community 39"
-Cohesion: 0.24
+Cohesion: 0.2
 Nodes (9): code:block1 (Test timeout of 30000ms exceeded.), code:block2 (Error: locator.fill: Test timeout of 30000ms exceeded.), code:yaml (- generic [ref=e2]:), code:ts (1   | import { test, expect } from "@playwright/test"), Error details, Instructions, Page snapshot, Test info (+1 more)
 
 ### Community 40 - "Community 40"
-Cohesion: 0.28
-Nodes (7): TaskCard(), SettingsContext, SettingsContextType, SettingsProvider(), { result }, TimeFormat, useSettings()
+Cohesion: 0.24
+Nodes (9): code:block1 (Test timeout of 30000ms exceeded.), code:block2 (Error: locator.fill: Test timeout of 30000ms exceeded.), code:yaml (- generic [ref=e2]:), code:ts (1   | import { test, expect } from "@playwright/test"), Error details, Instructions, Page snapshot, Test info (+1 more)
 
 ### Community 41 - "Community 41"
 Cohesion: 0.22
@@ -378,73 +376,65 @@ Nodes (8): code:block1 (Error: locator.fill: Error: strict mode violation: getBy
 
 ### Community 59 - "Community 59"
 Cohesion: 0.25
-Nodes (4): { activeSidebarFilter, setActiveSidebarFilter, activeTagId, setActiveTagId }, { data: projects = [] }, { data: tags = [] }, MobileDrawerProps
-
-### Community 60 - "Community 60"
-Cohesion: 0.25
 Nodes (7): 1. Objective, 2.1 MobileNav (`components/layout/mobile-nav.tsx`), 2.2 MobileDrawer (`components/layout/mobile-drawer.tsx`), 2. Components, 3. Technical Integration, 4. Success Criteria, Design Spec: Mobile Navigation & PWA Polish
 
-### Community 61 - "Community 61"
+### Community 60 - "Community 60"
 Cohesion: 0.29
 Nodes (7): handleAddSubtask(), handleAttachTag(), handleCreate(), handleCreateAndAttachTag(), handleDelete(), genId(), toast()
 
-### Community 62 - "Community 62"
+### Community 61 - "Community 61"
 Cohesion: 0.29
 Nodes (4): met, PASSWORD_RULES, PasswordStrengthMeterProps, { score, label }
 
-### Community 63 - "Community 63"
+### Community 62 - "Community 62"
 Cohesion: 0.29
 Nodes (6): code:typescript (export function useCreateTag() {), Sidebar & Tag Creation Implementation Plan, Task 1: API and Hook Infrastructure, Task 2: CreateTagModal Component, Task 3: Sidebar Refactor (Collapsibility & Dynamic Icons), Task 4: Centering & UI Polish
 
-### Community 64 - "Community 64"
+### Community 63 - "Community 63"
 Cohesion: 0.33
 Nodes (5): useAuditTrail(), UseAuditTrailOptions, api, AuditEntry, groupByDate()
 
-### Community 65 - "Community 65"
+### Community 64 - "Community 64"
 Cohesion: 0.33
 Nodes (6): `dashboard.tsx`, Key Components, `new-task-modal.tsx`, `sidebar.tsx`, `task-card.tsx`, `topnav.tsx`
 
-### Community 66 - "Community 66"
+### Community 65 - "Community 65"
 Cohesion: 0.33
 Nodes (5): code:tsx (import { Button } from "@/components/ui/button"), code:bash (git add src/components/task-drawer/MetaSidebar.tsx), Fix Missing Button Import in MetaSidebar Implementation Plan, Task 1: Add Button Import to MetaSidebar.tsx, Task 2: Verification
 
-### Community 67 - "Community 67"
+### Community 66 - "Community 66"
 Cohesion: 0.4
 Nodes (5): handleCreateProject(), handleDateSelect(), handleDescriptionBlur(), handleTitleBlur(), handleUpdate()
 
-### Community 68 - "Community 68"
-Cohesion: 0.5
-Nodes (3): buttonVariants, Calendar(), CalendarProps
-
-### Community 69 - "Community 69"
+### Community 67 - "Community 67"
 Cohesion: 0.4
 Nodes (5): Accessibility, Modern React Patterns, Performance, State Management, Type Safety
 
-### Community 70 - "Community 70"
+### Community 68 - "Community 68"
 Cohesion: 0.4
 Nodes (5): API Integration, Architecture, code:block1 (src/), code:typescript (// Fetch all tasks), Project Structure
 
-### Community 72 - "Community 72"
+### Community 70 - "Community 70"
 Cohesion: 0.5
 Nodes (3): payload, strengthBar, strengthLabel
 
-### Community 73 - "Community 73"
+### Community 71 - "Community 71"
 Cohesion: 0.5
 Nodes (3): profileLink, sidebar, toggleButton
 
-### Community 74 - "Community 74"
+### Community 72 - "Community 72"
 Cohesion: 0.5
 Nodes (4): Dashboard Insights, Features, Task Management, User Experience
 
-### Community 75 - "Community 75"
+### Community 73 - "Community 73"
 Cohesion: 0.5
 Nodes (4): Audit Trail, Backend API Docs, API Hooks, Dashboard Page
 
-### Community 76 - "Community 76"
+### Community 74 - "Community 74"
 Cohesion: 0.67
 Nodes (3): TaskBuddy App, Auth Context, App Icon
 
-### Community 77 - "Community 77"
+### Community 75 - "Community 75"
 Cohesion: 0.67
 Nodes (3): Subtask Model, Tag Model, Task Model
 
@@ -460,11 +450,11 @@ Nodes (3): Subtask Model, Tag Model, Task Model
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `cn()` connect `API Documentation & Integration` to `Authentication & Authorization`, `Core UI Components`, `User Navigation & Theme`, `Audit & Activity Logging`, `Task Management Forms`, `State Management & Actions`, `Community 68`, `Community 71`, `Data Models & Entities`, `Linting Configuration`, `Build & Vite Configuration`, `Community 16`, `Community 19`, `Community 23`, `Community 59`?**
+- **Why does `cn()` connect `Main Application Shell` to `Authentication & Authorization`, `Core UI Components`, `User Navigation & Theme`, `Audit & Activity Logging`, `Task Management Forms`, `State Management & Actions`, `Community 69`, `Testing & Validation`, `Playwright Testing Config`, `Project Documentation`, `Community 16`, `Community 17`, `Community 19`, `Community 21`?**
   _High betweenness centrality (0.024) - this node is a cross-community bridge._
-- **Why does `useAuth()` connect `Core UI Components` to `Authentication & Authorization`, `Community 64`, `Task Management Forms`, `State Management & Actions`, `Testing & Validation`, `Build & Vite Configuration`, `Project Documentation`, `Community 22`, `Community 27`?**
+- **Why does `useAuth()` connect `Core UI Components` to `Authentication & Authorization`, `Task Management Forms`, `State Management & Actions`, `Data Models & Entities`, `Linting Configuration`, `Project Documentation`, `Community 24`, `Community 28`, `Community 63`?**
   _High betweenness centrality (0.015) - this node is a cross-community bridge._
-- **Why does `useToast()` connect `Core UI Components` to `Authentication & Authorization`, `User Navigation & Theme`, `Audit & Activity Logging`, `Task Management Forms`, `Testing & Validation`, `Linting Configuration`, `Build & Vite Configuration`, `Project Documentation`, `Community 22`?**
+- **Why does `useToast()` connect `Core UI Components` to `Authentication & Authorization`, `User Navigation & Theme`, `Audit & Activity Logging`, `Task Management Forms`, `Data Models & Entities`, `Linting Configuration`, `Playwright Testing Config`, `Project Documentation`, `Community 24`?**
   _High betweenness centrality (0.011) - this node is a cross-community bridge._
 - **What connects `AuditTrailProps`, `{
     loading, error, search, setSearch,

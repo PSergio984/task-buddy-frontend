@@ -28,7 +28,6 @@ import {
 } from "lucide-react"
 import * as LucideIcons from "lucide-react"
 import { useState } from "react"
-import { PwaInstallButton } from "./pwa-install-button"
 
 export interface SidebarProps {
   readonly isCollapsed: boolean
@@ -491,10 +490,6 @@ export function Sidebar({
 
       </div>
 
-      {/* PWA Install Action - Fixed at bottom */}
-      <div className="mt-auto pt-6 border-t border-white/5">
-        <PwaInstallButton isCollapsed={isCollapsed} />
-      </div>
 
       <CreateProjectModal 
         open={isCreateProjectModalOpen} 

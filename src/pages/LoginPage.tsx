@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Eye, EyeOff, KeyRound, CheckCircle2, LogIn, Mail } from "lucide-react"
+import { Eye, EyeOff, KeyRound, CheckCircle2, LogIn, Mail, ArrowRight } from "lucide-react"
 import {
   sanitizeEmail,
   sanitizePassword,
@@ -116,6 +116,13 @@ export function LoginPage() {
           transition={{ duration: 0.6, ease: "easeOut" }}
           className="w-full max-w-lg"
         >
+          <div className="absolute top-8 right-8">
+            <Link to="/">
+              <Button variant="ghost" className="gap-2 font-bold hover:bg-secondary/50 rounded-xl">
+                <ArrowRight className="h-4 w-4 rotate-180" /> Back to Home
+              </Button>
+            </Link>
+          </div>
           <div className="mb-10 lg:hidden text-center">
             <Link to="/" className="inline-flex items-center gap-3">
               <CheckCircle2 className="h-10 w-10 text-primary" />

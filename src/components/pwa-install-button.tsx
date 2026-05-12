@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
-import { Download, Share, Smartphone, Laptop } from "lucide-react"
-import { motion } from "framer-motion"
+import { Download, Share, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 import {
   Tooltip,
   TooltipContent,
@@ -10,9 +10,6 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog"
 
 interface BeforeInstallPromptEvent extends Event {
@@ -26,17 +23,30 @@ interface BeforeInstallPromptEvent extends Event {
 
 interface PwaInstallButtonProps {
   readonly isCollapsed: boolean
+  readonly variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link"
+  readonly size?: "default" | "sm" | "lg" | "icon"
+  readonly className?: string
 }
 
-export function PwaInstallButton({ isCollapsed }: Readonly<PwaInstallButtonProps>) {
+export function PwaInstallButton({ 
+  isCollapsed, 
+  variant = "ghost", 
+  size = "default", 
+  className 
+}: Readonly<PwaInstallButtonProps>) {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [isIOS] = useState(() => {
     const ua = window.navigator.userAgent
     return /iPad|iPhone|iPod/.test(ua) && !((window as unknown) as { MSStream: unknown }).MSStream
   })
-  const [isStandalone] = useState(() => window.matchMedia("(display-mode: standalone)").matches)
+  const [isStandalone] = useState(() => 
+    typeof window !== "undefined" && (
+      window.matchMedia("(display-mode: standalone)").matches || 
+      (window.navigator as unknown as { standalone?: boolean }).standalone || 
+      document.referrer.includes("android-app://")
+    )
+  )
   const [showInstructions, setShowInstructions] = useState(false)
-  const [showIOSInstructions, setShowIOSInstructions] = useState(false)
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -52,51 +62,72 @@ export function PwaInstallButton({ isCollapsed }: Readonly<PwaInstallButtonProps
   }, [])
 
   const handleInstallClick = async () => {
-    if (isIOS) {
-      setShowIOSInstructions(true)
+    if (deferredPrompt) {
+      await deferredPrompt.prompt()
+      const { outcome } = await deferredPrompt.userChoice
+      if (outcome === "accepted") {
+        setDeferredPrompt(null)
+      }
       return
     }
-
-    if (!deferredPrompt) {
-      setShowInstructions(true)
-      return
-    }
-
-    await deferredPrompt.prompt()
-    const { outcome } = await deferredPrompt.userChoice
-    
-    if (outcome === "accepted") {
-      setDeferredPrompt(null)
-    }
+    setShowInstructions(true)
   }
 
   if (isStandalone) return null
 
-  const label = isIOS ? "Add to Home" : "Install App"
-  const Icon = isIOS ? Smartphone : Download
+  const steps = isIOS ? [
+    {
+      number: "1",
+      title: "Tap Share",
+      description: "Tap the share button in Safari (square with an arrow).",
+      icon: <Share className="h-5 w-5 text-primary" />
+    },
+    {
+      number: "2",
+      title: "Add to Home Screen",
+      description: "Scroll down and select 'Add to Home Screen'.",
+      icon: <div className="flex h-5 w-5 items-center justify-center border-2 border-primary rounded-md text-[8px] font-black">＋</div>
+    },
+    {
+      number: "3",
+      title: "Confirm Add",
+      description: "Tap 'Add' in the top right corner to finish.",
+      icon: <CheckCircle2 className="h-5 w-5 text-primary" />
+    }
+  ] : [
+    {
+      number: "1",
+      title: "Open Menu",
+      description: "Click the browser menu (three dots ⋮) in the top right.",
+      icon: <div className="flex flex-col gap-0.5"><div className="w-1.5 h-1.5 rounded-full bg-primary" /><div className="w-1.5 h-1.5 rounded-full bg-primary" /><div className="w-1.5 h-1.5 rounded-full bg-primary" /></div>
+    },
+    {
+      number: "2",
+      title: "Select Install",
+      description: "Find 'Install Task Buddy' or 'Save and Share > Install App'.",
+      icon: <Download className="h-5 w-5 text-primary" />
+    },
+    {
+      number: "3",
+      title: "Confirm",
+      description: "Accept the browser prompt to add it to your device.",
+      icon: <CheckCircle2 className="h-5 w-5 text-primary" />
+    }
+  ];
 
   const content = (
-    <motion.button
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 10 }}
+    <Button
+      variant={variant}
+      size={size}
       onClick={handleInstallClick}
       className={cn(
-        "group relative flex items-center rounded-xl px-4 py-2.5 text-sm font-bold transition-all duration-300",
-        isCollapsed
-          ? "mx-auto w-12 justify-center bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground"
-          : "w-full justify-start gap-4 bg-primary/5 text-primary hover:bg-primary/10",
-        "border border-primary/20 hover:border-primary/40 shadow-lg shadow-primary/5"
+        "gap-2 font-bold transition-all hover:scale-[1.02] active:scale-[0.98]",
+        className
       )}
     >
-      <Icon
-        className={cn(
-          "h-4 w-4 transition-transform duration-300 group-hover:scale-110",
-          "text-primary"
-        )}
-      />
-      {!isCollapsed && <span>{label}</span>}
-    </motion.button>
+      <Download className="h-4 w-4" />
+      {!isCollapsed && <span>Install App</span>}
+    </Button>
   )
 
   return (
@@ -105,85 +136,50 @@ export function PwaInstallButton({ isCollapsed }: Readonly<PwaInstallButtonProps
         <Tooltip delayDuration={0}>
           <TooltipTrigger asChild>{content}</TooltipTrigger>
           <TooltipContent side="right" className="font-bold border-none bg-primary text-primary-foreground px-4 py-2 rounded-xl">
-            {label} for faster access & offline mode
+            Install Task Buddy
           </TooltipContent>
         </Tooltip>
       ) : (
         content
       )}
 
-      {/* iOS Instructions */}
-      <Dialog open={showIOSInstructions} onOpenChange={setShowIOSInstructions}>
-        <DialogContent className="sm:max-w-md rounded-[2rem] border-white/10 bg-background/95 backdrop-blur-3xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Smartphone className="h-5 w-5 text-primary" />
-              Install Task Buddy
-            </DialogTitle>
-            <DialogDescription className="text-sm font-medium">
-              Install Task Buddy on your iPhone for the best experience.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-6 py-4">
-            <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                <Share className="h-5 w-5 text-primary" />
-              </div>
-              <p className="text-sm font-bold leading-tight">
-                1. Tap the <span className="text-primary italic">Share</span> button in your browser's toolbar.
-              </p>
-            </div>
-            <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                <div className="flex h-5 w-5 items-center justify-center border-2 border-primary rounded-md text-[8px] font-black">＋</div>
-              </div>
-              <p className="text-sm font-bold leading-tight">
-                2. Select <span className="text-primary italic">"Add to Home Screen"</span> from the menu.
-              </p>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* General Browser Instructions */}
       <Dialog open={showInstructions} onOpenChange={setShowInstructions}>
-        <DialogContent className="sm:max-w-md rounded-[2rem] border-white/10 bg-background/95 backdrop-blur-3xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Download className="h-5 w-5 text-primary" />
-              Install Task Buddy
-            </DialogTitle>
-            <DialogDescription className="text-sm font-medium">
-              Get the full experience by installing the app.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-6 py-4">
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-start gap-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                <Laptop className="h-5 w-5 text-primary" />
+        <DialogContent className="sm:max-w-[420px] p-0 overflow-hidden rounded-[2.5rem] border-none shadow-2xl bg-background/95 backdrop-blur-xl">
+          <div className="relative p-8">
+            <div className="mb-10 text-center">
+              <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-[2rem] bg-primary shadow-2xl shadow-primary/30">
+                <Download className="h-8 w-8 text-primary-foreground" />
               </div>
-              <div className="space-y-1">
-                <p className="text-sm font-bold leading-tight">Desktop Users</p>
-                <p className="text-xs text-foreground/60 leading-relaxed font-medium">
-                  Click the <span className="text-primary italic">"Install"</span> icon in your address bar (next to the star icon).
-                </p>
-              </div>
+              <h2 className="text-2xl font-bold tracking-tight mb-2">Install Task Buddy</h2>
+              <p className="text-sm text-muted-foreground font-medium">
+                Get the best experience with our desktop and mobile app.
+              </p>
             </div>
-            
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-start gap-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                <div className="flex flex-col gap-0.5 items-center justify-center">
-                  <div className="w-1 h-1 rounded-full bg-primary" />
-                  <div className="w-1 h-1 rounded-full bg-primary" />
-                  <div className="w-1 h-1 rounded-full bg-primary" />
+
+            <div className="relative space-y-8 before:absolute before:left-7 before:top-4 before:bottom-4 before:w-0.5 before:bg-gradient-to-b before:from-primary/20 before:via-primary/10 before:to-transparent">
+              {steps.map((step, index) => (
+                <div key={index} className="relative flex items-start gap-5 group">
+                  <div className="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-background border-2 border-primary/10 shadow-sm transition-all duration-300 group-hover:border-primary/40 group-hover:shadow-md group-hover:scale-105">
+                    {step.icon}
+                  </div>
+                  <div className="flex-1 pt-1.5">
+                    <p className="mb-1 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60">Step {step.number}</p>
+                    <h3 className="mb-1 text-base font-bold leading-none">{step.title}</h3>
+                    <p className="text-xs font-medium text-muted-foreground leading-relaxed">
+                      {step.description}
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm font-bold leading-tight">Other Browsers</p>
-                <p className="text-xs text-foreground/60 leading-relaxed font-medium">
-                  Open your browser menu and select <span className="text-primary italic">"Install Task Buddy"</span> or <span className="text-primary italic">"Save and Share &gt; Install App"</span>.
-                </p>
-              </div>
+              ))}
+            </div>
+
+            <div className="mt-10">
+              <Button 
+                onClick={() => setShowInstructions(false)} 
+                className="w-full h-14 rounded-2xl font-bold text-lg shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+              >
+                Got it
+              </Button>
             </div>
           </div>
         </DialogContent>

@@ -1,7 +1,8 @@
 import { motion } from "framer-motion"
 import { Link } from "react-router-dom"
-import { CheckCircle2, Layout, Shield, Zap, ArrowRight, Star } from "lucide-react"
+import { CheckCircle2, Layout, Shield, Zap, ArrowRight, Star, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { PwaInstallButton } from "@/components/pwa-install-button"
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -187,6 +188,52 @@ export function LandingPage() {
                     <div className="aspect-square rounded-3xl bg-secondary/50 border" />
                   </div>
                 </motion.div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* PWA Installation Section */}
+        <section className="bg-background py-24 sm:py-32">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="relative overflow-hidden rounded-[3rem] bg-secondary/30 border p-8 md:p-16">
+              <div className="flex flex-col lg:flex-row items-center gap-12">
+                <div className="flex-1 text-center lg:text-left">
+                  <h2 className="font-heading text-4xl font-bold sm:text-5xl mb-6">Experience Task Buddy <span className="text-accent">Anywhere</span></h2>
+                  <p className="text-lg text-muted-foreground mb-8 leading-relaxed max-w-xl">
+                    Install Task Buddy as a desktop or mobile app. Enjoy faster load times, offline access, and a distraction-free environment tailored for high-performance work.
+                  </p>
+                  <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
+                    <PwaInstallButton className="h-14 rounded-full px-10 text-lg shadow-xl shadow-primary/20" />
+                    <p className="text-sm text-muted-foreground font-medium italic">
+                      No App Store needed. Installs directly from your browser.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex-1 flex justify-center">
+                  <div className="relative w-full max-w-md aspect-square rounded-[2.5rem] bg-gradient-to-tr from-primary/10 to-accent/10 border-2 border-dashed border-primary/20 flex items-center justify-center overflow-hidden">
+                     <Download className="w-32 h-32 text-primary/20 absolute animate-pulse" />
+                     <motion.div 
+                        initial={{ y: 20, opacity: 0 }}
+                        whileInView={{ y: 0, opacity: 1 }}
+                        className="relative z-10 bg-background rounded-3xl p-6 shadow-2xl border"
+                     >
+                        <div className="flex items-center gap-4 mb-4">
+                           <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center">
+                              <CheckCircle2 className="w-6 h-6 text-primary-foreground" />
+                           </div>
+                           <div>
+                              <p className="font-bold">Task Buddy</p>
+                              <p className="text-xs text-muted-foreground">Ready to install</p>
+                           </div>
+                        </div>
+                        <div className="space-y-2">
+                           <div className="h-2 w-32 bg-secondary rounded-full" />
+                           <div className="h-2 w-24 bg-secondary rounded-full opacity-50" />
+                        </div>
+                     </motion.div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
