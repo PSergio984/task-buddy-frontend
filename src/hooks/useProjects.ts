@@ -47,3 +47,25 @@ export function useDeleteProject() {
     },
   })
 }
+
+export function useReorderProjects() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: projectsApi.reorder,
+    onMutate: async (orderedIds: number[]) => {
+      await queryClient.cancelQueries({ queryKey: ["projects"] })
+      const previous = queryClient.getQueryData<import("@/lib/api").Project[]>(["projects"])
+      queryClient.setQueryData<import("@/lib/api").Project[]>(["projects"], (old) =>
+        old ? orderedIds.map((id) => old.find((p) => p.id === id)!).filter(Boolean) : old
+      )
+      return { previous }
+    },
+    onError: (_err, _ids, ctx) => {
+      if (ctx?.previous) queryClient.setQueryData(["projects"], ctx.previous)
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] })
+    },
+  })
+}

@@ -35,3 +35,38 @@ export function useDeleteTag() {
     },
   })
 }
+
+export function useUpdateTag() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: { name?: string; color?: string; icon?: string } }) =>
+      tagsApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tags"] })
+      queryClient.invalidateQueries({ queryKey: ["tasks"] })
+    },
+  })
+}
+
+export function useReorderTags() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: tagsApi.reorder,
+    onMutate: async (orderedIds: number[]) => {
+      await queryClient.cancelQueries({ queryKey: ["tags"] })
+      const previous = queryClient.getQueryData<import("@/lib/api").Tag[]>(["tags"])
+      queryClient.setQueryData<import("@/lib/api").Tag[]>(["tags"], (old) =>
+        old ? orderedIds.map((id) => old.find((t) => t.id === id)!).filter(Boolean) : old
+      )
+      return { previous }
+    },
+    onError: (_err, _ids, ctx) => {
+      if (ctx?.previous) queryClient.setQueryData(["tags"], ctx.previous)
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["tags"] })
+    },
+  })
+}
