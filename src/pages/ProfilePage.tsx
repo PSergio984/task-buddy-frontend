@@ -9,13 +9,14 @@ import { Label } from "@/components/ui/label"
 import { 
   User, KeyRound, Save, ArrowLeft, CheckCircle2, 
   Circle, ShieldCheck, BadgeCheck, Eye, EyeOff, 
-  Settings2, Clock
+  Settings2, Clock, Bell
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { sanitizeUsername, sanitizePassword, validatePassword } from "@/lib/auth"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import axios from "axios"
+import { useRegisterPush, useVapidKey } from "@/hooks/useNotifications"
 
 function getErrorMessage(err: unknown): string {
   if (axios.isAxiosError(err)) {
@@ -33,6 +34,17 @@ const PASSWORD_RULES = [
   { label: "One number", test: (pw: string) => /\d/.test(pw) },
   { label: "One special character", test: (pw: string) => /[^A-Za-z0-9]/.test(pw) },
 ]
+
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4)
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/")
+  const rawData = window.atob(base64)
+  const outputArray = new Uint8Array(rawData.length)
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i)
+  }
+  return outputArray
+}
 
 export function ProfilePage() {
   const navigate = useNavigate()
@@ -74,6 +86,116 @@ export function ProfilePage() {
 
 function PreferencesCard() {
   const { timeFormat, setTimeFormat } = useSettings()
+  const [pushEnabled, setPushEnabled] = useState(false)
+  const [isRegistering, setIsRegistering] = useState(false)
+  const { toast } = useToast()
+  
+  const { data: vapidData, isLoading: isLoadingVapid } = useVapidKey()
+  const registerPush = useRegisterPush()
+
+  React.useEffect(() => {
+    const checkPermission = async () => {
+      if ("Notification" in window && "serviceWorker" in navigator) {
+        if (Notification.permission === "granted") {
+          const registration = await navigator.serviceWorker.ready
+          const subscription = await registration.pushManager.getSubscription()
+          setPushEnabled(!!subscription)
+        } else {
+          setPushEnabled(false)
+        }
+      }
+    }
+    checkPermission()
+  }, [])
+
+  const handleTogglePush = async (enabled: boolean) => {
+    if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+      toast({
+        title: "Not supported",
+        description: "Your browser does not support push notifications.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (enabled) {
+      setIsRegistering(true)
+      try {
+        const permission = await Notification.requestPermission()
+        if (permission !== "granted") {
+          toast({
+            title: "Permission denied",
+            description: "You need to allow notifications to enable this feature.",
+            variant: "destructive",
+          })
+          setPushEnabled(false)
+          return
+        }
+
+        if (!vapidData?.public_key) {
+          throw new Error("Push notification service is temporarily unavailable. Please try again in a few moments.")
+        }
+
+        const registration = await Promise.race([
+          navigator.serviceWorker.ready,
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error("Service worker initialization timed out. Please refresh the page.")), 10000)
+          )
+        ]) as ServiceWorkerRegistration
+        
+        // Unsubscribe existing if any to be safe
+        const existingSubscription = await registration.pushManager.getSubscription()
+        if (existingSubscription) {
+          await existingSubscription.unsubscribe()
+        }
+
+        const subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(vapidData.public_key),
+        })
+
+        const sub = subscription.toJSON()
+        await registerPush.mutateAsync({
+          endpoint: sub.endpoint!,
+          p256dh: sub.keys!.p256dh,
+          auth: sub.keys!.auth,
+        })
+        
+        setPushEnabled(true)
+        toast({
+          title: "Push enabled",
+          description: "You will now receive notifications in this browser.",
+          variant: "success",
+        })
+      } catch (err) {
+        console.error("Failed to subscribe to push notifications:", err)
+        setPushEnabled(false)
+        toast({
+          title: "Setup failed",
+          description: "Could not register for push notifications.",
+          variant: "destructive",
+        })
+      } finally {
+        setIsRegistering(false)
+      }
+    } else {
+      // Disabling
+      try {
+        const registration = await navigator.serviceWorker.ready
+        const subscription = await registration.pushManager.getSubscription()
+        if (subscription) {
+          await subscription.unsubscribe()
+        }
+        setPushEnabled(false)
+        toast({
+          title: "Push disabled",
+          description: "You will no longer receive notifications in this browser.",
+        })
+      } catch (err) {
+        console.error("Failed to unsubscribe from push notifications:", err)
+      }
+    }
+  }
 
   return (
     <Card className="overflow-hidden border bg-background/50 p-8 shadow-2xl shadow-primary/5 backdrop-blur-xl rounded-[2rem]">
@@ -87,7 +209,7 @@ function PreferencesCard() {
         </div>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-8">
         <div className="space-y-4">
           <div className="flex items-center gap-2 ml-1">
             <Clock className="h-4 w-4 text-muted-foreground" />
@@ -114,6 +236,37 @@ function PreferencesCard() {
             Affects timestamps in activity logs and task due dates.
           </p>
         </div>
+
+        <div className="h-px bg-border/50" />
+
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 ml-1">
+            <Bell className="h-4 w-4 text-muted-foreground" />
+            <Label className="text-sm font-semibold">Push Notifications</Label>
+          </div>
+          
+          <div className="flex p-1.5 bg-muted/30 rounded-2xl w-fit">
+            {([true, false] as const).map((enabled) => (
+              <button
+                key={enabled ? "on" : "off"}
+                disabled={isRegistering || isLoadingVapid}
+                onClick={() => handleTogglePush(enabled)}
+                className={cn(
+                  "px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300",
+                  pushEnabled === enabled 
+                    ? "bg-background text-foreground shadow-lg scale-100" 
+                    : "text-muted-foreground hover:text-foreground hover:bg-white/5 scale-95",
+                  (isRegistering || isLoadingVapid) && "opacity-50 cursor-not-allowed"
+                )}
+              >
+                {enabled ? (isRegistering ? "Enabling..." : (isLoadingVapid ? "Loading..." : "Enabled")) : "Disabled"}
+              </button>
+            ))}
+          </div>
+          <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider ml-1">
+            Receive browser notifications for upcoming and overdue tasks.
+          </p>
+        </div>
       </div>
     </Card>
   )
@@ -135,7 +288,7 @@ function UsernameCard() {
   const isUsernameValid = newUsername.trim().length > 0 && /^[A-Za-z0-9._@\- ]+$/.test(newUsername)
   const hasUsernameChanged = user && newUsername !== user.username && isUsernameValid
 
-  const handleUpdateUsername = async (e: React.SubmitEvent) => {
+  const handleUpdateUsername = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!hasUsernameChanged) return
     
@@ -197,23 +350,36 @@ function UsernameCard() {
             <p className="text-[10px] font-bold text-destructive px-2">Username cannot be empty</p>
           )}
         </div>
-        <Button
-          type="submit"
-          disabled={isUpdatingUsername || !hasUsernameChanged}
-          className={cn(
-            "h-12 px-8 rounded-xl font-bold shadow-lg transition-all",
-            hasUsernameChanged
-              ? "bg-primary text-primary-foreground shadow-primary/20 hover:scale-[1.02]" 
-              : "bg-muted text-muted-foreground shadow-none cursor-not-allowed opacity-50"
+        <div className="flex items-center gap-3">
+          <Button
+            type="submit"
+            disabled={isUpdatingUsername || !hasUsernameChanged}
+            className={cn(
+              "h-12 px-8 rounded-xl font-bold shadow-lg transition-all",
+              hasUsernameChanged
+                ? "bg-primary text-primary-foreground shadow-primary/20 hover:scale-[1.02]"
+                : "bg-muted text-muted-foreground shadow-none cursor-not-allowed opacity-50"
+            )}
+          >
+            {isUpdatingUsername ? (
+              <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2" />
+            ) : (
+              <Save className="mr-2 h-4 w-4" />
+            )}
+            {isUpdatingUsername ? "Updating..." : "Save Changes"}
+          </Button>
+          {hasUsernameChanged && (
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={isUpdatingUsername}
+              onClick={() => setNewUsername(user?.username ?? "")}
+              className="h-12 px-6 rounded-xl font-bold text-muted-foreground hover:text-foreground transition-all"
+            >
+              Cancel
+            </Button>
           )}
-        >
-          {isUpdatingUsername ? (
-            <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2" />
-          ) : (
-            <Save className="mr-2 h-4 w-4" />
-          )}
-          {isUpdatingUsername ? "Updating..." : "Save Changes"}
-        </Button>
+        </div>
       </form>
     </Card>
   )
@@ -231,7 +397,7 @@ function SecurityCard() {
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
-  const handleUpdatePassword = async (e: React.SubmitEvent) => {
+  const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault()
     if (newPassword !== confirmPassword) {
       toast({
@@ -404,4 +570,3 @@ function PasswordRules({ password }: Readonly<{ password: string }>) {
     </div>
   )
 }
-

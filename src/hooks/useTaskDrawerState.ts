@@ -10,6 +10,7 @@ import {
   useCreateSubtask,
   useUpdateSubtask,
   useDeleteSubtask,
+  useReorderSubtasks,
   useCreateTag,
   useAttachTag,
   useDetachTag,
@@ -35,6 +36,7 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onOpenChange }: 
   const createSubtask = useCreateSubtask()
   const updateSubtask = useUpdateSubtask()
   const deleteSubtask = useDeleteSubtask()
+  const reorderSubtasks = useReorderSubtasks()
   const createTag = useCreateTag()
   const attachTag = useAttachTag()
   const detachTag = useDetachTag()
@@ -57,7 +59,7 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onOpenChange }: 
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("")
   const [isAddingSubtask, setIsAddingSubtask] = useState(false)
   const [localSubtasks, setLocalSubtasks] = useState<Subtask[]>([])
-  const [pendingSubtasks, setPendingSubtasks] = useState<string[]>([])
+  const [pendingSubtasks, setPendingSubtasks] = useState<{ id: string; title: string }[]>([])
   const subtaskInputRef = useRef<HTMLInputElement>(null)
 
   // Tag state
@@ -76,10 +78,12 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onOpenChange }: 
   const isCreate = mode === "create"
 
   // Sync state when task or mode changes (reset/initialize form)
+  const [prevIsOpen, setPrevIsOpen] = useState(false)
   const [prevId, setPrevId] = useState<number | string | null>(null)
   const currentId = isCreate ? "create" : (task?.id ?? null)
 
-  if (isOpen && currentId !== prevId) {
+  if (isOpen && (!prevIsOpen || currentId !== prevId)) {
+    setPrevIsOpen(true)
     setPrevId(currentId)
     
     if (task && !isCreate) {
@@ -115,6 +119,10 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onOpenChange }: 
     setIsEditingTitle(false)
   }
 
+  if (!isOpen && prevIsOpen) {
+    setPrevIsOpen(false)
+  }
+
   const isTitleDirty = Boolean(!isCreate && task && title !== task.title)
   const isDescriptionDirty = Boolean(!isCreate && task && description !== (task.description ?? ""))
   const isPriorityDirty = Boolean(!isCreate && task && priority !== task.priority)
@@ -129,9 +137,9 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onOpenChange }: 
 
   const isSubtasksDirty = Boolean(!isCreate && task && (
     localSubtasks.length !== (task.subtasks || []).length ||
-    localSubtasks.some(ls => {
-      const os = (task.subtasks || []).find(s => s.id === ls.id)
-      return !os || ls.title !== os.title || ls.completed !== os.completed
+    localSubtasks.some((ls, index) => {
+      const os = (task.subtasks || [])[index]
+      return !os || ls.id !== os.id || ls.title !== os.title || ls.completed !== os.completed
     })
   ))
 
@@ -185,11 +193,36 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onOpenChange }: 
       ))
       const subtasksToDelete = originalSubtasks.filter(os => !localSubtasks.some(ls => ls.id === os.id))
 
-      await Promise.all([
-        ...subtasksToCreate.map(s => createSubtask.mutateAsync({ taskId: task.id, title: s.title })),
-        ...subtasksToUpdate.map(s => updateSubtask.mutateAsync({ id: s.id, updates: { title: s.title, completed: s.completed } })),
-        ...subtasksToDelete.map(s => deleteSubtask.mutateAsync(s.id))
-      ])
+      // a. Delete removed subtasks
+      await Promise.all(subtasksToDelete.map(s => deleteSubtask.mutateAsync(s.id)))
+      
+      // b. Update existing subtasks
+      await Promise.all(subtasksToUpdate.map(s => updateSubtask.mutateAsync({ id: s.id, updates: { title: s.title, completed: s.completed } })))
+      
+      // c. Create new subtasks and capture their real IDs
+      const createdSubtaskMappings = await Promise.all(
+        subtasksToCreate.map(async (s) => {
+          const newSub = await createSubtask.mutateAsync({ 
+            taskId: task.id, 
+            title: s.title,
+            completed: s.completed 
+          })
+          return { tempId: s.id, realId: newSub.id }
+        })
+      )
+      
+      // d. Create a map for temp -> real ID lookup
+      const idMap = new Map<number, number>()
+      createdSubtaskMappings.forEach(mapping => idMap.set(mapping.tempId, mapping.realId))
+      
+      // e. Final reordering with all real IDs
+      if (isSubtasksDirty) {
+        const orderedIds = localSubtasks.map(s => s.id < 0 ? idMap.get(s.id)! : s.id)
+        await reorderSubtasks.mutateAsync({ 
+          taskId: task.id, 
+          orderedIds 
+        })
+      }
 
       setShowSaveConfirm(false)
       toast({ title: "Changes saved", variant: "success" })
@@ -202,7 +235,7 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onOpenChange }: 
   const handleAddSubtask = async () => {
     if (!newSubtaskTitle.trim()) return
     if (isCreate) {
-      setPendingSubtasks(prev => [...prev, newSubtaskTitle.trim()])
+      setPendingSubtasks(prev => [...prev, { id: `pending-${Math.random().toString(36).substr(2, 9)}`, title: newSubtaskTitle.trim() }])
     } else {
       // Use negative ID for local-only subtasks
       const tempId = -Math.floor(Math.random() * 1000000)
@@ -235,6 +268,14 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onOpenChange }: 
     setLocalSubtasks(prev => prev.filter(s => s.id !== subtaskId))
   }
 
+  const handleReorderSubtasks = (newSubtasks: Subtask[] | { id: string; title: string }[]) => {
+    if (isCreate) {
+      setPendingSubtasks(newSubtasks as { id: string; title: string }[])
+    } else {
+      setLocalSubtasks(newSubtasks as Subtask[])
+    }
+  }
+
   const handleDelete = async () => {
     if (!task) return
     try {
@@ -258,7 +299,7 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onOpenChange }: 
         due_date: dueDate?.toISOString(),
         completed: false,
         tags: pendingTags.map(t => t.name),
-        subtasks: pendingSubtasks.map(stTitle => ({ title: stTitle }))
+        subtasks: pendingSubtasks.map(st => ({ title: st.title }))
       })
       toast({ title: "Task created!", variant: "success" })
       onOpenChange(false)
@@ -396,6 +437,7 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onOpenChange }: 
     handleAddSubtask,
     handleToggleSubtask,
     handleDeleteSubtask,
+    handleReorderSubtasks,
     handleDelete,
     handleCreate,
     handleAttachTag,

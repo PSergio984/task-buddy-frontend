@@ -52,10 +52,6 @@ export function TasksPage() {
     activeTagId,
     selectedPriorities,
     setSelectedPriorities,
-    selectedProjects,
-    setSelectedProjects,
-    selectedTags,
-    setSelectedTags
   } = useFilters()
   const [searchQuery, setSearchQuery] = useState("")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
@@ -65,8 +61,8 @@ export function TasksPage() {
   })
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false)
   
-  const { data: projects = [] } = useProjects()
-  const { data: tags = [] } = useTags()
+  useProjects()
+  useTags()
   const { logout } = useAuth()
   const { toast } = useToast()
 
@@ -97,12 +93,9 @@ export function TasksPage() {
 
   const matchesTask = (task: Task) => {
     const query = searchQuery.toLowerCase()
-    const matchesSearch = task.title.toLowerCase().includes(query) ||
-      task.description?.toLowerCase().includes(query)
+    const matchesSearch = task.title.toLowerCase().includes(query)
     
     const matchesPriority = selectedPriorities.length === 0 || selectedPriorities.includes(task.priority)
-    const matchesProject = selectedProjects.length === 0 || (task.project_id && selectedProjects.includes(task.project_id))
-    const matchesTags = selectedTags.length === 0 || task.tags?.some(tag => selectedTags.includes(tag.id))
 
     // Sidebar Smart Filters
     let matchesSidebar = true
@@ -116,7 +109,7 @@ export function TasksPage() {
       matchesSidebar = !task.project_id
     }
 
-    return matchesSearch && matchesPriority && matchesProject && matchesTags && matchesSidebar
+    return matchesSearch && matchesPriority && matchesSidebar
   }
 
   const filteredTasks = tasks.filter(matchesTask)
@@ -144,34 +137,12 @@ export function TasksPage() {
     )
   }
 
-  const toggleProject = (id: number) => {
-    setSelectedProjects(prev => 
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-    )
-  }
-
-  const toggleTag = (id: number) => {
-    setSelectedTags(prev => 
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-    )
-  }
-
   const removePriority = (p: string) => {
     setSelectedPriorities(prev => prev.filter(x => x !== p))
   }
 
-  const removeProject = (id: number) => {
-    setSelectedProjects(prev => prev.filter(x => x !== id))
-  }
-
-  const removeTag = (id: number) => {
-    setSelectedTags(prev => prev.filter(x => x !== id))
-  }
-
   const clearAllFilters = () => {
     setSelectedPriorities([])
-    setSelectedProjects([])
-    setSelectedTags([])
   }
 
   const handleToggleComplete = async (id: number) => {
@@ -291,16 +262,16 @@ export function TasksPage() {
             onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
             className={cn(
               "font-black text-[10px] tracking-widest uppercase flex items-center gap-2 transition-all h-10 px-4 rounded-xl",
-              isFiltersExpanded || selectedPriorities.length > 0 || selectedProjects.length > 0 || selectedTags.length > 0
+              isFiltersExpanded || selectedPriorities.length > 0
                 ? "bg-primary/10 text-primary border border-primary/20"
                 : "text-foreground/60 hover:text-foreground hover:bg-white/5"
             )}
           >
             <Filter className="h-3.5 w-3.5" />
             Filter
-            {(selectedPriorities.length + selectedProjects.length + selectedTags.length) > 0 && (
+            {selectedPriorities.length > 0 && (
               <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-white font-black">
-                {selectedPriorities.length + selectedProjects.length + selectedTags.length}
+                {selectedPriorities.length}
               </span>
             )}
           </Button>
@@ -340,7 +311,6 @@ export function TasksPage() {
             className="overflow-hidden"
           >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6 rounded-[2rem] bg-background/40 border border-border/50 backdrop-blur-xl">
-              {/* Priority Filter */}
               <div className="space-y-3">
                 <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 px-1">Priority</label>
                 <div className="flex flex-wrap gap-2">
@@ -360,55 +330,13 @@ export function TasksPage() {
                   ))}
                 </div>
               </div>
-
-              {/* Project Filter */}
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 px-1">Projects</label>
-                <div className="flex flex-wrap gap-2">
-                  {projects.map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => toggleProject(p.id)}
-                      className={cn(
-                        "px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-all border",
-                        selectedProjects.includes(p.id)
-                          ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20"
-                          : "bg-muted text-muted-foreground border-border/50 hover:border-primary/30 hover:bg-muted/80"
-                      )}
-                    >
-                      {p.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Tag Filter */}
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 px-1">Tags</label>
-                <div className="flex flex-wrap gap-2">
-                  {tags.map((t) => (
-                    <button
-                      key={t.id}
-                      onClick={() => toggleTag(t.id)}
-                      className={cn(
-                        "px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-all border",
-                        selectedTags.includes(t.id)
-                          ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20"
-                          : "bg-muted text-muted-foreground border-border/50 hover:border-primary/30 hover:bg-muted/80"
-                      )}
-                    >
-                      {t.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Active Filter Pills */}
-      {(selectedPriorities.length > 0 || selectedProjects.length > 0 || selectedTags.length > 0) && (
+      {selectedPriorities.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-[10px] font-black uppercase tracking-widest text-foreground/40 mr-2">Active Filters:</p>
           {selectedPriorities.map(p => (
@@ -417,24 +345,6 @@ export function TasksPage() {
               <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => removePriority(p)} />
             </Badge>
           ))}
-          {selectedProjects.map(id => {
-            const name = projects.find(p => p.id === id)?.name
-            return (
-              <Badge key={id} variant="outline" className="rounded-full bg-primary/10 text-primary border-primary/20 gap-1 pl-3 pr-2 py-1 uppercase text-[10px] font-black">
-                {name}
-                <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => removeProject(id)} />
-              </Badge>
-            )
-          })}
-          {selectedTags.map(id => {
-            const name = tags.find(t => t.id === id)?.name
-            return (
-              <Badge key={id} variant="outline" className="rounded-full bg-primary/10 text-primary border-primary/20 gap-1 pl-3 pr-2 py-1 uppercase text-[10px] font-black">
-                {name}
-                <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => removeTag(id)} />
-              </Badge>
-            )
-          })}
           <Button 
             variant="ghost" 
             size="sm" 

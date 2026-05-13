@@ -98,6 +98,7 @@ export function TaskDetailDrawer({ task: initialTask, mode, isOpen, onOpenChange
               setPendingSubtasks={state.setPendingSubtasks}
               task={state.task}
               isDirty={state.isSubtasksDirty}
+              handleReorderSubtasks={state.handleReorderSubtasks}
             />
           </div>
 

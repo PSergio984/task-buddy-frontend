@@ -18,6 +18,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import { Toaster } from "@/components/ui/toaster"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { DashboardDemo } from "@/pages/DashboardDemo"
+import { NotificationWatcher } from "@/components/notification-watcher"
 
 export function App() {
   const { user } = useAuth()
@@ -28,6 +29,7 @@ export function App() {
         <SettingsProvider>
           <FilterProvider>
             <Router>
+              <NotificationWatcher />
               <Routes>
                 {/* Landing Page */}
                 <Route

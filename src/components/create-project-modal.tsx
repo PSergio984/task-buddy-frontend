@@ -13,23 +13,27 @@ import { Label } from "@/components/ui/label"
 import { motion } from "framer-motion"
 import { Layers, Palette } from "lucide-react"
 import * as LucideIcons from "lucide-react"
-import { useCreateProject } from "@/hooks/useProjects"
+import { useCreateProject, useUpdateProject } from "@/hooks/useProjects"
 import { useToast } from "@/hooks/use-toast"
 import { ColorIconPicker, PRESET_COLORS, PRESET_ICONS } from "@/components/color-icon-picker"
+import type { Project } from "@/lib/api"
 
 export interface CreateProjectModalProps {
   readonly open: boolean
   readonly onOpenChange: (open: boolean) => void
+  readonly project?: Project
 }
 
 export function CreateProjectModal({
   open,
   onOpenChange,
+  project,
 }: Readonly<CreateProjectModalProps>) {
-  const [name, setName] = useState("")
-  const [color, setColor] = useState(PRESET_COLORS[0])
-  const [icon, setIcon] = useState(PRESET_ICONS[0])
+  const [name, setName] = useState(project?.name ?? "")
+  const [color, setColor] = useState(project?.color ?? PRESET_COLORS[0])
+  const [icon, setIcon] = useState(project?.icon ?? PRESET_ICONS[0])
   const createProject = useCreateProject()
+  const updateProject = useUpdateProject()
   const { toast } = useToast()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,25 +42,38 @@ export function CreateProjectModal({
     if (!name.trim()) return
 
     try {
-      await createProject.mutateAsync({
-        name: name.trim(),
-        color,
-        icon,
-      })
-      setName("")
-      setColor(PRESET_COLORS[0])
-      setIcon(PRESET_ICONS[0])
+      if (project) {
+        await updateProject.mutateAsync({
+          id: project.id,
+          updates: {
+            name: name.trim(),
+            color,
+            icon,
+          },
+        })
+      } else {
+        await createProject.mutateAsync({
+          name: name.trim(),
+          color,
+          icon,
+        })
+      }
+      if (!project) {
+        setName("")
+        setColor(PRESET_COLORS[0])
+        setIcon(PRESET_ICONS[0])
+      }
       onOpenChange(false)
       toast({
-        title: "Project Created",
-        description: "Your new project is ready.",
+        title: project ? "Project Updated" : "Project Created",
+        description: project ? "Your project has been updated." : "Your new project is ready.",
         variant: "success",
       })
     } catch (error) {
-      console.error("Failed to create project:", error)
+      console.error("Failed to save project:", error)
       toast({
-        title: "Creation Failed",
-        description: "Could not create project. Please try again.",
+        title: project ? "Update Failed" : "Creation Failed",
+        description: project ? "Could not update project." : "Could not create project. Please try again.",
         variant: "destructive",
       })
     }
@@ -80,7 +97,7 @@ export function CreateProjectModal({
                   <Layers className="h-5 w-5" />
                 </div>
                 <DialogTitle className="font-heading text-3xl font-black tracking-tight text-foreground">
-                  New Project
+                  {project ? "Edit Project" : "New Project"}
                 </DialogTitle>
               </div>
               <DialogDescription className="text-sm font-medium text-muted-foreground tracking-wide ml-13">
@@ -150,10 +167,10 @@ export function CreateProjectModal({
                     disabled={createProject.isPending || !name.trim()}
                     className="h-12 px-8 rounded-2xl bg-primary text-primary-foreground shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all font-bold tracking-tight"
                   >
-                    {createProject.isPending ? (
+                    {createProject.isPending || updateProject.isPending ? (
                       <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full" />
                     ) : (
-                      <span>Create Project</span>
+                      <span>{project ? "Save Changes" : "Create Project"}</span>
                     )}
                   </Button>
                 </motion.div>

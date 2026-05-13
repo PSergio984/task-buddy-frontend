@@ -1,9 +1,26 @@
 import React from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { CheckCircle2, Circle, Plus, Trash2, Check, X } from "lucide-react"
+import { CheckCircle2, Circle, Plus, Trash2, Check, X, GripVertical } from "lucide-react"
 import { type Subtask, type Task } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core"
+import type { DragEndEvent, DraggableAttributes, DraggableSyntheticListeners } from "@dnd-kit/core"
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
 
 interface SubtaskSectionProps {
   readonly isCreate: boolean
@@ -12,17 +29,18 @@ interface SubtaskSectionProps {
   readonly newSubtaskTitle: string
   readonly setNewSubtaskTitle: (v: string) => void
   readonly handleAddSubtask: () => void
-  readonly visibleSubtasks: readonly (Subtask | string)[]
-  readonly allSubtasks: readonly (Subtask | string)[]
+  readonly visibleSubtasks: readonly (Subtask | { id: string; title: string })[]
+  readonly allSubtasks: readonly (Subtask | { id: string; title: string })[]
   readonly handleToggleSubtask: (id: number, completed: boolean) => void
   readonly handleDeleteSubtask: (id: number) => void
   readonly subtaskInputRef: React.RefObject<HTMLInputElement | null>
   readonly subtasksLimit: number
   readonly setSubtasksLimit: (v: number) => void
-  readonly pendingSubtasks: readonly string[]
-  readonly setPendingSubtasks: React.Dispatch<React.SetStateAction<string[]>>
+  readonly pendingSubtasks: readonly { id: string; title: string }[]
+  readonly setPendingSubtasks: React.Dispatch<React.SetStateAction<{ id: string; title: string }[]>>
   readonly task: Task | null
   readonly isDirty?: boolean
+  readonly handleReorderSubtasks: (newSubtasks: Subtask[] | { id: string; title: string }[]) => void
 }
 
 export function SubtaskSection({
@@ -30,8 +48,34 @@ export function SubtaskSection({
   newSubtaskTitle, setNewSubtaskTitle, handleAddSubtask,
   visibleSubtasks, allSubtasks, handleToggleSubtask, handleDeleteSubtask,
   subtaskInputRef, subtasksLimit, setSubtasksLimit, pendingSubtasks, setPendingSubtasks,
-  task, isDirty
+  task, isDirty, handleReorderSubtasks
 }: SubtaskSectionProps) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+
+    if (over && active.id !== over.id) {
+      const oldIndex = allSubtasks.findIndex((sub) => sub.id.toString() === active.id.toString())
+      const newIndex = allSubtasks.findIndex((sub) => sub.id.toString() === over.id.toString())
+
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const newOrder = arrayMove([...allSubtasks], oldIndex, newIndex)
+        handleReorderSubtasks(newOrder as Subtask[] | { id: string; title: string }[])
+      }
+    }
+  }
+
+  const subtaskIds = allSubtasks.map((sub) => sub.id.toString())
 
   return (
     <div className="space-y-3">
@@ -48,18 +92,29 @@ export function SubtaskSection({
       </div>
 
       <div className="space-y-2">
-        <AnimatePresence>
-          {visibleSubtasks.map((sub, idx) => (
-            <SubtaskItem 
-              key={typeof sub === "string" ? `pending-${idx}` : sub.id}
-              sub={sub}
-              idx={idx}
-              handleToggleSubtask={handleToggleSubtask}
-              handleDeleteSubtask={handleDeleteSubtask}
-              setPendingSubtasks={setPendingSubtasks}
-            />
-          ))}
-        </AnimatePresence>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={subtaskIds}
+            strategy={verticalListSortingStrategy}
+          >
+            <AnimatePresence>
+              {visibleSubtasks.map((sub) => (
+                <SortableSubtaskItem 
+                  key={sub.id.toString()}
+                  id={sub.id.toString()}
+                  sub={sub}
+                  handleToggleSubtask={handleToggleSubtask}
+                  handleDeleteSubtask={handleDeleteSubtask}
+                  setPendingSubtasks={setPendingSubtasks}
+                />
+              ))}
+            </AnimatePresence>
+          </SortableContext>
+        </DndContext>
 
         {allSubtasks.length > subtasksLimit && (
           <Button
@@ -97,18 +152,43 @@ export function SubtaskSection({
   )
 }
 
-interface SubtaskItemProps {
-  readonly sub: Subtask | string
-  readonly idx: number
-  readonly handleToggleSubtask: (id: number, completed: boolean) => void
-  readonly handleDeleteSubtask: (id: number) => void
-  readonly setPendingSubtasks: React.Dispatch<React.SetStateAction<string[]>>
+function SortableSubtaskItem({ id, ...props }: SubtaskItemProps & { id: string | number }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 10 : 1,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <SubtaskItem {...props} attributes={attributes} listeners={listeners} />
+    </div>
+  )
 }
 
-function SubtaskItem({ sub, idx, handleToggleSubtask, handleDeleteSubtask, setPendingSubtasks }: SubtaskItemProps) {
-  const isPending = typeof sub === "string"
-  const subTitle = isPending ? sub : sub.title
-  const isCompleted = !isPending && sub.completed
+interface SubtaskItemProps {
+  readonly sub: Subtask | { id: string; title: string }
+  readonly handleToggleSubtask: (id: number, completed: boolean) => void
+  readonly handleDeleteSubtask: (id: number) => void
+  readonly setPendingSubtasks: React.Dispatch<React.SetStateAction<{ id: string; title: string }[]>>
+  readonly attributes?: DraggableAttributes
+  readonly listeners?: DraggableSyntheticListeners
+}
+
+function SubtaskItem({ sub, handleToggleSubtask, handleDeleteSubtask, setPendingSubtasks, attributes, listeners }: SubtaskItemProps) {
+  const isPending = typeof sub.id === "string"
+  const subTitle = sub.title
+  const isCompleted = "completed" in sub && sub.completed
   const [confirmDelete, setConfirmDelete] = React.useState(false)
 
   return (
@@ -119,15 +199,23 @@ function SubtaskItem({ sub, idx, handleToggleSubtask, handleDeleteSubtask, setPe
       className="flex items-center gap-3 p-3 rounded-xl bg-white/5 group/sub"
     >
       <div 
+        {...attributes}
+        {...listeners}
+        className="shrink-0 cursor-grab active:cursor-grabbing text-foreground/20 hover:text-primary transition-colors opacity-0 group-hover/sub:opacity-100"
+      >
+        <GripVertical className="h-3.5 w-3.5" />
+      </div>
+
+      <div 
         role="button"
         tabIndex={0}
         aria-label={isCompleted ? "Mark subtask as incomplete" : "Mark subtask as complete"}
         className="shrink-0 cursor-pointer hover:text-primary transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full"
-        onClick={() => !isPending && handleToggleSubtask(sub.id, !isCompleted)}
+        onClick={() => !isPending && handleToggleSubtask(sub.id as number, !isCompleted)}
         onKeyDown={(e) => {
           if ((e.key === "Enter" || e.key === " ") && !isPending) {
             e.preventDefault()
-            handleToggleSubtask(sub.id, !isCompleted)
+            handleToggleSubtask(sub.id as number, !isCompleted)
           }
         }}
       >
@@ -148,9 +236,9 @@ function SubtaskItem({ sub, idx, handleToggleSubtask, handleDeleteSubtask, setPe
           <button
             onClick={() => {
               if (isPending) {
-                setPendingSubtasks((prev: string[]) => prev.filter((_, i) => i !== idx))
+                setPendingSubtasks((prev) => prev.filter((s) => s.id !== sub.id))
               } else {
-                handleDeleteSubtask(sub.id)
+                handleDeleteSubtask(sub.id as number)
               }
               setConfirmDelete(false)
             }}

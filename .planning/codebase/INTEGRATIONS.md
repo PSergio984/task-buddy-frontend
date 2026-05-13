@@ -1,70 +1,68 @@
+<!-- generated-by: gsd-doc-writer -->
 # External Integrations
 
-**Analysis Date:** [YYYY-MM-DD]
+**Analysis Date: 2024-05-13**
 
 ## APIs & External Services
 
-**Error Tracking:**
-- Sentry - Error tracking and performance monitoring in the backend
-  - SDK/Client: `sentry-sdk`
-  - Auth: `SENTRY_DSN`
+**Task Buddy API (Backend):**
+- Primary data source for tasks, projects, tags, and users.
+- Auth: JWT (Bearer token in header).
+- Client: Axios with interceptors in `src/lib/api.ts`.
+- Synchronization: TanStack Query (React Query) v5.
 
 ## Data Storage
 
-**Databases:**
-- PostgreSQL / SQLite
-  - Connection: `DATABASE_URL`
-  - Client: `asyncpg` / `databases[sqlite]` / `SQLAlchemy` ORM
+**Client-Side Cache:**
+- TanStack Query: In-memory cache for server data with background revalidation.
+- Configuration: Managed in `src/lib/query-client.ts` and provided in `src/main.tsx`.
 
-**File Storage:**
-- Local filesystem only
+**Persistence:**
+- `localStorage`: Used for persisting the JWT token and user basic info (`AuthContext`).
+- IndexedDB (Implicit): Used by Service Worker (Workbox) for precaching static assets.
 
-**Caching:**
-- None detected (in-memory caching for some config via `lru_cache`)
+## Progressive Web App (PWA)
+
+**PWA Engine:**
+- Vite PWA Plugin (`vite-plugin-pwa`): Manages manifest generation and Service Worker registration.
+- Service Worker: `src/sw.ts` implements `injectManifest` strategy for custom logic (precaching + push).
+
+**Capabilities:**
+- Installable: Desktop and mobile (Android/iOS).
+- Offline Support: Precaching of core application assets.
+- Push Notifications: Integrated with browser Push API via the Service Worker.
 
 ## Authentication & Identity
 
-**Auth Provider:**
-- Custom
-  - Implementation: JWT (JSON Web Tokens) managed by the backend using `python-jose` and hashed with `passlib[argon2]`. Frontend stores and transmits tokens via `Authorization` header (`Bearer`).
+**JWT Implementation:**
+- Custom backend-issued tokens.
+- Frontend Lifecycle:
+  - Token stored on login/register.
+  - Injected into every request via Axios interceptors.
+  - Token cleared on logout or 401 response.
 
 ## Monitoring & Observability
 
 **Error Tracking:**
-- Sentry
-  - Configured in backend `app/main.py` with environment isolation (Dev vs Prod).
-
-**Logs:**
-- Standard Python logging configuration (`app/logging_conf.py`) integrated with FastAPI and Uvicorn.
-- Request tracing via `asgi-correlation-id`.
+- Sentry: Configured for backend (not currently active in frontend repo, but planned/optional).
+- Logs: Browser console for development; Toast notifications for user-facing errors.
 
 ## CI/CD & Deployment
 
-**Hosting:**
-- Not strictly defined in application config, though `VITE_API_BASE_URL` allows flexible frontend deployment. Docker configuration (`Dockerfile`, `docker-compose.yml`) is available in the backend repository.
+**GitHub Actions:**
+- Frontend flows include Datadog synthetics and general CI checks.
+- Build Process: `npm run build` generates a production-ready `dist/` folder via Vite.
 
-**CI Pipeline:**
-- GitHub Actions detected (`.github/workflows/` for backend scans like `apisec-scan.yml`, `mayhem-for-api.yml`, and `datadog-synthetics.yml` for frontend).
+**Hosting Requirements:**
+- Must support HTTPS for PWA features.
+- Needs to handle SPA routing (redirecting all non-file requests to `index.html`).
 
 ## Environment Configuration
 
-**Required env vars:**
-- `SECRET_KEY` (Backend JWT signing, required in production)
-- `DATABASE_URL` (Backend database connection)
-- `SENTRY_DSN` (Backend error tracking)
-- `VITE_API_BASE_URL` (Frontend API endpoint)
-
-**Secrets location:**
-- `.env` files locally (ignored in version control). Production secrets should be injected via environment variables.
-
-## Webhooks & Callbacks
-
-**Incoming:**
-- None detected
-
-**Outgoing:**
-- None detected
+**Vite Environment Variables:**
+- `VITE_API_BASE_URL`: Base URL for the backend API.
+- `VITE_VAPID_PUBLIC_KEY`: (Optional) For push notification subscription.
 
 ---
 
-*Integration audit: [YYYY-MM-DD]*
+*Integration audit: 2024-05-13*

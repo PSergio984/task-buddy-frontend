@@ -1,75 +1,75 @@
+<!-- generated-by: gsd-doc-writer -->
 # Codebase Concerns
 
-**Analysis Date:** [YYYY-MM-DD]
+**Analysis Date: 2026-05-13**
 
-## Tech Debt
+## Tech Debt (Frontend)
 
-**Monolithic Frontend Components:**
-- Issue: Pages and key components are growing very large (over 10-12KB each).
-- Files: `src/pages/ProfilePage.tsx`, `src/pages/LandingPage.tsx`, `src/components/new-task-modal.tsx`
-- Impact: Decreased readability, harder to maintain, and hinders reusability of internal UI logic.
-- Fix approach: Refactor these files by extracting sections into smaller, dedicated atomic components.
+**Monolithic Page Components:**
+- Issue: Core pages are very large and handle too many responsibilities (data fetching, state management, complex rendering).
+- Files: `src/pages/TasksPage.tsx` (21KB+), `src/pages/ProfilePage.tsx` (19KB+), `src/pages/LandingPage.tsx` (15KB+).
+- Impact: Harder to test in isolation, slow dev-server refresh times for these files, and difficult to reason about side effects.
+- Fix approach: Extract logic into smaller components and use domain-specific hooks to offload state management.
 
-## Known Bugs
-
-**Test Database Polluting Workspace:**
-- Symptoms: Running tests leaves a persistent SQLite file in the repository.
-- Files: `task-buddy-backend/app/config.py` (TestConfig), `test.db`
-- Trigger: Hardcoded database URL in `TestConfig` points to `sqlite:///./test.db`.
-- Workaround: Change `TestConfig` to use an in-memory database like `sqlite:///:memory:` or ensure the file is cleaned up post-test.
-
-## Security Considerations
-
-**CORS & Allowed Origins Misconfiguration:**
-- Risk: `ProdConfig` inherits `ALLOWED_ORIGINS` which defaults to `["http://localhost:3000", "http://localhost:5173"]`. Coupled with `allow_credentials=True` in `CORSMiddleware`, a misconfigured production environment might allow malicious local or wildcard cross-origin requests.
-- Files: `task-buddy-backend/app/main.py`, `task-buddy-backend/app/config.py`
-- Current mitigation: CORS is explicitly configured rather than fully open.
-- Recommendations: Add strict validation in `ProdConfig` to reject `localhost` or wildcard origins.
+**Prop Drilling in Task Components:**
+- Issue: Some task-related data is passed down through several layers of components.
+- Impact: Maintenance burden when changing component signatures.
+- Fix approach: Use `FilterContext` or TanStack Query's cache directly in leaf components where appropriate.
 
 ## Performance Bottlenecks
 
-**Synchronous Password Hashing in Async Routes:**
-- Problem: Password verification and hashing operations block the asyncio event loop.
-- Files: `task-buddy-backend/app/api/routers/user.py`, `task-buddy-backend/app/security.py`
-- Cause: `pwd_context.hash` and `pwd_context.verify` are CPU-bound synchronous functions, but are awaited directly in the main thread (e.g., during `authenticate_user` or `/register`).
-- Improvement path: Wrap password hashing/verification calls using `fastapi.concurrency.run_in_threadpool` or `asyncio.to_thread`.
+**Large Bundle Size:**
+- Problem: Heavy reliance on large libraries like `framer-motion`, `lucide-react`, and `radix-ui` can impact initial load time.
+- Impact: Slower "Time to Interactive" on mobile devices.
+- Improvement path: Implement code-splitting for pages using `React.lazy` and ensure tree-shaking is working effectively for icon libraries.
+
+**PWA Cache Invalidation:**
+- Problem: Users might occasionally see stale versions of the app if the Service Worker update logic isn't perfectly synced with the backend API changes.
+- Mitigation: Using `registerType: "autoUpdate"` in VitePWA, but manual refresh prompts might be safer for critical updates.
+
+## Security Considerations
+
+**Token Exposure in localStorage:**
+- Risk: JWT tokens stored in `localStorage` are vulnerable to XSS attacks.
+- Mitigation: The app uses sanitization for inputs, but migrating to `httpOnly` cookies for tokens would be more secure (requires backend coordination).
+
+**Client-Side Route Protection:**
+- Note: `ProtectedRoute` is purely a UI convenience. Server-side authorization remains the only source of truth for data access.
 
 ## Fragile Areas
 
-**Implicit Transaction Handling on Password Rehash:**
-- Files: `task-buddy-backend/app/security.py`, `task-buddy-backend/app/api/routers/user.py`
-- Why fragile: `authenticate_user` mutates `user.password` when a hash needs updating (lazy migration) but relies on the caller (the router) to invoke `await db.commit()`. If a router drops the commit or fails midway, the rehash is lost.
-- Safe modification: Enforce a clear separation of concerns—either handle the database commit internally within the security layer or queue a background task specifically for rehashing.
-- Test coverage: Missing comprehensive unit test coverage for edge cases in authentication.
+**Push Notification Subscription Flow:**
+- Why fragile: Relies on browser-specific permissions and VAPID key sync.
+- Current state: Implementation is present in `sw.ts` but requires rigorous testing across different browsers (Safari/Chrome/Firefox).
 
-## Scaling Limits
-
-**In-Memory Rate Limiting:**
-- Current capacity: Single-process memory store for rate limits.
-- Limit: `slowapi` will not share rate limits across multiple ASGI worker processes or horizontal pods (e.g., in Kubernetes).
-- Scaling path: Configure the `Limiter` in `app/limiter.py` to use a Redis storage backend.
-
-## Dependencies at Risk
-
-**python-jose:**
-- Risk: The `python-jose` package is largely unmaintained and may lack timely updates for future cryptographic vulnerabilities.
-- Impact: Risk of unpatched security flaws related to JWT encoding/decoding.
-- Migration plan: Migrate to the actively maintained `PyJWT` library.
-
-## Missing Critical Features
-
-**JWT Revocation / Blacklisting:**
-- Problem: The `/logout` endpoint instructs the client to clear the token but does not invalidate the token on the server.
-- Blocks: Cannot forcefully terminate active sessions or revoke tokens if an account is compromised.
+**Deeply Nested API Errors:**
+- Issue: The backend occasionally returns nested error structures that the frontend `getAuthErrorMessage` must recursively parse.
+- Risk: Changes in backend error shapes can break UI error reporting.
 
 ## Test Coverage Gaps
 
-**Frontend Component & Unit Tests:**
-- What's not tested: Isolated testing for UI components, custom hooks (`useApi.ts`), and state management. The frontend currently relies entirely on E2E tests (Playwright).
-- Files: `src/components/**/*`, `src/hooks/**/*`, `src/pages/**/*`
-- Risk: Edge-case rendering issues, complex hook behaviors, and non-happy-path logic might fail without detection. 
-- Priority: High
+**Hook and Component Tests:**
+- What's missing: While Vitest is configured, coverage for complex hooks like `useTasks` and `useNotifications` is minimal.
+- Priority: High - specifically for logic-heavy hooks that orchestrate multiple mutations.
 
 ---
 
-*Concerns audit: [YYYY-MM-DD]*
+## Backend-Related Concerns (Cross-Project)
+
+*Note: These concerns are tracked here as they impact frontend reliability and integration.*
+
+**Sync Password Hashing (Backend):**
+- Problem: Blocking calls in async routes for password verification.
+- Impact: Can cause request timeouts under high auth load.
+
+**Missing JWT Revocation:**
+- Problem: Logout only clears client-side state.
+- Impact: Stolen tokens remain valid until expiration.
+
+**In-Memory Rate Limiting:**
+- Problem: Not shared across multiple server instances.
+- Impact: Inconsistent rate limiting in scaled environments.
+
+---
+
+*Concerns audit: 2026-05-13*

@@ -1,7 +1,7 @@
-<!-- refreshed: [YYYY-MM-DD] -->
+<!-- generated-by: gsd-doc-writer -->
 # Architecture
 
-**Analysis Date:** [YYYY-MM-DD]
+**Analysis Date: 2026-05-13**
 
 ## System Overview
 
@@ -9,22 +9,24 @@
 ┌─────────────────────────────────────────────────────────────┐
 │                        Pages Layer                           │
 ├──────────────────┬──────────────────┬───────────────────────┤
-│ `LandingPage`    │ `LoginPage`      │ `DashboardLayout`     │
-│ `src/pages/`     │ `src/pages/`     │ `src/App.tsx`         │
+│ `TasksPage`      │ `ProfilePage`    │ `TaskDetailPage`      │
+│ `AuditLogsPage`  │ `LoginPage`      │ `LandingPage`         │
 └────────┬─────────┴────────┬─────────┴──────────┬────────────┘
          │                  │                     │
          ▼                  ▼                     ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                 Components & Hooks Layer                     │
-│ `src/components/`                                            │
-│ `src/hooks/useApi.ts`                                        │
-│ `src/contexts/AuthContext.tsx`                               │
+│ `src/components/` (Domain-specific: TaskCard, Sidebar)      │
+│ `src/hooks/` (Data: useTasks, useNotifications)              │
+│ `src/contexts/` (Global: Auth, Settings, Filter)             │
 └─────────────────────────────────────────────────────────────┘
-         │
-         ▼
+         │                  │                     │
+         ▼                  ▼                     ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                API Client & State Store                      │
-│ `axios` / `localStorage`                                     │
+│                 Client Infrastructure                       │
+│ `TanStack Query` (Server State / Cache)                     │
+│ `Zustand` (UI State) / `Axios` (HTTP Client)                │
+│ `Service Worker` (PWA / Push Notifications)                 │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -32,118 +34,106 @@
 
 | Component | Responsibility | File |
 |-----------|----------------|------|
-| `App` | Core routing and route protection logic (`PublicRoute`, `ProtectedRoute`) | `src/App.tsx` |
-| `AuthProvider` | Manages authentication state (token, user), `localStorage` persistence, and login/register functions | `src/contexts/AuthContext.tsx` |
-| `DashboardLayout` | Central layout for authenticated users, managing tasks state and rendering `Sidebar` and `Dashboard` | `src/App.tsx` |
-| API Hooks | Data fetching wrappers (e.g. `useTasks`, `useStats`) over `axios`, handling loading/error states | `src/hooks/useApi.ts` |
-| `ui/*` | Reusable primitive UI components styled via Tailwind and Radix UI | `src/components/ui/` |
+| `App` | Core routing, route guards (`ProtectedRoute`), and PWA updates. | `src/App.tsx` |
+| `AuthContext` | JWT session management, login/logout, and unauthorized redirection. | `src/contexts/AuthContext.tsx` |
+| `SettingsContext` | User preferences, theme (dark/light), and PWA install state. | `src/contexts/SettingsContext.tsx` |
+| `FilterContext` | Shared task filtering (status, priority, search) across views. | `src/contexts/FilterContext.tsx` |
+| Domain Hooks | Data fetching wrappers using TanStack Query for caching and sync. | `src/hooks/` |
+| `ui/*` | Atomic UI primitives styled via Tailwind v4 and Radix UI. | `src/components/ui/` |
 
 ## Pattern Overview
 
-**Overall:** React Single Page Application (SPA) with Context-based Auth and Custom Hooks for Data Fetching.
+**Overall:** React 19 Single Page Application (SPA) with TanStack Query for server state management and Tailwind CSS v4 for engine-native styling.
 
 **Key Characteristics:**
-- **Custom Hooks for Data:** Backend interactions are fully abstracted inside custom hooks (`useApi.ts`).
-- **Context API:** Global state is minimized, using React Context primarily for cross-cutting concerns like Authentication and Theme.
-- **Component Composition:** Complex views are composed of functional components using Shadcn UI primitives.
-- **Client-Side Routing:** `react-router-dom` is used to navigate between views, enforcing access control at the route level.
+- **Server State with TanStack Query:** Data fetching, caching, and background synchronization are managed centrally via Query hooks.
+- **Tailwind CSS v4:** Uses the latest CSS-first configuration engine for improved build performance and modern CSS features.
+- **PWA / Service Worker:** Offline capabilities and Push Notifications are handled via `vite-plugin-pwa` and a custom `sw.ts` implementing `injectManifest`.
+- **Atomic UI Components:** UI is built on top of `shadcn/ui` primitives, ensuring accessibility and consistency.
+- **Context-based Feature State:** Complex shared state (like filters) is managed via React Context to avoid prop-drilling.
 
 ## Layers
 
 **Pages Layer:**
-- Purpose: Defines view-level assemblies mapped to routes.
-- Location: `src/pages/` and routing defined in `src/App.tsx`
-- Contains: `LoginPage.tsx`, `LandingPage.tsx`, `AuditLogsPage.tsx`
-- Depends on: Components, Hooks, Contexts.
-- Used by: Route Definitions (`src/App.tsx`)
+- Purpose: Orchestrate complex views by assembling components and hooks.
+- Location: `src/pages/`
+- Pattern: Usually contains logic for layout, route parameters, and high-level data orchestration.
 
 **Components Layer:**
-- Purpose: Reusable and domain-specific UI blocks.
+- Purpose: Reusable UI blocks, divided into generic primitives (`ui/`) and domain-specific assemblies.
 - Location: `src/components/`
-- Contains: `dashboard.tsx`, `sidebar.tsx`, `task-card.tsx`, `ui/button.tsx`
-- Depends on: React, Radix UI, Tailwind utils (`src/lib/utils.ts`).
-- Used by: Pages layer.
+- Pattern: Functional components utilizing Radix UI primitives and Framer Motion for animations.
 
-**Hooks / API Layer:**
-- Purpose: Interface with the backend API and provide data/status to components.
+**Hooks / Data Layer:**
+- Purpose: Interface with the backend API and provide cached, synchronized state to components.
 - Location: `src/hooks/`
-- Contains: `useApi.ts` (API interaction hooks), `use-toast.ts`
-- Depends on: `axios`, `AuthContext` (for tokens).
-- Used by: Pages and Domain Components (e.g., `DashboardLayout`).
+- Pattern: Custom hooks wrapping `useQuery` and `useMutation`.
+
+**Contexts Layer:**
+- Purpose: Provide cross-cutting application state (Auth, Theme, Filters).
+- Location: `src/contexts/`
+- Pattern: Provider-Consumer pattern with custom hooks for access (e.g., `useAuth`).
 
 ## Data Flow
 
-### Primary Request Path (Task Fetching)
+### Primary Data Fetching (e.g., Tasks)
 
-1. `DashboardLayout` in `src/App.tsx` calls `useTasks(activeFilter)` hook.
-2. `useTasks()` in `src/hooks/useApi.ts` retrieves the `token` from `useAuth()`.
-3. An `axios.get` call is fired to the backend `/api/v1/tasks/` endpoint with the `Authorization: Bearer` header.
-4. The hook updates its internal `tasks`, `loading`, and `error` states, triggering a re-render of `DashboardLayout`.
-5. `DashboardLayout` passes the `tasks` data down to the `Dashboard` component via props.
+1. A component (e.g., `TasksPage`) calls `useTasks()` hook with current filters.
+2. `useTasks` uses `useQuery` from TanStack Query.
+3. If data is in cache and fresh, it returns immediately.
+4. If stale, TanStack Query triggers an `axios` request via `src/lib/api.ts`.
+5. On success, the cache is updated, and components re-render with new data.
+6. For mutations (creating/deleting tasks), `useMutation` is used, often triggering cache invalidation to refresh related queries.
 
-### Authentication Flow
+### PWA & Push Notifications
 
-1. User submits `RegisterForm.tsx` or `LoginPage.tsx`.
-2. Component calls `login` or `register` from `useAuth()`.
-3. `AuthContext.tsx` issues API request using `axios`.
-4. On success, `AuthContext` stores the token and user in `localStorage` and updates its React state.
-5. React Router's `PublicRoute` detects the token and redirects the user to `/dashboard`.
-
-**State Management:**
-- Application state is mostly ephemeral and tied to component lifecycle or data-fetching hooks.
-- Global state is handled via `React.createContext` (`AuthContext`, `ThemeContext`).
+1. `VitePWA` plugin injects `src/sw.ts` into the build.
+2. The Service Worker precaches static assets and listens for `push` events.
+3. When a push message arrives, `sw.ts` shows a system notification.
+4. Clicking the notification opens or focuses the application window and navigates to the `action_url`.
 
 ## Key Abstractions
 
-**Custom Data Hooks:**
-- Purpose: Encapsulate data fetching logic, keeping components clean.
-- Examples: `src/hooks/useApi.ts` (`useTasks`, `useCreateTask`, `useStats`)
-- Pattern: Hook pattern exposing `{ data, loading, error, refreshAction }`.
+**Query Hooks:**
+- Purpose: Encapsulate endpoint URLs, types, and cache keys.
+- Examples: `useTasks`, `useProjects`, `useNotifications`.
 
-**Route Protectors:**
-- Purpose: Control access to application routes based on auth state.
-- Examples: `src/contexts/ProtectedRoute.tsx` (`ProtectedRoute`, `PublicRoute`)
-- Pattern: Wrapper components that conditionally render `children` or `<Navigate />`.
+**API Client Interceptors:**
+- Purpose: Handle global request/response logic (Auth headers, 401 redirects, rate limiting toasts).
+- Location: `src/lib/api.ts`.
+
+**Protected Routes:**
+- Purpose: Enforce authentication at the routing level.
+- Location: `src/contexts/ProtectedRoute.tsx`.
 
 ## Entry Points
 
-**Main Script:**
-- Location: `src/main.tsx`
-- Triggers: Browser loading the app
-- Responsibilities: Bootstraps React, applies global Context Providers (`AuthProvider`, `ThemeProvider`), and renders `App`.
+**Main Script (`src/main.tsx`):**
+- Bootstraps React, QueryClientProvider, and global Contexts.
 
-**Application Router:**
-- Location: `src/App.tsx`
-- Triggers: `main.tsx` rendering
-- Responsibilities: Maps URL paths to Page components, handles layouts and route guards.
+**Application Router (`src/App.tsx`):**
+- Defines the URL structure and wraps pages in Layouts and Route Guards.
+
+**Service Worker (`src/sw.ts`):**
+- Entry point for background tasks, offline support, and push notifications.
 
 ## Architectural Constraints
 
-- **Global state:** Restricted to `Context`. Avoid large global stores unless necessary (though `zustand` is installed, its usage isn't central based on initial inspection).
-- **API Coupling:** Components should not use `axios` or `fetch` directly. All API interaction must go through custom hooks in `src/hooks/useApi.ts`.
-
-## Anti-Patterns
-
-### Direct API Calls in Components
-
-**What happens:** Components using `axios` directly.
-**Why it's wrong:** Duplicates loading/error handling logic and bypasses centralized auth token injection.
-**Do this instead:** Create a custom hook in `src/hooks/useApi.ts` and call it from the component.
+- **No Direct API Calls:** Components must use custom hooks from `src/hooks/` instead of calling `axios` directly.
+- **Server State vs. Client State:** Use TanStack Query for anything that comes from the API; use Context/Zustand only for local UI state.
+- **Tailwind v4 First:** Avoid inline styles or complex CSS files; prefer Tailwind classes and CSS variables defined in `index.css`.
 
 ## Error Handling
 
-**Strategy:** Error boundaries are not heavily prominent, but data-level errors are handled locally by API hooks and bubbled to the UI via `Toast` notifications or inline error messages.
-
-**Patterns:**
-- Hooks capture `axios` errors, normalize them into `Error` objects, and expose an `error` state.
-- `AuthContext` catches auth failures, extracts the message using `getAuthErrorMessage` in `src/lib/auth.ts`, and updates the context `error` state.
+- **API Errors:** Handled globally by `api.ts` interceptors (showing toasts for 429s/500s) and locally via Query `error` states.
+- **Auth Failures:** Interceptors detect 401s and dispatch a custom event to `AuthContext` to trigger a logout/redirect.
 
 ## Cross-Cutting Concerns
 
-**Logging:** Standard `console` logging for development; no comprehensive remote logging client identified in the core flows.
-**Authentication:** Managed via JWT tokens stored in `localStorage`, injected into API requests dynamically by `useApi` hooks taking the token from `useAuth()`.
-**Styling & Theming:** Handled via Tailwind CSS (`tailwindcss`) and centralized in `ThemeProvider` (`src/components/theme-provider.tsx`) toggling a `dark` class on the root document.
+- **Authentication:** JWT stored in HttpOnly cookies (backend-managed); user metadata in `localStorage`.
+- **Styling:** Tailwind CSS v4 with a unified theme defined in `index.css`.
+- **Theming:** `SettingsContext` manages dark/light mode by toggling the `.dark` class on the root element.
 
 ---
 
-*Architecture analysis: [YYYY-MM-DD]*
+*Architecture analysis: 2026-05-13*

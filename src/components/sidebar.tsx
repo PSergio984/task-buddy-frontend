@@ -4,8 +4,28 @@ import { cn } from "@/lib/utils"
 import { useFilters } from "@/contexts/FilterContext"
 import { CreateProjectModal } from "@/components/create-project-modal"
 import { CreateTagModal } from "@/components/create-tag-modal"
-import { useProjects } from "@/hooks/useProjects"
-import { useTags } from "@/hooks/useTags"
+import { useProjects, useReorderProjects, useDeleteProject } from "@/hooks/useProjects"
+import { useTags, useDeleteTag, useReorderTags } from "@/hooks/useTags"
+import { useToast } from "@/hooks/use-toast"
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core"
+import type { DragEndEvent } from "@dnd-kit/core"
+import {
+  arrayMove,
+  SortableContext,
+  verticalListSortingStrategy,
+  rectSortingStrategy,
+} from "@dnd-kit/sortable"
+import { GripHandle } from "./sidebar/grip-handle"
+import { SortableSidebarItem } from "./sidebar/sortable-item"
+import { SidebarItemActions } from "./sidebar/item-actions"
+import { DeleteConfirmationModal } from "./delete-confirmation-modal"
+import type { Tag as TagType, Project as ProjectType } from "@/lib/api"
 import {
   Tooltip,
   TooltipContent,
@@ -40,21 +60,69 @@ export function Sidebar({
 }: Readonly<SidebarProps>) {
   const navigate = useNavigate()
   const location = useLocation()
+  const { toast } = useToast()
+  const [deletingItem, setDeletingItem] = useState<{ type: 'project' | 'tag', id: number, name: string } | null>(null);
+  const [editingProject, setEditingProject] = useState<ProjectType | undefined>();
+  const [editingTag, setEditingTag] = useState<TagType | undefined>();
+
   const { 
     activeSidebarFilter, 
     setActiveSidebarFilter,
     activeTagId,
     setActiveTagId,
     setSelectedPriorities,
-    setSelectedProjects,
-    setSelectedTags
   } = useFilters()
   const { data: projects = [] } = useProjects()
   const { data: tags = [] } = useTags()
+  const reorderProjects = useReorderProjects()
+  const reorderTags = useReorderTags()
+  const deleteProject = useDeleteProject()
+  const deleteTag = useDeleteTag()
+
   const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = useState(false)
   const [isCreateTagModalOpen, setIsCreateTagModalOpen] = useState(false)
   const [isProjectsCollapsed, setIsProjectsCollapsed] = useState(false)
   const [isTagsCollapsed, setIsTagsCollapsed] = useState(false)
+
+  const handleEditProject = (project: ProjectType) => {
+    setEditingProject(project);
+    setIsCreateProjectModalOpen(true);
+  };
+
+  const handleEditTag = (tag: TagType) => {
+    setEditingTag(tag);
+    setIsCreateTagModalOpen(true);
+  };
+
+  const handleDeleteClick = (item: { type: 'project' | 'tag', id: number, name: string }) => {
+    setDeletingItem(item);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingItem) return;
+    if (deletingItem.type === 'project') {
+      await deleteProject.mutateAsync(deletingItem.id);
+      toast({ title: "Project deleted", variant: "success" });
+      if (activeSidebarFilter === `project:${deletingItem.id}`) {
+        setActiveSidebarFilter("all");
+      }
+    } else {
+      await deleteTag.mutateAsync(deletingItem.id);
+      toast({ title: "Tag deleted", variant: "success" });
+      if (activeTagId === deletingItem.id) {
+        setActiveTagId(null);
+      }
+    }
+    setDeletingItem(null);
+  };
+  
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    })
+  )
 
   const navLinks = [
     { id: "dashboard", path: "/dashboard", label: "Overview", icon: LayoutDashboard },
@@ -70,8 +138,6 @@ export function Sidebar({
 
   const clearHubFilters = () => {
     setSelectedPriorities([])
-    setSelectedProjects([])
-    setSelectedTags([])
   }
 
   const handleSidebarFilterClick = (filter: string) => {
@@ -106,6 +172,28 @@ export function Sidebar({
     }
     if (location.pathname !== "/tasks") navigate("/tasks")
   }
+
+  const handleProjectDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (over && active.id !== over.id) {
+      const oldIndex = projects.findIndex((p) => p.id === active.id)
+      const newIndex = projects.findIndex((p) => p.id === over.id)
+      const newOrder = arrayMove(projects, oldIndex, newIndex)
+      reorderProjects.mutate(newOrder.map((p) => p.id))
+    }
+  }
+
+  const handleTagDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (over && active.id !== over.id) {
+      const oldIndex = tags.findIndex((t) => t.id === active.id)
+      const newIndex = tags.findIndex((t) => t.id === over.id)
+      const newOrder = arrayMove(tags, oldIndex, newIndex)
+      reorderTags.mutate(newOrder.map((t) => t.id))
+    }
+  }
+
+
 
   return (
     <motion.aside
@@ -277,13 +365,15 @@ export function Sidebar({
         <div className="space-y-4">
           <div
             className={cn(
-              "flex items-center justify-between px-4 group/header cursor-pointer select-none",
+              "flex items-center justify-between px-4 group/header select-none",
               isCollapsed && "justify-center"
             )}
-            onClick={() => !isCollapsed && setIsProjectsCollapsed(!isProjectsCollapsed)}
           >
             {!isCollapsed && (
-              <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setIsProjectsCollapsed(!isProjectsCollapsed)}
+                className="flex items-center gap-2 cursor-pointer flex-1 text-left"
+              >
                 <ChevronDown 
                   className={cn(
                     "h-3 w-3 text-accent/40 transition-transform duration-300",
@@ -294,7 +384,7 @@ export function Sidebar({
                 <p className="text-[10px] font-bold tracking-[0.3em] text-accent/80 uppercase">
                   Projects
                 </p>
-              </div>
+              </button>
             )}
             {isCollapsed ? (
               <Layers className="h-4 w-4 text-foreground/20" />
@@ -322,63 +412,96 @@ export function Sidebar({
                 transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
                 className="overflow-hidden"
               >
-                <div className="flex flex-col gap-2">
-                  {projects.length === 0 && !isCollapsed && (
-                    <div className="px-4 py-6 rounded-2xl border border-dashed border-border/50 bg-white/5 text-center mx-4">
-                      <p className="text-[10px] font-bold text-foreground/40 uppercase">No Projects</p>
-                    </div>
-                  )}
-                  {projects.map((project) => {
-                    const filterId = `project:${project.id}`
-                    const isActive = activeSidebarFilter === filterId && activeTagId === null
-                    const ProjectIcon = (LucideIcons as unknown as Record<string, LucideIcons.LucideIcon>)[project.icon || "Layers"] || LucideIcons.Layers
-                    const content = (
-                      <motion.button
-                        key={project.id}
-                        onClick={() => handleProjectClick(project.id)}
-                        whileHover={{ x: isCollapsed ? 0 : 4, backgroundColor: "rgba(255,255,255,0.05)" }}
-                        whileTap={{ scale: 0.98 }}
-                        className={cn(
-                          "group flex items-center rounded-2xl px-4 py-3.5 text-left text-sm font-bold transition-all duration-300",
-                          isCollapsed
-                            ? "mx-auto w-14 justify-center"
-                            : "w-full justify-between",
-                          isActive
-                            ? "bg-primary/5 text-primary ring-1 ring-primary/20 shadow-xl"
-                            : "text-foreground/50 hover:text-foreground"
-                        )}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div 
-                            className={cn(
-                              "h-6 w-6 rounded-lg flex items-center justify-center transition-all duration-300 shadow-lg",
-                              isActive ? "scale-110" : "opacity-40 group-hover:opacity-100 group-hover:scale-110"
-                            )}
-                            style={{ backgroundColor: project.color || "gray" }}
-                          >
-                            <ProjectIcon className="h-3.5 w-3.5 text-white" />
-                          </div>
-                          {!isCollapsed && <span className="truncate max-w-[140px]">{project.name}</span>}
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleProjectDragEnd}
+                >
+                  <SortableContext
+                    items={projects.map((p) => p.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="flex flex-col gap-2">
+                      {projects.length === 0 && !isCollapsed && (
+                        <div className="px-4 py-6 rounded-2xl border border-dashed border-border/50 bg-white/5 text-center mx-4">
+                          <p className="text-[10px] font-bold text-foreground/40 uppercase">No Projects</p>
                         </div>
-                        {!isCollapsed && isActive && (
-                          <div className="h-1.5 w-1.5 rounded-full bg-primary shadow-glow shadow-primary/50" />
-                        )}
-                      </motion.button>
-                    )
+                      )}
+                      {projects.map((project) => {
+                        const filterId = `project:${project.id}`
+                        const isActive = activeSidebarFilter === filterId && activeTagId === null
+                        const ProjectIcon = (LucideIcons as unknown as Record<string, LucideIcons.LucideIcon>)[project.icon || "Layers"] || LucideIcons.Layers
+                        const content = (
+                          <SortableSidebarItem
+                            key={project.id}
+                            id={project.id}
+                            handle={!isCollapsed && <GripHandle className="opacity-0 group-hover:opacity-100 transition-opacity" />}
+                          >
+                            <motion.div
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault()
+                                  handleProjectClick(project.id)
+                                }
+                              }}
+                              onClick={() => handleProjectClick(project.id)}
+                              whileHover={{ x: isCollapsed ? 0 : 4, backgroundColor: "rgba(255,255,255,0.05)" }}
+                              whileTap={{ scale: 0.98 }}
+                              className={cn(
+                                "group/item flex items-center rounded-2xl px-4 py-3.5 text-left text-sm font-bold transition-all duration-300 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                                isCollapsed
+                                  ? "mx-auto w-14 justify-center"
+                                  : "w-full justify-between",
+                                isActive
+                                  ? "bg-primary/5 text-primary ring-1 ring-primary/20 shadow-xl"
+                                  : "text-foreground/50 hover:text-foreground"
+                              )}
+                            >
+                              <div className="flex items-center gap-4">
+                                <div 
+                                  className={cn(
+                                    "h-6 w-6 rounded-lg flex items-center justify-center transition-all duration-300 shadow-lg",
+                                    isActive ? "scale-110" : "opacity-40 group-hover:opacity-100 group-hover:scale-110"
+                                  )}
+                                  style={{ backgroundColor: project.color || "gray" }}
+                                >
+                                  <ProjectIcon className="h-3.5 w-3.5 text-white" />
+                                </div>
+                                {!isCollapsed && <span className="truncate max-w-[140px]">{project.name}</span>}
+                              </div>
+                              
+                              {!isCollapsed && (
+                                <div className="flex items-center gap-3">
+                                  {isActive && (
+                                    <div className="h-1.5 w-1.5 rounded-full bg-primary shadow-glow shadow-primary/50" />
+                                  )}
+                                  <SidebarItemActions 
+                                    onEdit={() => handleEditProject(project)}
+                                    onDelete={() => handleDeleteClick({ type: 'project', id: project.id, name: project.name })}
+                                  />
+                                </div>
+                              )}
+                            </motion.div>
+                          </SortableSidebarItem>
+                        )
 
-                    if (isCollapsed) {
-                      return (
-                        <Tooltip key={project.id} delayDuration={0}>
-                          <TooltipTrigger asChild>{content}</TooltipTrigger>
-                          <TooltipContent side="right" className="font-bold border-none bg-primary text-primary-foreground px-4 py-2 rounded-xl shadow-2xl">
-                            {project.name}
-                          </TooltipContent>
-                        </Tooltip>
-                      )
-                    }
-                    return content
-                  })}
-                </div>
+                        if (isCollapsed) {
+                          return (
+                            <Tooltip key={project.id} delayDuration={0}>
+                              <TooltipTrigger asChild>{content}</TooltipTrigger>
+                              <TooltipContent side="right" className="font-bold border-none bg-primary text-primary-foreground px-4 py-2 rounded-xl shadow-2xl">
+                                {project.name}
+                              </TooltipContent>
+                            </Tooltip>
+                          )
+                        }
+                        return content
+                      })}
+                    </div>
+                  </SortableContext>
+                </DndContext>
               </motion.div>
             )}
           </AnimatePresence>
@@ -388,13 +511,15 @@ export function Sidebar({
         <div className="space-y-4">
           <div 
             className={cn(
-              "flex items-center justify-between px-4 group/header cursor-pointer select-none", 
+              "flex items-center justify-between px-4 group/header select-none", 
               isCollapsed && "justify-center"
             )}
-            onClick={() => !isCollapsed && setIsTagsCollapsed(!isTagsCollapsed)}
           >
             {!isCollapsed && (
-              <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setIsTagsCollapsed(!isTagsCollapsed)}
+                className="flex items-center gap-2 cursor-pointer flex-1 text-left"
+              >
                 <ChevronDown 
                   className={cn(
                     "h-3 w-3 text-accent/40 transition-transform duration-300",
@@ -405,7 +530,7 @@ export function Sidebar({
                 <p className="text-[10px] font-bold tracking-[0.3em] text-accent/80 uppercase">
                   Focus Tags
                 </p>
-              </div>
+              </button>
             )}
             {isCollapsed ? (
               <Tag className="h-4 w-4 text-foreground/20" />
@@ -439,49 +564,79 @@ export function Sidebar({
                       <p className="text-[10px] font-bold text-foreground/20 uppercase">No Tags</p>
                     </div>
                   )}
-                  <div className={cn("flex flex-wrap gap-2", isCollapsed && "flex-col items-center")}>
-                    {tags.map((tag) => {
-                      const isActive = activeTagId === tag.id
-                      const TagIconComp = (LucideIcons as unknown as Record<string, LucideIcons.LucideIcon>)[tag.icon || "Tag"] || LucideIcons.Tag
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleTagDragEnd}
+                  >
+                    <SortableContext
+                      items={tags.map((t) => t.id)}
+                      strategy={rectSortingStrategy}
+                    >
+                      <div className={cn("flex flex-wrap gap-2", isCollapsed && "flex-col items-center")}>
+                        {tags.map((tag) => {
+                          const isActive = activeTagId === tag.id
+                          const TagIconComp = (LucideIcons as unknown as Record<string, LucideIcons.LucideIcon>)[tag.icon || "Tag"] || LucideIcons.Tag
 
-                      const content = (
-                        <motion.button
-                          key={tag.id}
-                          onClick={() => handleTagClick(tag.id)}
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          className={cn(
-                            "flex items-center gap-2 rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all shadow-sm",
-                            isActive
-                              ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
-                              : "bg-white/5 text-foreground/60 hover:bg-white/10 hover:text-foreground",
-                            isCollapsed && "px-2 py-2"
-                          )}
-                        >
-                          <TagIconComp className="h-3.5 w-3.5" style={{ color: isActive ? "inherit" : tag.color || "gray" }} />
-                          <div 
-                            className="h-1 w-1 rounded-full shadow-[0_0_5px_currentColor]" 
-                            style={{ backgroundColor: tag.color || "gray", color: tag.color || "gray" }} 
-                          />
-                          {!isCollapsed && <span>{tag.name}</span>}
-                        </motion.button>
-                      )
+                          const content = (
+                            <SortableSidebarItem
+                              key={tag.id}
+                              id={tag.id}
+                              handle={!isCollapsed && <GripHandle className="opacity-0 group-hover:opacity-100 transition-opacity" />}
+                            >
+                              <motion.div
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                className={cn(
+                                  "group/item flex items-center rounded-full transition-all shadow-sm outline-none",
+                                  isActive
+                                    ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
+                                    : "bg-white/5 text-foreground/60 hover:bg-white/10 hover:text-foreground",
+                                  isCollapsed && "p-2"
+                                )}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => handleTagClick(tag.id)}
+                                  className={cn(
+                                    "flex items-center gap-2 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full",
+                                    !isCollapsed && "pr-1.5"
+                                  )}
+                                >
+                                  <TagIconComp className="h-3.5 w-3.5" style={{ color: isActive ? "inherit" : tag.color || "gray" }} />
+                                  <div 
+                                    className="h-1 w-1 rounded-full shadow-[0_0_5px_currentColor]" 
+                                    style={{ backgroundColor: tag.color || "gray", color: tag.color || "gray" }} 
+                                  />
+                                  {!isCollapsed && <span>{tag.name}</span>}
+                                </button>
 
-                      if (isCollapsed) {
-                        return (
-                          <Tooltip key={tag.id} delayDuration={0}>
-                            <TooltipTrigger asChild>{content}</TooltipTrigger>
-                            <TooltipContent side="right" className="font-bold border-none bg-primary text-primary-foreground px-4 py-2 rounded-xl shadow-2xl">
-                              {tag.name}
-                            </TooltipContent>
-                          </Tooltip>
-                        )
-                      }
+                                {!isCollapsed && (
+                                  <SidebarItemActions 
+                                    onEdit={() => handleEditTag(tag)}
+                                    onDelete={() => handleDeleteClick({ type: 'tag', id: tag.id, name: tag.name })}
+                                  />
+                                )}
+                              </motion.div>
+                            </SortableSidebarItem>
+                          )
 
-                      return content
-                    })}
+                          if (isCollapsed) {
+                            return (
+                              <Tooltip key={tag.id} delayDuration={0}>
+                                <TooltipTrigger asChild>{content}</TooltipTrigger>
+                                <TooltipContent side="right" className="font-bold border-none bg-primary text-primary-foreground px-4 py-2 rounded-xl shadow-2xl">
+                                  {tag.name}
+                                </TooltipContent>
+                              </Tooltip>
+                            )
+                          }
 
-                  </div>
+                          return content
+                        })}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
                 </div>
               </motion.div>
             )}
@@ -491,12 +646,33 @@ export function Sidebar({
       </div>
 
       <CreateProjectModal 
+        key={isCreateProjectModalOpen ? `project-modal-${editingProject?.id ?? "new"}` : "project-modal-closed"}
         open={isCreateProjectModalOpen} 
-        onOpenChange={setIsCreateProjectModalOpen} 
+        onOpenChange={(open) => {
+          setIsCreateProjectModalOpen(open)
+          if (!open) setEditingProject(undefined)
+        }}
+        project={editingProject}
       />
       <CreateTagModal
+        key={isCreateTagModalOpen ? `tag-modal-${editingTag?.id ?? "new"}` : "tag-modal-closed"}
         open={isCreateTagModalOpen}
-        onOpenChange={setIsCreateTagModalOpen}
+        onOpenChange={(open) => {
+          setIsCreateTagModalOpen(open)
+          if (!open) setEditingTag(undefined)
+        }}
+        tag={editingTag}
+      />
+
+      <DeleteConfirmationModal
+        open={!!deletingItem}
+        onOpenChange={(open) => {
+          if (!open) setDeletingItem(null)
+        }}
+        onConfirm={handleConfirmDelete}
+        title={`Delete ${deletingItem?.type === 'project' ? 'Project' : 'Tag'}`}
+        description={`Are you sure you want to delete "${deletingItem?.name}"? This action cannot be undone.`}
+        isLoading={deleteProject.isPending || deleteTag.isPending}
       />
     </motion.aside>
   )

@@ -92,6 +92,20 @@ export interface TagDistribution {
   task_count: number
 }
 
+export type NotificationType = "TASK_DUE" | "TASK_OVERDUE" | "REMINDER_DUE" | "REMINDER_OVERDUE" | "SYSTEM"
+
+export interface Notification {
+  id: number
+  user_id: number
+  title: string
+  body: string
+  type: NotificationType
+  priority: number
+  action_url?: string
+  read: boolean
+  created_at: string
+}
+
 export interface StatsOverview {
   task_stats: TaskStats
   tag_distribution: TagDistribution[]
@@ -175,9 +189,12 @@ export const projectsApi = {
   delete: async (id: number) => {
     await api.delete(`/api/v1/projects/${id}`)
   },
+  reorder: async (orderedIds: number[]) => {
+    await api.post("/api/v1/projects/reorder", orderedIds)
+  },
 }
 export const subtasksApi = {
-  create: async (taskId: number, data: { title: string }) => {
+  create: async (taskId: number, data: { title: string; completed?: boolean; description?: string; due_date?: string }) => {
     const response = await api.post<Subtask>(`/api/v1/tasks/subtask`, {
       ...data,
       task_id: taskId,
@@ -191,6 +208,9 @@ export const subtasksApi = {
   delete: async (id: number) => {
     await api.delete(`/api/v1/tasks/subtask/${id}`)
   },
+  reorder: async (taskId: number, orderedIds: number[]) => {
+    await api.post(`/api/v1/tasks/${taskId}/subtask/reorder`, orderedIds)
+  },
 }
 
 export const tagsApi = {
@@ -203,6 +223,10 @@ export const tagsApi = {
     const response = await api.post<Tag>("/api/v1/tasks/tags/", data)
     return response.data
   },
+  update: async (id: number, data: { name?: string; color?: string; icon?: string }) => {
+    const response = await api.put<Tag>(`/api/v1/tasks/tags/${id}`, data)
+    return response.data
+  },
   delete: async (id: number) => {
     await api.delete(`/api/v1/tasks/tags/${id}`)
   },
@@ -211,5 +235,29 @@ export const tagsApi = {
   },
   attach: async (taskId: number, tagId: number) => {
     await api.post(`/api/v1/tasks/${taskId}/tags/${tagId}`)
+  },
+  reorder: async (orderedIds: number[]) => {
+    await api.post("/api/v1/tasks/tags/reorder", orderedIds)
+  },
+}
+
+export const notificationsApi = {
+  getVapidKey: async () => {
+    const response = await api.get<{ public_key: string }>("/api/v1/notifications/vapid-key")
+    return response.data
+  },
+  list: async (params?: { limit?: number; offset?: number; read?: boolean }) => {
+    const response = await api.get<{ items: Notification[]; total: number }>("/api/v1/notifications/", { params })
+    return response.data
+  },
+  markRead: async (id: number) => {
+    const response = await api.patch<Notification>(`/api/v1/notifications/${id}/read`)
+    return response.data
+  },
+  markAllRead: async () => {
+    await api.post("/api/v1/notifications/read-all")
+  },
+  registerPushSubscription: async (subscription: { endpoint: string; p256dh: string; auth: string }) => {
+    await api.post("/api/v1/notifications/push-subscription", subscription)
   },
 }

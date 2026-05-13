@@ -1,78 +1,86 @@
+<!-- generated-by: gsd-doc-writer -->
 # Coding Conventions
 
-**Analysis Date:** [YYYY-MM-DD]
+**Analysis Date: 2026-05-13**
 
 ## Naming Patterns
 
 **Files:**
-- Frontend: Kebab-case for component files (e.g., `task-card.tsx`), CamelCase for hooks/utilities (`use-toast.ts`, `useApi.ts`), PascalCase for pages (`LoginPage.tsx`).
-- Backend: Snake_case for Python modules and files (e.g., `test_security.py`, `logging_conf.py`).
+- React Components & Pages: PascalCase (e.g., `TaskCard.tsx`, `TasksPage.tsx`).
+- Hooks: camelCase with `use` prefix (e.g., `useTasks.ts`). For shadcn/ui components, kebab-case is allowed for internal library compatibility (e.g., `use-toast.ts`).
+- Utilities & Libs: camelCase (e.g., `api.ts`, `utils.ts`).
+- Tests: `.test.ts`, `.test.tsx` (Vitest) or `.spec.ts` (Playwright).
 
 **Functions:**
-- Frontend: CamelCase (e.g., `sanitizeEmail`, `TaskCard`), PascalCase for React Components.
-- Backend: Snake_case for normal functions (e.g., `create_task`, `create_access_token`).
+- React Components: PascalCase (e.g., `function TaskCard() {}`).
+- Hooks: camelCase (e.g., `function useTasks() {}`).
+- Utilities: camelCase (e.g., `function formatDate() {}`).
 
 **Variables:**
-- Frontend: CamelCase for variables and state (e.g., `emailError`, `submitAttempted`). UPPER_SNAKE_CASE for constants (e.g., `EMAIL_REGEX`).
-- Backend: Snake_case (e.g., `logged_in_token`, `async_client`).
+- State & Variables: camelCase (e.g., `const [isLoading, setIsLoading] = useState(false)`).
+- Constants: UPPER_SNAKE_CASE (e.g., `const API_BASE_URL = "..."`).
 
-**Types:**
-- Frontend: PascalCase for Interfaces and Types (e.g., `AuthUser`, `TaskCardProps`).
-- Backend: PascalCase for Pydantic Models and SQLAlchemy classes.
+**Types & Interfaces:**
+- PascalCase (e.g., `interface TaskProps {}`, `type TaskPriority = "HIGH" | "LOW"`).
+- Prefer interfaces for object structures and types for unions/aliases.
 
 ## Code Style
 
-**Formatting:**
-- Frontend: Prettier with `prettier-plugin-tailwindcss` (`semi: false`, `singleQuote: false`, `tabWidth: 2`, `printWidth: 80`).
-- Backend: Black (`line-length = 100`).
+**React 19 Patterns:**
+- Prefer functional components and hooks.
+- Use `use` hook for context or promise unwrapping where appropriate.
+- Leverage improved metadata support in `App.tsx` or Page components.
 
-**Linting:**
-- Frontend: ESLint (flat config) using `@eslint/js`, `typescript-eslint`, and React plugins.
-- Backend: Ruff (configured to select E, W, F, I, C, B, UP), Mypy for static type checking.
+**Tailwind CSS v4:**
+- Use CSS-first configuration in `src/index.css`.
+- Use `@theme` blocks for defining design tokens.
+- Prefer Tailwind classes over custom CSS.
+- Use the `@custom-variant` directive for complex selectors (e.g., dark mode).
+
+**TanStack Query:**
+- Encapsulate all API logic in custom hooks.
+- Define consistent `queryKey` patterns.
+- Use `useMutation` for any data-modifying actions.
 
 ## Import Organization
 
 **Order:**
-1. External libraries (e.g., `react`, `framer-motion`, `pytest`, `fastapi`).
-2. Internal aliases/modules (Frontend: `@/components/...`, `@/lib/...`; Backend: `app.security`).
-3. Local relative imports.
+1. React and standard library imports.
+2. Third-party libraries (e.g., `framer-motion`, `@tanstack/react-query`).
+3. Path-aliased internal modules (`@/components`, `@/hooks`, `@/lib`).
+4. Local relative imports.
 
 **Path Aliases:**
-- Frontend: `@/` maps to `src/`.
-- Backend: Uses absolute imports starting from `app.` (e.g., `from app import security`).
+- Use `@/` to reference the `src/` directory (configured in `vite.config.ts` and `tsconfig.json`).
 
 ## Error Handling
 
-**Patterns:**
-- Frontend: Centralized error handling helpers (e.g., `getAuthErrorMessage` recursively parses nested backend errors). Specific error messages parsed from Axios responses using `err.response?.data`. Uses custom `useToast` hook to present error feedback via toast notifications.
-- Backend: Standard FastAPI HTTPExceptions returning error responses in specific shapes (`{"detail": "..."}`).
+**Strategy:**
+- Use Axios interceptors for global error detection (401, 429).
+- Use `toast()` from `use-toast` to provide immediate user feedback.
+- Leverage TanStack Query's `error` state for inline UI error messaging.
+- Use `axios.isAxiosError()` for type-safe error inspection.
+- **Axios Generics:** Explicitly type API responses using generics (e.g., `api.get<Task>("/...")`) to ensure end-to-end type safety.
+- **Shadcn Compatibility:** Internal shadcn/ui components use kebab-case (e.g., `use-toast.ts`) for library compatibility; maintain this for new components added via CLI.
 
-## Logging
+## State Management
 
-**Framework:** Backend uses `python-json-logger` for structured logging, `rich` for console output, `sentry-sdk` and `asgi-correlation-id`.
-**Patterns:**
-- Errors and metrics are captured as JSON payloads for structured logging.
+- **Server State:** Always use TanStack Query. Avoid `useEffect` for data fetching.
+- **Global UI State:** Use React Context (for things like Auth/Theme) or Zustand (for complex client-only state).
+- **Local State:** Use `useState` or `useReducer`.
 
-## Comments
+## Documentation
 
-**When to Comment:**
-- Mostly self-documenting code. Comments used occasionally to explain complex regexes or non-obvious configurations.
+- Use JSDoc for complex utility functions.
+- Keep components self-documenting through clear prop names and TypeScript interfaces.
+- Use `README.md` files in complex directories for additional context.
 
-**JSDoc/TSDoc:**
-- Type definitions define prop constraints in TS, inline docs sparse. Python uses type hints rather than docstrings extensively.
+## Component Design
 
-## Function Design
+- **Size:** Extract large sub-sections into smaller components (atomic design).
+- **Props:** Use object destructuring in component signatures.
+- **Purity:** Keep components as pure as possible; move complex logic into custom hooks.
 
-**Size:** Concise, functional utilities. React components tend to break out sub-renders but can be somewhat monolithic for forms.
-**Parameters:**
-- Frontend: Object parameter destructuring for React Components (`{ task, onToggleComplete }: TaskCardProps`).
-- Backend: Direct positional and keyword arguments, extensive use of FastAPI Dependency Injection (e.g., `db`, `async_client: AsyncClient`).
+---
 
-## Module Design
-
-**Exports:** 
-- Frontend: Named exports preferred for utilities and components (`export function TaskCard(...)`). Default exports used mostly for configs (`vite.config.ts`, `eslint.config.js`).
-- Backend: Implicit module exports, typical Python structure.
-
-**Barrel Files:** 
-- Not heavily used in frontend (uses direct `@/components/ui/button` imports rather than `components/index.ts`). Used in backend via `__init__.py`.
+*Conventions analysis: 2026-05-13*

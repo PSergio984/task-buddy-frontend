@@ -13,24 +13,30 @@ import { Label } from "@/components/ui/label"
 import { motion } from "framer-motion"
 import { Tag as TagIcon, Palette } from "lucide-react"
 import * as LucideIcons from "lucide-react"
-import { useCreateTag } from "@/hooks/useTags"
+import { useCreateTag, useUpdateTag } from "@/hooks/useTags"
 import { useToast } from "@/hooks/use-toast"
 import { ColorIconPicker, PRESET_COLORS, PRESET_ICONS } from "@/components/color-icon-picker"
+import type { Tag } from "@/lib/api"
 
 export interface CreateTagModalProps {
   readonly open: boolean
   readonly onOpenChange: (open: boolean) => void
+  readonly tag?: Tag
 }
 
 export function CreateTagModal({
   open,
   onOpenChange,
+  tag,
 }: Readonly<CreateTagModalProps>) {
-  const [name, setName] = useState("")
-  const [color, setColor] = useState(PRESET_COLORS[0])
-  const [icon, setIcon] = useState(PRESET_ICONS[0])
+  const [name, setName] = useState(tag?.name ?? "")
+  const [color, setColor] = useState(tag?.color ?? PRESET_COLORS[0])
+  const [icon, setIcon] = useState(tag?.icon ?? PRESET_ICONS[0])
   const createTag = useCreateTag()
+  const updateTag = useUpdateTag()
   const { toast } = useToast()
+
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -38,25 +44,38 @@ export function CreateTagModal({
     if (!name.trim()) return
 
     try {
-      await createTag.mutateAsync({
-        name: name.trim(),
-        color,
-        icon,
-      })
-      setName("")
-      setColor(PRESET_COLORS[0])
-      setIcon(PRESET_ICONS[0])
+      if (tag) {
+        await updateTag.mutateAsync({
+          id: tag.id,
+          data: {
+            name: name.trim(),
+            color,
+            icon,
+          },
+        })
+      } else {
+        await createTag.mutateAsync({
+          name: name.trim(),
+          color,
+          icon,
+        })
+      }
+      if (!tag) {
+        setName("")
+        setColor(PRESET_COLORS[0])
+        setIcon(PRESET_ICONS[0])
+      }
       onOpenChange(false)
       toast({
-        title: "Tag Created",
-        description: "Your new tag is ready.",
+        title: tag ? "Tag Updated" : "Tag Created",
+        description: tag ? "Your tag has been updated." : "Your new tag is ready.",
         variant: "success",
       })
     } catch (error) {
-      console.error("Failed to create tag:", error)
+      console.error("Failed to save tag:", error)
       toast({
-        title: "Creation Failed",
-        description: "Could not create tag. Please try again.",
+        title: tag ? "Update Failed" : "Creation Failed",
+        description: tag ? "Could not update tag." : "Could not create tag. Please try again.",
         variant: "destructive",
       })
     }
@@ -80,7 +99,7 @@ export function CreateTagModal({
                   <TagIcon className="h-5 w-5" />
                 </div>
                 <DialogTitle className="font-heading text-3xl font-black tracking-tight text-foreground">
-                  New Tag
+                  {tag ? "Edit Tag" : "New Tag"}
                 </DialogTitle>
               </div>
               <DialogDescription className="text-sm font-medium text-muted-foreground tracking-wide ml-13">
@@ -147,13 +166,13 @@ export function CreateTagModal({
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Button
                     type="submit"
-                    disabled={createTag.isPending || !name.trim()}
+                    disabled={createTag.isPending || updateTag.isPending || !name.trim()}
                     className="h-12 px-8 rounded-2xl bg-primary text-primary-foreground shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all font-bold tracking-tight"
                   >
-                    {createTag.isPending ? (
+                    {createTag.isPending || updateTag.isPending ? (
                       <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full" />
                     ) : (
-                      <span>Create Tag</span>
+                      <span>{tag ? "Save Changes" : "Create Tag"}</span>
                     )}
                   </Button>
                 </motion.div>

@@ -25,3 +25,14 @@
 |--------|-------------|--------|
 | VERI-01 | **Persistence Verification**: E2E test proves that TopNav/Sidebar do not unmount during route transitions. | RESEARCH.md |
 | VERI-02 | **Style Compliance**: Visual check (checkpoint) for typography, spacing, and icon consistency. | UI-SPEC.md |
+
+# Phase 3.8: Sidebar Organization & DND — Requirements
+
+## Sidebar Interactions
+
+| Req ID | Requirement | Source |
+|--------|-------------|--------|
+| SIDE-01 | **Drag-and-Drop Reordering**: Users can reorder Projects and Tags within their sections via a vertical grip handle. | CONTEXT.md / RESEARCH.md |
+| SIDE-02 | **Sidebar CRUD Menu**: Each Project and Tag item (except system lists) must have an ellipsis menu for actions. | CONTEXT.md |
+| SIDE-03 | **Inline Edit/Delete**: Ellipsis menu provides "Edit" (opens modal) and "Delete" (opens confirmation) actions. | CONTEXT.md |
+| SIDE-04 | **Active Filter Auto-Reset**: Deleting the currently active Project or Tag filter must reset the view to "All Tasks". | CONTEXT.md |

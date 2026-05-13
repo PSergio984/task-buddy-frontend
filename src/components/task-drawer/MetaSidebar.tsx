@@ -124,7 +124,11 @@ function PrioritySection({ priority, setPriority, dirtySections }: Pick<MetaSide
           </div>
         </SelectTrigger>
         <SelectContent className="bg-background/95 backdrop-blur-xl border-white/10">
-          <SelectItem value="HIGH" className="text-red-500 font-bold text-xs uppercase tracking-widest">High</SelectItem>
+          {priority !== "HIGH" && priority !== "MEDIUM" && priority !== "LOW" && (
+            <SelectItem value={priority} className="hidden">{priority}</SelectItem>
+          )}
+          <SelectItem value="HIGH" className="focus:bg-rose-500/10 focus:text-rose-500 rounded-xl transition-all font-bold">
+High</SelectItem>
           <SelectItem value="MEDIUM" className="text-amber-500 font-bold text-xs uppercase tracking-widest">Medium</SelectItem>
           <SelectItem value="LOW" className="text-blue-500 font-bold text-xs uppercase tracking-widest">Low</SelectItem>
         </SelectContent>
@@ -151,7 +155,7 @@ function ProjectSection({
         <PopoverTrigger asChild>
           <button className="flex items-center gap-3 w-full p-3 rounded-xl bg-white/5 text-xs font-black uppercase tracking-widest text-foreground/60 border border-white/5 hover:bg-white/10 transition-all text-left">
             <Layers className="h-3.5 w-3.5 text-primary shrink-0" />
-            {projectId === "none" ? "Inbox" : selectedProject?.name || "Inbox"}
+            {projectId === "none" ? "Inbox" : selectedProject?.name || `Project #${projectId}`}
           </button>
         </PopoverTrigger>
         <PopoverContent className="w-56 p-2 rounded-xl border-white/10 bg-background/95 backdrop-blur-xl" align="end">

@@ -24,6 +24,10 @@ export function TimePicker({ id, value, onChange, className }: TimePickerProps) 
   
   // Format string for display/input
   const displayFormat = is12h ? "hh:mm a" : "HH:mm"
+  // Fallback formats tried in order when parsing user input
+  const alternateFormats = is12h
+    ? ["hh:mm a", "h:mm a", "hh:mm", "h:mm"]
+    : ["HH:mm", "H:mm"]
   
   const getDisplayValue = (val24h: string) => {
     if (!val24h) return ""
@@ -38,10 +42,14 @@ export function TimePicker({ id, value, onChange, className }: TimePickerProps) 
   const [inputValue, setInputValue] = React.useState(getDisplayValue(value || ""))
   const [prevValue, setPrevValue] = React.useState(value)
   const [isOpen, setIsOpen] = React.useState(false)
+  const [isFocused, setIsFocused] = React.useState(false)
 
+  // Sync with prop value only when not focused or value changed externally
   if (value !== prevValue) {
-    setInputValue(getDisplayValue(value || ""))
     setPrevValue(value)
+    if (!isFocused) {
+      setInputValue(getDisplayValue(value || ""))
+    }
   }
 
   // Generate suggestions based on input
@@ -59,7 +67,7 @@ export function TimePicker({ id, value, onChange, className }: TimePickerProps) 
 
     // Try to parse partial input to narrow down suggestions
     let searchHours: number | null = null
-    const match = inputValue.match(/^(\d{1,2})/)
+    const match = /^(\d{1,2})/.exec(inputValue)
     if (match) {
       searchHours = Number.parseInt(match[1])
     }
@@ -82,22 +90,31 @@ export function TimePicker({ id, value, onChange, className }: TimePickerProps) 
   }, [inputValue, displayFormat, is12h])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let val = e.target.value.replace(/[^\d:]/g, "")
+    let val = e.target.value
     
-    // Prevent multiple colons
-    const parts = val.split(":")
-    if (parts.length > 2) {
-      val = parts[0] + ":" + parts.slice(1).join("")
+    // Strict filtering: only allow digits, colons, and AM/PM markers if 12h
+    const allowedRegex = is12h ? /[^0-9:apm\s]/gi : /[^0-9:]/gi
+    val = val.replace(allowedRegex, "")
+    
+    // Limit digits to 4
+    const digitsOnly = val.replace(/\D/g, "")
+    if (digitsOnly.length > 4) {
+      let digitCount = 0
+      val = Array.from(val)
+        .filter((char) => (/\d/.test(char) ? digitCount++ < 4 : true))
+        .join("")
     }
 
-    // Auto-colon if user types 2 digits and no colon
-    // But only if they are adding characters (not deleting)
+    // Handle auto-colon insertion
     const isAdding = val.length > (inputValue?.length || 0)
     if (isAdding && val.length === 2 && !val.includes(":")) {
-      val = val + ":"
+      val = `${val}:`
     }
 
-    // Limit to 5 characters (HH:mm) for 24h, or more for 12h
+    // Prevent double colons
+    val = val.replace(/:{2,}/g, ":")
+
+    // Limit length
     const maxLength = is12h ? 8 : 5
     if (val.length > maxLength) {
       val = val.slice(0, maxLength)
@@ -106,33 +123,63 @@ export function TimePicker({ id, value, onChange, className }: TimePickerProps) 
     setInputValue(val)
     setIsOpen(true)
 
-    // Try to parse and notify parent if it's a valid time
-    try {
-      // Use parse with the current displayFormat (e.g. "HH:mm" or "hh:mm a")
-      const date = parse(val, displayFormat, new Date())
-      if (isValid(date)) {
-        onChange(format(date, "HH:mm"))
+    // Notify parent ONLY when it's a complete time format
+    // This prevents "11:1" being parsed as "11:01" and resetting the user's input
+    const isComplete = is12h 
+      ? /[ap]m$/i.test(val) // In 12h, wait for AM/PM to be "certain"
+      : /^\d{1,2}:\d{2}$/.test(val) // In 24h, wait for minutes
+
+    if (isComplete) {
+      for (const fmt of alternateFormats) {
+        try {
+          const date = parse(val, fmt, new Date())
+          if (isValid(date)) {
+            const val24h = format(date, "HH:mm")
+            setPrevValue(val24h) // Mark as seen to avoid effect-sync loop
+            onChange(val24h)
+            break
+          }
+        } catch { /* ignore invalid formats */ }
       }
-    } catch {
-      // Ignore invalid partial inputs
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const key = e.key
+    const isControlKey = [
+      "Backspace", "Delete", "Tab", "Enter", "Escape", 
+      "ArrowLeft", "ArrowRight", "Home", "End"
+    ].includes(key) || e.ctrlKey || e.metaKey
+
+    const isDigit = /^[0-9]$/.test(key)
+    const isColon = key === ":"
+    const isMarker = is12h && (["a", "p", "m", " "].includes(key.toLowerCase()))
+
+    if (!isDigit && !isColon && !isMarker && !isControlKey) {
+      e.preventDefault()
     }
   }
 
   const handleBlur = () => {
+    setIsFocused(false)
     // Small delay to allow clicking suggestions
     setTimeout(() => {
       setIsOpen(false)
       if (inputValue) {
-        try {
-          const date = parse(inputValue, displayFormat, new Date())
+        let validDate = null
+        for (const fmt of alternateFormats) {
+          const date = parse(inputValue, fmt, new Date())
           if (isValid(date)) {
-            const formatted = format(date, displayFormat)
-            setInputValue(formatted)
-            onChange(format(date, "HH:mm"))
-          } else {
-            setInputValue(getDisplayValue(value || ""))
+            validDate = date
+            break
           }
-        } catch {
+        }
+
+        if (validDate) {
+          const formatted = format(validDate, displayFormat)
+          setInputValue(formatted)
+          onChange(format(validDate, "HH:mm"))
+        } else {
           setInputValue(getDisplayValue(value || ""))
         }
       } else {
@@ -164,9 +211,11 @@ export function TimePicker({ id, value, onChange, className }: TimePickerProps) 
               id={id}
               value={inputValue}
               onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
               onBlur={handleBlur}
               onFocus={(e) => {
                 e.target.select()
+                setIsFocused(true)
                 setIsOpen(true)
               }}
               className="pl-11 pr-12 h-12 rounded-2xl bg-white/5 text-foreground border border-white/10 text-lg font-black tracking-tight focus:ring-4 focus:ring-primary/20 transition-all shadow-2xl placeholder:text-foreground/20 hover:bg-white/10"

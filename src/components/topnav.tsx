@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { Plus, User, LogOut, ChevronDown, Bell } from "lucide-react"
+import { Plus, User, LogOut, ChevronDown } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useNavigate } from "react-router-dom"
@@ -9,6 +9,7 @@ import { LogoutDialog } from "@/components/logout-dialog"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { PwaInstallButton } from "./pwa-install-button"
 import { cn } from "@/lib/utils"
+import { NotificationBell } from "@/components/notification-bell"
 
 export interface TopNavProps {
   readonly onNewTask: () => void
@@ -69,10 +70,7 @@ export function TopNav({ onNewTask }: Readonly<TopNavProps>) {
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-3 mr-4">
           <ThemeToggle />
-          <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent/10 relative">
-             <Bell className="h-5 w-5 text-muted-foreground" />
-             <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-accent shadow-[0_0_8px_rgba(var(--accent),0.5)]" />
-          </Button>
+          <NotificationBell />
         </div>
 
         <div className="h-8 w-px bg-border/50 mx-2" />

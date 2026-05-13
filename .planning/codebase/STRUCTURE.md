@@ -1,122 +1,109 @@
+<!-- generated-by: gsd-doc-writer -->
 # Codebase Structure
 
-**Analysis Date:** [YYYY-MM-DD]
+**Analysis Date: 2024-05-13**
 
 ## Directory Layout
 
 ```
 [project-root]/
-├── public/                 # Static public assets
+├── public/                 # Static public assets (icons, images)
 ├── src/                    # Primary source code directory
-│   ├── assets/             # Media and static assets imported via bundler
-│   ├── components/         # Reusable React UI and domain components
+│   ├── assets/             # Media assets imported via bundler
+│   ├── components/         # React UI components
 │   │   ├── auth/           # Authentication related components
-│   │   └── ui/             # Generic, reusable UI primitives (shadcn)
-│   ├── contexts/           # React Context providers
-│   ├── hooks/              # Custom React hooks (data fetching, util)
-│   ├── lib/                # Utility functions and library configs
-│   └── pages/              # High-level route wrapper components
+│   │   ├── layout/         # Shared layout components (Sidebar, TopNav)
+│   │   ├── task-drawer/    # Task detail and edit drawer components
+│   │   └── ui/             # Generic shadcn/ui primitives
+│   ├── contexts/           # React Context providers (Auth, Settings, Filter)
+│   ├── hooks/              # Custom React hooks (TanStack Query wrappers)
+│   ├── lib/                # Utility functions, API client, and helpers
+│   ├── pages/              # View-level route components
+│   └── sw.ts               # Service Worker implementation (PWA)
 ├── tests/                  # E2E Tests (Playwright)
-└── playwright-report/      # Test reports (Generated)
+├── playwright-report/      # E2E Test reports
+└── dist/                   # Production build output
 ```
 
 ## Directory Purposes
 
-**`src/components/`:**
-- Purpose: Holds both generic UI components and specific application components.
-- Contains: React `.tsx` files.
-- Key files: `task-card.tsx`, `sidebar.tsx`, `dashboard.tsx`.
-
-**`src/components/ui/`:**
-- Purpose: Reusable foundational UI elements, predominantly sourced from shadcn/ui.
-- Contains: Primitives like buttons, dialogs, form inputs.
-- Key files: `button.tsx`, `card.tsx`, `dialog.tsx`.
+**`src/pages/`:**
+- Purpose: Route entry points and full-page assemblies.
+- Key files:
+  - `TasksPage.tsx`: Primary task management view.
+  - `TaskDetailPage.tsx`: Detailed view for a single task.
+  - `ProfilePage.tsx`: User profile and settings.
+  - `AuditLogsPage.tsx`: History of actions.
+  - `LandingPage.tsx`: Marketing/Welcome page.
+  - `LoginPage.tsx`, `RegisterPage.tsx`: Auth entry points.
 
 **`src/hooks/`:**
-- Purpose: Extract reusable React logic, particularly data-fetching.
-- Contains: React hooks.
-- Key files: `useApi.ts` (API abstraction), `use-toast.ts` (Toast notifications).
+- Purpose: Encapsulate data fetching (TanStack Query) and component logic.
+- Key files:
+  - `useTasks.ts`: CRUD operations for tasks.
+  - `useProjects.ts`, `useTags.ts`: Metadata management.
+  - `useNotifications.ts`: Push notification and alert management.
+  - `useTaskDrawerState.ts`: UI state management for task interactions.
+  - `use-toast.ts`: shadcn/ui toast notifications.
+
+**`src/components/ui/`:**
+- Purpose: Atomic UI primitives (shadcn/ui), styled with Tailwind v4.
+- Contains: Button, Input, Dialog, Drawer, Popover, Toast, etc.
 
 **`src/contexts/`:**
-- Purpose: Application-wide state management using Context API.
-- Contains: Provider definitions and custom hook exports for contexts.
-- Key files: `AuthContext.tsx`, `ProtectedRoute.tsx`.
-
-**`src/pages/`:**
-- Purpose: Route endpoints combining multiple components into full views.
-- Contains: React components intended as the `element` for a Router `<Route>`.
-- Key files: `DashboardDemo.tsx`, `LoginPage.tsx`, `LandingPage.tsx`.
+- Purpose: Global application state and configuration.
+- Key files:
+  - `AuthContext.tsx`: Session and identity management.
+  - `SettingsContext.tsx`: User preferences and theme state.
+  - `FilterContext.tsx`: Shared task filtering logic across pages.
 
 **`src/lib/`:**
-- Purpose: Pure TypeScript helper functions, non-React utilities.
-- Contains: Shared utilities.
-- Key files: `utils.ts` (Tailwind class merging), `auth.ts` (Authentication helpers).
+- Purpose: Non-React utilities and shared configurations.
+- Key files:
+  - `api.ts`: Central Axios instance with interceptors.
+  - `utils.ts`: Tailwind class merging and formatting helpers.
+  - `auth.ts`: Validation and sanitization logic.
 
-**`tests/`:**
-- Purpose: End-to-end automation testing.
-- Contains: Playwright test spec files.
-- Key files: `auth.spec.ts`, `landing.spec.ts`.
+**`src/sw.ts`:**
+- Purpose: Service Worker for PWA support, handling precaching and push notifications.
 
 ## Key File Locations
 
 **Entry Points:**
-- `src/main.tsx`: React DOM mount and root Provider setup.
-- `src/App.tsx`: Central router configuration and `DashboardLayout` composition.
+- `src/main.tsx`: React DOM hydration and root provider setup.
+- `src/App.tsx`: Central router configuration and protected route logic.
+- `src/index.css`: Tailwind v4 configuration and global styles.
 
 **Configuration:**
-- `vite.config.ts`: Vite build and development server configuration.
-- `tailwind.config.js`: Tailwind CSS design system configuration.
-- `eslint.config.js`: Linting rules.
-- `playwright.config.ts`: E2E test runner configuration.
-
-**Core Logic:**
-- `src/hooks/useApi.ts`: Centralizes all Backend API interactions and data types (`Task`, `Subtask`).
-- `src/contexts/AuthContext.tsx`: Core identity and token persistence logic.
+- `vite.config.ts`: Vite config with PWA and Tailwind v4 plugins.
+- `tailwind.config.js`: (Legacy/Bridge) Tailwind configuration.
+- `playwright.config.ts`: E2E test runner setup.
+- `vitest.config.ts`: Unit/Component test runner setup.
 
 ## Naming Conventions
 
 **Files:**
-- React Components/Pages: PascalCase or kebab-case. *Observation: Mixed usage. Pages use PascalCase (`LoginPage.tsx`), but components often use kebab-case (`task-card.tsx`, `system-overview.tsx`). Follow the existing pattern for the target folder.*
-- Hooks: camelCase with `use` prefix (`useApi.ts`, `use-toast.ts`).
-- Utility/Lib: camelCase (`utils.ts`, `auth.ts`).
-- Tests: kebab-case with `.spec.ts` suffix (`forgot-password.spec.ts`).
+- React Components/Pages: PascalCase (e.g., `TaskCard.tsx`, `TasksPage.tsx`).
+- Hooks: camelCase with `use` prefix (e.g., `useTasks.ts`, `use-toast.ts`).
+- Utility/Lib: camelCase or kebab-case (e.g., `api.ts`, `auth-helpers.ts`).
+- Tests: `.test.ts`, `.test.tsx` (Vitest) or `.spec.ts` (Playwright).
 
 **Directories:**
-- All lowercase, hyphen-separated (kebab-case) where needed.
+- Kebab-case (lowercase, hyphen-separated).
 
 ## Where to Add New Code
 
-**New Feature:**
-- Primary view/assembly: `src/pages/NewFeaturePage.tsx`
-- Feature-specific UI parts: `src/components/new-feature/` (if complex) or `src/components/`
-- API calls for feature: `src/hooks/useApi.ts` (append new hooks) or a new `useNewFeatureApi.ts`.
-- Tests: `tests/new-feature.spec.ts`
+**New API Interaction:**
+- Create/update hook in `src/hooks/` using `useQuery` or `useMutation`.
+- Define TypeScript interfaces in `src/lib/api.ts` if shared.
 
-**New Component/Module:**
-- Shared UI primitives: `src/components/ui/`
-- Domain components: `src/components/`
+**New Feature View:**
+- Add page component to `src/pages/`.
+- Register route in `src/App.tsx`.
 
-**Utilities:**
-- Shared generic helpers: `src/lib/utils.ts`
-- Domain-specific pure functions: New file in `src/lib/` (e.g., `src/lib/validation.ts`).
-
-## Special Directories
-
-**`tests/`:**
-- Purpose: End-to-end testing scenarios checking functionality in a real browser context.
-- Generated: No
-- Committed: Yes
-
-**`playwright-report/` & `test-results/`:**
-- Purpose: Output directories for E2E tests containing HTML reports and traces.
-- Generated: Yes
-- Committed: No (in `.gitignore`)
-
-**`dist/`:**
-- Purpose: Production build output created by Vite.
-- Generated: Yes
-- Committed: No
+**New UI Primitive:**
+- Add to `src/components/ui/` (usually via `npx shadcn@latest add`).
 
 ---
 
-*Structure analysis: [YYYY-MM-DD]*
+*Structure analysis: 2024-05-13*

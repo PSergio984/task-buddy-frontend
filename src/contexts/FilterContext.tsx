@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState, useMemo, type ReactNode } from "react"
+import { createContext, useContext, useState, useMemo, useCallback, type ReactNode } from "react"
 
 interface FilterContextType {
   activeSidebarFilter: string
@@ -10,21 +10,23 @@ interface FilterContextType {
   setActiveTagId: (tagId: number | null) => void
   selectedPriorities: string[]
   setSelectedPriorities: (priorities: string[] | ((prev: string[]) => string[])) => void
-  selectedProjects: number[]
-  setSelectedProjects: (projects: number[] | ((prev: number[]) => number[])) => void
-  selectedTags: number[]
-  setSelectedTags: (tags: number[] | ((prev: number[]) => number[])) => void
+  clearHubFilters: () => void
 }
 
-const FilterContext = createContext<FilterContextType | undefined>(undefined)
+export const FilterContext = createContext<FilterContextType | undefined>(undefined)
 
 export function FilterProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [activeSidebarFilter, setActiveSidebarFilter] = useState("all")
   const [activeStatus, setActiveStatus] = useState("all")
   const [activeTagId, setActiveTagId] = useState<number | null>(null)
   const [selectedPriorities, setSelectedPriorities] = useState<string[]>([])
-  const [selectedProjects, setSelectedProjects] = useState<number[]>([])
-  const [selectedTags, setSelectedTags] = useState<number[]>([])
+
+  const clearHubFilters = useCallback(() => {
+    setActiveSidebarFilter("all")
+    setActiveStatus("all")
+    setActiveTagId(null)
+    setSelectedPriorities([])
+  }, [])
 
   const value = useMemo(() => ({
     activeSidebarFilter,
@@ -35,17 +37,13 @@ export function FilterProvider({ children }: Readonly<{ children: ReactNode }>) 
     setActiveTagId,
     selectedPriorities,
     setSelectedPriorities,
-    selectedProjects,
-    setSelectedProjects,
-    selectedTags,
-    setSelectedTags,
+    clearHubFilters
   }), [
     activeSidebarFilter, 
     activeStatus, 
     activeTagId, 
-    selectedPriorities, 
-    selectedProjects, 
-    selectedTags
+    selectedPriorities,
+    clearHubFilters
   ])
 
   return (

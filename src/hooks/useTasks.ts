@@ -131,10 +131,22 @@ export function useCreateSubtask() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ taskId, title }: { taskId: number; title: string }) =>
-      subtasksApi.create(taskId, { title }),
+    mutationFn: ({ taskId, ...data }: { taskId: number; title: string; completed?: boolean; description?: string; due_date?: string }) =>
+      subtasksApi.create(taskId, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] })
+    },
+  })
+}
+
+export function useReorderSubtasks() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ taskId, orderedIds }: { taskId: number; orderedIds: number[] }) =>
+      subtasksApi.reorder(taskId, orderedIds),
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] })
     },
   })
