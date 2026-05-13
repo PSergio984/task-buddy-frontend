@@ -6,15 +6,14 @@ import { CreateProjectModal } from "@/components/create-project-modal"
 import { CreateTagModal } from "@/components/create-tag-modal"
 import { useProjects, useReorderProjects, useDeleteProject } from "@/hooks/useProjects"
 import { useTags, useDeleteTag, useReorderTags } from "@/hooks/useTags"
-import { useToast } from "@/hooks/use-toast"
 import {
   DndContext,
   closestCenter,
   PointerSensor,
   useSensor,
   useSensors,
+  DragEndEvent,
 } from "@dnd-kit/core"
-import type { DragEndEvent } from "@dnd-kit/core"
 import {
   arrayMove,
   SortableContext,
@@ -24,8 +23,9 @@ import {
 import { GripHandle } from "./sidebar/grip-handle"
 import { SortableSidebarItem } from "./sidebar/sortable-item"
 import { SidebarItemActions } from "./sidebar/item-actions"
-import { DeleteConfirmationModal } from "./delete-confirmation-modal"
+import { DeleteConfirmationModal } from "@/components/delete-confirmation-modal"
 import type { Tag as TagType, Project as ProjectType } from "@/lib/api"
+import { useToast } from "@/hooks/use-toast"
 import {
   Tooltip,
   TooltipContent,
@@ -45,6 +45,8 @@ import {
   Inbox,
   CalendarRange,
   ChevronDown,
+  Edit2,
+  Trash2,
 } from "lucide-react"
 import * as LucideIcons from "lucide-react"
 import { useState } from "react"
@@ -61,10 +63,11 @@ export function Sidebar({
   const navigate = useNavigate()
   const location = useLocation()
   const { toast } = useToast()
-  const [deletingItem, setDeletingItem] = useState<{ type: 'project' | 'tag', id: number, name: string } | null>(null);
-  const [editingProject, setEditingProject] = useState<ProjectType | undefined>();
-  const [editingTag, setEditingTag] = useState<TagType | undefined>();
-
+  const deleteTag = useDeleteTag()
+  const deleteProject = useDeleteProject()
+  const [editingTag, setEditingTag] = useState<TagType | undefined>()
+  const [editingProject, setEditingProject] = useState<ProjectType | undefined>()
+  const [deletingItem, setDeletingItem] = useState<{ type: "project" | "tag"; id: number; name: string } | null>(null)
   const { 
     activeSidebarFilter, 
     setActiveSidebarFilter,
@@ -72,50 +75,47 @@ export function Sidebar({
     setActiveTagId,
     setSelectedPriorities,
   } = useFilters()
+
+  const handleConfirmDelete = async () => {
+    if (!deletingItem) return
+    
+    try {
+      if (deletingItem.type === "project") {
+        await deleteProject.mutateAsync(deletingItem.id)
+        if (activeSidebarFilter === `project:${deletingItem.id}`) {
+          setActiveSidebarFilter("all")
+        }
+      } else {
+        await deleteTag.mutateAsync(deletingItem.id)
+        if (activeTagId === deletingItem.id) {
+          setActiveTagId(null)
+          setActiveSidebarFilter("all")
+        }
+      }
+      toast({
+        title: "Deleted",
+        description: `${deletingItem.type === "project" ? "Project" : "Tag"} deleted successfully`,
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete item",
+        variant: "destructive",
+      })
+    } finally {
+      setDeletingItem(null)
+    }
+  }
   const { data: projects = [] } = useProjects()
   const { data: tags = [] } = useTags()
   const reorderProjects = useReorderProjects()
   const reorderTags = useReorderTags()
-  const deleteProject = useDeleteProject()
-  const deleteTag = useDeleteTag()
 
   const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = useState(false)
   const [isCreateTagModalOpen, setIsCreateTagModalOpen] = useState(false)
   const [isProjectsCollapsed, setIsProjectsCollapsed] = useState(false)
   const [isTagsCollapsed, setIsTagsCollapsed] = useState(false)
 
-  const handleEditProject = (project: ProjectType) => {
-    setEditingProject(project);
-    setIsCreateProjectModalOpen(true);
-  };
-
-  const handleEditTag = (tag: TagType) => {
-    setEditingTag(tag);
-    setIsCreateTagModalOpen(true);
-  };
-
-  const handleDeleteClick = (item: { type: 'project' | 'tag', id: number, name: string }) => {
-    setDeletingItem(item);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!deletingItem) return;
-    if (deletingItem.type === 'project') {
-      await deleteProject.mutateAsync(deletingItem.id);
-      toast({ title: "Project deleted", variant: "success" });
-      if (activeSidebarFilter === `project:${deletingItem.id}`) {
-        setActiveSidebarFilter("all");
-      }
-    } else {
-      await deleteTag.mutateAsync(deletingItem.id);
-      toast({ title: "Tag deleted", variant: "success" });
-      if (activeTagId === deletingItem.id) {
-        setActiveTagId(null);
-      }
-    }
-    setDeletingItem(null);
-  };
-  
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -192,8 +192,6 @@ export function Sidebar({
       reorderTags.mutate(newOrder.map((t) => t.id))
     }
   }
-
-
 
   return (
     <motion.aside
@@ -440,17 +438,17 @@ export function Sidebar({
                             <motion.div
                               role="button"
                               tabIndex={0}
+                              onClick={() => handleProjectClick(project.id)}
                               onKeyDown={(e) => {
                                 if (e.key === "Enter" || e.key === " ") {
                                   e.preventDefault()
                                   handleProjectClick(project.id)
                                 }
                               }}
-                              onClick={() => handleProjectClick(project.id)}
                               whileHover={{ x: isCollapsed ? 0 : 4, backgroundColor: "rgba(255,255,255,0.05)" }}
                               whileTap={{ scale: 0.98 }}
                               className={cn(
-                                "group/item flex items-center rounded-2xl px-4 py-3.5 text-left text-sm font-bold transition-all duration-300 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                                "group/item flex items-center rounded-2xl px-4 py-3.5 text-left text-sm font-bold transition-all duration-300 cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-primary",
                                 isCollapsed
                                   ? "mx-auto w-14 justify-center"
                                   : "w-full justify-between",
@@ -471,15 +469,20 @@ export function Sidebar({
                                 </div>
                                 {!isCollapsed && <span className="truncate max-w-[140px]">{project.name}</span>}
                               </div>
-                              
                               {!isCollapsed && (
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-1">
                                   {isActive && (
-                                    <div className="h-1.5 w-1.5 rounded-full bg-primary shadow-glow shadow-primary/50" />
+                                    <div className="h-1.5 w-1.5 rounded-full bg-primary shadow-glow shadow-primary/50 mr-2" />
                                   )}
-                                  <SidebarItemActions 
-                                    onEdit={() => handleEditProject(project)}
-                                    onDelete={() => handleDeleteClick({ type: 'project', id: project.id, name: project.name })}
+                                  <SidebarItemActions
+                                    className="opacity-0 group-hover/item:opacity-100 transition-opacity"
+                                    onEdit={() => {
+                                      setEditingProject(project)
+                                      setIsCreateProjectModalOpen(true)
+                                    }}
+                                    onDelete={() => {
+                                      setDeletingItem({ type: "project", id: project.id, name: project.name })
+                                    }}
                                   />
                                 </div>
                               )}
@@ -612,9 +615,15 @@ export function Sidebar({
                                 </button>
 
                                 {!isCollapsed && (
-                                  <SidebarItemActions 
-                                    onEdit={() => handleEditTag(tag)}
-                                    onDelete={() => handleDeleteClick({ type: 'tag', id: tag.id, name: tag.name })}
+                                  <SidebarItemActions
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity mr-3"
+                                    onEdit={() => {
+                                      setEditingTag(tag)
+                                      setIsCreateTagModalOpen(true)
+                                    }}
+                                    onDelete={() => {
+                                      setDeletingItem({ type: "tag", id: tag.id, name: tag.name })
+                                    }}
                                   />
                                 )}
                               </motion.div>
@@ -666,11 +675,9 @@ export function Sidebar({
 
       <DeleteConfirmationModal
         open={!!deletingItem}
-        onOpenChange={(open) => {
-          if (!open) setDeletingItem(null)
-        }}
+        onOpenChange={(open) => !open && setDeletingItem(null)}
         onConfirm={handleConfirmDelete}
-        title={`Delete ${deletingItem?.type === 'project' ? 'Project' : 'Tag'}`}
+        title={`Delete ${deletingItem?.type === "project" ? "Project" : "Tag"}`}
         description={`Are you sure you want to delete "${deletingItem?.name}"? This action cannot be undone.`}
         isLoading={deleteProject.isPending || deleteTag.isPending}
       />

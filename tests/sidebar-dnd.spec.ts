@@ -100,12 +100,8 @@ test.describe("Sidebar DND Reordering", () => {
     await expect(projectA).toBeVisible();
     await expect(projectB).toBeVisible();
 
-    // Find the drag handles ONLY in the projects section
-    // Use the section header text to find the container
-    const projectsSection = page.locator('div', { has: page.locator('p:text("Focus Projects")') }).locator('..').locator('..');
-    const handles = projectsSection.locator('button[aria-label="Drag to reorder"]');
-    
-    // There should be 2 projects
+    // Find the drag handles
+    const handles = page.locator('button[aria-label="Drag to reorder"]');
     await expect(handles).toHaveCount(2);
 
     const handleA = handles.nth(0);
@@ -114,7 +110,7 @@ test.describe("Sidebar DND Reordering", () => {
     // Perform drag and drop
     await handleA.hover();
     await page.mouse.down();
-    await page.mouse.move(0, 50, { steps: 10 }); // Move down slightly
+    await page.mouse.move(0, 100, { steps: 10 }); // Move down
     await handleB.hover();
     await page.mouse.up();
 
@@ -123,8 +119,8 @@ test.describe("Sidebar DND Reordering", () => {
   });
 
   test("should allow reordering tags", async ({ page }) => {
-    const tagA = page.getByText(/Tag A/i);
-    const tagB = page.getByText(/Tag B/i);
+    const tagA = page.getByText("Tag A");
+    const tagB = page.getByText("Tag B");
     
     await expect(tagA).toBeVisible({ timeout: 10000 });
     await expect(tagB).toBeVisible({ timeout: 10000 });
@@ -147,6 +143,12 @@ test.describe("Sidebar DND Reordering", () => {
     await page.mouse.up();
 
     // Verify it's still there
+    await expect(tagA).toBeVisible();
+    await expect(tagB).toBeVisible();
+
+    // In the sidebar, tags section comes after projects
+    const tagHandles = page.locator('button[aria-label="Drag to reorder"]').nth(2); // First tag handle
+    
     await expect(tagA).toBeVisible();
   });
 });

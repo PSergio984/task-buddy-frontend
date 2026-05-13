@@ -1,82 +1,71 @@
-import React from "react"
-import { MoreHorizontal, Edit2, Trash2 } from "lucide-react"
+import * as React from "react"
+import { MoreVertical, Edit2, Trash2 } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 export interface SidebarItemActionsProps {
   readonly onEdit: () => void
   readonly onDelete: () => void
+  readonly className?: string
 }
 
-/**
- * Reusable action menu for sidebar items (projects/tags).
- * Visible on hover of the parent container (which should have the 'group' class).
- */
-export function SidebarItemActions({ onEdit, onDelete }: Readonly<SidebarItemActionsProps>) {
-  const stopAndPrevent = (e: React.MouseEvent | React.KeyboardEvent) => {
-    e.stopPropagation()
-    // We don't necessarily want to preventDefault on all events (like Tab)
-    // but for click-like events on the trigger, we do.
-    if ("preventDefault" in e) {
-      e.preventDefault()
-    }
-  }
-
+export function SidebarItemActions({
+  onEdit,
+  onDelete,
+  className,
+}: Readonly<SidebarItemActionsProps>) {
   return (
-    <div 
-      className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center ml-auto" 
-      data-testid="sidebar-item-actions"
-      onClick={(e) => e.stopPropagation()} // Prevent click on container from bubbling
-    >
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 p-0 focus-visible:ring-1 focus-visible:ring-ring"
-            onClick={stopAndPrevent}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                stopAndPrevent(e)
-              }
-            }}
-          >
-            <MoreHorizontal className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-            <span className="sr-only">Open actions</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent 
-          align="end" 
-          className="w-32"
-          onCloseAutoFocus={(e) => e.preventDefault()} // Avoid focus jumping back in some contexts if undesired
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label="More actions"
+          onClick={(e) => {
+            e.stopPropagation()
+            e.preventDefault()
+          }}
+          className={cn(
+            "flex h-7 w-7 items-center justify-center rounded-lg text-foreground/40 hover:bg-white/10 hover:text-foreground transition-all duration-300 focus-visible:ring-1 focus-visible:ring-primary outline-none",
+            className
+          )}
         >
-          <DropdownMenuItem
-            onClick={(e) => {
-              e.stopPropagation()
-              onEdit()
-            }}
-          >
-            <Edit2 className="mr-2 h-4 w-4" />
-            <span>Edit</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            className="text-destructive focus:bg-destructive focus:text-white"
-            onClick={(e) => {
-              e.stopPropagation()
-              onDelete()
-            }}
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            <span>Delete</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+          <MoreVertical className="h-4 w-4" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent 
+        align="end" 
+        className="w-40 bg-background/95 backdrop-blur-xl border-white/10 rounded-xl p-1 shadow-2xl"
+        onClick={(e) => {
+          e.stopPropagation()
+        }}
+      >
+        <DropdownMenuItem
+          onClick={(e) => {
+            e.stopPropagation()
+            onEdit()
+          }}
+          className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer"
+        >
+          <Edit2 className="h-4 w-4" />
+          <span>Edit</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          variant="destructive"
+          onClick={(e) => {
+            e.stopPropagation()
+            onDelete()
+          }}
+          className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer"
+        >
+          <Trash2 className="h-4 w-4" />
+          <span>Delete</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
