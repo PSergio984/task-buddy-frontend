@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { tagsApi } from "@/lib/api"
 import { useAuth } from "@/contexts/AuthContext"
+import { useToast } from "@/hooks/use-toast"
 
 export function useTags() {
   const { user } = useAuth()
@@ -14,17 +15,24 @@ export function useTags() {
 
 export function useCreateTag() {
   const queryClient = useQueryClient()
+  const { toast } = useToast()
 
   return useMutation({
     mutationFn: tagsApi.create,
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["tags"] })
+      toast({
+        title: "Tag created",
+        description: `Tag "${data.name}" has been created.`,
+        variant: "success",
+      })
     },
   })
 }
 
 export function useDeleteTag() {
   const queryClient = useQueryClient()
+  const { toast } = useToast()
 
   return useMutation({
     mutationFn: tagsApi.delete,
@@ -32,19 +40,30 @@ export function useDeleteTag() {
       queryClient.invalidateQueries({ queryKey: ["tags"] })
       // Also invalidate tasks because they might have this tag
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      toast({
+        title: "Tag deleted",
+        description: "Tag has been removed successfully.",
+        variant: "success",
+      })
     },
   })
 }
 
 export function useUpdateTag() {
   const queryClient = useQueryClient()
+  const { toast } = useToast()
 
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: { name?: string; color?: string; icon?: string } }) =>
       tagsApi.update(id, data),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["tags"] })
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      toast({
+        title: "Tag updated",
+        description: `Tag "${data.name}" has been updated.`,
+        variant: "success",
+      })
     },
   })
 }

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { projectsApi } from "@/lib/api"
 import { useAuth } from "@/contexts/AuthContext"
+import { useToast } from "@/hooks/use-toast"
 
 export function useProjects() {
   const { user } = useAuth()
@@ -14,29 +15,42 @@ export function useProjects() {
 
 export function useCreateProject() {
   const queryClient = useQueryClient()
+  const { toast } = useToast()
   
   return useMutation({
     mutationFn: projectsApi.create,
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["projects"] })
+      toast({
+        title: "Project created",
+        description: `Project "${data.name}" has been created.`,
+        variant: "success",
+      })
     },
   })
 }
 
 export function useUpdateProject() {
   const queryClient = useQueryClient()
+  const { toast } = useToast()
   
   return useMutation({
     mutationFn: ({ id, updates }: { id: number; updates: { name?: string; color?: string; icon?: string } }) =>
       projectsApi.update(id, updates),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["projects"] })
+      toast({
+        title: "Project updated",
+        description: `Project "${data.name}" has been updated.`,
+        variant: "success",
+      })
     },
   })
 }
 
 export function useDeleteProject() {
   const queryClient = useQueryClient()
+  const { toast } = useToast()
   
   return useMutation({
     mutationFn: projectsApi.delete,
@@ -44,6 +58,11 @@ export function useDeleteProject() {
       queryClient.invalidateQueries({ queryKey: ["projects"] })
       // Also invalidate tasks because they might belong to this project
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      toast({
+        title: "Project deleted",
+        description: "Project has been removed successfully.",
+        variant: "success",
+      })
     },
   })
 }
