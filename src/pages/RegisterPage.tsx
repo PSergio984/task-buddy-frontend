@@ -78,15 +78,15 @@ export function RegisterPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.8 }}
-            className="text-right"
+            className="text-right space-y-8 bg-background/30 backdrop-blur-2xl p-12 rounded-[2.5rem] border border-white/20 shadow-2xl max-w-xl"
           >
-            <div className="flex items-center gap-3 justify-end mb-8">
+            <div className="flex items-center gap-3 justify-end">
               <span className="text-3xl font-bold tracking-tighter text-foreground">Task Buddy</span>
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-2xl shadow-primary/40">
                 <CheckCircle2 className="h-7 w-7" />
               </div>
             </div>
-            <h2 className="text-6xl font-black tracking-tighter text-foreground leading-[0.9] mb-6">
+            <h2 className="text-6xl font-black tracking-tighter text-foreground leading-[0.9]">
               DESIGN YOUR <br />
               <span className="text-accent underline decoration-accent/20 underline-offset-8 uppercase">OWN SUCCESS.</span>
             </h2>

@@ -8,8 +8,8 @@ import { useAuth } from "@/contexts/AuthContext"
 export function NotificationWatcher() {
   const { user } = useAuth()
   
-  // Only activate the watcher if the user is logged in
-  if (!user) return null
+  // Only activate the watcher if the user is logged in AND confirmed
+  if (!user || user.email_confirmed === false) return null
 
   return <WatcherInner />
 }

@@ -70,7 +70,7 @@ export function RegisterForm() {
         description: "Welcome to Task Buddy. Please log in to start your journey.",
         variant: "success",
       })
-      navigate("/login")
+      navigate("/verify-email")
     } catch (err: unknown) {
       let detail = "Something went wrong. Please check your details and try again."
       if (axios.isAxiosError(err)) {

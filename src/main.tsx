@@ -10,7 +10,7 @@ import { registerSW } from 'virtual:pwa-register'
 
 import { queryClient } from "@/lib/query-client"
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client"
-import { createPersister } from "@tanstack/react-query-persist-client"
+import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister"
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import { get, set, del } from "idb-keyval"
 
@@ -22,14 +22,12 @@ if ("serviceWorker" in navigator) {
 }
 
 // Create IndexedDB persister
-const persister = createPersister({
+const persister = createAsyncStoragePersister({
   storage: {
     getItem: (key) => get(key),
     setItem: (key, value) => set(key, value),
     removeItem: (key) => del(key),
   },
-  buster: "v1", // Cache buster for schema changes
-  maxAge: 1000 * 60 * 60 * 24, // 24 hours
 })
 
 createRoot(document.getElementById("root")!).render(
@@ -38,6 +36,8 @@ createRoot(document.getElementById("root")!).render(
       client={queryClient}
       persistOptions={{ 
         persister,
+        buster: "v1", // Cache buster for schema changes
+        maxAge: 1000 * 60 * 60 * 24, // 24 hours
         // Exclude audit logs from persistence
         dehydrateOptions: {
           shouldDehydrateQuery: (query) => {

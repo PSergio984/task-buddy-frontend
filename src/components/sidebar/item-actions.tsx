@@ -27,7 +27,6 @@ export function SidebarItemActions({
           aria-label="More actions"
           onClick={(e) => {
             e.stopPropagation()
-            e.preventDefault()
           }}
           className={cn(
             "flex h-7 w-7 items-center justify-center rounded-lg text-foreground/40 hover:bg-white/10 hover:text-foreground transition-all duration-300 focus-visible:ring-1 focus-visible:ring-primary outline-none",

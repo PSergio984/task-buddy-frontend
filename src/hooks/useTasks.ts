@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { tasksApi, subtasksApi, tagsApi, type Task, type Subtask } from "@/lib/api"
+import { tasksApi, subtasksApi, tagsApi, type Task, type Subtask, type Tag } from "@/lib/api"
 import { useAuth } from "@/contexts/AuthContext"
 import { useToast } from "@/hooks/use-toast"
 
@@ -80,11 +80,13 @@ export function useUpdateTask() {
     onMutate: async ({ id, updates }) => {
       // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
       await queryClient.cancelQueries({ queryKey: ["tasks"] })
+      await queryClient.cancelQueries({ queryKey: ["task", id] })
 
       // Snapshot the previous value
       const previousTasks = queryClient.getQueryData<Task[]>(["tasks"])
+      const previousTask = queryClient.getQueryData<Task>(["task", id])
 
-      // Optimistically update to the new value
+      // Optimistically update to the new value in the list
       queryClient.setQueriesData<Task[]>({ queryKey: ["tasks"] }, (old) => {
         if (!old) return []
         return old.map((task) =>
@@ -92,13 +94,21 @@ export function useUpdateTask() {
         )
       })
 
+      // Optimistically update the detail view
+      if (previousTask) {
+        queryClient.setQueryData<Task>(["task", id], { ...previousTask, ...updates })
+      }
+
       // Return a context object with the snapshotted value
-      return { previousTasks }
+      return { previousTasks, previousTask }
     },
     // If the mutation fails, use the context returned from onMutate to roll back
-    onError: (_err, _variables, context) => {
+    onError: (_err, { id }, context) => {
       if (context?.previousTasks) {
         queryClient.setQueryData(["tasks"], context.previousTasks)
+      }
+      if (context?.previousTask) {
+        queryClient.setQueryData(["task", id], context.previousTask)
       }
     },
     onSettled: (_data, _error, variables) => {
@@ -125,6 +135,8 @@ export function useDeleteTask() {
     // Optimistic Update
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: ["tasks"] })
+      await queryClient.cancelQueries({ queryKey: ["task", id] })
+      
       const previousTasks = queryClient.getQueryData<Task[]>(["tasks"])
 
       queryClient.setQueriesData<Task[]>({ queryKey: ["tasks"] }, (old) => {
@@ -160,9 +172,44 @@ export function useUpdateSubtask() {
   return useMutation({
     mutationFn: ({ id, updates }: { id: number; updates: Partial<Subtask> }) =>
       subtasksApi.update(id, updates),
-    onSuccess: (data) => {
+    onMutate: async ({ id, updates }) => {
+      await queryClient.cancelQueries({ queryKey: ["tasks"] })
+      await queryClient.cancelQueries({ queryKey: ["task"] })
+
+      const previousTasks = queryClient.getQueryData<Task[]>(["tasks"])
+      
+      // Update in ["tasks"] list
+      queryClient.setQueriesData<Task[]>({ queryKey: ["tasks"] }, (old) => {
+        if (!old) return []
+        return old.map(task => ({
+          ...task,
+          subtasks: task.subtasks?.map(s => s.id === id ? { ...s, ...updates } : s)
+        }))
+      })
+
+      // Update in ["task", id] queries
+      queryClient.setQueriesData<Task>({ queryKey: ["task"] }, (old) => {
+        if (!old || !old.subtasks) return old
+        return {
+          ...old,
+          subtasks: old.subtasks.map(s => s.id === id ? { ...s, ...updates } : s)
+        }
+      })
+
+      return { previousTasks }
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(["tasks"], context.previousTasks)
+      }
+    },
+    onSettled: (data) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
-      queryClient.invalidateQueries({ queryKey: ["task"] })
+      if (data?.task_id) {
+        queryClient.invalidateQueries({ queryKey: ["task", data.task_id] })
+      }
+    },
+    onSuccess: (data) => {
       toast({
         title: "Subtask updated",
         description: `Subtask "${data.title}" has been updated.`,
@@ -178,9 +225,40 @@ export function useDeleteSubtask() {
   
   return useMutation({
     mutationFn: subtasksApi.delete,
-    onSuccess: () => {
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ["tasks"] })
+      await queryClient.cancelQueries({ queryKey: ["task"] })
+
+      const previousTasks = queryClient.getQueryData<Task[]>(["tasks"])
+      
+      queryClient.setQueriesData<Task[]>({ queryKey: ["tasks"] }, (old) => {
+        if (!old) return []
+        return old.map(task => ({
+          ...task,
+          subtasks: task.subtasks?.filter(s => s.id !== id)
+        }))
+      })
+
+      queryClient.setQueriesData<Task>({ queryKey: ["task"] }, (old) => {
+        if (!old || !old.subtasks) return old
+        return {
+          ...old,
+          subtasks: old.subtasks.filter(s => s.id !== id)
+        }
+      })
+
+      return { previousTasks }
+    },
+    onError: (_err, _id, context) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(["tasks"], context.previousTasks)
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
       queryClient.invalidateQueries({ queryKey: ["task"] })
+    },
+    onSuccess: () => {
       toast({
         title: "Subtask deleted",
         description: "Subtask has been removed.",
@@ -197,9 +275,51 @@ export function useCreateSubtask() {
   return useMutation({
     mutationFn: ({ taskId, ...data }: { taskId: number; title: string; completed?: boolean; description?: string; due_date?: string }) =>
       subtasksApi.create(taskId, data),
-    onSuccess: (data, variables) => {
+    onMutate: async ({ taskId, title, completed }) => {
+      await queryClient.cancelQueries({ queryKey: ["tasks"] })
+      await queryClient.cancelQueries({ queryKey: ["task", taskId] })
+
+      const previousTasks = queryClient.getQueryData<Task[]>(["tasks"])
+      const previousTask = queryClient.getQueryData<Task>(["task", taskId])
+
+      const tempSub: Subtask = {
+        id: Math.random(),
+        task_id: taskId,
+        title,
+        completed: completed ?? false,
+        created_at: new Date().toISOString()
+      }
+
+      queryClient.setQueriesData<Task[]>({ queryKey: ["tasks"] }, (old) => {
+        if (!old) return []
+        return old.map(task => task.id === taskId ? {
+          ...task,
+          subtasks: task.subtasks ? [...task.subtasks, tempSub] : [tempSub]
+        } : task)
+      })
+
+      if (previousTask) {
+        queryClient.setQueryData<Task>(["task", taskId], {
+          ...previousTask,
+          subtasks: previousTask.subtasks ? [...previousTask.subtasks, tempSub] : [tempSub]
+        })
+      }
+
+      return { previousTasks, previousTask }
+    },
+    onError: (_err, { taskId }, context) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(["tasks"], context.previousTasks)
+      }
+      if (context?.previousTask) {
+        queryClient.setQueryData(["task", taskId], context.previousTask)
+      }
+    },
+    onSettled: (data, _error, variables) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
       queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] })
+    },
+    onSuccess: (data) => {
       toast({
         title: "Subtask created",
         description: `Subtask "${data.title}" has been created.`,
@@ -216,28 +336,32 @@ export function useReorderSubtasks() {
   return useMutation({
     mutationFn: ({ taskId, orderedIds }: { taskId: number; orderedIds: number[] }) =>
       subtasksApi.reorder(taskId, orderedIds),
-    onSuccess: (_, variables) => {
+    onMutate: async ({ taskId, orderedIds }) => {
+      await queryClient.cancelQueries({ queryKey: ["task", taskId] })
+      const previousTask = queryClient.getQueryData<Task>(["task", taskId])
+
+      if (previousTask && previousTask.subtasks) {
+        const reordered = orderedIds.map(id => previousTask.subtasks!.find(s => s.id === id)!).filter(Boolean)
+        queryClient.setQueryData<Task>(["task", taskId], {
+          ...previousTask,
+          subtasks: reordered
+        })
+      }
+
+      return { previousTask }
+    },
+    onError: (_err, { taskId }, context) => {
+      if (context?.previousTask) {
+        queryClient.setQueryData(["task", taskId], context.previousTask)
+      }
+    },
+    onSettled: (_, _error, variables) => {
       queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] })
+    },
+    onSuccess: () => {
       toast({
         title: "Subtasks reordered",
         description: "Your subtask order has been saved.",
-        variant: "success",
-      })
-    },
-  })
-}
-
-export function useCreateTag() {
-  const queryClient = useQueryClient()
-  const { toast } = useToast()
-
-  return useMutation({
-    mutationFn: (data: { name: string; color?: string; icon?: string }) => tagsApi.create(data),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["tags"] })
-      toast({
-        title: "Tag created",
-        description: `Tag "${data.name}" has been created.`,
         variant: "success",
       })
     },
@@ -251,9 +375,47 @@ export function useAttachTag() {
   return useMutation({
     mutationFn: ({ taskId, tagId }: { taskId: number; tagId: number }) =>
       tagsApi.attach(taskId, tagId),
-    onSuccess: (_, variables) => {
+    onMutate: async ({ taskId, tagId }) => {
+      await queryClient.cancelQueries({ queryKey: ["tasks"] })
+      await queryClient.cancelQueries({ queryKey: ["task", taskId] })
+
+      const previousTasks = queryClient.getQueryData<Task[]>(["tasks"])
+      const previousTask = queryClient.getQueryData<Task>(["task", taskId])
+      const allTags = queryClient.getQueryData<Tag[]>(["tags"])
+      const tag = allTags?.find(t => t.id === tagId)
+
+      if (tag) {
+        queryClient.setQueriesData<Task[]>({ queryKey: ["tasks"] }, (old) => {
+          if (!old) return []
+          return old.map(task => task.id === taskId ? {
+            ...task,
+            tags: task.tags ? [...task.tags, tag] : [tag]
+          } : task)
+        })
+
+        if (previousTask) {
+          queryClient.setQueryData<Task>(["task", taskId], {
+            ...previousTask,
+            tags: previousTask.tags ? [...previousTask.tags, tag] : [tag]
+          })
+        }
+      }
+
+      return { previousTasks, previousTask }
+    },
+    onError: (_err, { taskId }, context) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(["tasks"], context.previousTasks)
+      }
+      if (context?.previousTask) {
+        queryClient.setQueryData(["task", taskId], context.previousTask)
+      }
+    },
+    onSettled: (_, _error, variables) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
       queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] })
+    },
+    onSuccess: () => {
       toast({
         title: "Tag attached",
         description: "Tag has been added to the task.",
@@ -270,9 +432,43 @@ export function useDetachTag() {
   return useMutation({
     mutationFn: ({ taskId, tagId }: { taskId: number; tagId: number }) =>
       tagsApi.detach(taskId, tagId),
-    onSuccess: (_, variables) => {
+    onMutate: async ({ taskId, tagId }) => {
+      await queryClient.cancelQueries({ queryKey: ["tasks"] })
+      await queryClient.cancelQueries({ queryKey: ["task", taskId] })
+
+      const previousTasks = queryClient.getQueryData<Task[]>(["tasks"])
+      const previousTask = queryClient.getQueryData<Task>(["task", taskId])
+
+      queryClient.setQueriesData<Task[]>({ queryKey: ["tasks"] }, (old) => {
+        if (!old) return []
+        return old.map(task => task.id === taskId ? {
+          ...task,
+          tags: task.tags?.filter(t => t.id !== tagId)
+        } : task)
+      })
+
+      if (previousTask) {
+        queryClient.setQueryData<Task>(["task", taskId], {
+          ...previousTask,
+          tags: previousTask.tags?.filter(t => t.id !== tagId)
+        })
+      }
+
+      return { previousTasks, previousTask }
+    },
+    onError: (_err, { taskId }, context) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(["tasks"], context.previousTasks)
+      }
+      if (context?.previousTask) {
+        queryClient.setQueryData(["task", taskId], context.previousTask)
+      }
+    },
+    onSettled: (_, _error, variables) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
       queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] })
+    },
+    onSuccess: () => {
       toast({
         title: "Tag detached",
         description: "Tag has been removed from the task.",

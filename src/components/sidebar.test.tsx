@@ -1,4 +1,5 @@
-import { render, screen, fireEvent, within } from "@testing-library/react"
+import { render, screen, fireEvent, within, waitFor } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { BrowserRouter } from "react-router-dom"
@@ -77,13 +78,16 @@ const renderSidebar = () => {
       },
     },
   })
-  return render(
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Sidebar isCollapsed={false} onToggle={vi.fn()} />
-      </BrowserRouter>
-    </QueryClientProvider>
-  )
+  return {
+    user: userEvent.setup(),
+    ...render(
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      </QueryClientProvider>
+    )
+  }
 }
 
 describe("Sidebar CRUD Integration", () => {
@@ -92,28 +96,30 @@ describe("Sidebar CRUD Integration", () => {
   })
 
   it("opens deletion modal when delete is clicked for a project", async () => {
-    renderSidebar()
+    const { user } = renderSidebar()
     
     const projectItem = screen.getByText("Project A").closest("div[role='button']")!
     const actionsTrigger = within(projectItem as HTMLElement).getByRole("button", { name: /more actions/i })
-    fireEvent.click(actionsTrigger)
     
-    const deleteBtn = screen.getByRole("menuitem", { name: /delete/i })
-    fireEvent.click(deleteBtn)
+    await user.click(actionsTrigger)
+    
+    const deleteBtn = await screen.findByRole("menuitem", { name: /delete/i })
+    await user.click(deleteBtn)
     
     expect(screen.getByText(/delete project/i)).toBeInTheDocument()
     expect(screen.getByText(/are you sure you want to delete "project a"/i)).toBeInTheDocument()
   })
 
   it("opens deletion modal when delete is clicked for a tag", async () => {
-    renderSidebar()
+    const { user } = renderSidebar()
     
     const tagItem = screen.getByText("Tag A").closest("div")!
     const actionsTrigger = within(tagItem as HTMLElement).getByRole("button", { name: /more actions/i })
-    fireEvent.click(actionsTrigger)
     
-    const deleteBtn = screen.getByRole("menuitem", { name: /delete/i })
-    fireEvent.click(deleteBtn)
+    await user.click(actionsTrigger)
+    
+    const deleteBtn = await screen.findByRole("menuitem", { name: /delete/i })
+    await user.click(deleteBtn)
     
     expect(screen.getByText(/delete tag/i)).toBeInTheDocument()
     expect(screen.getByText(/are you sure you want to delete "tag a"/i)).toBeInTheDocument()

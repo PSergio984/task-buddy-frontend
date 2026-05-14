@@ -85,7 +85,7 @@ export function LoginPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.8 }}
-            className="space-y-6"
+            className="space-y-8 bg-background/30 backdrop-blur-2xl p-12 rounded-[2.5rem] border border-white/20 shadow-2xl max-w-xl"
           >
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-2xl shadow-primary/40">

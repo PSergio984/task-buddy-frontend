@@ -216,6 +216,8 @@ export function normalizeAuthUser(payload: unknown) {
 
   if (typeof userPayload.email_confirmed === "boolean") {
     user.email_confirmed = userPayload.email_confirmed
+  } else if (typeof userPayload.confirmed === "boolean") {
+    user.email_confirmed = userPayload.confirmed
   }
 
   return user
