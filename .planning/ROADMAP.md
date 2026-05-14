@@ -6,17 +6,18 @@ The frontend roadmap focuses on transforming the application from an "AI-generat
 
 ## Phases
 
-- [ ] **Phase 1: Frontend UX & Integration Rework** - Layout persistence, collapsible sidebar, design system alignment, and backend sync.
-- [ ] **Phase 2: Enhanced Interactivity & State** - Real-time updates, advanced filtering, and offline support.
+- [x] **Phase 1: Frontend UX & Integration Rework** - Layout persistence, collapsible sidebar, design system alignment, and backend sync.
+- [x] **Phase 2: Enhanced Interactivity & State** - Real-time updates, advanced filtering, and offline support. (Superceded by Phase 05)
 - [ ] **Phase 3: Performance & Accessibility** - Optimization, a11y audit, and mobile responsiveness polish.
-- [ ] **Phase 3.8: Sidebar Organization & DND** - Sidebar CRUD actions, DND reordering, and ellipsis menus.
-- [ ] **Phase 3.9: UI and Idempotency Overhaul** - Stable time picker, performance skeletons, and backend idempotency.
+- [x] **Phase 3.8: Sidebar Organization & DND** - Sidebar CRUD actions, DND reordering, and ellipsis menus.
+- [x] **Phase 3.9: UI and Idempotency Overhaul** - Stable time picker, performance skeletons, and backend idempotency.
 - [x] **Phase 4: Premium UX Hardening & Descriptive History** - Command-palette modals, sorting persistence, and refined timeline.
 - [x] **Phase 4.1: Advanced UI/UX & Feature Refinement** - Boxed sidebar toggle, Task Drawer, and Advanced Filtering.
 - [x] **Phase 4.2: High-Velocity Polish & Feature Hardening** - Subtask fixes, interaction refinements, and searchable creation.
 - [x] **Phase 4.3: Task Interaction Precision & Information Density** - Full creation support (subtasks/tags), time-aware deadlines, color-coding, and layout polish.
 - [x] **Phase 4.5: UI/UX & Functional Refinement** - Sidebar workspace controls, activity history context, and profile settings.
 - [x] **Phase 4.6: Advanced UI/UX Refinement** - Dashboard responsiveness, color-icon picker, and enhanced audit trail.
+- [ ] **Phase 05: Real-time Sync & Offline Mode** - TanStack Query persistence, optimistic UI, and auth hardening.
 
 
 ## Phase Details
@@ -42,14 +43,14 @@ Plans:
 *(Details TBD)*
 
 ### Phase 3.8: Sidebar Organization & DND
-**Goal**: Refine the sidebar with CRUD actions and Drag-and-Drop functionality for Projects and Tags.
+**Goal**: Refine the sidebar with CRUD actions and Drag-and-Drop functionality for Projects and Tags.     
 **Depends on**: Phase 3 (or current state)
-**Requirements**: 
+**Requirements**: SIDE-01, SIDE-02, SIDE-03, SIDE-04
 **Success Criteria**:
-  1. [ ] Projects and Tags can be reordered via drag-and-drop within their respective sections.
-  2. [ ] Projects and Tags can be edited and deleted via a "More" (ellipsis) dropdown menu on hover.
-  3. [ ] Active project/tag filter resets to "All Tasks" if the active item is deleted.
-  4. [ ] UI state remains consistent across all views after CRUD actions.
+  1. [x] Projects and Tags can be reordered via drag-and-drop within their respective sections.
+  2. [x] Projects and Tags can be edited and deleted via a "More" (ellipsis) dropdown menu on hover.      
+  3. [x] Active project/tag filter resets to "All Tasks" if the active item is deleted.
+  4. [x] UI state remains consistent across all views after CRUD actions.
 
 ### Phase 4: Premium UX Hardening & Descriptive History
 **Goal**: Transform core interactions into a keyboard-centric command center style while cleaning up design "slop" and improving historical scannability.
@@ -105,13 +106,29 @@ Plans:
 **Depends on**: Phase 4.3
 **Requirements**: UI-28, UI-29, UI-30, UI-31, UI-32, UI-33, UI-34, UI-35
 **Success Criteria**:
-  1. Sidebar "Projects" and "Focus Tags" sections are individually collapsible.
-  2. Projects and Tags render their custom user-selected icons and colors in the Sidebar.
-  3. Clicking an active Sidebar filter reverts the view to "All Tasks".
-  4. "Create Tag" action is accessible directly from the Sidebar.
-  5. Audit Trail uses natural language for updates and preserves parent-task context for subtasks.
-  6. User can toggle between 12h and 24h time formats in Profile settings.
-  7. Collapsed sidebar icon is perfectly centered and aligned.
+  1. [x] Sidebar "Projects" and "Focus Tags" sections are individually collapsible.
+  2. [x] Projects and Tags render their custom user-selected icons and colors in the Sidebar.
+  3. [x] Clicking an active Sidebar filter reverts the view to "All Tasks".
+  4. [x] "Create Tag" action is accessible directly from the Sidebar.
+  5. [x] Audit Trail uses natural language for updates and preserves parent-task context for subtasks.        
+  6. [x] User can toggle between 12h and 24h time formats in Profile settings.
+  7. [x] Collapsed sidebar icon is perfectly centered and aligned.
+
+### Phase 05: Real-time Sync & Offline Mode
+**Goal**: Transform Task Buddy into a resilient, offline-capable tool with real-time synchronization and hardened authentication.
+**Depends on**: Phase 4.6, Phase 3.9
+**Requirements**: SYNC-01, SYNC-02, AUTH-01, AUTH-02, AUTH-03, UX-01, UX-02, UX-03, UX-04
+**Success Criteria**:
+  1. [ ] Core entities (Tasks/Projects/Tags) are cached offline in IndexedDB.
+  2. [ ] All workspace mutations reflect in the UI optimistically.
+  3. [ ] Redirection loops are resolved; unconfirmed users see a dedicated landing page.
+  4. [ ] Audit Trail is clean, bug-free, and provides natural feedback.
+**Plans**: 3 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — Auth Hardening & Verify Email Landing
+- [ ] 05-02-PLAN.md — Real-time Sync & Offline Cache
+- [ ] 05-03-PLAN.md — UX Hardening & Audit Trail Refinement
 
 ---
-*Roadmap updated: 2026-05-11*
+*Roadmap updated: 2026-05-14*

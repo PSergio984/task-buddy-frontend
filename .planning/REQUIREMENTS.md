@@ -36,3 +36,29 @@
 | SIDE-02 | **Sidebar CRUD Menu**: Each Project and Tag item (except system lists) must have an ellipsis menu for actions. | CONTEXT.md |
 | SIDE-03 | **Inline Edit/Delete**: Ellipsis menu provides "Edit" (opens modal) and "Delete" (opens confirmation) actions. | CONTEXT.md |
 | SIDE-04 | **Active Filter Auto-Reset**: Deleting the currently active Project or Tag filter must reset the view to "All Tasks". | CONTEXT.md |
+
+# Phase 05: Real-time Sync & Offline Mode — Requirements
+
+## Synchronization & Reliability
+
+| Req ID | Requirement | Source |
+|--------|-------------|--------|
+| SYNC-01 | **Offline Cache (IndexedDB)**: Persist Tasks, Projects, and Tags using TanStack Query's persistent cache (IndexedDB via idb-keyval). | RESEARCH.md / D-02 |
+| SYNC-02 | **Optimistic UI Updates**: All task, project, and tag mutations (Create, Update, Delete, Toggle) MUST reflect in the UI immediately. | RESEARCH.md / D-03 |
+
+## Authentication Hardening
+
+| Req ID | Requirement | Source |
+|--------|-------------|--------|
+| AUTH-01 | **Strict Session Verification**: `AuthContext` must confirm session validity via `refreshUser` on mount before allowing access to `ProtectedRoute`. | CONTEXT.md / D-04 |
+| AUTH-02 | **Verification Landing Page**: Implement a dedicated `/verify-email` page for users with unconfirmed accounts. | CONTEXT.md / D-05 |
+| AUTH-03 | **Semantic Auth Errors**: `getAuthErrorMessage` must explicitly detect and handle "Email not confirmed" status. | CONTEXT.md / D-06 |
+
+## UX Polish & History
+
+| Req ID | Requirement | Source |
+|--------|-------------|--------|
+| UX-01 | **Global Dirty Checks**: Disable "Save" or "Update" buttons in all creation/edit forms if no changes are detected. | CONTEXT.md / D-10 |
+| UX-02 | **Skeleton UI Fix**: Add missing `Skeleton` import to `audit-trail.tsx`. | CONTEXT.md / D-11 |
+| UX-03 | **Contextual Toasts**: Success toasts for creation actions must include the item name. | CONTEXT.md / D-07 |
+| UX-04 | **Refined Audit Trail**: Strictly exclude login/logout events and focus on workspace lifecycle events (Create/Update/Complete). | CONTEXT.md / D-08, D-09 |
