@@ -8,7 +8,7 @@ interface ProtectedRouteProps {
   readonly children: ReactNode
 }
 
-function LoadingScreen() {
+export function LoadingScreen() {
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background p-6" style={{ transform: "translateZ(0)" }}>
       {/* Simplified Background - Performance optimized */}
@@ -77,6 +77,10 @@ export function ProtectedRoute({ children }: Readonly<ProtectedRouteProps>) {
     return <Navigate to="/login" />
   }
 
+  if (user.email_confirmed === false) {
+    return <Navigate to="/verify-email" />
+  }
+
   return <>{children}</>
 }
 
@@ -87,7 +91,7 @@ export function PublicRoute({ children }: Readonly<ProtectedRouteProps>) {
     return <LoadingScreen />
   }
 
-  if (user) {
+  if (user && user.email_confirmed !== false) {
     return <Navigate to="/dashboard" />
   }
 

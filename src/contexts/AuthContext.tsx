@@ -78,7 +78,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       if (axios.isAxiosError(err)) {
         if (err.response?.status === 401) {
           // Token is invalid/expired or not present
-          // logout() // Handled by event listener if using shared api
+          setUser(null)
+          globalThis.localStorage.removeItem(USER_STORAGE_KEY)
         } else {
           setError((err.response?.data as { detail?: string })?.detail || "Failed to refresh user profile")
         }

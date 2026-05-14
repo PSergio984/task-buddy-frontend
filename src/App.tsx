@@ -12,7 +12,7 @@ import { TasksPage } from "@/pages/TasksPage"
 import { ResetPasswordPage } from "@/pages/ResetPasswordPage"
 import { VerifyEmailPage } from "@/pages/verify-email"
 import { MainLayout } from "@/components/layout/main-layout"
-import { ProtectedRoute, PublicRoute } from "@/contexts/ProtectedRoute"
+import { ProtectedRoute, PublicRoute, LoadingScreen } from "@/contexts/ProtectedRoute"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { SettingsProvider } from "@/contexts/SettingsContext"
 import { useAuth } from "@/contexts/AuthContext"
@@ -22,7 +22,7 @@ import { DashboardDemo } from "@/pages/DashboardDemo"
 import { NotificationWatcher } from "@/components/notification-watcher"
 
 export function App() {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -36,7 +36,17 @@ export function App() {
                 <Route
                   path="/"
                   element={
-                    user ? <Navigate to="/dashboard" replace /> : <LandingPage />
+                    loading ? (
+                      <LoadingScreen />
+                    ) : user ? (
+                      user.email_confirmed === false ? (
+                        <Navigate to="/verify-email" replace />
+                      ) : (
+                        <Navigate to="/dashboard" replace />
+                      )
+                    ) : (
+                      <LandingPage />
+                    )
                   }
                 />
 
