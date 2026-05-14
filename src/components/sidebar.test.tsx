@@ -6,19 +6,19 @@ import React from "react"
 
 // Mock dnd-kit BEFORE importing Sidebar
 vi.mock("@dnd-kit/core", () => ({
-  DndContext: ({ children }: any) => <div data-testid="dnd-context">{children}</div>,
+  DndContext: ({ children }: { children: React.ReactNode }) => <div data-testid="dnd-context">{children}</div>,
   closestCenter: vi.fn(),
   PointerSensor: vi.fn(),
   useSensor: vi.fn(),
   useSensors: vi.fn(() => []),
-  DragOverlay: ({ children }: any) => <div>{children}</div>,
+  DragOverlay: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }))
 
 vi.mock("@dnd-kit/sortable", () => ({
-  SortableContext: ({ children }: any) => <div data-testid="sortable-context">{children}</div>,
+  SortableContext: ({ children }: { children: React.ReactNode }) => <div data-testid="sortable-context">{children}</div>,
   verticalListSortingStrategy: vi.fn(),
   rectSortingStrategy: vi.fn(),
-  arrayMove: (array: any[]) => array,
+  arrayMove: (array: unknown[]) => array,
   useSortable: () => ({
     attributes: {},
     listeners: {},
@@ -63,7 +63,7 @@ vi.mock("@/contexts/FilterContext", () => ({
     setSelectedProjects: vi.fn(),
     setSelectedTags: vi.fn(),
   })),
-  FilterProvider: ({ children }: any) => <>{children}</>,
+  FilterProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }))
 
 // Import Sidebar after mocks
@@ -95,26 +95,27 @@ describe("Sidebar CRUD Integration", () => {
     renderSidebar()
     
     const projectItem = screen.getByText("Project A").closest("div[role='button']")!
-    const actionsTrigger = within(projectItem).getByRole("button", { name: /more actions/i })
+    const actionsTrigger = within(projectItem as HTMLElement).getByRole("button", { name: /more actions/i })
     fireEvent.click(actionsTrigger)
     
-    const deleteOption = await screen.findByRole("menuitem", { name: /delete/i })
-    fireEvent.click(deleteOption)
+    const deleteBtn = screen.getByRole("menuitem", { name: /delete/i })
+    fireEvent.click(deleteBtn)
     
-    expect(screen.getByText(/Are you sure you want to delete "Project A"?/i)).toBeDefined()
+    expect(screen.getByText(/delete project/i)).toBeInTheDocument()
+    expect(screen.getByText(/are you sure you want to delete "project a"/i)).toBeInTheDocument()
   })
 
-  it("opens creation/edit modal when edit is clicked for a project", async () => {
+  it("opens deletion modal when delete is clicked for a tag", async () => {
     renderSidebar()
     
-    const projectItem = screen.getByText("Project A").closest("div[role='button']")!
-    const actionsTrigger = within(projectItem).getByRole("button", { name: /more actions/i })
+    const tagItem = screen.getByText("Tag A").closest("div")!
+    const actionsTrigger = within(tagItem as HTMLElement).getByRole("button", { name: /more actions/i })
     fireEvent.click(actionsTrigger)
     
-    const editOption = await screen.findByRole("menuitem", { name: /edit/i })
-    fireEvent.click(editOption)
+    const deleteBtn = screen.getByRole("menuitem", { name: /delete/i })
+    fireEvent.click(deleteBtn)
     
-    // Should open CreateProjectModal with project data
-    expect(screen.getByText(/Edit Project/i)).toBeDefined()
+    expect(screen.getByText(/delete tag/i)).toBeInTheDocument()
+    expect(screen.getByText(/are you sure you want to delete "tag a"/i)).toBeInTheDocument()
   })
 })

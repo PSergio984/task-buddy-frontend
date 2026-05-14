@@ -25,6 +25,8 @@ import { useAuth } from "@/contexts/AuthContext"
 import { useProjects } from "@/hooks/useProjects"
 import { useTags } from "@/hooks/useTags"
 import { Badge } from "@/components/ui/badge"
+import { ConfirmationModal } from "@/components/confirmation-modal"
+import { animations } from "@/lib/animations"
 
 type SortMode = "priority" | "due_date" | "alpha"
 
@@ -60,6 +62,13 @@ export function TasksPage() {
     return (saved as SortMode) || "due_date"
   })
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false)
+  const [confirmData, setConfirmData] = useState<{
+    type: "task" | "subtask"
+    id: number
+    title: string
+    completed: boolean
+  } | null>(null)
+  const [isCompleting, setIsCompleting] = useState(false)
   
   useProjects()
   useTags()
@@ -150,11 +159,70 @@ export function TasksPage() {
     if (!task) return
     
     const nextStatus = !task.completed
+    
+    if (nextStatus) {
+      setConfirmData({
+        type: "task",
+        id,
+        title: task.title,
+        completed: true
+      })
+      return
+    }
+
+    await performToggle(id, nextStatus)
+  }
+
+  const handleConfirmAction = async () => {
+    if (!confirmData) return
+    
+    setIsCompleting(true)
     try {
-      await updateTask({ id, updates: { completed: nextStatus } })
+      if (confirmData.type === "task") {
+        await updateTask({ 
+          id: confirmData.id, 
+          updates: { completed: confirmData.completed } 
+        })
+        toast({
+          title: "Task completed!",
+          description: "Great job!",
+          variant: "success",
+        })
+      } else {
+        await updateSubtask({ 
+          id: confirmData.id, 
+          updates: { completed: confirmData.completed } 
+        })
+        refreshTasks()
+        toast({
+          title: "Subtask completed!",
+          variant: "success",
+        })
+      }
+      setConfirmData(null)
+    } catch (err) {
+      if (axios.isAxiosError(err) && err.response?.status === 401) {
+        await logout()
+        return
+      }
+      console.error("Failed to complete action:", err)
+      toast({ 
+        title: "Action failed", 
+        description: "Could not update status.",
+        variant: "destructive" 
+      })
+    } finally {
+      setIsCompleting(false)
+    }
+  }
+
+  const performToggle = async (id: number, completed: boolean) => {
+    setIsCompleting(true)
+    try {
+      await updateTask({ id, updates: { completed } })
       toast({
-        title: nextStatus ? "Task completed!" : "Task restored",
-        description: nextStatus ? "Great job!" : "Task moved to pending.",
+        title: completed ? "Task completed!" : "Task restored",
+        description: completed ? "Great job!" : "Task moved to pending.",
         variant: "success",
       })
     } catch (err) {
@@ -168,13 +236,28 @@ export function TasksPage() {
         description: "Could not update task status.",
         variant: "destructive" 
       })
+    } finally {
+      setIsCompleting(false)
     }
   }
 
-
   const handleToggleSubtask = async (subtaskId: number, completed: boolean) => {
+    if (completed) {
+      // Find subtask title
+      const task = tasks.find((t: Task) => t.subtasks?.some(s => s.id === subtaskId))
+      const subtask = task?.subtasks?.find(s => s.id === subtaskId)
+      
+      setConfirmData({
+        type: "subtask",
+        id: subtaskId,
+        title: subtask?.title || "Subtask",
+        completed: true
+      })
+      return
+    }
+
     try {
-      await updateSubtask({ id: subtaskId, updates: { completed } })
+      await updateSubtask({ id: subtaskId, updates: { completed: false } })
       refreshTasks()
     } catch (err) {
       console.error("Failed to update subtask:", err)
@@ -204,9 +287,21 @@ export function TasksPage() {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
+    <>
+      <ConfirmationModal
+        open={confirmData !== null}
+        onOpenChange={(open) => !open && setConfirmData(null)}
+        onConfirm={handleConfirmAction}
+        title={confirmData?.type === "task" ? "Complete Objective?" : "Subtask Finished?"}
+        description={`Confirm completion of: "${confirmData?.title}"`}
+        variant="success"
+        confirmText="Mark as Complete"
+        isLoading={isCompleting}
+      />
+      <motion.div
+      initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
       className="flex flex-1 flex-col gap-8 p-6 lg:p-10 relative"
     >
       {/* Top accent bar */}
@@ -220,10 +315,6 @@ export function TasksPage() {
           <p className="text-foreground/60 font-medium text-lg ml-11">
             {activeSidebarFilter === "all" ? "Your complete objective list." : "Refined focus for current mission."}
           </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {/* Sort controls moved here — TopNav handles Create Task globally */}
         </div>
       </header>
 
@@ -301,13 +392,13 @@ export function TasksPage() {
         </div>
       </div>
 
-      {/* Advanced Filter Panel */}
       <AnimatePresence>
         {isFiltersExpanded && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6 rounded-[2rem] bg-background/40 border border-border/50 backdrop-blur-xl">
@@ -335,7 +426,6 @@ export function TasksPage() {
         )}
       </AnimatePresence>
 
-      {/* Active Filter Pills */}
       {selectedPriorities.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-[10px] font-black uppercase tracking-widest text-foreground/40 mr-2">Active Filters:</p>
@@ -405,10 +495,10 @@ export function TasksPage() {
                       <motion.div
                         key={task.id}
                         layout
-                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.9, y: -20 }}
-                        transition={{ delay: index * 0.05, type: "spring", stiffness: 260, damping: 20 }}
+                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                        transition={{ ...animations.spring.snappy, delay: index * 0.02 }}
                       >
                         <TaskCard
                           task={task}
@@ -428,5 +518,6 @@ export function TasksPage() {
         ))}
       </Tabs>
     </motion.div>
+    </>
   )
 }

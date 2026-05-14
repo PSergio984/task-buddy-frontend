@@ -11,14 +11,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { motion } from "framer-motion"
-import { Tag as TagIcon, Palette } from "lucide-react"
+import { Tag as TagIcon } from "lucide-react"
 import * as LucideIcons from "lucide-react"
 import { useCreateTag, useUpdateTag } from "@/hooks/useTags"
-import { useToast } from "@/hooks/use-toast"
-import { ColorIconPicker, PRESET_COLORS, PRESET_ICONS } from "@/components/color-icon-picker"
-import type { Tag } from "@/lib/api"
+import { type Tag } from "@/lib/api"
+import { ColorIconPicker, PRESET_COLORS, PRESET_ICONS } from "./color-icon-picker"
+import { animations } from "@/lib/animations"
 
-export interface CreateTagModalProps {
+interface CreateTagModalProps {
   readonly open: boolean
   readonly onOpenChange: (open: boolean) => void
   readonly tag?: Tag
@@ -29,29 +29,34 @@ export function CreateTagModal({
   onOpenChange,
   tag,
 }: Readonly<CreateTagModalProps>) {
-  const [name, setName] = useState(tag?.name ?? "")
-  const [color, setColor] = useState(tag?.color ?? PRESET_COLORS[0])
-  const [icon, setIcon] = useState(tag?.icon ?? PRESET_ICONS[0])
+  const [name, setName] = useState(tag?.name || "")
+  const [color, setColor] = useState(tag?.color || PRESET_COLORS[0])
+  const [icon, setIcon] = useState(tag?.icon || PRESET_ICONS[0])
+
   const createTag = useCreateTag()
   const updateTag = useUpdateTag()
-  const { toast } = useToast()
 
+  const [lastOpen, setLastOpen] = useState(open)
 
+  // Reset state when modal opens
+  if (open && !lastOpen) {
+    setLastOpen(true)
+    setName(tag?.name || "")
+    setColor(tag?.color || PRESET_COLORS[0])
+    setIcon(tag?.icon || PRESET_ICONS[0])
+  } else if (!open && lastOpen) {
+    setLastOpen(false)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
     if (!name.trim()) return
 
     try {
       if (tag) {
         await updateTag.mutateAsync({
           id: tag.id,
-          data: {
-            name: name.trim(),
-            color,
-            icon,
-          },
+          updates: { name: name.trim(), color, icon },
         })
       } else {
         await createTag.mutateAsync({
@@ -60,40 +65,26 @@ export function CreateTagModal({
           icon,
         })
       }
-      if (!tag) {
-        setName("")
-        setColor(PRESET_COLORS[0])
-        setIcon(PRESET_ICONS[0])
-      }
       onOpenChange(false)
-      toast({
-        title: tag ? "Tag Updated" : "Tag Created",
-        description: tag ? "Your tag has been updated." : "Your new tag is ready.",
-        variant: "success",
-      })
-    } catch (error) {
-      console.error("Failed to save tag:", error)
-      toast({
-        title: tag ? "Update Failed" : "Creation Failed",
-        description: tag ? "Could not update tag." : "Could not create tag. Please try again.",
-        variant: "destructive",
-      })
+    } catch (err) {
+      console.error("Failed to save tag:", err)
     }
   }
 
-  const SelectedIcon = (LucideIcons as unknown as Record<string, LucideIcons.LucideIcon>)[icon] || LucideIcons.Tag
+  const TagIconComp = (LucideIcons as unknown as Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>>)[icon || "Tag"] || LucideIcons.Tag
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] overflow-hidden border-none bg-transparent p-0 shadow-none pointer-events-none">
+      <DialogContent className="sm:max-w-xl overflow-hidden border-none bg-transparent p-0 shadow-none pointer-events-none">
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
+          transition={animations.spring.snappy}
           className="pointer-events-auto overflow-hidden border-none bg-white dark:bg-zinc-900 p-0 shadow-sm rounded-[2.5rem]"
         >
           <div className="p-8 sm:p-10">
-            <DialogHeader className="mb-8 text-left">
+            <DialogHeader className="mb-10 text-left">
               <div className="flex items-center gap-3 mb-2">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
                   <TagIcon className="h-5 w-5" />
@@ -103,18 +94,18 @@ export function CreateTagModal({
                 </DialogTitle>
               </div>
               <DialogDescription className="text-sm font-medium text-muted-foreground tracking-wide ml-13">
-                Organize your tasks with custom categories.
+                Label your objectives for granular tracking.
               </DialogDescription>
             </DialogHeader>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
+            <form onSubmit={handleSubmit} className="space-y-8">
+              <div className="space-y-3">
+                <Label htmlFor="tagName" className="text-[10px] font-black uppercase tracking-[0.2em] ml-1 text-foreground/40">
                   Tag Name
                 </Label>
                 <Input
-                  id="name"
-                  placeholder="e.g., Critical"
+                  id="tagName"
+                  placeholder="e.g., Critical, Research, Phase 1"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
@@ -123,9 +114,8 @@ export function CreateTagModal({
               </div>
 
               <div className="space-y-3">
-                <Label className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
-                  <Palette className="h-3 w-3" />
-                  Appearance
+                <Label className="text-[10px] font-black uppercase tracking-[0.2em] ml-1 text-foreground/40">
+                  Visual Identity
                 </Label>
                 <div className="pl-1">
                   <ColorIconPicker 
@@ -141,8 +131,11 @@ export function CreateTagModal({
                         variant="outline" 
                         className="h-14 w-full justify-start gap-4 rounded-2xl border-border bg-muted/50 dark:bg-zinc-800/50 px-6 hover:bg-muted dark:hover:bg-zinc-800 transition-all"
                       >
-                        <div className="h-6 w-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color}20` }}>
-                           <SelectedIcon className="h-4 w-4" style={{ color }} />
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-background shadow-sm">
+                          <TagIconComp 
+                            className="h-4 w-4"
+                            style={{ color }}
+                          />
                         </div>
                         <span className="text-sm font-semibold text-foreground">Select Color & Icon</span>
                         <div className="ml-auto flex items-center gap-2">
@@ -166,14 +159,11 @@ export function CreateTagModal({
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Button
                     type="submit"
-                    disabled={createTag.isPending || updateTag.isPending || !name.trim()}
+                    loading={createTag.isPending || updateTag.isPending}
+                    disabled={!name.trim()}
                     className="h-12 px-8 rounded-2xl bg-primary text-primary-foreground shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all font-bold tracking-tight"
                   >
-                    {createTag.isPending || updateTag.isPending ? (
-                      <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full" />
-                    ) : (
-                      <span>{tag ? "Save Changes" : "Create Tag"}</span>
-                    )}
+                    <span>{tag ? "Save Changes" : "Create Tag"}</span>
                   </Button>
                 </motion.div>
               </DialogFooter>

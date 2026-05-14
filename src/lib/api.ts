@@ -1,4 +1,5 @@
 import axios from "axios"
+import { v4 as uuidv4 } from "uuid"
 import { toast } from "@/hooks/use-toast"
 
 const API_BASE_URL =
@@ -7,6 +8,16 @@ const API_BASE_URL =
 export const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
+})
+
+// Add a request interceptor for idempotency
+api.interceptors.request.use((config) => {
+  // Only add idempotency key for mutating requests
+  const mutatingMethods = ["post", "put", "patch", "delete"]
+  if (config.method && mutatingMethods.includes(config.method.toLowerCase())) {
+    config.headers["X-Idempotency-Key"] = uuidv4()
+  }
+  return config
 })
 
 // Add a response interceptor to handle 401 and 429 errors

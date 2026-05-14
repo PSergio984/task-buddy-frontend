@@ -146,6 +146,8 @@ export function TaskDetailDrawer({ task: initialTask, mode, isOpen, onOpenChange
                 project: state.isProjectDirty ?? undefined,
                 tags: state.isTagsDirty ?? undefined
               }}
+              isCreatingTag={state.isCreatingTag}
+              isCreatingProject={state.isCreatingProject}
             />
           </div>
  
@@ -160,6 +162,9 @@ export function TaskDetailDrawer({ task: initialTask, mode, isOpen, onOpenChange
             handleDelete={state.handleDelete}
             showSaveConfirm={state.showSaveConfirm}
             setShowSaveConfirm={state.setShowSaveConfirm}
+            isSaving={state.isSaving}
+            isDeleting={state.isDeleting}
+            isCreating={state.isCreating}
           />
       </SheetContent>
     </Sheet>

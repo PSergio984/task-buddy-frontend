@@ -43,19 +43,23 @@ const buttonVariants = cva(
   }
 )
 
+import { Loader2 } from "lucide-react"
+
 function Button({
   className,
   variant = "default",
   size = "default",
   asChild = false,
+  loading = false,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean
+    loading?: boolean
   }) {
   const Comp = asChild ? Slot.Root : "button"
 
-  const isDisabled = Boolean((props as unknown as { disabled: boolean }).disabled)
+  const isDisabled = loading || Boolean((props as unknown as { disabled: boolean }).disabled)
 
   // If rendering as a non-button element (via asChild) ensure disabled state
   // remains inaccessible: set aria-disabled, remove from tab order and
@@ -77,10 +81,20 @@ function Button({
       data-slot="button"
       data-variant={variant}
       data-size={size}
+      disabled={isDisabled}
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
       {...extraProps}
-    />
+    >
+      {loading ? (
+        <>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          {props.children}
+        </>
+      ) : (
+        props.children
+      )}
+    </Comp>
   )
 }
 

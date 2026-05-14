@@ -4,10 +4,12 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import type { Task } from "@/lib/api"
-import { Trash2, Calendar, X, Tag, CheckCircle2, Layers, ChevronDown, ChevronUp } from "lucide-react"
+import { Trash2, Calendar, X, CheckCircle2, Layers, ChevronDown, ChevronUp } from "lucide-react"
 import { cn } from "@/lib/utils"
 import * as LucideIcons from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { useSettings } from "@/contexts/SettingsContext"
+import { ConfirmationModal } from "./confirmation-modal"
 
 export interface TaskCardProps {
   readonly task: Task
@@ -16,6 +18,7 @@ export interface TaskCardProps {
   readonly onToggleSubtask?: (subtaskId: number, completed: boolean) => void
   readonly onDeleteSubtask?: (subtaskId: number) => void
   readonly onDetachTag?: (taskId: number, tagId: number) => void
+  readonly disabled?: boolean
 }
 
 export function TaskCard({
@@ -25,10 +28,51 @@ export function TaskCard({
   onToggleSubtask,
   onDeleteSubtask,
   onDetachTag,
-}: TaskCardProps) {
+  disabled = false
+}: Readonly<TaskCardProps>) {
   const { timeFormat } = useSettings()
   const is12h = timeFormat === '12h'
   const [showAllSubtasks, setShowAllSubtasks] = useState(false)
+  
+  // Confirmation states
+  const [showConfirm, setShowConfirm] = useState(false)
+  const [pendingAction, setPendingAction] = useState<{ type: 'task' | 'subtask', id: number, completed: boolean } | null>(null)
+
+  const handleToggleTask = (completed: boolean) => {
+    const skipConfirm = localStorage.getItem('skip_completion_confirm') === 'true'
+    if (completed && !skipConfirm) {
+      setPendingAction({ type: 'task', id: task.id, completed })
+      setShowConfirm(true)
+    } else {
+      onToggleComplete(task.id)
+    }
+  }
+
+  const handleToggleSubtask = (subtaskId: number, completed: boolean) => {
+    const skipConfirm = localStorage.getItem('skip_completion_confirm') === 'true'
+    if (completed && !skipConfirm) {
+      setPendingAction({ type: 'subtask', id: subtaskId, completed })
+      setShowConfirm(true)
+    } else if (onToggleSubtask) {
+      onToggleSubtask(subtaskId, completed)
+    }
+  }
+
+  const confirmCompletion = async (dontShowAgain?: boolean) => {
+    if (dontShowAgain) {
+      localStorage.setItem('skip_completion_confirm', 'true')
+    }
+    
+    if (pendingAction) {
+      if (pendingAction.type === 'task') {
+        onToggleComplete(pendingAction.id)
+      } else if (pendingAction.type === 'subtask' && onToggleSubtask) {
+        onToggleSubtask(pendingAction.id, pendingAction.completed)
+      }
+    }
+    setShowConfirm(false)
+    setPendingAction(null)
+  }
 
   const formatDueDate = (dateStr: string) => {
     const date = new Date(dateStr)
@@ -54,16 +98,18 @@ export function TaskCard({
         role="button"
         tabIndex={0}
         onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
+          if (!disabled && (e.key === "Enter" || e.key === " ")) {
             e.preventDefault()
             onEdit(task)
           }
         }}
         className={cn(
           "group relative overflow-hidden border-none bg-white dark:bg-zinc-900 shadow-sm transition-all duration-300 hover:shadow-xl rounded-[2rem] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-          task.completed && "opacity-75"
+          task.completed && "opacity-75",
+          disabled && "cursor-not-allowed hover:shadow-none"
         )}
         onClick={(e) => {
+          if (disabled) return
           // Prevent opening drawer if clicking checkbox or buttons
           const target = e.target as HTMLElement
           if (target.closest('[role="checkbox"]') || target.closest("button")) {
@@ -79,8 +125,12 @@ export function TaskCard({
               <div className="relative mt-1">
                 <Checkbox
                   checked={task.completed}
-                  onCheckedChange={() => onToggleComplete(task.id)}
-                  className="h-6 w-6 rounded-full border-2 border-primary/20 transition-all data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                  onCheckedChange={(checked) => handleToggleTask(!!checked)}
+                  disabled={disabled}
+                  className={cn(
+                    "h-6 w-6 rounded-full border-2 border-primary/20 transition-all data-[state=checked]:bg-primary data-[state=checked]:border-primary",
+                    disabled && "opacity-50 cursor-not-allowed"
+                  )}
                 />
                 {task.completed && (
                   <motion.div
@@ -95,14 +145,23 @@ export function TaskCard({
 
               <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex items-center justify-between gap-3">
-                  <h3
+                  <button
+                    onClick={() => !disabled && onEdit(task)}
+                    disabled={disabled}
                     className={cn(
-                      "font-heading text-lg font-bold tracking-tight text-foreground transition-all",
-                      task.completed && "text-muted-foreground/50 line-through"
+                      "text-left group/title focus:outline-none transition-all",
+                      disabled && "cursor-not-allowed"
                     )}
                   >
-                    {task.title}
-                  </h3>
+                    <h3
+                      className={cn(
+                        "font-heading text-lg font-bold tracking-tight text-foreground transition-all",
+                        task.completed && "text-muted-foreground/50 line-through"
+                      )}
+                    >
+                      {task.title}
+                    </h3>
+                  </button>
                   
                   <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1.5 rounded-full bg-muted/50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -157,29 +216,26 @@ export function TaskCard({
                   )}
 
                   {task?.tags?.map((tag) => {
-                    const TagIconComp = (LucideIcons as unknown as Record<string, LucideIcons.LucideIcon>)[tag.icon || "Tag"] || Tag
                     return (
-                      <div
+                      <Badge
                         key={tag.id}
-                        className="group/tag flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-bold transition-all"
-                        style={{ 
-                          backgroundColor: tag.color ? `${tag.color}15` : undefined,
-                          color: tag.color || "inherit",
-                          border: tag.color ? `1px solid ${tag.color}30` : "1px solid transparent"
-                        }}
+                        variant="outline"
+                        className="rounded-full bg-primary/5 text-[10px] font-black uppercase tracking-widest text-primary border-primary/20 py-0.5 px-3 flex items-center gap-1.5"
                       >
-                        <TagIconComp className="h-3 w-3" />
                         {tag.name}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onDetachTag?.(task.id, tag.id)
-                          }}
-                          className="ml-0.5 rounded-full p-0.5 opacity-0 transition-opacity group-hover/tag:opacity-100 hover:bg-black/10 dark:hover:bg-white/10"
-                        >
-                          <X className="h-2 w-2" />
-                        </button>
-                      </div>
+                        {!disabled && onDetachTag && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDetachTag(task.id, tag.id);
+                            }}
+                            disabled={disabled}
+                            className="hover:text-foreground/80 transition-colors"
+                          >
+                            <X className="h-2.5 w-2.5" />
+                          </button>
+                        )}
+                      </Badge>
                     )
                   })}
                 </div>
@@ -215,7 +271,8 @@ export function TaskCard({
                           <div className="flex items-center gap-3">
                             <Checkbox
                               checked={subtask.completed}
-                              onCheckedChange={(checked) => onToggleSubtask?.(subtask.id, !!checked)}
+                              disabled={disabled}
+                              onCheckedChange={(checked) => handleToggleSubtask(subtask.id, !!checked)}
                               className="h-4 w-4 rounded-md border-2 border-primary/20"
                             />
                             <span className={cn(
@@ -225,17 +282,19 @@ export function TaskCard({
                               {subtask.title}
                             </span>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              onDeleteSubtask?.(subtask.id)
-                            }}
-                            className="h-6 w-6 rounded-lg opacity-0 transition-opacity group-hover/sub:opacity-100 hover:bg-destructive/10 hover:text-destructive"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
+                          {!disabled && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                onDeleteSubtask?.(subtask.id)
+                              }}
+                              className="h-6 w-6 rounded-lg opacity-0 transition-opacity group-hover/sub:opacity-100 hover:bg-destructive/10 hover:text-destructive"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
                         </div>
                       ))}
                       
@@ -270,6 +329,18 @@ export function TaskCard({
           )}
         </CardContent>
       </Card>
+
+      <ConfirmationModal
+        open={showConfirm}
+        onOpenChange={setShowConfirm}
+        onConfirm={confirmCompletion}
+        title="Mark as Complete?"
+        description={`Are you sure you want to mark this ${pendingAction?.type === 'task' ? 'task' : 'sub-task'} as complete?`}
+        confirmText="Yes, Complete It"
+        cancelText="Not Yet"
+        variant="success"
+        showDontShowAgain={true}
+      />
     </motion.div>
   )
 }

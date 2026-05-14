@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 import { TimePicker } from "@/components/ui/time-picker"
+import { animations } from "@/lib/animations"
 
 export interface NewTaskModalProps {
   readonly open: boolean
@@ -73,7 +74,7 @@ export function NewTaskModal({
 
   const isEditMode = false
 
-  const handleSubmit = async (e: React.SubmitEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!title.trim()) return
@@ -110,6 +111,7 @@ export function NewTaskModal({
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
+          transition={animations.spring.snappy}
           className="pointer-events-auto overflow-hidden border-none bg-white dark:bg-zinc-900 p-0 shadow-sm rounded-[2.5rem]"
         >
           <div className="p-8 sm:p-10">
@@ -302,14 +304,11 @@ export function NewTaskModal({
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Button
                     type="submit"
-                    disabled={isLoading || !title.trim()}
+                    loading={isLoading}
+                    disabled={!title.trim()}
                     className="h-12 px-10 rounded-2xl bg-primary text-primary-foreground shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all font-bold tracking-tight"
                   >
-                    {isLoading ? (
-                      <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full" />
-                    ) : (
-                      <span>{isEditMode ? "Update Task" : "Create Task"}</span>
-                    )}
+                    <span>{isEditMode ? "Update Task" : "Create Task"}</span>
                   </Button>
                 </motion.div>
               </DialogFooter>

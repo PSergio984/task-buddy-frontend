@@ -177,19 +177,19 @@ function AuditSkeleton({ limit, className }: Readonly<{ limit: number; className
   return (
     <Card className={cn("overflow-hidden border bg-background/50 p-8 shadow-2xl shadow-primary/5 backdrop-blur-xl rounded-[2.5rem] h-full flex flex-col", className)}>
       <div className="flex items-center gap-4 mb-8">
-         <div className="h-12 w-12 bg-muted rounded-2xl animate-pulse" />
+         <Skeleton className="h-12 w-12 rounded-2xl" />
          <div className="space-y-2">
-           <div className="h-5 w-32 bg-muted rounded animate-pulse" />
-           <div className="h-3 w-24 bg-muted rounded animate-pulse" />
+           <Skeleton className="h-5 w-32" />
+           <Skeleton className="h-3 w-24" />
          </div>
       </div>
       <div className="space-y-8 flex-1">
         {skeletonIds.map((id) => (
           <div key={id} className="flex gap-6">
-            <div className="h-12 w-12 bg-muted rounded-2xl animate-pulse" />
+            <Skeleton className="h-12 w-12 rounded-2xl shrink-0" />
             <div className="flex-1 space-y-3 pt-1">
-              <div className="h-4 w-1/4 bg-muted rounded animate-pulse" />
-              <div className="h-4 w-full bg-muted rounded animate-pulse" />
+              <Skeleton className="h-4 w-1/4" />
+              <Skeleton className="h-4 w-full" />
             </div>
           </div>
         ))}

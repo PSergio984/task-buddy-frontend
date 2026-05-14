@@ -1,5 +1,5 @@
 import { useState, useRef } from "react"
-import { type Task, type TaskPriority, type Tag, type Subtask, api } from "@/lib/api"
+import { type Task, type TaskPriority, type Tag, type Subtask } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { PRESET_COLORS } from "@/components/color-icon-picker"
 import {
@@ -38,6 +38,7 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onOpenChange }: 
   const deleteSubtask = useDeleteSubtask()
   const reorderSubtasks = useReorderSubtasks()
   const createTag = useCreateTag()
+  const createProject = useCreateProject()
   const attachTag = useAttachTag()
   const detachTag = useDetachTag()
 
@@ -376,12 +377,11 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onOpenChange }: 
   const handleCreateProject = async () => {
     if (!projectSearch.trim()) return
     try {
-      const response = await api.post("/api/v1/projects/", { 
+      const p = await createProject.mutateAsync({ 
         name: projectSearch.trim(),
         color: newProjectColor,
         icon: newProjectIcon
       })
-      const p = response.data
       setProjectId(p.id.toString())
       setProjectSearch("")
       setIsProjectPickerOpen(false)
@@ -432,6 +432,11 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onOpenChange }: 
     currentTags,
     filteredTags,
     canCreateTag,
+    isSaving: updateTask.isPending || attachTag.isPending || detachTag.isPending || createSubtask.isPending || updateSubtask.isPending || deleteSubtask.isPending || reorderSubtasks.isPending,
+    isDeleting: deleteTask.isPending,
+    isCreating: createTask.isPending,
+    isCreatingTag: createTag.isPending,
+    isCreatingProject: createProject.isPending,
     handleUpdate,
     handleConfirmUpdate,
     handleAddSubtask,

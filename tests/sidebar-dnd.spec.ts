@@ -147,8 +147,6 @@ test.describe("Sidebar DND Reordering", () => {
     await expect(tagB).toBeVisible();
 
     // In the sidebar, tags section comes after projects
-    const tagHandles = page.locator('button[aria-label="Drag to reorder"]').nth(2); // First tag handle
-    
     await expect(tagA).toBeVisible();
   });
 });

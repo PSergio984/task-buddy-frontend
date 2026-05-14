@@ -12,12 +12,16 @@ interface ActionFooterProps {
   readonly handleDelete: () => void
   readonly showSaveConfirm: boolean
   readonly setShowSaveConfirm: (v: boolean) => void
+  readonly isCreating?: boolean
+  readonly isSaving?: boolean
+  readonly isDeleting?: boolean
 }
 
 export function ActionFooter({
   isCreate, isDirty, onOpenChange, handleCreate, handleUpdate,
   showDeleteConfirm, setShowDeleteConfirm, handleDelete,
-  showSaveConfirm, setShowSaveConfirm
+  showSaveConfirm, setShowSaveConfirm,
+  isCreating = false, isSaving = false, isDeleting = false
 }: ActionFooterProps) {
   return (
     <div className="px-8 py-6 border-t border-white/5 bg-white/[0.02] flex items-center justify-between shrink-0">
@@ -26,6 +30,7 @@ export function ActionFooter({
           onCancel={() => onOpenChange(false)} 
           onCreate={handleCreate} 
           isDirty={isDirty} 
+          loading={isCreating}
         />
       ) : (
         <EditModeFooter 
@@ -37,6 +42,8 @@ export function ActionFooter({
           showSaveConfirm={showSaveConfirm}
           setShowSaveConfirm={setShowSaveConfirm}
           handleUpdate={handleUpdate}
+          isSaving={isSaving}
+          isDeleting={isDeleting}
         />
       )}
     </div>
@@ -47,9 +54,10 @@ interface CreateModeFooterProps {
   readonly onCancel: () => void
   readonly onCreate: () => void
   readonly isDirty: boolean
+  readonly loading?: boolean
 }
 
-function CreateModeFooter({ onCancel, onCreate, isDirty }: CreateModeFooterProps) {
+function CreateModeFooter({ onCancel, onCreate, isDirty, loading }: CreateModeFooterProps) {
   return (
     <>
       <Button variant="ghost" onClick={onCancel} className="text-xs font-bold hover:bg-white/5">
@@ -57,7 +65,8 @@ function CreateModeFooter({ onCancel, onCreate, isDirty }: CreateModeFooterProps
       </Button>
       <Button
         onClick={onCreate}
-        disabled={!isDirty}
+        disabled={!isDirty || loading}
+        loading={loading}
         className="px-8 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 h-11 rounded-xl text-xs font-black uppercase tracking-widest gap-2"
       >
         Create Task <Sparkles className="h-4 w-4" />
@@ -75,16 +84,20 @@ interface EditModeFooterProps {
   readonly showSaveConfirm: boolean
   readonly setShowSaveConfirm: (v: boolean) => void
   readonly handleUpdate: () => void
+  readonly isCreating?: boolean
+  readonly isSaving?: boolean
+  readonly isDeleting?: boolean
 }
 
 function EditModeFooter({ 
   isDirty, onOpenChange, showDeleteConfirm, setShowDeleteConfirm, handleDelete,
-  showSaveConfirm, setShowSaveConfirm, handleUpdate
+  showSaveConfirm, setShowSaveConfirm, handleUpdate,
+  isSaving = false, isDeleting = false
 }: EditModeFooterProps) {
   if (showDeleteConfirm) {
     return (
       <div className="flex items-center justify-start w-full">
-        <DeleteConfirmView onConfirm={handleDelete} onCancel={() => setShowDeleteConfirm(false)} />
+        <DeleteConfirmView onConfirm={handleDelete} onCancel={() => setShowDeleteConfirm(false)} loading={isDeleting} />
       </div>
     )
   }
@@ -92,7 +105,7 @@ function EditModeFooter({
   if (showSaveConfirm) {
     return (
       <div className="flex items-center justify-end w-full">
-        <SaveConfirmView onConfirm={handleUpdate} onCancel={() => setShowSaveConfirm(false)} />
+        <SaveConfirmView onConfirm={handleUpdate} onCancel={() => setShowSaveConfirm(false)} loading={isSaving} />
       </div>
     )
   }
@@ -138,12 +151,13 @@ function EditModeFooter({
   )
 }
 
-function DeleteConfirmView({ onConfirm, onCancel }: Readonly<{ onConfirm: () => void; onCancel: () => void }>) {
+function DeleteConfirmView({ onConfirm, onCancel, loading }: Readonly<{ onConfirm: () => void; onCancel: () => void; loading?: boolean }>) {
   return (
     <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-300">
       <Button
         variant="destructive"
         onClick={onConfirm}
+        loading={loading}
         className="text-xs font-black uppercase tracking-widest h-11 px-8 rounded-xl shadow-lg shadow-destructive/20 gap-2"
       >
         <Check className="h-4 w-4" /> Confirm Delete
@@ -159,7 +173,7 @@ function DeleteConfirmView({ onConfirm, onCancel }: Readonly<{ onConfirm: () => 
   )
 }
 
-function SaveConfirmView({ onConfirm, onCancel }: Readonly<{ onConfirm: () => void; onCancel: () => void }>) {
+function SaveConfirmView({ onConfirm, onCancel, loading }: Readonly<{ onConfirm: () => void; onCancel: () => void; loading?: boolean }>) {
   return (
     <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-2 duration-300">
       <Button
@@ -171,6 +185,7 @@ function SaveConfirmView({ onConfirm, onCancel }: Readonly<{ onConfirm: () => vo
       </Button>
       <Button
         onClick={onConfirm}
+        loading={loading}
         className="text-xs font-black uppercase tracking-widest bg-primary text-primary-foreground h-11 px-8 rounded-xl shadow-lg shadow-primary/20 gap-2"
       >
         <Check className="h-4 w-4" /> Confirm Update

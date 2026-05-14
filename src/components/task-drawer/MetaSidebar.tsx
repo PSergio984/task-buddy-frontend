@@ -59,6 +59,8 @@ interface MetaSidebarProps {
   readonly handleUpdate: (updates: Partial<Task>) => void
   readonly toast: (props: { title?: string; description?: string; variant?: "default" | "destructive" | "success" }) => void
   readonly dirtySections?: DirtySections
+  readonly isCreatingTag?: boolean
+  readonly isCreatingProject?: boolean
 }
 
 const PRIORITY_STYLES = {
@@ -141,8 +143,8 @@ High</SelectItem>
 function ProjectSection({
   projectId, setProjectId, projects, isProjectPickerOpen, setIsProjectPickerOpen,
   projectSearch, setProjectSearch, handleCreateProject, newProjectColor, setNewProjectColor,
-  newProjectIcon, setNewProjectIcon, dirtySections
-}: Pick<MetaSidebarProps, "projectId" | "setProjectId" | "projects" | "isProjectPickerOpen" | "setIsProjectPickerOpen" | "projectSearch" | "setProjectSearch" | "handleCreateProject" | "newProjectColor" | "setNewProjectColor" | "newProjectIcon" | "setNewProjectIcon" | "dirtySections">) {
+  newProjectIcon, setNewProjectIcon, dirtySections, isCreatingProject
+}: Pick<MetaSidebarProps, "projectId" | "setProjectId" | "projects" | "isProjectPickerOpen" | "setIsProjectPickerOpen" | "projectSearch" | "setProjectSearch" | "handleCreateProject" | "newProjectColor" | "setNewProjectColor" | "newProjectIcon" | "setNewProjectIcon" | "dirtySections" | "isCreatingProject">) {
   const selectedProject = projects.find(p => p.id.toString() === projectId)
   
   return (
@@ -163,9 +165,10 @@ function ProjectSection({
             id="project-search"
             value={projectSearch}
             onChange={(e) => setProjectSearch(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleCreateProject()}
+            onKeyDown={(e) => e.key === "Enter" && !isCreatingProject && handleCreateProject()}
+            disabled={isCreatingProject}
             placeholder="Search or create project..."
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/50 mb-2"
+            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/50 mb-2 disabled:opacity-50"
           />
           <div className="space-y-1 max-h-40 overflow-y-auto">
             <button
@@ -205,10 +208,11 @@ function ProjectSection({
                 />
                 <button
                   onClick={handleCreateProject}
-                  className="flex-1 text-left px-3 py-2 rounded-lg text-xs font-bold text-primary hover:bg-primary/10 transition-colors flex items-center gap-2"
+                  disabled={isCreatingProject}
+                  className="flex-1 text-left px-3 py-2 rounded-lg text-xs font-bold text-primary hover:bg-primary/10 transition-colors flex items-center gap-2 disabled:opacity-50"
                 >
-                  <Plus className="h-3 w-3" />
-                  Create "{projectSearch}"
+                  <Plus className={cn("h-3 w-3", isCreatingProject && "animate-spin")} />
+                  {isCreatingProject ? "Creating..." : `Create "${projectSearch}"`}
                 </button>
               </div>
             )}
@@ -339,8 +343,8 @@ function TagsSection({
   currentTags, handleDetachTag, isTagPickerOpen, setIsTagPickerOpen,
   tagSearch, setTagSearch, filteredTags, handleAttachTag, canCreateTag,
   handleCreateAndAttachTag, newTagColor, setNewTagColor, newTagIcon, setNewTagIcon,
-  dirtySections
-}: Pick<MetaSidebarProps, "currentTags" | "handleDetachTag" | "isTagPickerOpen" | "setIsTagPickerOpen" | "tagSearch" | "setTagSearch" | "filteredTags" | "handleAttachTag" | "canCreateTag" | "handleCreateAndAttachTag" | "newTagColor" | "setNewTagColor" | "newTagIcon" | "setNewTagIcon" | "dirtySections">) {
+  dirtySections, isCreatingTag
+}: Pick<MetaSidebarProps, "currentTags" | "handleDetachTag" | "isTagPickerOpen" | "setIsTagPickerOpen" | "tagSearch" | "setTagSearch" | "filteredTags" | "handleAttachTag" | "canCreateTag" | "handleCreateAndAttachTag" | "newTagColor" | "setNewTagColor" | "newTagIcon" | "setNewTagIcon" | "dirtySections" | "isCreatingTag">) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
@@ -362,9 +366,10 @@ function TagsSection({
               id="tag-search"
               value={tagSearch}
               onChange={(e) => setTagSearch(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && canCreateTag && handleCreateAndAttachTag()}
+              onKeyDown={(e) => e.key === "Enter" && canCreateTag && !isCreatingTag && handleCreateAndAttachTag()}
+              disabled={isCreatingTag}
               placeholder="Search or create tag..."
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/50 mb-2"
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/50 mb-2 disabled:opacity-50"
             />
             <div className="space-y-1 max-h-40 overflow-y-auto">
               {filteredTags.map((tag) => (
@@ -389,10 +394,11 @@ function TagsSection({
                   />
                   <button
                     onClick={handleCreateAndAttachTag}
-                    className="flex-1 text-left px-3 py-2 rounded-lg text-xs font-bold text-primary hover:bg-primary/10 transition-colors flex items-center gap-2"
+                    disabled={isCreatingTag}
+                    className="flex-1 text-left px-3 py-2 rounded-lg text-xs font-bold text-primary hover:bg-primary/10 transition-colors flex items-center gap-2 disabled:opacity-50"
                   >
-                    <Plus className="h-3 w-3" />
-                    Create "{tagSearch}"
+                    <Plus className={cn("h-3 w-3", isCreatingTag && "animate-spin")} />
+                    {isCreatingTag ? "Creating..." : `Create "${tagSearch}"`}
                   </button>
                 </div>
               )}
