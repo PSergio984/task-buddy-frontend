@@ -12,7 +12,7 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  DragEndEvent,
+  type DragEndEvent,
 } from "@dnd-kit/core"
 import {
   arrayMove,
@@ -45,8 +45,6 @@ import {
   Inbox,
   CalendarRange,
   ChevronDown,
-  Edit2,
-  Trash2,
 } from "lucide-react"
 import * as LucideIcons from "lucide-react"
 import { useState } from "react"
@@ -96,7 +94,7 @@ export function Sidebar({
         title: "Deleted",
         description: `${deletingItem.type === "project" ? "Project" : "Tag"} deleted successfully`,
       })
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to delete item",
