@@ -25,13 +25,12 @@ export function App() {
   const { user, loading } = useAuth()
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider delayDuration={0}>
-        <SettingsProvider>
-          <FilterProvider>
-            <Router>
-              <NotificationWatcher />
-              <Routes>
+    <TooltipProvider delayDuration={0}>
+      <SettingsProvider>
+        <FilterProvider>
+          <Router>
+            <NotificationWatcher />
+            <Routes>
                 {/* Landing Page */}
                 <Route
                   path="/"
@@ -113,8 +112,7 @@ export function App() {
           </FilterProvider>
         </SettingsProvider>
       </TooltipProvider>
-      <ReactQueryDevtools initialIsOpen={false} />
-    </QueryClientProvider>
+    </>
   )
 }
 

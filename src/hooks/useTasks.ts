@@ -29,9 +29,37 @@ export function useCreateTask() {
   
   return useMutation({
     mutationFn: tasksApi.create,
-    onSuccess: (data) => {
+    onMutate: async (newTaskData) => {
+      await queryClient.cancelQueries({ queryKey: ["tasks"] })
+      const previousTasks = queryClient.getQueryData<Task[]>(["tasks"])
+
+      queryClient.setQueryData<Task[]>(["tasks"], (old) => {
+        const tempTask: Task = {
+          id: Math.random(), // Temporary ID
+          title: newTaskData.title,
+          description: newTaskData.description,
+          completed: newTaskData.completed ?? false,
+          priority: newTaskData.priority ?? "MEDIUM",
+          project_id: newTaskData.project_id,
+          due_date: newTaskData.due_date,
+          created_at: new Date().toISOString(),
+          user_id: 0, // Placeholder
+        }
+        return old ? [tempTask, ...old] : [tempTask]
+      })
+
+      return { previousTasks }
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(["tasks"], context.previousTasks)
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
       queryClient.invalidateQueries({ queryKey: ["stats"] })
+    },
+    onSuccess: (data) => {
       toast({
         title: "Task created",
         description: `Task "${data.title}" has been created.`,

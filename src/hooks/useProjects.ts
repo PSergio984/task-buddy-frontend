@@ -19,8 +19,33 @@ export function useCreateProject() {
   
   return useMutation({
     mutationFn: projectsApi.create,
-    onSuccess: (data) => {
+    onMutate: async (newProject) => {
+      await queryClient.cancelQueries({ queryKey: ["projects"] })
+      const previousProjects = queryClient.getQueryData<import("@/lib/api").Project[]>(["projects"])
+      
+      queryClient.setQueryData<import("@/lib/api").Project[]>(["projects"], (old) => {
+        const temp: import("@/lib/api").Project = {
+          id: Math.random(),
+          name: newProject.name,
+          color: newProject.color,
+          icon: newProject.icon,
+          user_id: 0,
+          created_at: new Date().toISOString()
+        }
+        return old ? [...old, temp] : [temp]
+      })
+      
+      return { previousProjects }
+    },
+    onError: (_err, _newProject, context) => {
+      if (context?.previousProjects) {
+        queryClient.setQueryData(["projects"], context.previousProjects)
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] })
+    },
+    onSuccess: (data) => {
       toast({
         title: "Project created",
         description: `Project "${data.name}" has been created.`,
@@ -37,8 +62,26 @@ export function useUpdateProject() {
   return useMutation({
     mutationFn: ({ id, updates }: { id: number; updates: { name?: string; color?: string; icon?: string } }) =>
       projectsApi.update(id, updates),
-    onSuccess: (data) => {
+    onMutate: async ({ id, updates }) => {
+      await queryClient.cancelQueries({ queryKey: ["projects"] })
+      const previousProjects = queryClient.getQueryData<import("@/lib/api").Project[]>(["projects"])
+      
+      queryClient.setQueryData<import("@/lib/api").Project[]>(["projects"], (old) => {
+        if (!old) return []
+        return old.map(p => p.id === id ? { ...p, ...updates } : p)
+      })
+      
+      return { previousProjects }
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousProjects) {
+        queryClient.setQueryData(["projects"], context.previousProjects)
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] })
+    },
+    onSuccess: (data) => {
       toast({
         title: "Project updated",
         description: `Project "${data.name}" has been updated.`,
@@ -54,10 +97,28 @@ export function useDeleteProject() {
   
   return useMutation({
     mutationFn: projectsApi.delete,
-    onSuccess: () => {
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ["projects"] })
+      const previousProjects = queryClient.getQueryData<import("@/lib/api").Project[]>(["projects"])
+      
+      queryClient.setQueryData<import("@/lib/api").Project[]>(["projects"], (old) => {
+        if (!old) return []
+        return old.filter(p => p.id !== id)
+      })
+      
+      return { previousProjects }
+    },
+    onError: (_err, _id, context) => {
+      if (context?.previousProjects) {
+        queryClient.setQueryData(["projects"], context.previousProjects)
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] })
       // Also invalidate tasks because they might belong to this project
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
+    },
+    onSuccess: () => {
       toast({
         title: "Project deleted",
         description: "Project has been removed successfully.",

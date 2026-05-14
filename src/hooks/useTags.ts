@@ -19,8 +19,33 @@ export function useCreateTag() {
 
   return useMutation({
     mutationFn: tagsApi.create,
-    onSuccess: (data) => {
+    onMutate: async (newTag) => {
+      await queryClient.cancelQueries({ queryKey: ["tags"] })
+      const previousTags = queryClient.getQueryData<import("@/lib/api").Tag[]>(["tags"])
+      
+      queryClient.setQueryData<import("@/lib/api").Tag[]>(["tags"], (old) => {
+        const temp: import("@/lib/api").Tag = {
+          id: Math.random(),
+          name: newTag.name,
+          color: newTag.color,
+          icon: newTag.icon,
+          user_id: 0,
+          created_at: new Date().toISOString()
+        }
+        return old ? [...old, temp] : [temp]
+      })
+      
+      return { previousTags }
+    },
+    onError: (_err, _newTag, context) => {
+      if (context?.previousTags) {
+        queryClient.setQueryData(["tags"], context.previousTags)
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["tags"] })
+    },
+    onSuccess: (data) => {
       toast({
         title: "Tag created",
         description: `Tag "${data.name}" has been created.`,
@@ -36,10 +61,28 @@ export function useDeleteTag() {
 
   return useMutation({
     mutationFn: tagsApi.delete,
-    onSuccess: () => {
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ["tags"] })
+      const previousTags = queryClient.getQueryData<import("@/lib/api").Tag[]>(["tags"])
+      
+      queryClient.setQueryData<import("@/lib/api").Tag[]>(["tags"], (old) => {
+        if (!old) return []
+        return old.filter(t => t.id !== id)
+      })
+      
+      return { previousTags }
+    },
+    onError: (_err, _id, context) => {
+      if (context?.previousTags) {
+        queryClient.setQueryData(["tags"], context.previousTags)
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["tags"] })
       // Also invalidate tasks because they might have this tag
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
+    },
+    onSuccess: () => {
       toast({
         title: "Tag deleted",
         description: "Tag has been removed successfully.",
@@ -56,9 +99,27 @@ export function useUpdateTag() {
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: { name?: string; color?: string; icon?: string } }) =>
       tagsApi.update(id, data),
-    onSuccess: (data) => {
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: ["tags"] })
+      const previousTags = queryClient.getQueryData<import("@/lib/api").Tag[]>(["tags"])
+      
+      queryClient.setQueryData<import("@/lib/api").Tag[]>(["tags"], (old) => {
+        if (!old) return []
+        return old.map(t => t.id === id ? { ...t, ...data } : t)
+      })
+      
+      return { previousTags }
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousTags) {
+        queryClient.setQueryData(["tags"], context.previousTags)
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["tags"] })
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
+    },
+    onSuccess: (data) => {
       toast({
         title: "Tag updated",
         description: `Tag "${data.name}" has been updated.`,
