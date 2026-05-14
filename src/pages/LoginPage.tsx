@@ -14,7 +14,6 @@ import {
   getAuthErrorMessage,
 } from "@/lib/auth"
 import { useToast } from "@/hooks/use-toast"
-import axios from "axios"
 
 export function LoginPage() {
   const [email, setEmail] = useState("")

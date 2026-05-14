@@ -1,7 +1,4 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
-import { QueryClientProvider } from "@tanstack/react-query"
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
-import { queryClient } from "@/lib/query-client"
 import { LoginPage } from "@/pages/LoginPage"
 import { RegisterPage } from "@/pages/RegisterPage"
 import { LandingPage } from "@/pages/LandingPage"
@@ -112,7 +109,6 @@ export function App() {
           </FilterProvider>
         </SettingsProvider>
       </TooltipProvider>
-    </>
   )
 }
 
