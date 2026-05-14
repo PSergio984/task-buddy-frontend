@@ -4,6 +4,7 @@ export interface AuthUser {
   id: string
   username?: string
   email?: string
+  email_confirmed?: boolean
 }
 
 export interface PasswordStrength {
@@ -213,6 +214,10 @@ export function normalizeAuthUser(payload: unknown) {
     user.email = userPayload.email
   }
 
+  if (typeof userPayload.email_confirmed === "boolean") {
+    user.email_confirmed = userPayload.email_confirmed
+  }
+
   return user
 }
 
@@ -222,7 +227,11 @@ export function getAuthErrorMessage(error: unknown, fallback: string) {
     const data = error.response?.data
 
     if (status === 401) {
-      return formatFirstBackendError(data) ?? "Invalid email or password."
+      const message = formatFirstBackendError(data)
+      if (message === "Email not confirmed") {
+        return "EMAIL_NOT_CONFIRMED"
+      }
+      return message ?? "Invalid email or password."
     }
 
     if (status === 422) {

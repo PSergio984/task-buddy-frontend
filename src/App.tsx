@@ -10,6 +10,7 @@ import { ProfilePage } from "@/pages/ProfilePage"
 import { AuditLogsPage } from "@/pages/AuditLogsPage"
 import { TasksPage } from "@/pages/TasksPage"
 import { ResetPasswordPage } from "@/pages/ResetPasswordPage"
+import { VerifyEmailPage } from "@/pages/verify-email"
 import { MainLayout } from "@/components/layout/main-layout"
 import { ProtectedRoute, PublicRoute } from "@/contexts/ProtectedRoute"
 import { FilterProvider } from "@/contexts/FilterContext"
@@ -69,6 +70,14 @@ export function App() {
                   element={
                     <PublicRoute>
                       <ResetPasswordPage />
+                    </PublicRoute>
+                  }
+                />
+                <Route
+                  path="/verify-email"
+                  element={
+                    <PublicRoute>
+                      <VerifyEmailPage />
                     </PublicRoute>
                   }
                 />

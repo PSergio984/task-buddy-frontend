@@ -11,6 +11,7 @@ import {
   sanitizePassword,
   validateEmail,
   validatePassword,
+  getAuthErrorMessage,
 } from "@/lib/auth"
 import { useToast } from "@/hooks/use-toast"
 import axios from "axios"
@@ -51,13 +52,13 @@ export function LoginPage() {
       })
       navigate("/dashboard")
     } catch (err: unknown) {
-      let detail = "Invalid credentials. Please try again."
-      if (axios.isAxiosError(err)) {
-        detail = (err.response?.data as { detail?: string })?.detail || err.message
-      } else if (err instanceof Error) {
-        detail = err.message
-      }
+      const detail = getAuthErrorMessage(err, "Invalid credentials. Please try again.")
       
+      if (detail === "EMAIL_NOT_CONFIRMED") {
+        navigate("/verify-email")
+        return
+      }
+
       toast({
         title: "Authentication failed",
         description: detail,
