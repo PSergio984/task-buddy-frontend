@@ -73,6 +73,12 @@ export function NewTaskModal({
   }
 
   const isEditMode = false
+  const isDirty = title.trim() !== "" || 
+                  description.trim() !== "" || 
+                  projectId !== "none" || 
+                  dueDate !== undefined ||
+                  tags.trim() !== "" ||
+                  priority !== "MEDIUM"
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -132,9 +138,12 @@ export function NewTaskModal({
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Title Section */}
               <div className="space-y-2">
-                <Label htmlFor="title" className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
-                  Objective Title
-                </Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="title" className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
+                    Objective Title
+                  </Label>
+                  {isDirty && <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse mr-1" />}
+                </div>
                 <Input
                   id="title"
                   placeholder="e.g., Finalize architecture review"
@@ -305,8 +314,8 @@ export function NewTaskModal({
                   <Button
                     type="submit"
                     loading={isLoading}
-                    disabled={!title.trim()}
-                    className="h-12 px-10 rounded-2xl bg-primary text-primary-foreground shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all font-bold tracking-tight"
+                    disabled={!isDirty || !title.trim() || isLoading}
+                    className="h-12 px-10 rounded-2xl bg-primary text-primary-foreground shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all font-bold tracking-tight disabled:opacity-50 disabled:grayscale-[0.5]"
                   >
                     <span>{isEditMode ? "Update Task" : "Create Task"}</span>
                   </Button>

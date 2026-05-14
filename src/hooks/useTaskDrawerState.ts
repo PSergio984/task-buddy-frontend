@@ -11,12 +11,11 @@ import {
   useUpdateSubtask,
   useDeleteSubtask,
   useReorderSubtasks,
-  useCreateTag,
   useAttachTag,
   useDetachTag,
 } from "@/hooks/useTasks"
-import { useProjects } from "@/hooks/useProjects"
-import { useTags } from "@/hooks/useTags"
+import { useProjects, useCreateProject } from "@/hooks/useProjects"
+import { useTags, useCreateTag } from "@/hooks/useTags"
 
 interface UseTaskDrawerStateProps {
   initialTask: Task | null

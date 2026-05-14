@@ -121,31 +121,20 @@ function EditModeFooter({
       </Button>
 
       <div className="flex items-center gap-2">
-        {isDirty ? (
-          <>
-            <Button
-              variant="ghost"
-              onClick={() => onOpenChange(false)}
-              className="text-xs font-bold text-foreground/40 hover:text-foreground hover:bg-white/5 h-11 px-6 rounded-xl transition-all"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => setShowSaveConfirm(true)}
-              className="text-xs font-black uppercase tracking-widest bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-8 rounded-xl shadow-lg shadow-primary/20 transition-all flex items-center gap-2"
-            >
-              Update Task <Check className="h-4 w-4" />
-            </Button>
-          </>
-        ) : (
-          <Button
-            variant="ghost"
-            onClick={() => onOpenChange(false)}
-            className="text-xs font-bold text-foreground/40 hover:text-foreground hover:bg-white/5 h-11 px-8 rounded-xl transition-all"
-          >
-            Close
-          </Button>
-        )}
+        <Button
+          variant="ghost"
+          onClick={() => onOpenChange(false)}
+          className="text-xs font-bold text-foreground/40 hover:text-foreground hover:bg-white/5 h-11 px-6 rounded-xl transition-all"
+        >
+          {isDirty ? "Cancel" : "Close"}
+        </Button>
+        <Button
+          onClick={() => setShowSaveConfirm(true)}
+          disabled={!isDirty || isSaving}
+          className="text-xs font-black uppercase tracking-widest bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:bg-primary/20 disabled:text-primary-foreground/50 h-11 px-8 rounded-xl shadow-lg shadow-primary/20 transition-all flex items-center gap-2"
+        >
+          Update Task <Check className="h-4 w-4" />
+        </Button>
       </div>
     </div>
   )
