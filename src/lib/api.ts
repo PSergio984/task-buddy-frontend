@@ -1,5 +1,5 @@
 import axios from "axios"
-import { v4 as uuidv4 } from "uuid"
+import type { InternalAxiosRequestConfig } from "axios"
 import { toast } from "@/hooks/use-toast"
 
 const API_BASE_URL =
@@ -10,12 +10,30 @@ export const api = axios.create({
   withCredentials: true,
 })
 
+// Helper to generate a deterministic hash for idempotency
+async function generateIdempotencyKey(config: InternalAxiosRequestConfig): Promise<string> {
+  const payload = JSON.stringify({
+    method: config.method?.toLowerCase(),
+    url: config.url,
+    data: config.data,
+    params: config.params,
+  })
+  const msgUint8 = new TextEncoder().encode(payload)
+  const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("")
+}
+
 // Add a request interceptor for idempotency
-api.interceptors.request.use((config) => {
+api.interceptors.request.use(async (config) => {
   // Only add idempotency key for mutating requests
   const mutatingMethods = ["post", "put", "patch", "delete"]
   if (config.method && mutatingMethods.includes(config.method.toLowerCase())) {
-    config.headers["X-Idempotency-Key"] = uuidv4()
+    try {
+      config.headers["X-Idempotency-Key"] = await generateIdempotencyKey(config)
+    } catch (error) {
+      console.error("Failed to generate idempotency key:", error)
+    }
   }
   return config
 })

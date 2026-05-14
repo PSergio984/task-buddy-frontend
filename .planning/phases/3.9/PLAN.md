@@ -7,7 +7,7 @@
 - [ ] Verify middleware correctly ignores `GET` requests and handles errors gracefully.
 
 ## 2. Frontend Idempotency & UI Foundation
-- [ ] Update `src/lib/api.ts` (Axios) to attach a UUIDv4 as `X-Idempotency-Key` to all mutating requests.
+- [ ] Update `src/lib/api.ts` (Axios) to attach a deterministic `X-Idempotency-Key` (based on payload hash) to all mutating requests.
 - [ ] Implement `isLoading` state management in `Button` and action-oriented components to prevent double clicks.
 - [ ] Install `react-time-picker` and `react-clock` dependencies.
 
@@ -30,4 +30,5 @@
 - [ ] Verify no duplicate tasks are created on rapid clicks.
 - [ ] Verify confirmation modal appears for all completion actions.
 - [ ] Verify time picker is stable and supports selected time formats.
+- [ ] Verify handling of concurrent duplicate requests (409/200 response consistency).
 - [ ] Verify loading performance on low-end device simulation.

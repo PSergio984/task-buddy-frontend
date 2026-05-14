@@ -45,6 +45,9 @@
 |--------|-------------|--------|
 | SYNC-01 | **Offline Cache (IndexedDB)**: Persist Tasks, Projects, and Tags using TanStack Query's persistent cache (IndexedDB via idb-keyval). | RESEARCH.md / D-02 |
 | SYNC-02 | **Optimistic UI Updates**: All task, project, and tag mutations (Create, Update, Delete, Toggle) MUST reflect in the UI immediately. | RESEARCH.md / D-03 |
+| SYNC-03 | **Real-time Sync Protocol**: Use WebSockets for live updates with a 30s heartbeat. Implement delta-sync on reconnect to fetch missed updates since `last_sync_timestamp`. | RESEARCH.md / D-12 |
+| SYNC-04 | **Conflict Resolution (LWW)**: Implement Last-Write-Wins strategy. Server overwrites client if timestamps conflict; UI must notify user if a local change was discarded. | CONTEXT.md / D-13 |
+| SYNC-05 | **Reconnection & Backoff**: Exponential backoff (initial 1s, max 30s) for WebSocket reconnection. UI must show "Offline" and "Syncing" states. | CONTEXT.md / D-14 |
 
 ## Authentication Hardening
 
@@ -59,6 +62,6 @@
 | Req ID | Requirement | Source |
 |--------|-------------|--------|
 | UX-01 | **Global Dirty Checks**: Disable "Save" or "Update" buttons in all creation/edit forms if no changes are detected. | CONTEXT.md / D-10 |
-| UX-02 | **Skeleton UI Fix**: Add missing `Skeleton` import to `audit-trail.tsx`. | CONTEXT.md / D-11 |
+| UX-02 | **Skeleton UI Consistency**: Ensure all major views (Audit, Dashboard, Tasks) use consistent shimmering skeleton patterns. | CONTEXT.md / D-11 |
 | UX-03 | **Contextual Toasts**: Success toasts for creation actions must include the item name. | CONTEXT.md / D-07 |
 | UX-04 | **Refined Audit Trail**: Strictly exclude login/logout events and focus on workspace lifecycle events (Create/Update/Complete). | CONTEXT.md / D-08, D-09 |

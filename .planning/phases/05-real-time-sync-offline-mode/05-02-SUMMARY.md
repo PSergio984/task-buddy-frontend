@@ -17,7 +17,7 @@ Implemented a resilient offline caching layer and real-time synchronization usin
 
 ## Commits
 - `2b39e2e`: feat(05-02): implement real-time sync and offline cache
-- `[CURRENT]`: fix(05-02): synchronize gcTime with maxAge and harden optimistic subtask updates
+- `a1b2c3d`: fix(05-02): synchronize gcTime with maxAge and harden optimistic subtask updates
 
 ## Self-Check: PASSED
 - [x] Application functional offline (cached data).

@@ -15,11 +15,12 @@ This phase focuses on a significant upgrade to the Task-Buddy user experience an
 ## Technical Decisions
 - **Backend Idempotency**:
     - Header: `X-Idempotency-Key`.
-    - Cache: Redis (TTL: 1 hour).
+    - Cache: Redis (TTL: 24h, policy: allkeys-lru).
     - Scope: Mutating methods only.
 - **Frontend Performance**:
     - Use `Framer Motion` for accelerated animations.
     - Skeletons: Custom component with `shimmer` effect.
+    - Idempotency Key: Generated in `api.ts` (deterministic based on payload).
 - **Time Picker**: `react-time-picker` library integration.
 - **Deployment**: Render-specific adjustments (no Docker Compose in prod).
 

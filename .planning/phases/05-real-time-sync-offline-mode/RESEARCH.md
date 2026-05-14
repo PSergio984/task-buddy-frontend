@@ -14,8 +14,8 @@ The following hooks in `src/hooks/useTasks.ts` and `src/hooks/useProjects.ts` re
 
 ## 3. Authentication & Redirection Hardening
 - **Backend Error Mapping:** The backend returns `401 Unauthorized` with `detail: "Email not confirmed"` when a user attempts to log in or access `/me` with an unverified account.
-- **Detection Logic:** Update `getAuthErrorMessage` in `src/lib/auth.ts` to explicitly detect this string or use a specific error code if available.
-- **Redirection:** `ProtectedRoute.tsx` must wait for `loading === false` from `AuthContext`. If `user` is present but `!user.confirmed` (or if the server returns the confirmation error), redirect to `/verify-email`.
+- **Detection Logic:** Update `AuthContext` (via `refreshUser`) to explicitly detect the "Email not confirmed" string and update global auth state.
+- **Redirection:** `ProtectedRoute.tsx` must redirect to `/verify-email` if the user is authenticated but not confirmed.
 
 ## 4. Global Dirty Checks
 - **NewTaskModal:** Add an `isDirty` state comparing current inputs (`title`, `description`, `projectId`, etc.) to their initial empty values. Disable the "Create Task" button if not dirty or if the title is empty.

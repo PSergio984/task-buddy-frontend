@@ -13,14 +13,14 @@ This phase transitions Task Buddy from a purely online-dependent application to 
 ## Implementation Decisions
 
 ### 1. Sync & Offline Strategy
-- **D-01: Conflict Resolution (Last-Write-Wins):** Simple timestamp-based resolution where the most recent update reaching the server persists.
-- **D-02: Core Offline Cache:** Persist `Tasks`, `Projects`, and `Tags` locally using TanStack Query's persistent cache (IndexedDB). Audit logs remain online-only to minimize local storage bloat.
+- **D-01: Conflict Resolution (Last-Write-Wins):** Acknowledge that Last-Write-Wins can lose data but is chosen for simplicity; most recent update reaching the server persists.
+- **D-02: Core Offline Cache:** Persist `Tasks`, `Projects`, and `Tags` locally using TanStack Query's persistent cache (IndexedDB). Audit logs remain online-only to minimize local storage bloat (not mission-critical for offline usage).
 - **D-03: Optimistic UI:** All task mutations (Create, Update, Delete, Toggle) must reflect in the UI immediately while the sync happens in the background.
 
 ### 2. Authentication & Redirection Hardening
 - **D-04: Strict Verification Flow:** `AuthContext` must confirm session validity via `refreshUser` on mount before allowing access to `ProtectedRoute`. This prevents the "Dashboard -> Login" redirection loop caused by stale local storage tokens.
 - **D-05: Dedicated Verification Landing:** If a user logs in with an unconfirmed email, redirect them to a dedicated `/verify-email` page instead of displaying "Invalid Credentials".
-- **D-06: Semantic Error Parsing:** Update `getAuthErrorMessage` to explicitly detect unconfirmed email status (Backend status codes/details) and provide accurate feedback.
+- **D-06: Semantic Error Parsing:** Update `getAuthErrorMessage` to explicitly detect unconfirmed email status (Backend `401` with `detail: "Email not confirmed"`) and provide accurate feedback.
 
 ### 3. Semantic Feedback & History Refinement
 - **D-07: Contextual Toasts:** Success toasts for task/project/tag creation must include the item name (e.g., `Task "Clean Room" created`).

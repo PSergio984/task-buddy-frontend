@@ -7,7 +7,7 @@ The frontend roadmap focuses on transforming the application from an "AI-generat
 ## Phases
 
 - [x] **Phase 1: Frontend UX & Integration Rework** - Layout persistence, collapsible sidebar, design system alignment, and backend sync.
-- [x] **Phase 2: Enhanced Interactivity & State** - Real-time updates, advanced filtering, and offline support. (Superceded by Phase 05)
+- [x] **Phase 2: Enhanced Interactivity & State** - Real-time updates, advanced filtering, and offline support. (Superseded by Phase 05)
 - [ ] **Phase 3: Performance & Accessibility** - Optimization, a11y audit, and mobile responsiveness polish.
 - [x] **Phase 3.8: Sidebar Organization & DND** - Sidebar CRUD actions, DND reordering, and ellipsis menus.
 - [x] **Phase 3.9: UI and Idempotency Overhaul** - Stable time picker, performance skeletons, and backend idempotency.
