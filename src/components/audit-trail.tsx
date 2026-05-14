@@ -5,6 +5,7 @@ import {
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { 
   type AuditEntry, describeAction, getAuditIcon 

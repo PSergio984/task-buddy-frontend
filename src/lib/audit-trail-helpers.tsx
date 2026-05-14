@@ -232,10 +232,19 @@ export function describeAction(action: string, details: string, targetType: stri
   return details || (targetId ? `${humanAction} on ${targetType} #${targetId}` : humanAction)
 }
 
-export const EXCLUDED_ACTIONS = new Set(["login", "logout", "user_login", "user_logout"])
+export const EXCLUDED_ACTIONS = new Set([
+  "login", 
+  "logout", 
+  "user_login", 
+  "user_logout", 
+  "session_start", 
+  "session_end",
+  "token_refresh"
+])
 
 export function isExcluded(action: string): boolean {
-  const act = action?.toLowerCase() || ""
+  if (!action) return false
+  const act = action.toLowerCase()
   return Array.from(EXCLUDED_ACTIONS).some(ex => act.includes(ex))
 }
 
