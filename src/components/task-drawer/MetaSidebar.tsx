@@ -71,7 +71,7 @@ const PRIORITY_STYLES = {
 
 export function MetaSidebar(props: MetaSidebarProps) {
   return (
-    <div className="flex-[0.35] bg-white/[0.02] p-8 space-y-6 flex flex-col overflow-y-auto no-scrollbar border-l border-white/5">
+    <div className="flex-1 lg:flex-[0.35] bg-white/[0.02] p-6 md:p-8 space-y-6 flex flex-col overflow-y-auto no-scrollbar border-t lg:border-t-0 lg:border-l border-white/5">
       <DueDateSection {...props} />
       {!props.isCreate && <StatusSection {...props} />}
       <PrioritySection {...props} />

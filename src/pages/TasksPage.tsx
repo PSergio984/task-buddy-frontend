@@ -1,24 +1,10 @@
-import { useState, useMemo, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { useState, useEffect } from "react"
+import { motion } from "framer-motion"
 import { useTasks, useUpdateTask, useUpdateSubtask, useDeleteSubtask, useDetachTag } from "@/hooks/useTasks"
-import { cn } from "@/lib/utils"
 import { useFilters } from "@/contexts/FilterContext"
 import { useOutletContext } from "react-router-dom"
 import type { Task } from "@/lib/api"
-import { TaskCard } from "@/components/task-card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Skeleton } from "@/components/ui/skeleton"
-import { ListChecks, Search, LayoutGrid, List, ArrowUpDown, Check, Filter, X } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import axios from "axios"
 import { useAuth } from "@/contexts/AuthContext"
@@ -26,7 +12,9 @@ import { useProjects } from "@/hooks/useProjects"
 import { useTags } from "@/hooks/useTags"
 import { Badge } from "@/components/ui/badge"
 import { ConfirmationModal } from "@/components/confirmation-modal"
-import { animations } from "@/lib/animations"
+import { useTaskFilters } from "@/hooks/useTaskFilters"
+import { TasksHeader } from "./tasks/TasksHeader"
+import { TaskList } from "./tasks/TaskList"
 
 type SortMode = "priority" | "due_date" | "alpha"
 
@@ -35,8 +23,6 @@ const SORT_LABELS: Record<SortMode, string> = {
   due_date: "Deadline (Soonest)",
   alpha: "Alphabetical",
 }
-
-const PRIORITY_ORDER = { HIGH: 0, MEDIUM: 1, LOW: 2 }
 
 const LS_KEY = "tb_sort_preference"
 
@@ -52,42 +38,26 @@ export function TasksPage() {
     activeStatus, 
     setActiveStatus, 
     activeTagId,
-    selectedPriorities,
-    setSelectedPriorities,
   } = useFilters()
-  const [searchQuery, setSearchQuery] = useState("")
+  
+  const { toast } = useToast()
+  const { logout } = useAuth()
+  const { data: projects = [] } = useProjects()
+  const { data: tags = [] } = useTags()
+
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
-  const [sortBy, setSortBy] = useState<SortMode>(() => {
-    const saved = localStorage.getItem(LS_KEY)
-    return (saved as SortMode) || "due_date"
-  })
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false)
+  const [isCompleting, setIsCompleting] = useState(false)
   const [confirmData, setConfirmData] = useState<{
     type: "task" | "subtask"
     id: number
     title: string
     completed: boolean
   } | null>(null)
-  const [isCompleting, setIsCompleting] = useState(false)
-  
-  useProjects()
-  useTags()
-  const { logout } = useAuth()
-  const { toast } = useToast()
-
-  useEffect(() => {
-    localStorage.setItem(LS_KEY, sortBy)
-  }, [sortBy])
 
   const isProjectFilter = activeSidebarFilter.startsWith("project:")
   const filterParam = activeStatus === "all" ? undefined : activeStatus
   const projectIdParam = isProjectFilter ? Number.parseInt(activeSidebarFilter.split(":")[1]) : undefined
-
-  // Determine date filtering
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const next7Days = new Date(today)
-  next7Days.setDate(today.getDate() + 7)
 
   const { data: tasks = [], isLoading: loadingTasks, refetch: refreshTasks } = useTasks(
     filterParam, 
@@ -100,59 +70,27 @@ export function TasksPage() {
   const { mutateAsync: deleteSubtask } = useDeleteSubtask()
   const { mutateAsync: detachTag } = useDetachTag()
 
-  const matchesTask = (task: Task) => {
-    const query = searchQuery.toLowerCase()
-    const matchesSearch = task.title.toLowerCase().includes(query)
-    
-    const matchesPriority = selectedPriorities.length === 0 || selectedPriorities.includes(task.priority)
+  const {
+    searchQuery,
+    setSearchQuery,
+    sortBy,
+    setSortBy,
+    sortedTasks,
+    togglePriority,
+    clearAllFilters,
+    selectedPriorities
+  } = useTaskFilters(tasks)
 
-    // Sidebar Smart Filters
-    let matchesSidebar = true
-    if (activeSidebarFilter === "today") {
-      const taskDate = task.due_date ? new Date(task.due_date) : null
-      matchesSidebar = taskDate ? taskDate.getTime() >= today.getTime() && taskDate.getTime() < today.getTime() + 86400000 : false
-    } else if (activeSidebarFilter === "upcoming") {
-      const taskDate = task.due_date ? new Date(task.due_date) : null
-      matchesSidebar = taskDate ? taskDate.getTime() >= today.getTime() && taskDate.getTime() < next7Days.getTime() : false
-    } else if (activeSidebarFilter === "inbox") {
-      matchesSidebar = !task.project_id
+  useEffect(() => {
+    const saved = localStorage.getItem(LS_KEY)
+    if (saved && (saved === "priority" || saved === "due_date" || saved === "alpha")) {
+      setSortBy(saved)
     }
+  }, [setSortBy])
 
-    return matchesSearch && matchesPriority && matchesSidebar
-  }
-
-  const filteredTasks = tasks.filter(matchesTask)
-
-  const sortedTasks = useMemo(() => {
-    return [...filteredTasks].sort((a, b) => {
-      if (sortBy === "priority") {
-        const pa = PRIORITY_ORDER[a.priority] ?? 99
-        const pb = PRIORITY_ORDER[b.priority] ?? 99
-        return pa - pb
-      }
-      if (sortBy === "due_date") {
-        if (!a.due_date && !b.due_date) return 0
-        if (!a.due_date) return 1
-        if (!b.due_date) return -1
-        return new Date(a.due_date).getTime() - new Date(b.due_date).getTime()
-      }
-      return a.title.localeCompare(b.title)
-    })
-  }, [filteredTasks, sortBy])
-
-  const togglePriority = (p: string) => {
-    setSelectedPriorities(prev => 
-      prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p]
-    )
-  }
-
-  const removePriority = (p: string) => {
-    setSelectedPriorities(prev => prev.filter(x => x !== p))
-  }
-
-  const clearAllFilters = () => {
-    setSelectedPriorities([])
-  }
+  useEffect(() => {
+    localStorage.setItem(LS_KEY, sortBy)
+  }, [sortBy])
 
   const handleToggleComplete = async (id: number) => {
     const task = tasks.find((t: Task) => t.id === id)
@@ -179,20 +117,9 @@ export function TasksPage() {
     setIsCompleting(true)
     try {
       if (confirmData.type === "task") {
-        await updateTask({ 
-          id: confirmData.id, 
-          updates: { completed: confirmData.completed } 
-        })
-        toast({
-          title: "Task completed!",
-          description: "Great job!",
-          variant: "success",
-        })
+        await performToggle(confirmData.id, confirmData.completed)
       } else {
-        await updateSubtask({ 
-          id: confirmData.id, 
-          updates: { completed: confirmData.completed } 
-        })
+        await updateSubtask({ id: confirmData.id, updates: { completed: confirmData.completed } })
         refreshTasks()
         toast({
           title: "Subtask completed!",
@@ -243,36 +170,33 @@ export function TasksPage() {
 
   const handleToggleSubtask = async (subtaskId: number, completed: boolean) => {
     if (completed) {
-      // Find subtask title
-      const task = tasks.find((t: Task) => t.subtasks?.some(s => s.id === subtaskId))
-      const subtask = task?.subtasks?.find(s => s.id === subtaskId)
-      
-      setConfirmData({
-        type: "subtask",
-        id: subtaskId,
-        title: subtask?.title || "Subtask",
-        completed: true
-      })
-      return
+      const allSubtasks = tasks.flatMap(t => t.subtasks || [])
+      const subtask = allSubtasks.find(s => s.id === subtaskId)
+      if (subtask) {
+        setConfirmData({
+          type: "subtask",
+          id: subtaskId,
+          title: subtask.title,
+          completed: true
+        })
+        return
+      }
     }
-
+    
     try {
-      await updateSubtask({ id: subtaskId, updates: { completed: false } })
+      await updateSubtask({ id: subtaskId, updates: { completed } })
       refreshTasks()
     } catch (err) {
       console.error("Failed to update subtask:", err)
-      toast({ title: "Update failed", variant: "destructive" })
     }
   }
 
   const handleDeleteSubtask = async (subtaskId: number) => {
     try {
       await deleteSubtask(subtaskId)
-      toast({ title: "Subtask deleted", variant: "success" })
       refreshTasks()
     } catch (err) {
       console.error("Failed to delete subtask:", err)
-      toast({ title: "Delete failed", variant: "destructive" })
     }
   }
 
@@ -282,238 +206,123 @@ export function TasksPage() {
       refreshTasks()
     } catch (err) {
       console.error("Failed to detach tag:", err)
-      toast({ title: "Detach failed", variant: "destructive" })
     }
   }
 
+  const activeProject = isProjectFilter ? projects.find(p => p.id === projectIdParam) : null
+  const activeTag = activeTagId ? tags.find(t => t.id === activeTagId) : null
+
   return (
     <>
-      <ConfirmationModal
-        open={confirmData !== null}
-        onOpenChange={(open) => !open && setConfirmData(null)}
-        onConfirm={handleConfirmAction}
-        title={confirmData?.type === "task" ? "Complete Objective?" : "Subtask Finished?"}
-        description={`Confirm completion of: "${confirmData?.title}"`}
-        variant="success"
-        confirmText="Mark as Complete"
-        isLoading={isCompleting}
-      />
-      <motion.div
-      initial={{ opacity: 0, y: 15 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2, ease: "easeOut" }}
-      className="flex flex-1 flex-col gap-8 p-6 lg:p-10 relative"
+    <ConfirmationModal
+      open={!!confirmData}
+      onOpenChange={(open) => !open && setConfirmData(null)}
+      onConfirm={handleConfirmAction}
+      title={confirmData?.type === "task" ? "Mission Accomplished?" : "Sub-objective Complete?"}
+      description={`Confirm completion of: "${confirmData?.title}"`}
+      confirmText="Mark Finished"
+      variant="success"
+      isLoading={isCompleting}
+    />
+
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="flex flex-1 flex-col gap-10 bg-background/20 p-4 md:p-8 lg:p-12 backdrop-blur-3xl"
     >
-      {/* Top accent bar */}
-      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-600 via-sky-400 to-blue-600 opacity-80" />
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3 text-primary">
-            <ListChecks className="h-8 w-8" />
-            <h1 className="text-4xl font-black tracking-tighter uppercase">Tasks</h1>
+      <header className="flex flex-col gap-8">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-3 text-primary">
+              <Badge variant="outline" className="rounded-full px-4 py-1 text-[10px] font-black tracking-widest uppercase border-primary/20 bg-primary/5 text-primary">
+                {activeSidebarFilter === "all" ? "Strategic Ops" : (activeProject?.name || activeSidebarFilter.toUpperCase())}
+              </Badge>
+              {activeTag && (
+                <Badge variant="secondary" className="rounded-full px-4 py-1 text-[10px] font-black tracking-widest uppercase bg-accent/10 text-accent">
+                  Focus: {activeTag.name}
+                </Badge>
+              )}
+            </div>
+            <h1 className="font-heading text-4xl md:text-6xl font-black tracking-tighter text-foreground uppercase leading-none">
+              Objective <span className="text-primary italic">Terminal</span>
+            </h1>
           </div>
-          <p className="text-foreground/60 font-medium text-lg ml-11">
-            {activeSidebarFilter === "all" ? "Your complete objective list." : "Refined focus for current mission."}
-          </p>
+
+          <div className="flex items-center gap-2 rounded-2xl bg-white/5 p-1.5 border border-white/10 shadow-2xl">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`p-3 rounded-xl transition-all ${viewMode === "grid" ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "text-foreground/40 hover:bg-white/5 hover:text-foreground"}`}
+            >
+              <span className="sr-only">Grid View</span>
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={`p-3 rounded-xl transition-all ${viewMode === "list" ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "text-foreground/40 hover:bg-white/5 hover:text-foreground"}`}
+            >
+              <span className="sr-only">List View</span>
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16" /></svg>
+            </button>
+          </div>
         </div>
+
+        <TasksHeader 
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          sortLabels={SORT_LABELS}
+          isFiltersExpanded={isFiltersExpanded}
+          setIsFiltersExpanded={setIsFiltersExpanded}
+          selectedPriorities={selectedPriorities}
+          togglePriority={togglePriority}
+          clearAllFilters={clearAllFilters}
+        />
       </header>
 
-      <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between">
-        <div className="relative w-full lg:max-w-md group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-foreground/40 transition-colors group-focus-within:text-primary" />
-          <Input 
-            placeholder="Search tasks..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-14 pl-12 pr-4 rounded-2xl border-white/10 bg-white/5 backdrop-blur-xl text-lg focus-visible:ring-primary/30 shadow-2xl shadow-black/10 transition-all hover:bg-white/10"
-          />
+      <Tabs 
+        value={activeStatus} 
+        onValueChange={setActiveStatus} 
+        className="w-full"
+      >
+        <div className="mb-8 flex items-center justify-between">
+          <TabsList className="h-auto bg-transparent p-0 gap-8">
+            {["all", "pending", "completed"].map((status) => (
+              <TabsTrigger
+                key={status}
+                value={status}
+                className="relative bg-transparent p-0 text-xl font-black uppercase tracking-tighter text-foreground/30 transition-all data-[state=active]:text-primary hover:text-foreground/60 focus-visible:outline-none"
+              >
+                {status}
+                {activeStatus === status && (
+                  <motion.div
+                    layoutId="active-tab"
+                    className="absolute -bottom-2 left-0 h-1 w-full rounded-full bg-primary"
+                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  />
+                )}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          
+          <div className="hidden sm:flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">
+            <span>Result Set:</span>
+            <span className="text-foreground">{sortedTasks.length} Units</span>
+          </div>
         </div>
-
-        <div className="flex items-center gap-4 bg-background/50 p-1.5 rounded-2xl border border-border backdrop-blur-xl">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setViewMode("grid")}
-            className={viewMode === "grid" ? "bg-primary text-primary-foreground shadow-lg" : "text-foreground/40"}
-          >
-            <LayoutGrid className="h-5 w-5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setViewMode("list")}
-            className={viewMode === "list" ? "bg-primary text-primary-foreground shadow-lg" : "text-foreground/40"}
-          >
-            <List className="h-5 w-5" />
-          </Button>
-          <div className="w-[1px] h-6 bg-border mx-1" />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
-            className={cn(
-              "font-black text-[10px] tracking-widest uppercase flex items-center gap-2 transition-all h-10 px-4 rounded-xl",
-              isFiltersExpanded || selectedPriorities.length > 0
-                ? "bg-primary/10 text-primary border border-primary/20"
-                : "text-foreground/60 hover:text-foreground hover:bg-white/5"
-            )}
-          >
-            <Filter className="h-3.5 w-3.5" />
-            Filter
-            {selectedPriorities.length > 0 && (
-              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-white font-black">
-                {selectedPriorities.length}
-              </span>
-            )}
-          </Button>
-          <div className="w-[1px] h-6 bg-border mx-1" />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="font-bold text-xs tracking-widest uppercase flex items-center gap-2 text-foreground/60 hover:text-foreground">
-                <ArrowUpDown className="h-4 w-4" />
-                {SORT_LABELS[sortBy]}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52 rounded-2xl border-border bg-background shadow-2xl p-1">
-              <DropdownMenuLabel className="text-[10px] font-black tracking-widest uppercase text-muted-foreground px-3 py-2">Sort By</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {(Object.entries(SORT_LABELS) as [SortMode, string][]).map(([mode, label]) => (
-                <DropdownMenuItem
-                  key={mode}
-                  onClick={() => setSortBy(mode)}
-                  className="rounded-xl cursor-pointer flex items-center justify-between font-semibold text-sm px-3 py-2.5"
-                >
-                  {label}
-                  {sortBy === mode && <Check className="h-4 w-4 text-primary" />}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-
-      <AnimatePresence>
-        {isFiltersExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6 rounded-[2rem] bg-background/40 border border-border/50 backdrop-blur-xl">
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 px-1">Priority</label>
-                <div className="flex flex-wrap gap-2">
-                  {["HIGH", "MEDIUM", "LOW"].map((p) => (
-                    <button
-                      key={p}
-                      onClick={() => togglePriority(p)}
-                      className={cn(
-                        "px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-all border",
-                        selectedPriorities.includes(p)
-                          ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20"
-                          : "bg-muted text-muted-foreground border-border/50 hover:border-primary/30 hover:bg-muted/80"
-                      )}
-                    >
-                      {p}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {selectedPriorities.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="text-[10px] font-black uppercase tracking-widest text-foreground/40 mr-2">Active Filters:</p>
-          {selectedPriorities.map(p => (
-            <Badge key={p} variant="outline" className="rounded-full bg-primary/10 text-primary border-primary/20 gap-1 pl-3 pr-2 py-1 uppercase text-[10px] font-black">
-              {p}
-              <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => removePriority(p)} />
-            </Badge>
-          ))}
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={clearAllFilters}
-            className="text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/10 rounded-full h-8 px-4"
-          >
-            Clear All
-          </Button>
-        </div>
-      )}
-
-      <Tabs value={activeStatus} onValueChange={setActiveStatus} className="w-full">
-        <TabsList className="inline-flex h-14 items-center justify-center rounded-[2rem] border bg-background/50 p-1.5 backdrop-blur-2xl shadow-xl mb-10">
-          {["all", "pending", "completed"].map((status) => (
-            <TabsTrigger
-              key={status}
-              value={status}
-              className="rounded-3xl px-10 text-xs font-black tracking-[0.3em] transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-2xl uppercase"
-            >
-              {status}
-            </TabsTrigger>
-          ))}
-        </TabsList>
 
         {["all", "pending", "completed"].map((status) => (
           <TabsContent key={status} value={status} className="mt-0 outline-none">
-            {(() => {
-              if (loadingTasks) {
-                return (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {["t1", "t2", "t3", "t4"].map((id) => (
-                      <Skeleton key={id} className="h-[200px] rounded-[2.5rem]" />
-                    ))}
-                  </div>
-                )
-              }
-              
-              if (sortedTasks.length === 0) {
-                return (
-                  <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex h-96 flex-col items-center justify-center rounded-[3rem] border-2 border-dashed border-border bg-background/20 text-center"
-                  >
-                    <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[2rem] bg-muted/50">
-                      <ListChecks className="h-10 w-10 text-muted-foreground/20" />
-                    </div>
-                    <h3 className="text-2xl font-bold text-foreground mb-2">No tasks found</h3>
-                    <p className="text-muted-foreground font-medium">Clear as a summer sky. Ready for new ideas?</p>
-                  </motion.div>
-                )
-              }
-
-              return (
-                <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 gap-6" : "flex flex-col gap-4"}>
-                  <AnimatePresence mode="popLayout">
-                    {sortedTasks.map((task, index) => (
-                      <motion.div
-                        key={task.id}
-                        layout
-                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                        transition={{ ...animations.spring.snappy, delay: index * 0.02 }}
-                      >
-                        <TaskCard
-                          task={task}
-                          onToggleComplete={handleToggleComplete}
-                          onEdit={handleEditTask}
-                          onToggleSubtask={handleToggleSubtask}
-                          onDeleteSubtask={handleDeleteSubtask}
-                          onDetachTag={handleDetachTag}
-                        />
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </div>
-              )
-            })()}
+            <TaskList 
+              tasks={sortedTasks}
+              loading={loadingTasks}
+              viewMode={viewMode}
+              onToggleComplete={handleToggleComplete}
+              onEdit={handleEditTask}
+              onToggleSubtask={handleToggleSubtask}
+              onDeleteSubtask={handleDeleteSubtask}
+              onDetachTag={handleDetachTag}
+            />
           </TabsContent>
         ))}
       </Tabs>

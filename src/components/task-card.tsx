@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, memo } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -21,7 +21,7 @@ export interface TaskCardProps {
   readonly disabled?: boolean
 }
 
-export function TaskCard({
+export const TaskCard = memo(function TaskCard({
   task,
   onToggleComplete,
   onEdit,
@@ -343,4 +343,4 @@ export function TaskCard({
       />
     </motion.div>
   )
-}
+})

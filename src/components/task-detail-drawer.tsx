@@ -58,8 +58,8 @@ export function TaskDetailDrawer({ task: initialTask, mode, isOpen, onOpenChange
         >
           <DrawerHeader isCreate={state.isCreate} onClose={() => handleSafeClose(false)} />
 
-        <div className="flex-1 flex overflow-hidden">
-          <div className="flex-[0.65] flex flex-col p-8 gap-6 overflow-y-auto border-r border-white/5 no-scrollbar">
+        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+          <div className="flex-1 flex flex-col p-6 md:p-8 gap-6 overflow-y-auto border-b lg:border-b-0 lg:border-r border-white/5 no-scrollbar">
             <TitleSection 
               isCreate={state.isCreate}
               isEditingTitle={state.isEditingTitle}

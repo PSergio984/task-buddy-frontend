@@ -1,22 +1,25 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
-import { LoginPage } from "@/pages/LoginPage"
-import { RegisterPage } from "@/pages/RegisterPage"
-import { LandingPage } from "@/pages/LandingPage"
-import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage"
-import { ProfilePage } from "@/pages/ProfilePage"
-import { AuditLogsPage } from "@/pages/AuditLogsPage"
-import { TasksPage } from "@/pages/TasksPage"
-import { ResetPasswordPage } from "@/pages/ResetPasswordPage"
-import { VerifyEmailPage } from "@/pages/verify-email"
-import { MainLayout } from "@/components/layout/main-layout"
+import { lazy, Suspense } from "react"
 import { ProtectedRoute, PublicRoute, LoadingScreen } from "@/contexts/ProtectedRoute"
 import { FilterProvider } from "@/contexts/FilterContext"
 import { SettingsProvider } from "@/contexts/SettingsContext"
 import { useAuth } from "@/contexts/AuthContext"
 import { Toaster } from "@/components/ui/toaster"
 import { TooltipProvider } from "@/components/ui/tooltip"
-import { DashboardDemo } from "@/pages/DashboardDemo"
 import { NotificationWatcher } from "@/components/notification-watcher"
+
+// Lazy-loaded pages
+const LoginPage = lazy(() => import("@/pages/LoginPage").then(m => ({ default: m.LoginPage })))
+const RegisterPage = lazy(() => import("@/pages/RegisterPage").then(m => ({ default: m.RegisterPage })))
+const LandingPage = lazy(() => import("@/pages/LandingPage").then(m => ({ default: m.LandingPage })))
+const ForgotPasswordPage = lazy(() => import("@/pages/ForgotPasswordPage").then(m => ({ default: m.ForgotPasswordPage })))
+const ProfilePage = lazy(() => import("@/pages/ProfilePage").then(m => ({ default: m.ProfilePage })))
+const AuditLogsPage = lazy(() => import("@/pages/AuditLogsPage").then(m => ({ default: m.AuditLogsPage })))
+const TasksPage = lazy(() => import("@/pages/TasksPage").then(m => ({ default: m.TasksPage })))
+const ResetPasswordPage = lazy(() => import("@/pages/ResetPasswordPage").then(m => ({ default: m.ResetPasswordPage })))
+const VerifyEmailPage = lazy(() => import("@/pages/verify-email").then(m => ({ default: m.VerifyEmailPage })))
+const MainLayout = lazy(() => import("@/components/layout/main-layout").then(m => ({ default: m.MainLayout })))
+const DashboardDemo = lazy(() => import("@/pages/DashboardDemo").then(m => ({ default: m.DashboardDemo })))
 
 export function App() {
   const { user, loading } = useAuth()
@@ -27,7 +30,8 @@ export function App() {
         <FilterProvider>
           <Router>
             <NotificationWatcher />
-            <Routes>
+            <Suspense fallback={<LoadingScreen />}>
+              <Routes>
                 {/* Landing Page */}
                 <Route
                   path="/"
@@ -104,14 +108,13 @@ export function App() {
                 {/* Fallback */}
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
-              <Toaster />
-            </Router>
-          </FilterProvider>
-        </SettingsProvider>
-      </TooltipProvider>
+            </Suspense>
+            <Toaster />
+          </Router>
+        </FilterProvider>
+      </SettingsProvider>
+    </TooltipProvider>
   )
 }
 
 export default App
-
-

@@ -23,7 +23,6 @@ export function FilterProvider({ children }: Readonly<{ children: ReactNode }>) 
 
   const clearHubFilters = useCallback(() => {
     setActiveSidebarFilter("all")
-    setActiveStatus("all")
     setActiveTagId(null)
     setSelectedPriorities([])
   }, [])

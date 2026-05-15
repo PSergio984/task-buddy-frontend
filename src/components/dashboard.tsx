@@ -6,6 +6,7 @@ import { TaskCard } from "@/components/task-card"
 import { AuditTrail } from "@/components/audit-trail"
 import { SystemOverview } from "@/components/system-overview"
 import { ConfirmationModal } from "@/components/confirmation-modal"
+import { useFilters } from "@/contexts/FilterContext"
 import {
   isToday,
   isTomorrow,
@@ -59,7 +60,7 @@ export function Dashboard({
   const { mutateAsync: updateSubtask, isPending: isUpdatingSubtask } = useUpdateSubtask()
   const { mutateAsync: deleteSubtask } = useDeleteSubtask()
   const { mutateAsync: detachTag } = useDetachTag()
-  const [activeTab, setActiveTab] = useState("all")
+  const { activeStatus, setActiveStatus } = useFilters()
   
   const { toast } = useToast()
 
@@ -77,18 +78,18 @@ export function Dashboard({
 
     return tasks.filter((task) => {
       if (task.completed) return false
-      if (activeTab === "all") return true
+      if (activeStatus === "all") return true
       if (!task.due_date) return false
 
       const dueDate = parseISO(task.due_date)
-      if (activeTab === "today") return isToday(dueDate)
-      if (activeTab === "tomorrow") return isTomorrow(dueDate)
-      if (activeTab === "week") {
+      if (activeStatus === "today") return isToday(dueDate)
+      if (activeStatus === "tomorrow") return isTomorrow(dueDate)
+      if (activeStatus === "week") {
         return isWithinInterval(dueDate, { start: today, end: weekEnd })
       }
       return true
     })
-  }, [tasks, activeTab])
+  }, [tasks, activeStatus])
 
   const handleToggleComplete = useCallback(
     async (id: number) => {
@@ -228,9 +229,9 @@ export function Dashboard({
               loading={loadingStats}
               timeframeTasks={filteredTasks}
               timeframeLabel={(() => {
-                if (activeTab === "all") return "All Time"
-                if (activeTab === "today") return "Today"
-                if (activeTab === "tomorrow") return "Tomorrow"
+                if (activeStatus === "all") return "All Time"
+                if (activeStatus === "today") return "Today"
+                if (activeStatus === "tomorrow") return "Tomorrow"
                 return "This Week"
               })()}
             />
@@ -257,8 +258,8 @@ export function Dashboard({
           </div>
 
           <Tabs
-            value={activeTab}
-            onValueChange={setActiveTab}
+            value={activeStatus}
+            onValueChange={setActiveStatus}
             className="w-full"
           >
             <TabsList className="inline-flex h-14 items-center justify-center rounded-[2rem] border-none bg-white/5 p-1.5 backdrop-blur-2xl shadow-xl mb-10">
@@ -278,7 +279,7 @@ export function Dashboard({
               ))}
             </TabsList>
 
-            <TabsContent value={activeTab} className="mt-0 space-y-6 focus-visible:outline-none">    
+            <TabsContent value={activeStatus} className="mt-0 space-y-6 focus-visible:outline-none">    
               {(() => {
                 if (loadingTasks) return <TaskListSkeleton />
                 if (filteredTasks.length === 0) {

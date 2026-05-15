@@ -19,9 +19,15 @@
 ## Performance Bottlenecks
 
 **Large Bundle Size:**
-- Problem: Heavy reliance on large libraries like `framer-motion`, `lucide-react`, and `radix-ui` can impact initial load time.
-- Impact: Slower "Time to Interactive" on mobile devices.
-- Improvement path: Implement code-splitting for pages using `React.lazy` and ensure tree-shaking is working effectively for icon libraries.
+- Problem: Heavy reliance on large libraries like `framer-motion`, `lucide-react`, and `radix-ui`.
+- Status: **OPTIMIZED** (2026-05-15) - Implemented route-based code-splitting using `React.lazy` and `Suspense`.
+- Impact: Initial bundle size reduced; major pages only load on demand.
+- Next targets: Ensure tree-shaking for icon libraries and use `framer-motion` lazy features where possible.
+
+**Performance Targets:**
+- Initial Load TTI: < 2.0s
+- Lighthouse Performance Score: > 90
+- Page Transition Duration: < 300ms
 
 **PWA Cache Invalidation:**
 - Problem: Users might occasionally see stale versions of the app if the Service Worker update logic isn't perfectly synced with the backend API changes.
