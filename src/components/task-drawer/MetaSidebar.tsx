@@ -234,6 +234,8 @@ function DueDateSection({ dueDate, handleDateSelect, dirtySections }: MetaSideba
     { label: "Next Week", value: new Date(new Date().setDate(new Date().getDate() + 7)) },
   ]
 
+  const formattedDueDate = dueDate ? format(dueDate, is12h ? "EEE, MMM d 'at' hh:mm a" : "EEE, MMM d 'at' HH:mm") : "No deadline"
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
@@ -247,7 +249,7 @@ function DueDateSection({ dueDate, handleDateSelect, dirtySections }: MetaSideba
             dueDate ? "bg-primary/10 text-primary border-primary/20 shadow-lg shadow-primary/5" : "text-foreground/40 border-white/5"
           )}>
             <Calendar className={cn("h-3.5 w-3.5 shrink-0", dueDate ? "text-primary" : "text-foreground/20")} />
-            {dueDate ? format(dueDate, is12h ? "EEE, MMM d 'at' hh:mm a" : "EEE, MMM d 'at' HH:mm") : "No deadline"}
+            {formattedDueDate}
           </button>
         </PopoverTrigger>
         <PopoverContent className="w-[320px] p-4 rounded-[1.5rem] border-white/10 bg-background/95 backdrop-blur-3xl flex flex-col gap-6 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)]" align="start" side="bottom" sideOffset={8}>

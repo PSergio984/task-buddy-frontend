@@ -25,7 +25,7 @@ export function useAuditTrail({ limit }: UseAuditTrailOptions) {
     }
     try {
       const response = await api.get("/api/v1/audit/logs", {
-        params: { limit: Math.max(currentLimit * 2, 50) },
+        params: { limit: Math.min(Math.max(currentLimit * 2, 50), 500) },
         signal,
       })
       setLogs(Array.isArray(response.data) ? response.data : [])

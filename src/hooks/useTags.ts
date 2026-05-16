@@ -1,7 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { tagsApi } from "@/lib/api"
+import { tagsApi, type Tag } from "@/lib/api"
 import { useAuth } from "@/contexts/AuthContext"
 import { useToast } from "@/hooks/use-toast"
+
+/**
+ * Reorders an array of items based on a list of IDs.
+ * Extracted to reduce function nesting in hooks.
+ */
+function reorderItems<T extends { id: number }>(items: T[], orderedIds: number[]): T[] {
+  const itemMap = new Map(items.map(item => [item.id, item]))
+  return orderedIds
+    .map(id => itemMap.get(id))
+    .filter((item): item is T => !!item)
+}
 
 export function useTags() {
   const { user } = useAuth()
@@ -21,19 +32,19 @@ export function useCreateTag() {
     mutationFn: tagsApi.create,
     onMutate: async (newTag) => {
       await queryClient.cancelQueries({ queryKey: ["tags"] })
-      const previousTags = queryClient.getQueryData<import("@/lib/api").Tag[]>(["tags"])
+      const previousTags = queryClient.getQueryData<Tag[]>(["tags"])
       
-      queryClient.setQueryData<import("@/lib/api").Tag[]>(["tags"], (old) => {
-        const temp: import("@/lib/api").Tag = {
-          id: Math.random(),
-          name: newTag.name,
-          color: newTag.color,
-          icon: newTag.icon,
-          user_id: 0,
-          created_at: new Date().toISOString()
-        }
-        return old ? [...old, temp] : [temp]
-      })
+      const temp: Tag = {
+        id: Math.random(),
+        name: newTag.name,
+        color: newTag.color,
+        icon: newTag.icon,
+        user_id: 0,
+        created_at: new Date().toISOString()
+      }
+      
+      const updatedTags = previousTags ? [...previousTags, temp] : [temp]
+      queryClient.setQueryData<Tag[]>(["tags"], updatedTags)
       
       return { previousTags }
     },
@@ -63,12 +74,10 @@ export function useDeleteTag() {
     mutationFn: tagsApi.delete,
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: ["tags"] })
-      const previousTags = queryClient.getQueryData<import("@/lib/api").Tag[]>(["tags"])
+      const previousTags = queryClient.getQueryData<Tag[]>(["tags"])
       
-      queryClient.setQueryData<import("@/lib/api").Tag[]>(["tags"], (old) => {
-        if (!old) return []
-        return old.filter(t => t.id !== id)
-      })
+      const updatedTags = previousTags ? previousTags.filter(t => t.id !== id) : []
+      queryClient.setQueryData<Tag[]>(["tags"], updatedTags)
       
       return { previousTags }
     },
@@ -101,12 +110,10 @@ export function useUpdateTag() {
       tagsApi.update(id, data),
     onMutate: async ({ id, data }) => {
       await queryClient.cancelQueries({ queryKey: ["tags"] })
-      const previousTags = queryClient.getQueryData<import("@/lib/api").Tag[]>(["tags"])
+      const previousTags = queryClient.getQueryData<Tag[]>(["tags"])
       
-      queryClient.setQueryData<import("@/lib/api").Tag[]>(["tags"], (old) => {
-        if (!old) return []
-        return old.map(t => t.id === id ? { ...t, ...data } : t)
-      })
+      const updatedTags = previousTags ? previousTags.map(t => t.id === id ? { ...t, ...data } : t) : []
+      queryClient.setQueryData<Tag[]>(["tags"], updatedTags)
       
       return { previousTags }
     },
@@ -136,10 +143,13 @@ export function useReorderTags() {
     mutationFn: tagsApi.reorder,
     onMutate: async (orderedIds: number[]) => {
       await queryClient.cancelQueries({ queryKey: ["tags"] })
-      const previous = queryClient.getQueryData<import("@/lib/api").Tag[]>(["tags"])
-      queryClient.setQueryData<import("@/lib/api").Tag[]>(["tags"], (old) =>
-        old ? orderedIds.map((id) => old.find((t) => t.id === id)!).filter(Boolean) : old
-      )
+      const previous = queryClient.getQueryData<Tag[]>(["tags"])
+      
+      if (previous) {
+        const updatedTags = reorderItems(previous, orderedIds)
+        queryClient.setQueryData<Tag[]>(["tags"], updatedTags)
+      }
+      
       return { previous }
     },
     onError: (_err, _ids, ctx) => {

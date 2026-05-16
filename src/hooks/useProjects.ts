@@ -1,7 +1,33 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { projectsApi } from "@/lib/api"
+import { projectsApi, type Project } from "@/lib/api"
 import { useAuth } from "@/contexts/AuthContext"
 import { useToast } from "@/hooks/use-toast"
+
+/**
+ * Reorders an array of projects based on a list of IDs.
+ */
+function reorderProjects(projects: Project[], orderedIds: number[]): Project[] {
+  const projectMap = new Map(projects.map(p => [p.id, p]))
+  return orderedIds
+    .map(id => projectMap.get(id))
+    .filter((p): p is Project => !!p)
+}
+
+/**
+ * Updates an item in a list.
+ */
+function updateItem<T extends { id: number }>(items: T[] | undefined, id: number, updates: Partial<T>): T[] {
+  if (!items) return []
+  return items.map(item => item.id === id ? { ...item, ...updates } : item)
+}
+
+/**
+ * Removes an item from a list.
+ */
+function removeItem<T extends { id: number }>(items: T[] | undefined, id: number): T[] {
+  if (!items) return []
+  return items.filter(item => item.id !== id)
+}
 
 export function useProjects() {
   const { user } = useAuth()
@@ -21,19 +47,19 @@ export function useCreateProject() {
     mutationFn: projectsApi.create,
     onMutate: async (newProject) => {
       await queryClient.cancelQueries({ queryKey: ["projects"] })
-      const previousProjects = queryClient.getQueryData<import("@/lib/api").Project[]>(["projects"])
+      const previousProjects = queryClient.getQueryData<Project[]>(["projects"])
       
-      queryClient.setQueryData<import("@/lib/api").Project[]>(["projects"], (old) => {
-        const temp: import("@/lib/api").Project = {
-          id: Math.random(),
-          name: newProject.name,
-          color: newProject.color,
-          icon: newProject.icon,
-          user_id: 0,
-          created_at: new Date().toISOString()
-        }
-        return old ? [...old, temp] : [temp]
-      })
+      const temp: Project = {
+        id: Math.random(),
+        name: newProject.name,
+        color: newProject.color,
+        icon: newProject.icon,
+        user_id: 0,
+        created_at: new Date().toISOString()
+      }
+      
+      const updatedProjects = previousProjects ? [...previousProjects, temp] : [temp]
+      queryClient.setQueryData<Project[]>(["projects"], updatedProjects)
       
       return { previousProjects }
     },
@@ -64,12 +90,10 @@ export function useUpdateProject() {
       projectsApi.update(id, updates),
     onMutate: async ({ id, updates }) => {
       await queryClient.cancelQueries({ queryKey: ["projects"] })
-      const previousProjects = queryClient.getQueryData<import("@/lib/api").Project[]>(["projects"])
+      const previousProjects = queryClient.getQueryData<Project[]>(["projects"])
       
-      queryClient.setQueryData<import("@/lib/api").Project[]>(["projects"], (old) => {
-        if (!old) return []
-        return old.map(p => p.id === id ? { ...p, ...updates } : p)
-      })
+      const updatedProjects = updateItem(previousProjects, id, updates)
+      queryClient.setQueryData<Project[]>(["projects"], updatedProjects)
       
       return { previousProjects }
     },
@@ -99,12 +123,10 @@ export function useDeleteProject() {
     mutationFn: projectsApi.delete,
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: ["projects"] })
-      const previousProjects = queryClient.getQueryData<import("@/lib/api").Project[]>(["projects"])
+      const previousProjects = queryClient.getQueryData<Project[]>(["projects"])
       
-      queryClient.setQueryData<import("@/lib/api").Project[]>(["projects"], (old) => {
-        if (!old) return []
-        return old.filter(p => p.id !== id)
-      })
+      const updatedProjects = removeItem(previousProjects, id)
+      queryClient.setQueryData<Project[]>(["projects"], updatedProjects)
       
       return { previousProjects }
     },
@@ -135,10 +157,13 @@ export function useReorderProjects() {
     mutationFn: projectsApi.reorder,
     onMutate: async (orderedIds: number[]) => {
       await queryClient.cancelQueries({ queryKey: ["projects"] })
-      const previous = queryClient.getQueryData<import("@/lib/api").Project[]>(["projects"])
-      queryClient.setQueryData<import("@/lib/api").Project[]>(["projects"], (old) =>
-        old ? orderedIds.map((id) => old.find((p) => p.id === id)!).filter(Boolean) : old
-      )
+      const previous = queryClient.getQueryData<Project[]>(["projects"])
+      
+      if (previous) {
+        const updatedProjects = reorderProjects(previous, orderedIds)
+        queryClient.setQueryData<Project[]>(["projects"], updatedProjects)
+      }
+      
       return { previous }
     },
     onError: (_err, _ids, ctx) => {

@@ -7,7 +7,7 @@ import { useMarkRead } from "@/hooks/useNotifications"
 import { useNavigate } from "react-router-dom"
 
 interface NotificationItemProps {
-  notification: Notification
+  readonly notification: Notification
 }
 
 const iconMap: Record<NotificationType, { icon: LucideIcon; color: string }> = {
@@ -34,10 +34,10 @@ export function NotificationItem({ notification }: NotificationItemProps) {
   }
 
   return (
-    <div
+    <button
       onClick={handleClick}
       className={cn(
-        "flex gap-3 p-4 cursor-pointer transition-colors hover:bg-muted/50 border-b border-border/50 last:border-0",
+        "flex w-full text-left gap-3 p-4 transition-colors hover:bg-muted/50 border-b border-border/50 last:border-0",
         !notification.read && "bg-primary/5"
       )}
     >
@@ -60,6 +60,6 @@ export function NotificationItem({ notification }: NotificationItemProps) {
           {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
         </p>
       </div>
-    </div>
+    </button>
   )
 }

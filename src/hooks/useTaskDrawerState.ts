@@ -17,6 +17,18 @@ import {
 import { useProjects, useCreateProject } from "@/hooks/useProjects"
 import { useTags, useCreateTag } from "@/hooks/useTags"
 
+const areTagsDirty = (local: Tag[], original: Tag[]) => 
+  local.length !== original.length || 
+  local.some(lt => !original.some(ot => ot.id === lt.id))
+
+const areSubtasksDirty = (local: Subtask[], original: Subtask[]) => {
+  if (local.length !== original.length) return true
+  return local.some((ls, i) => {
+    const os = original[i]
+    return ls.id !== os?.id || ls.title !== os?.title || ls.completed !== os?.completed
+  })
+}
+
 interface UseTaskDrawerStateProps {
   initialTask: Task | null
   mode: "view" | "create"
@@ -86,16 +98,7 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onOpenChange }: 
     setPrevIsOpen(true)
     setPrevId(currentId)
     
-    if (task && !isCreate) {
-      setTitle(task.title)
-      setDescription(task.description ?? "")
-      setPriority(task.priority)
-      setCompleted(task.completed)
-      setProjectId(task.project_id?.toString() ?? "none")
-      setDueDate(task.due_date ? new Date(task.due_date) : undefined)
-      setLocalSubtasks(task.subtasks || [])
-      setLocalTags(task.tags || [])
-    } else {
+    if (isCreate || !task) {
       setTitle("")
       setDescription("")
       setPriority("MEDIUM")
@@ -106,6 +109,15 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onOpenChange }: 
       setPendingTags([])
       setLocalSubtasks([])
       setLocalTags([])
+    } else {
+      setTitle(task.title)
+      setDescription(task.description ?? "")
+      setPriority(task.priority)
+      setCompleted(task.completed)
+      setProjectId(task.project_id?.toString() ?? "none")
+      setDueDate(task.due_date ? new Date(task.due_date) : undefined)
+      setLocalSubtasks(task.subtasks || [])
+      setLocalTags(task.tags || [])
     }
     
     setNewSubtaskTitle("")
@@ -130,18 +142,8 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onOpenChange }: 
   const isProjectDirty = Boolean(!isCreate && task && projectId !== (task.project_id?.toString() ?? "none"))
   const isDueDateDirty = Boolean(!isCreate && task && (dueDate?.getTime() !== (task.due_date ? new Date(task.due_date).getTime() : undefined)))
   
-  const isTagsDirty = Boolean(!isCreate && task && (
-    localTags.length !== (task.tags || []).length ||
-    localTags.some(lt => !(task.tags || []).some(ot => ot.id === lt.id))
-  ))
-
-  const isSubtasksDirty = Boolean(!isCreate && task && (
-    localSubtasks.length !== (task.subtasks || []).length ||
-    localSubtasks.some((ls, index) => {
-      const os = (task.subtasks || [])[index]
-      return !os || ls.id !== os.id || ls.title !== os.title || ls.completed !== os.completed
-    })
-  ))
+  const isTagsDirty = Boolean(!isCreate && task && areTagsDirty(localTags, task.tags || []))
+  const isSubtasksDirty = Boolean(!isCreate && task && areSubtasksDirty(localSubtasks, task.subtasks || []))
 
   const hasChanges = isTitleDirty || isDescriptionDirty || isPriorityDirty || isStatusDirty || isProjectDirty || isDueDateDirty || isTagsDirty || isSubtasksDirty
 
@@ -154,10 +156,45 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onOpenChange }: 
     if (updates.due_date !== undefined) setDueDate(updates.due_date ? new Date(updates.due_date) : undefined)
   }
 
+  const syncTags = async (taskId: number, currentTags: Tag[], originalTags: Tag[]) => {
+    const originalTagIds = originalTags.map(t => t.id)
+    const currentTagIds = currentTags.map(t => t.id)
+    const tagsToAdd = currentTagIds.filter(id => !originalTagIds.includes(id))
+    const tagsToRemove = originalTagIds.filter(id => !currentTagIds.includes(id))
+    await Promise.all([
+      ...tagsToAdd.map(id => attachTag.mutateAsync({ taskId, tagId: id })),
+      ...tagsToRemove.map(id => detachTag.mutateAsync({ taskId, tagId: id }))
+    ])
+  }
+
+  const syncSubtasks = async (taskId: number, local: Subtask[], original: Subtask[]) => {
+    const subtasksToCreate = local.filter(s => s.id < 0)
+    const subtasksToUpdate = local.filter(s => s.id > 0 && (
+      original.find(os => os.id === s.id)?.title !== s.title ||
+      original.find(os => os.id === s.id)?.completed !== s.completed
+    ))
+    const subtasksToDelete = original.filter(os => !local.some(ls => ls.id === os.id))
+
+    await Promise.all([
+      ...subtasksToDelete.map(s => deleteSubtask.mutateAsync(s.id)),
+      ...subtasksToUpdate.map(s => updateSubtask.mutateAsync({ id: s.id, updates: { title: s.title, completed: s.completed } }))
+    ])
+    
+    const idMap = new Map<number, number>()
+    for (const s of subtasksToCreate) {
+      const newSub = await createSubtask.mutateAsync({ taskId, title: s.title, completed: s.completed })
+      idMap.set(s.id, newSub.id)
+    }
+    
+    if (areSubtasksDirty(local, original)) {
+      const orderedIds = local.map(s => s.id < 0 ? idMap.get(s.id)! : s.id)
+      await reorderSubtasks.mutateAsync({ taskId, orderedIds })
+    }
+  }
+
   const handleConfirmUpdate = async () => {
     if (!task) return
     try {
-      // 1. Update core task fields
       await updateTask.mutateAsync({
         id: task.id,
         updates: {
@@ -170,59 +207,8 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onOpenChange }: 
         }
       })
 
-      // 2. Sync Tags
-      const originalTagIds = (task.tags || []).map(t => t.id)
-      const currentTagIds = localTags.map(t => t.id)
-      
-      const tagsToAdd = currentTagIds.filter(id => !originalTagIds.includes(id))
-      const tagsToRemove = originalTagIds.filter(id => !currentTagIds.includes(id))
-
-      await Promise.all([
-        ...tagsToAdd.map(id => attachTag.mutateAsync({ taskId: task.id, tagId: id })),
-        ...tagsToRemove.map(id => detachTag.mutateAsync({ taskId: task.id, tagId: id }))
-      ])
-
-      // 3. Sync Subtasks
-      const originalSubtasks = task.subtasks || []
-      
-      // New subtasks have id < 0
-      const subtasksToCreate = localSubtasks.filter(s => s.id < 0)
-      const subtasksToUpdate = localSubtasks.filter(s => s.id > 0 && (
-        originalSubtasks.find(os => os.id === s.id)?.title !== s.title ||
-        originalSubtasks.find(os => os.id === s.id)?.completed !== s.completed
-      ))
-      const subtasksToDelete = originalSubtasks.filter(os => !localSubtasks.some(ls => ls.id === os.id))
-
-      // a. Delete removed subtasks
-      await Promise.all(subtasksToDelete.map(s => deleteSubtask.mutateAsync(s.id)))
-      
-      // b. Update existing subtasks
-      await Promise.all(subtasksToUpdate.map(s => updateSubtask.mutateAsync({ id: s.id, updates: { title: s.title, completed: s.completed } })))
-      
-      // c. Create new subtasks and capture their real IDs
-      const createdSubtaskMappings = await Promise.all(
-        subtasksToCreate.map(async (s) => {
-          const newSub = await createSubtask.mutateAsync({ 
-            taskId: task.id, 
-            title: s.title,
-            completed: s.completed 
-          })
-          return { tempId: s.id, realId: newSub.id }
-        })
-      )
-      
-      // d. Create a map for temp -> real ID lookup
-      const idMap = new Map<number, number>()
-      createdSubtaskMappings.forEach(mapping => idMap.set(mapping.tempId, mapping.realId))
-      
-      // e. Final reordering with all real IDs
-      if (isSubtasksDirty) {
-        const orderedIds = localSubtasks.map(s => s.id < 0 ? idMap.get(s.id)! : s.id)
-        await reorderSubtasks.mutateAsync({ 
-          taskId: task.id, 
-          orderedIds 
-        })
-      }
+      await syncTags(task.id, localTags, task.tags || [])
+      await syncSubtasks(task.id, localSubtasks, task.subtasks || [])
 
       setShowSaveConfirm(false)
       toast({ title: "Changes saved", variant: "success" })
@@ -313,10 +299,8 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onOpenChange }: 
     if (!tag) return
     if (isCreate) {
       setPendingTags(prev => [...prev, tag])
-    } else {
-      if (!localTags.some(t => t.id === tagId)) {
-        setLocalTags(prev => [...prev, tag])
-      }
+    } else if (!localTags.some(t => t.id === tagId)) {
+      setLocalTags(prev => [...prev, tag])
     }
     setTagSearch("")
   }

@@ -259,7 +259,12 @@ function PreferencesCard() {
                   (isRegistering || isLoadingVapid) && "opacity-50 cursor-not-allowed"
                 )}
               >
-                {enabled ? (isRegistering ? "Enabling..." : (isLoadingVapid ? "Loading..." : "Enabled")) : "Disabled"}
+                {(() => {
+                  if (!enabled) return "Disabled"
+                  if (isRegistering) return "Enabling..."
+                  if (isLoadingVapid) return "Loading..."
+                  return "Enabled"
+                })()}
               </button>
             ))}
           </div>

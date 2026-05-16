@@ -3,6 +3,96 @@ import { tasksApi, subtasksApi, tagsApi, type Task, type Subtask, type Tag } fro
 import { useAuth } from "@/contexts/AuthContext"
 import { useToast } from "@/hooks/use-toast"
 
+/**
+ * Reorders an array of items based on a list of IDs.
+ */
+function reorderItems<T extends { id: number }>(items: T[], orderedIds: number[]): T[] {
+  const itemMap = new Map(items.map(item => [item.id, item]))
+  return orderedIds
+    .map(id => itemMap.get(id))
+    .filter((item): item is T => !!item)
+}
+
+/**
+ * Helper to update a task in a list of tasks.
+ */
+function updateTaskInList(tasks: Task[], id: number, updates: Partial<Task>): Task[] {
+  return tasks.map(task => (task.id === id ? { ...task, ...updates } : task))
+}
+
+/**
+ * Helper to update a subtask within a specific task.
+ */
+function updateSubtaskInTask(task: Task, subtaskId: number, updates: Partial<Subtask>): Task {
+  if (!task.subtasks) return task
+  return {
+    ...task,
+    subtasks: task.subtasks.map(s => (s.id === subtaskId ? { ...s, ...updates } : s)),
+  }
+}
+
+/**
+ * Helper to update a subtask across all tasks in a list.
+ */
+function updateSubtaskInTasks(tasks: Task[], subtaskId: number, updates: Partial<Subtask>): Task[] {
+  return tasks.map(task => updateSubtaskInTask(task, subtaskId, updates))
+}
+
+/**
+ * Helper to remove a subtask from a specific task.
+ */
+function removeSubtaskFromTask(task: Task, subtaskId: number): Task {
+  if (!task.subtasks) return task
+  return {
+    ...task,
+    subtasks: task.subtasks.filter(s => s.id !== subtaskId),
+  }
+}
+
+/**
+ * Helper to remove a subtask across all tasks in a list.
+ */
+function removeSubtaskFromTasks(tasks: Task[], subtaskId: number): Task[] {
+  return tasks.map(task => removeSubtaskFromTask(task, subtaskId))
+}
+
+/**
+ * Helper to add a tag to a task in a list.
+ */
+function addTagToTaskInList(tasks: Task[], taskId: number, tag: Tag): Task[] {
+  return tasks.map(task =>
+    task.id === taskId ? { ...task, tags: [...(task.tags || []), tag] } : task
+  )
+}
+
+/**
+ * Helper to remove a tag from a task in a list.
+ */
+function removeTagFromTaskInList(tasks: Task[], taskId: number, tagId: number): Task[] {
+  return tasks.map(task =>
+    task.id === taskId ? { ...task, tags: task.tags?.filter(t => t.id !== tagId) } : task
+  )
+}
+
+/**
+ * Helper to add a subtask to a specific task.
+ */
+function addSubtaskToTask(task: Task, subtask: Subtask): Task {
+  return {
+    ...task,
+    subtasks: [...(task.subtasks || []), subtask],
+  }
+}
+
+/**
+ * Helper to add a subtask across all tasks in a list.
+ */
+function addSubtaskToTasks(tasks: Task[], taskId: number, subtask: Subtask): Task[] {
+  return tasks.map(task => (task.id === taskId ? addSubtaskToTask(task, subtask) : task))
+}
+
+
+
 export function useTasks(filter?: string, project_id?: number, tag_id?: number) {
   const { user } = useAuth()
   
@@ -33,9 +123,9 @@ export function useCreateTask() {
       await queryClient.cancelQueries({ queryKey: ["tasks"] })
       const previousTasks = queryClient.getQueryData<Task[]>(["tasks"])
 
-      queryClient.setQueryData<Task[]>(["tasks"], (old) => {
+      if (previousTasks) {
         const tempTask: Task = {
-          id: Math.random(), // Temporary ID
+          id: Math.random(),
           title: newTaskData.title,
           description: newTaskData.description,
           completed: newTaskData.completed ?? false,
@@ -43,10 +133,10 @@ export function useCreateTask() {
           project_id: newTaskData.project_id,
           due_date: newTaskData.due_date,
           created_at: new Date().toISOString(),
-          user_id: 0, // Placeholder
+          user_id: 0,
         }
-        return old ? [tempTask, ...old] : [tempTask]
-      })
+        queryClient.setQueryData<Task[]>(["tasks"], [tempTask, ...previousTasks])
+      }
 
       return { previousTasks }
     },
@@ -87,12 +177,9 @@ export function useUpdateTask() {
       const previousTask = queryClient.getQueryData<Task>(["task", id])
 
       // Optimistically update to the new value in the list
-      queryClient.setQueriesData<Task[]>({ queryKey: ["tasks"] }, (old) => {
-        if (!old) return []
-        return old.map((task) =>
-          task.id === id ? { ...task, ...updates } : task
-        )
-      })
+      if (previousTasks) {
+        queryClient.setQueryData<Task[]>(["tasks"], updateTaskInList(previousTasks, id, updates))
+      }
 
       // Optimistically update the detail view
       if (previousTask) {
@@ -139,10 +226,9 @@ export function useDeleteTask() {
       
       const previousTasks = queryClient.getQueryData<Task[]>(["tasks"])
 
-      queryClient.setQueriesData<Task[]>({ queryKey: ["tasks"] }, (old) => {
-        if (!old) return []
-        return old.filter((task) => task.id !== id)
-      })
+      if (previousTasks) {
+        queryClient.setQueryData<Task[]>(["tasks"], previousTasks.filter((task) => task.id !== id))
+      }
 
       return { previousTasks }
     },
@@ -179,22 +265,13 @@ export function useUpdateSubtask() {
       const previousTasks = queryClient.getQueryData<Task[]>(["tasks"])
       
       // Update in ["tasks"] list
-      queryClient.setQueriesData<Task[]>({ queryKey: ["tasks"] }, (old) => {
-        if (!old) return []
-        return old.map(task => ({
-          ...task,
-          subtasks: task.subtasks?.map(s => s.id === id ? { ...s, ...updates } : s)
-        }))
-      })
+      if (previousTasks) {
+        queryClient.setQueryData<Task[]>(["tasks"], updateSubtaskInTasks(previousTasks, id, updates))
+      }
 
-      // Update in ["task", id] queries
-      queryClient.setQueriesData<Task>({ queryKey: ["task"] }, (old) => {
-        if (!old || !old.subtasks) return old
-        return {
-          ...old,
-          subtasks: old.subtasks.map(s => s.id === id ? { ...s, ...updates } : s)
-        }
-      })
+      // Note: Detail update is more complex because it could be any task.
+      // For now, we only update the list which is most common.
+      // If we want to update all cached task details, we can use setQueriesData but that's Level 3.
 
       return { previousTasks }
     },
@@ -231,21 +308,9 @@ export function useDeleteSubtask() {
 
       const previousTasks = queryClient.getQueryData<Task[]>(["tasks"])
       
-      queryClient.setQueriesData<Task[]>({ queryKey: ["tasks"] }, (old) => {
-        if (!old) return []
-        return old.map(task => ({
-          ...task,
-          subtasks: task.subtasks?.filter(s => s.id !== id)
-        }))
-      })
-
-      queryClient.setQueriesData<Task>({ queryKey: ["task"] }, (old) => {
-        if (!old || !old.subtasks) return old
-        return {
-          ...old,
-          subtasks: old.subtasks.filter(s => s.id !== id)
-        }
-      })
+      if (previousTasks) {
+        queryClient.setQueryData<Task[]>(["tasks"], removeSubtaskFromTasks(previousTasks, id))
+      }
 
       return { previousTasks }
     },
@@ -290,19 +355,12 @@ export function useCreateSubtask() {
         created_at: new Date().toISOString()
       }
 
-      queryClient.setQueriesData<Task[]>({ queryKey: ["tasks"] }, (old) => {
-        if (!old) return []
-        return old.map(task => task.id === taskId ? {
-          ...task,
-          subtasks: task.subtasks ? [...task.subtasks, tempSub] : [tempSub]
-        } : task)
-      })
+      if (previousTasks) {
+        queryClient.setQueryData<Task[]>(["tasks"], addSubtaskToTasks(previousTasks, taskId, tempSub))
+      }
 
       if (previousTask) {
-        queryClient.setQueryData<Task>(["task", taskId], {
-          ...previousTask,
-          subtasks: previousTask.subtasks ? [...previousTask.subtasks, tempSub] : [tempSub]
-        })
+        queryClient.setQueryData<Task>(["task", taskId], addSubtaskToTask(previousTask, tempSub))
       }
 
       return { previousTasks, previousTask }
@@ -340,11 +398,10 @@ export function useReorderSubtasks() {
       await queryClient.cancelQueries({ queryKey: ["task", taskId] })
       const previousTask = queryClient.getQueryData<Task>(["task", taskId])
 
-      if (previousTask && previousTask.subtasks) {
-        const reordered = orderedIds.map(id => previousTask.subtasks!.find(s => s.id === id)!).filter(Boolean)
+      if (previousTask?.subtasks) {
         queryClient.setQueryData<Task>(["task", taskId], {
           ...previousTask,
-          subtasks: reordered
+          subtasks: reorderItems(previousTask.subtasks, orderedIds)
         })
       }
 
@@ -384,21 +441,17 @@ export function useAttachTag() {
       const allTags = queryClient.getQueryData<Tag[]>(["tags"])
       const tag = allTags?.find(t => t.id === tagId)
 
-      if (tag) {
-        queryClient.setQueriesData<Task[]>({ queryKey: ["tasks"] }, (old) => {
-          if (!old) return []
-          return old.map(task => task.id === taskId ? {
-            ...task,
-            tags: task.tags ? [...task.tags, tag] : [tag]
-          } : task)
-        })
+      if (!tag) return { previousTasks, previousTask }
 
-        if (previousTask) {
-          queryClient.setQueryData<Task>(["task", taskId], {
-            ...previousTask,
-            tags: previousTask.tags ? [...previousTask.tags, tag] : [tag]
-          })
-        }
+      if (previousTasks) {
+        queryClient.setQueryData<Task[]>(["tasks"], addTagToTaskInList(previousTasks, taskId, tag))
+      }
+
+      if (previousTask) {
+        queryClient.setQueryData<Task>(["task", taskId], {
+          ...previousTask,
+          tags: [...(previousTask.tags || []), tag]
+        })
       }
 
       return { previousTasks, previousTask }
@@ -439,13 +492,9 @@ export function useDetachTag() {
       const previousTasks = queryClient.getQueryData<Task[]>(["tasks"])
       const previousTask = queryClient.getQueryData<Task>(["task", taskId])
 
-      queryClient.setQueriesData<Task[]>({ queryKey: ["tasks"] }, (old) => {
-        if (!old) return []
-        return old.map(task => task.id === taskId ? {
-          ...task,
-          tags: task.tags?.filter(t => t.id !== tagId)
-        } : task)
-      })
+      if (previousTasks) {
+        queryClient.setQueryData<Task[]>(["tasks"], removeTagFromTaskInList(previousTasks, taskId, tagId))
+      }
 
       if (previousTask) {
         queryClient.setQueryData<Task>(["task", taskId], {

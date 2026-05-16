@@ -21,9 +21,17 @@ const VerifyEmailPage = lazy(() => import("@/pages/verify-email").then(m => ({ d
 const MainLayout = lazy(() => import("@/components/layout/main-layout").then(m => ({ default: m.MainLayout })))
 const DashboardDemo = lazy(() => import("@/pages/DashboardDemo").then(m => ({ default: m.DashboardDemo })))
 
-export function App() {
+function RootElement() {
   const { user, loading } = useAuth()
 
+  if (loading) return <LoadingScreen />
+  if (!user) return <LandingPage />
+  if (user.email_confirmed === false) return <Navigate to="/verify-email" replace />
+  
+  return <Navigate to="/dashboard" replace />
+}
+
+export function App() {
   return (
     <TooltipProvider delayDuration={0}>
       <SettingsProvider>
@@ -33,22 +41,7 @@ export function App() {
             <Suspense fallback={<LoadingScreen />}>
               <Routes>
                 {/* Landing Page */}
-                <Route
-                  path="/"
-                  element={
-                    loading ? (
-                      <LoadingScreen />
-                    ) : user ? (
-                      user.email_confirmed === false ? (
-                        <Navigate to="/verify-email" replace />
-                      ) : (
-                        <Navigate to="/dashboard" replace />
-                      )
-                    ) : (
-                      <LandingPage />
-                    )
-                  }
-                />
+                <Route path="/" element={<RootElement />} />
 
                 {/* Public Auth Routes */}
                 <Route

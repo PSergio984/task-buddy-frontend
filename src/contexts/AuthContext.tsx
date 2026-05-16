@@ -163,25 +163,21 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
           }
         )
 
-        // Note: register doesn't currently set a cookie in the backend,
-        // it just returns success. The user will need to log in or 
-        // the backend needs to be updated to set a cookie on register too.
-        // For now, we follow the existing behavior of normalizing user data if present.
         const nextUser = normalizeAuthUser(response.data)
         if (nextUser) {
           setUser(nextUser)
           globalThis.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextUser))
         }
-      } catch (err) {
+        setError(null)
+        } catch (err) {
         setError(getAuthErrorMessage(err, "Registration failed."))
         throw err
-      } finally {
+        } finally {
         setLoading(false)
-      }
-    },
-    []
-  )
-
+        }
+        },
+        []
+        )
   const value = useMemo(() => ({
     user,
     loading,

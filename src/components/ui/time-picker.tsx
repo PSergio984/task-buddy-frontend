@@ -47,11 +47,15 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
     onChange(`${h}:${m}`)
   }
 
+  const get24Hour = (h: number, p: string) => {
+    if (p === "PM") return h === 12 ? 12 : h + 12
+    return h === 12 ? 0 : h
+  }
+
   const handleHourChange = (val: string) => {
     const h = parseInt(val, 10)
     if (is12h) {
-      const h24 = period === "PM" ? (h === 12 ? 12 : h + 12) : (h === 12 ? 0 : h)
-      updateTime(h24, minute)
+      updateTime(get24Hour(h, period), minute)
     } else {
       updateTime(h, minute)
     }
@@ -64,8 +68,7 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
   const handlePeriodChange = (val: string) => {
     const h12 = hour24 % 12
     const h = h12 === 0 ? 12 : h12
-    const h24 = val === "PM" ? (h === 12 ? 12 : h + 12) : (h === 12 ? 0 : h)
-    updateTime(h24, minute)
+    updateTime(get24Hour(h, val), minute)
   }
 
   const hours = is12h 

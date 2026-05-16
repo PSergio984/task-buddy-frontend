@@ -86,6 +86,29 @@ export function RegisterForm() {
     }
   }
 
+  const getSubmitButtonContent = () => {
+    if (loading) {
+      return (
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1 }}
+          className="h-6 w-6 border-2 border-primary-foreground border-t-transparent rounded-full"
+        />
+      )
+    }
+    if (!isPasswordStrong && password.length > 0) {
+      return "Password too weak"
+    }
+    return (
+      <span className="flex items-center gap-2">
+        Create Account <ArrowRight className="h-5 w-5" />
+      </span>
+    )
+  }
+
+  const PasswordEyeIcon = showPassword ? EyeOff : Eye
+  const ConfirmPasswordEyeIcon = showConfirmPassword ? EyeOff : Eye
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2">
@@ -150,7 +173,7 @@ export function RegisterForm() {
             onClick={() => setShowPassword((v) => !v)}
             className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/60 hover:text-foreground transition-colors"
           >
-            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+            <PasswordEyeIcon className="h-5 w-5" />
           </button>
         </div>
         <PasswordStrengthMeter password={password} />
@@ -179,7 +202,7 @@ export function RegisterForm() {
             onClick={() => setShowConfirmPassword((v) => !v)}
             className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/60 hover:text-foreground transition-colors"
           >
-            {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+            <ConfirmPasswordEyeIcon className="h-5 w-5" />
           </button>
         </div>
         {(submitAttempted || confirmPassword.length > 0) && confirmPasswordError && (
@@ -192,13 +215,7 @@ export function RegisterForm() {
         disabled={loading || !isFormValid}
         className="w-full h-14 rounded-2xl text-lg font-bold shadow-xl shadow-primary/10 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
       >
-        {loading ? (
-          <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="h-6 w-6 border-2 border-primary-foreground border-t-transparent rounded-full" />
-        ) : !isPasswordStrong && password.length > 0 ? (
-          "Password too weak"
-        ) : (
-          <span className="flex items-center gap-2">Create Account <ArrowRight className="h-5 w-5" /></span>
-        )}
+        {getSubmitButtonContent()}
       </Button>
     </form>
   )
