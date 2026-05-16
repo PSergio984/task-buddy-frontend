@@ -25,38 +25,52 @@ export interface TaskDetailDrawerProps {
   readonly task: Task | null
   readonly mode: "view" | "create"
   readonly isOpen: boolean
-  readonly onOpenChange: (open: boolean) => void
+  readonly onOpen: () => void
+  readonly onClose: () => void
 }
 
-export function TaskDetailDrawer({ task: initialTask, mode, isOpen, onOpenChange }: TaskDetailDrawerProps) {
-  const state = useTaskDrawerState({ initialTask, mode, isOpen, onOpenChange })
+export function TaskDetailDrawer({ task: initialTask, mode, isOpen, onOpen, onClose }: TaskDetailDrawerProps) {
+  const state = useTaskDrawerState({ 
+    initialTask, 
+    mode, 
+    isOpen, 
+    onOpenChange: (open) => open ? onOpen() : onClose() 
+  })
   const [subtasksLimit, setSubtasksLimit] = useState(5)
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false)
   
   const allSubtasks = state.isCreate ? state.pendingSubtasks : state.localSubtasks
   const visibleSubtasks = allSubtasks.slice(0, subtasksLimit)
 
-  const handleSafeClose = (open: boolean) => {
-    if (!open && state.hasChanges) {
+  const handleClose = () => {
+    if (state.hasChanges) {
       setShowDiscardConfirm(true)
     } else {
-      onOpenChange(open)
+      onClose()
+    }
+  }
+
+  const onSheetOpenChange = (open: boolean) => {
+    if (open) {
+      onOpen()
+    } else {
+      handleClose()
     }
   }
 
   const handleConfirmDiscard = () => {
     setShowDiscardConfirm(false)
-    onOpenChange(false)
+    onClose()
   }
 
   return (
     <>
-      <Sheet open={isOpen} onOpenChange={handleSafeClose}>
+      <Sheet open={isOpen} onOpenChange={onSheetOpenChange}>
         <SheetContent
           side="right"
           className="w-full sm:max-w-3xl p-0 flex flex-col bg-background/95 backdrop-blur-2xl border-l border-white/5 shadow-2xl"
         >
-          <DrawerHeader isCreate={state.isCreate} onClose={() => handleSafeClose(false)} />
+          <DrawerHeader isCreate={state.isCreate} onClose={handleClose} />
 
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
           <div className="flex-1 flex flex-col p-6 md:p-8 gap-6 overflow-y-auto border-b lg:border-b-0 lg:border-r border-white/5 no-scrollbar">
@@ -154,7 +168,7 @@ export function TaskDetailDrawer({ task: initialTask, mode, isOpen, onOpenChange
           <ActionFooter
             isCreate={state.isCreate}
             isDirty={state.isCreate ? !!state.title.trim() : state.hasChanges}
-            onOpenChange={handleSafeClose}
+            onOpenChange={handleClose}
             handleCreate={state.handleCreate}
             handleUpdate={state.handleConfirmUpdate}
             showDeleteConfirm={state.showDeleteConfirm}

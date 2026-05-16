@@ -21,6 +21,15 @@ interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>
 }
 
+declare global {
+  interface Window {
+    MSStream?: unknown
+  }
+  interface WindowEventMap {
+    beforeinstallprompt: BeforeInstallPromptEvent
+  }
+}
+
 interface PwaInstallButtonProps {
   readonly isCollapsed?: boolean
   readonly variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link"
@@ -43,7 +52,7 @@ export function PwaInstallButton({
 
     // iOS detection
     const ua = globalThis.navigator.userAgent
-    const isIOSDevice = /iPad|iPhone|iPod/.test(ua) && !((globalThis as unknown) as { MSStream: unknown }).MSStream
+    const isIOSDevice = /iPad|iPhone|iPod/.test(ua) && !window.MSStream
     
     const isStandaloneMode = globalThis.matchMedia?.("(display-mode: standalone)").matches ?? false
     const isSafariStandalone = (globalThis.navigator as unknown as { standalone?: boolean })?.standalone ?? false
@@ -63,15 +72,15 @@ export function PwaInstallButton({
   useEffect(() => {
     if (globalThis.window === undefined) return
 
-    const handler = (e: Event) => {
+    const handler = ((e: BeforeInstallPromptEvent) => {
       e.preventDefault()
-      setDeferredPrompt(e as BeforeInstallPromptEvent)
-    }
+      setDeferredPrompt(e)
+    }) as EventListener
 
-    globalThis.addEventListener("beforeinstallprompt", handler)
+    globalThis.window.addEventListener("beforeinstallprompt", handler)
 
     return () => {
-      globalThis.removeEventListener("beforeinstallprompt", handler)
+      globalThis.window?.removeEventListener("beforeinstallprompt", handler)
     }
   }, [])
 

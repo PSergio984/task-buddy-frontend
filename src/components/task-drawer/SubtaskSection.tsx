@@ -49,7 +49,7 @@ export function SubtaskSection({
   visibleSubtasks, allSubtasks, handleToggleSubtask, handleDeleteSubtask,
   subtaskInputRef, subtasksLimit, setSubtasksLimit, pendingSubtasks, setPendingSubtasks,
   task, isDirty, handleReorderSubtasks
-}: SubtaskSectionProps) {
+}: Readonly<SubtaskSectionProps>) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -152,7 +152,7 @@ export function SubtaskSection({
   )
 }
 
-function SortableSubtaskItem({ id, ...props }: SubtaskItemProps & { id: string | number }) {
+function SortableSubtaskItem({ id, ...props }: Readonly<SubtaskItemProps & { id: string | number }>) {
   const {
     attributes,
     listeners,
@@ -185,7 +185,7 @@ interface SubtaskItemProps {
   readonly listeners?: DraggableSyntheticListeners
 }
 
-function SubtaskItem({ sub, handleToggleSubtask, handleDeleteSubtask, setPendingSubtasks, attributes, listeners }: SubtaskItemProps) {
+function SubtaskItem({ sub, handleToggleSubtask, handleDeleteSubtask, setPendingSubtasks, attributes, listeners }: Readonly<SubtaskItemProps>) {
   const isPending = typeof sub.id === "string"
   const subTitle = sub.title
   const isCompleted = "completed" in sub && sub.completed
@@ -276,7 +276,7 @@ interface SubtaskInputProps {
   readonly setIsAddingSubtask: (v: boolean) => void
 }
 
-function SubtaskInput({ subtaskInputRef, newSubtaskTitle, setNewSubtaskTitle, handleAddSubtask, setIsAddingSubtask }: SubtaskInputProps) {
+function SubtaskInput({ subtaskInputRef, newSubtaskTitle, setNewSubtaskTitle, handleAddSubtask, setIsAddingSubtask }: Readonly<SubtaskInputProps>) {
   return (
     <motion.div
       initial={{ opacity: 0, y: -8 }}
@@ -309,7 +309,7 @@ function SubtaskInput({ subtaskInputRef, newSubtaskTitle, setNewSubtaskTitle, ha
   )
 }
 
-function AddSubtaskButton({ onClick }: { onClick: () => void }) {
+function AddSubtaskButton({ onClick }: Readonly<{ onClick: () => void }>) {
   return (
     <div className="flex items-center gap-2">
       <button

@@ -17,7 +17,7 @@ The frontend roadmap focuses on transforming the application from an "AI-generat
 - [x] **Phase 4.3: Task Interaction Precision & Information Density** - Full creation support (subtasks/tags), time-aware deadlines, color-coding, and layout polish.
 - [x] **Phase 4.5: UI/UX & Functional Refinement** - Sidebar workspace controls, activity history context, and profile settings.
 - [x] **Phase 4.6: Advanced UI/UX Refinement** - Dashboard responsiveness, color-icon picker, and enhanced audit trail.
-- [ ] **Phase 05: Real-time Sync & Offline Mode** - TanStack Query persistence, optimistic UI, and auth hardening.
+- [x] **Phase 05: Real-time Sync & Offline Mode** - TanStack Query persistence, optimistic UI, and auth hardening.
 
 
 ## Phase Details
@@ -126,9 +126,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — Auth Hardening & Verify Email Landing
-- [ ] 05-02-PLAN.md — Real-time Sync & Offline Cache
-- [ ] 05-03-PLAN.md — UX Hardening & Audit Trail Refinement
+- [x] 05-01-PLAN.md — Auth Hardening & Verify Email Landing
+- [x] 05-02-PLAN.md — Real-time Sync & Offline Cache
+- [x] 05-03-PLAN.md — UX Hardening & Audit Trail Refinement
 
 ---
 *Roadmap updated: 2026-05-14*

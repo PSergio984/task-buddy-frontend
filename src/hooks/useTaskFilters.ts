@@ -48,7 +48,7 @@ export function useTaskFilters(tasks: Task[]) {
     return matchesSearch && matchesPriority && matchesSidebar
   }, [searchQuery, selectedPriorities, activeSidebarFilter, today, next7Days])
 
-  const filteredTasks = useMemo(() => tasks.filter(matchesTask), [tasks, matchesTask])
+  const filteredTasks = useMemo(() => tasks.filter(t => matchesTask(t)), [tasks, matchesTask])
 
   const sortedTasks = useMemo(() => {
     return [...filteredTasks].sort((a, b) => {

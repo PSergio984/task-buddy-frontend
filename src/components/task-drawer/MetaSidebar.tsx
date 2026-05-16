@@ -234,7 +234,8 @@ function DueDateSection({ dueDate, handleDateSelect, dirtySections }: MetaSideba
     { label: "Next Week", value: new Date(new Date().setDate(new Date().getDate() + 7)) },
   ]
 
-  const formattedDueDate = dueDate ? format(dueDate, is12h ? "EEE, MMM d 'at' hh:mm a" : "EEE, MMM d 'at' HH:mm") : "No deadline"
+  const dateFormatStr = is12h ? "EEE, MMM d 'at' hh:mm a" : "EEE, MMM d 'at' HH:mm"
+  const formattedDueDate = dueDate ? format(dueDate, dateFormatStr) : "No deadline"
 
   return (
     <div className="space-y-2">
@@ -282,12 +283,12 @@ function DueDateSection({ dueDate, handleDateSelect, dirtySections }: MetaSideba
                 id="time-picker"
                 value={dueDate ? format(dueDate, "HH:mm") : ""}
                 onChange={(timeStr) => {
-                  if (!timeStr || !timeStr.includes(':')) return
+                  if (!timeStr?.includes(':')) return
                   const [hoursStr, minutesStr] = timeStr.split(':')
                   const hours = Number(hoursStr)
                   const minutes = Number(minutesStr)
                   
-                  if (isNaN(hours) || isNaN(minutes)) return
+                  if (Number.isNaN(hours) || Number.isNaN(minutes)) return
 
                   const now = new Date()
                   const current = dueDate || now

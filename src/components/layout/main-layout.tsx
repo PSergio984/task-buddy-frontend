@@ -66,11 +66,10 @@ export function MainLayout() {
         task={activeTask}
         mode={drawerMode}
         isOpen={isDrawerOpen}
-        onOpenChange={(open) => {
-          setIsDrawerOpen(open)
-          if (!open) {
-            setActiveTask(null)
-          }
+        onOpen={() => setIsDrawerOpen(true)}
+        onClose={() => {
+          setIsDrawerOpen(false)
+          setActiveTask(null)
         }}
       />
     </div>

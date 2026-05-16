@@ -84,7 +84,6 @@ interface EditModeFooterProps {
   readonly showSaveConfirm: boolean
   readonly setShowSaveConfirm: (v: boolean) => void
   readonly handleUpdate: () => void
-  readonly isCreating?: boolean
   readonly isSaving?: boolean
   readonly isDeleting?: boolean
 }
