@@ -3,11 +3,11 @@ import { cn } from "@/lib/utils"
 import { useFilters } from "@/contexts/FilterContext"
 
 interface MobileNavProps {
-  onNewTask: () => void
-  onOpenWorkspace: () => void
+  readonly onNewTask: () => void
+  readonly onOpenWorkspace: () => void
 }
 
-export function MobileNav({ onNewTask, onOpenWorkspace }: MobileNavProps) {
+export function MobileNav({ onNewTask, onOpenWorkspace }: Readonly<MobileNavProps>) {
   const { activeSidebarFilter, setActiveSidebarFilter, setActiveTagId } = useFilters()
 
   const tabs = [

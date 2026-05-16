@@ -44,7 +44,7 @@ export function TaskDetailPage() {
   const queryClient = useQueryClient()
   const [isDeleting, setIsDeleting] = useState(false)
 
-  const taskId = id ? Number.parseInt(id) : 0
+  const taskId = id ? Number.parseInt(id, 10) : 0
 
   const {
     data: task,

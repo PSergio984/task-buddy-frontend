@@ -48,7 +48,7 @@ export function CreateTagModal({
     setLastOpen(false)
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!name.trim()) return
 
@@ -56,7 +56,7 @@ export function CreateTagModal({
       if (tag) {
         await updateTag.mutateAsync({
           id: tag.id,
-          updates: { name: name.trim(), color, icon },
+          data: { name: name.trim(), color, icon },
         })
       } else {
         await createTag.mutateAsync({

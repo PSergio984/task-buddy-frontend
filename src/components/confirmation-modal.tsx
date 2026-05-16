@@ -42,26 +42,21 @@ export function ConfirmationModal({
 }: ConfirmationModalProps) {
   const [dontShowAgain, setDontShowAgain] = useState(false)
 
-  const getVariantStyles = () => {
-    switch (variant) {
-      case "destructive":
-        return "destructive"
-      case "success":
-        return "default" // success uses primary/default in current theme
-      default:
-        return "default"
+  const getVariantStyles = (): "default" | "destructive" => {
+    if (variant === "destructive") {
+      return "destructive"
     }
+    return "default"
   }
 
   const getIcon = () => {
-    switch (variant) {
-      case "destructive":
-        return <AlertCircle className="h-12 w-12 text-destructive mb-4" />
-      case "success":
-        return <CheckCircle2 className="h-12 w-12 text-primary mb-4" />
-      default:
-        return null
+    if (variant === "destructive") {
+      return <AlertCircle className="h-12 w-12 text-destructive mb-4" />
     }
+    if (variant === "success") {
+      return <CheckCircle2 className="h-12 w-12 text-primary mb-4" />
+    }
+    return null
   }
 
   return (
@@ -110,7 +105,7 @@ export function ConfirmationModal({
                 onConfirm(dontShowAgain)
               }}
               loading={isLoading}
-              variant={getVariantStyles() as "default" | "destructive"}
+              variant={getVariantStyles()}
               className="w-full h-12 rounded-2xl font-bold tracking-tight shadow-xl transition-all"
             >
               {confirmText}

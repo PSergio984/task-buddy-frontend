@@ -35,29 +35,43 @@ export function PwaInstallButton({
   className 
 }: Readonly<PwaInstallButtonProps>) {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
-  const [isIOS] = useState(() => {
-    const ua = window.navigator.userAgent
-    return /iPad|iPhone|iPod/.test(ua) && !((window as unknown) as { MSStream: unknown }).MSStream
-  })
-  const [isStandalone] = useState(() => 
-    typeof window !== "undefined" && (
-      window.matchMedia("(display-mode: standalone)").matches || 
-      (window.navigator as unknown as { standalone?: boolean }).standalone || 
-      document.referrer.includes("android-app://")
-    )
-  )
+  const [isIOS, setIsIOS] = useState(false)
+  const [isStandalone, setIsStandalone] = useState(false)
+
+  useEffect(() => {
+    if (globalThis.window === undefined || globalThis.document === undefined) return
+
+    // iOS detection
+    const ua = globalThis.navigator.userAgent
+    const isIOSDevice = /iPad|iPhone|iPod/.test(ua) && !((globalThis as unknown) as { MSStream: unknown }).MSStream
+    
+    const isStandaloneMode = globalThis.matchMedia?.("(display-mode: standalone)").matches ?? false
+    const isSafariStandalone = (globalThis.navigator as unknown as { standalone?: boolean })?.standalone ?? false
+    const isAndroidApp = document.referrer?.includes("android-app://")
+
+    const timer = setTimeout(() => {
+      setIsIOS(isIOSDevice)
+      if (isStandaloneMode || isSafariStandalone || isAndroidApp) {
+        setIsStandalone(true)
+      }
+    }, 0)
+
+    return () => clearTimeout(timer)
+  }, [])
   const [showInstructions, setShowInstructions] = useState(false)
 
   useEffect(() => {
+    if (globalThis.window === undefined) return
+
     const handler = (e: Event) => {
       e.preventDefault()
       setDeferredPrompt(e as BeforeInstallPromptEvent)
     }
 
-    window.addEventListener("beforeinstallprompt", handler)
+    globalThis.addEventListener("beforeinstallprompt", handler)
 
     return () => {
-      window.removeEventListener("beforeinstallprompt", handler)
+      globalThis.removeEventListener("beforeinstallprompt", handler)
     }
   }, [])
 
@@ -157,8 +171,8 @@ export function PwaInstallButton({
             </div>
 
             <div className="relative space-y-8 before:absolute before:left-7 before:top-4 before:bottom-4 before:w-0.5 before:bg-gradient-to-b before:from-primary/20 before:via-primary/10 before:to-transparent">
-              {steps.map((step, index) => (
-                <div key={index} className="relative flex items-start gap-5 group">
+              {steps.map((step) => (
+                <div key={step.number} className="relative flex items-start gap-5 group">
                   <div className="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-background border-2 border-primary/10 shadow-sm transition-all duration-300 group-hover:border-primary/40 group-hover:shadow-md group-hover:scale-105">
                     {step.icon}
                   </div>

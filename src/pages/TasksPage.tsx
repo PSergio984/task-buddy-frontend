@@ -57,7 +57,7 @@ export function TasksPage() {
 
   const isProjectFilter = activeSidebarFilter.startsWith("project:")
   const filterParam = activeStatus === "all" ? undefined : activeStatus
-  const projectIdParam = isProjectFilter ? Number.parseInt(activeSidebarFilter.split(":")[1]) : undefined
+  const projectIdParam = isProjectFilter ? Number.parseInt(activeSidebarFilter.split(":")[1], 10) : undefined
 
   const { data: tasks = [], isLoading: loadingTasks, refetch: refreshTasks } = useTasks(
     filterParam, 

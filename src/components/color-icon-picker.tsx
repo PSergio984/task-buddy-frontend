@@ -24,13 +24,13 @@ export const PRESET_ICONS = [
 ]
 
 interface ColorIconPickerProps {
-  color?: string
-  icon?: string
-  onSelect: (color: string, icon: string) => void
-  trigger?: React.ReactNode
+  readonly color?: string
+  readonly icon?: string
+  readonly onSelect: (color: string, icon: string) => void
+  readonly trigger?: React.ReactNode
 }
 
-export function ColorIconPicker({ color = "#6366f1", icon = "Tag", onSelect, trigger }: ColorIconPickerProps) {
+export function ColorIconPicker({ color = "#6366f1", icon = "Tag", onSelect, trigger }: Readonly<ColorIconPickerProps>) {
   return (
     <Popover>
       <PopoverTrigger asChild>

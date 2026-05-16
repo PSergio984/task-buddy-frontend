@@ -80,7 +80,7 @@ export function NewTaskModal({
                   tags.trim() !== "" ||
                   priority !== "MEDIUM"
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
 
     if (!title.trim()) return
@@ -88,7 +88,7 @@ export function NewTaskModal({
     const taskData = {
       title: title.trim(),
       description: description.trim() || undefined,
-      project_id: projectId === "none" ? undefined : Number.parseInt(projectId),
+      project_id: projectId === "none" ? undefined : Number.parseInt(projectId, 10),
       due_date: dueDate ? dueDate.toISOString() : undefined,
       completed: false,
       priority,

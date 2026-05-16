@@ -37,11 +37,11 @@ const PASSWORD_RULES = [
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4)
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/")
-  const rawData = window.atob(base64)
+  const base64 = (base64String + padding).replaceAll("-", "+").replaceAll("_", "/")
+  const rawData = globalThis.atob(base64)
   const outputArray = new Uint8Array(rawData.length)
   for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i)
+    outputArray[i] = rawData.codePointAt(i) ?? 0
   }
   return outputArray
 }
@@ -95,9 +95,9 @@ function PreferencesCard() {
 
   React.useEffect(() => {
     const checkPermission = async () => {
-      if ("Notification" in window && "serviceWorker" in navigator) {
+      if ("Notification" in globalThis && "serviceWorker" in globalThis.navigator) {
         if (Notification.permission === "granted") {
-          const registration = await navigator.serviceWorker.ready
+          const registration = await globalThis.navigator.serviceWorker.ready
           const subscription = await registration.pushManager.getSubscription()
           setPushEnabled(!!subscription)
         } else {
@@ -109,7 +109,7 @@ function PreferencesCard() {
   }, [])
 
   const handleTogglePush = async (enabled: boolean) => {
-    if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+    if (!("Notification" in globalThis) || !("serviceWorker" in globalThis.navigator)) {
       toast({
         title: "Not supported",
         description: "Your browser does not support push notifications.",
@@ -137,7 +137,7 @@ function PreferencesCard() {
         }
 
         const registration = await Promise.race([
-          navigator.serviceWorker.ready,
+          globalThis.navigator.serviceWorker.ready,
           new Promise((_, reject) => 
             setTimeout(() => reject(new Error("Service worker initialization timed out. Please refresh the page.")), 10000)
           )
@@ -181,7 +181,7 @@ function PreferencesCard() {
     } else {
       // Disabling
       try {
-        const registration = await navigator.serviceWorker.ready
+        const registration = await globalThis.navigator.serviceWorker.ready
         const subscription = await registration.pushManager.getSubscription()
         if (subscription) {
           await subscription.unsubscribe()
@@ -293,7 +293,7 @@ function UsernameCard() {
   const isUsernameValid = newUsername.trim().length > 0 && /^[A-Za-z0-9._@\- ]+$/.test(newUsername)
   const hasUsernameChanged = user && newUsername !== user.username && isUsernameValid
 
-  const handleUpdateUsername = async (e: React.FormEvent) => {
+  const handleUpdateUsername = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!hasUsernameChanged) return
     
@@ -402,7 +402,7 @@ function SecurityCard() {
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
-  const handleUpdatePassword = async (e: React.FormEvent) => {
+  const handleUpdatePassword = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (newPassword !== confirmPassword) {
       toast({

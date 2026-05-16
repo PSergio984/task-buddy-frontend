@@ -20,7 +20,7 @@ export function ForgotPasswordPage() {
 
   const isButtonDisabled = isLoading || !email || !isValidEmail(email)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsLoading(true)
 

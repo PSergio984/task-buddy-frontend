@@ -23,7 +23,7 @@ export function ResetPasswordPage() {
   const isPasswordStrong = passwordStrength.score >= 4
   const passwordsMatch = newPassword === confirmPassword && newPassword !== ""
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
     
     if (newPassword !== confirmPassword) {

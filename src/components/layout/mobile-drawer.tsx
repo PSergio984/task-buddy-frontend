@@ -7,11 +7,11 @@ import * as LucideIcons from "lucide-react"
 import { PwaInstallButton } from "../pwa-install-button"
 
 interface MobileDrawerProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  readonly open: boolean
+  readonly onOpenChange: (open: boolean) => void
 }
 
-export function MobileDrawer({ open, onOpenChange }: MobileDrawerProps) {
+export function MobileDrawer({ open, onOpenChange }: Readonly<MobileDrawerProps>) {
   const { data: projects = [] } = useProjects()
   const { data: tags = [] } = useTags()
   const { activeSidebarFilter, setActiveSidebarFilter, activeTagId, setActiveTagId } = useFilters()

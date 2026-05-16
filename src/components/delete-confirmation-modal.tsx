@@ -11,12 +11,12 @@ import {
 import { Loader2 } from "lucide-react"
 
 interface DeleteConfirmationModalProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onConfirm: () => Promise<void>
-  title: string
-  description: string
-  isLoading?: boolean
+  readonly open: boolean
+  readonly onOpenChange: (open: boolean) => void
+  readonly onConfirm: () => Promise<void>
+  readonly title: string
+  readonly description: string
+  readonly isLoading?: boolean
 }
 
 export function DeleteConfirmationModal({
@@ -26,7 +26,7 @@ export function DeleteConfirmationModal({
   title,
   description,
   isLoading = false,
-}: DeleteConfirmationModalProps) {
+}: Readonly<DeleteConfirmationModalProps>) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="bg-background/95 backdrop-blur-xl border-white/10 rounded-2xl">

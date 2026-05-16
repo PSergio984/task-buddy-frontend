@@ -23,7 +23,7 @@ export interface TimePickerProps {
   readonly className?: string
 }
 
-export function TimePicker({ value, onChange, className }: TimePickerProps) {
+export function TimePicker({ id, value, onChange, className }: TimePickerProps) {
   const { timeFormat } = useSettings()
   const is12h = timeFormat === "12h"
 
@@ -53,7 +53,7 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
   }
 
   const handleHourChange = (val: string) => {
-    const h = parseInt(val, 10)
+    const h = Number.parseInt(val, 10)
     if (is12h) {
       updateTime(get24Hour(h, period), minute)
     } else {
@@ -62,7 +62,7 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
   }
 
   const handleMinuteChange = (val: string) => {
-    updateTime(hour24, parseInt(val, 10))
+    updateTime(hour24, Number.parseInt(val, 10))
   }
 
   const handlePeriodChange = (val: string) => {
@@ -89,6 +89,7 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
       <Popover>
         <PopoverTrigger asChild>
           <Button
+            id={id}
             variant="outline"
             className={cn(
               "h-14 w-full justify-start rounded-2xl bg-muted/50 border-border px-4 font-black text-lg hover:bg-muted transition-all shadow-xl",

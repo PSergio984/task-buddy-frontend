@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react"
+import React, { useCallback, useMemo, useState } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { motion, AnimatePresence } from "framer-motion"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -26,7 +26,6 @@ import { useToast } from "@/hooks/use-toast"
 import axios from "axios"
 import { LayoutDashboard, ListChecks, Calendar } from "lucide-react"
 import { animations } from "@/lib/animations"
-import React from "react"
 
 export interface DashboardProps {
   readonly tasks: readonly Task[]

@@ -14,7 +14,7 @@ export function DashboardDemo() {
   const { activeSidebarFilter, activeTagId } = useFilters()
   
   const isProjectFilter = activeSidebarFilter.startsWith("project:")
-  const projectIdParam = isProjectFilter ? parseInt(activeSidebarFilter.split(":")[1]) : undefined
+  const projectIdParam = isProjectFilter ? Number.parseInt(activeSidebarFilter.split(":")[1], 10) : undefined
 
   // For Dashboard, we want to fetch all tasks and filter them by time locally
   const { data: tasks = [], isLoading: loadingTasks, refetch: refreshTasks } = useTasks(undefined, projectIdParam, activeTagId || undefined)
