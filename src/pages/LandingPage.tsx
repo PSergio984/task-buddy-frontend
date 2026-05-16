@@ -34,7 +34,7 @@ const itemVariants = {
 
 export function LandingPage() {
   const scrollToPwa = () => {
-    const element = document.getElementById("pwa-install")
+    const element = globalThis.document.getElementById("pwa-install")
     element?.scrollIntoView({ behavior: "smooth" })
   }
 

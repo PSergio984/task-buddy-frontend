@@ -45,8 +45,8 @@ export function TopNav({ onNewTask }: Readonly<TopNavProps>) {
         setIsDropdownOpen(false)
       }
     }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
+    globalThis.document.addEventListener("mousedown", handleClickOutside)
+    return () => globalThis.document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
   const userInitial = (user?.username?.[0] || user?.email?.[0] || "U").toUpperCase()

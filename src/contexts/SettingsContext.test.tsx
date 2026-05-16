@@ -4,7 +4,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest"
 
 describe("SettingsContext", () => {
   beforeEach(() => {
-    localStorage.clear()
+    globalThis.localStorage.clear()
     vi.clearAllMocks()
   })
 
@@ -23,11 +23,11 @@ describe("SettingsContext", () => {
       result.current.setTimeFormat("24h")
     })
     expect(result.current.timeFormat).toBe("24h")
-    expect(localStorage.getItem("pref_time_format")).toBe("24h")
+    expect(globalThis.localStorage.getItem("pref_time_format")).toBe("24h")
   })
 
   it("should initialize from localStorage", () => {
-    localStorage.setItem("pref_time_format", "24h")
+    globalThis.localStorage.setItem("pref_time_format", "24h")
     const { result } = renderHook(() => useSettings(), {
       wrapper: SettingsProvider,
     })

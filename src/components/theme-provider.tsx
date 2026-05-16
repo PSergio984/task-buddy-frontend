@@ -40,18 +40,18 @@ function getSystemTheme(): ResolvedTheme {
 }
 
 function disableTransitionsTemporarily() {
-  const style = document.createElement("style")
+  const style = globalThis.document.createElement("style")
   style.appendChild(
-    document.createTextNode(
+    globalThis.document.createTextNode(
       "*,*::before,*::after{-webkit-transition:none!important;transition:none!important}"
     )
   )
-  document.head.appendChild(style)
+  globalThis.document.head.appendChild(style)
 
   return () => {
-    globalThis.getComputedStyle(document.body)
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
+    globalThis.getComputedStyle(globalThis.document.body)
+    globalThis.requestAnimationFrame(() => {
+      globalThis.requestAnimationFrame(() => {
         style.remove()
       })
     })
@@ -66,7 +66,7 @@ export function ThemeProvider({
   ...props
 }: Readonly<ThemeProviderProps>) {
   const [theme, setThemeState] = React.useState<Theme>(() => {
-    const storedTheme = localStorage.getItem(storageKey)
+    const storedTheme = globalThis.localStorage.getItem(storageKey)
     if (isTheme(storedTheme)) {
       return storedTheme
     }
@@ -76,7 +76,7 @@ export function ThemeProvider({
 
   const setTheme = React.useCallback(
     (nextTheme: Theme) => {
-      localStorage.setItem(storageKey, nextTheme)
+      globalThis.localStorage.setItem(storageKey, nextTheme)
       setThemeState(nextTheme)
     },
     [storageKey]
@@ -84,7 +84,7 @@ export function ThemeProvider({
 
   const applyTheme = React.useCallback(
     (nextTheme: Theme) => {
-      const root = document.documentElement
+      const root = globalThis.document.documentElement
       const resolvedTheme =
         nextTheme === "system" ? getSystemTheme() : nextTheme
       const restoreTransitions = disableTransitionOnChange
@@ -123,7 +123,7 @@ export function ThemeProvider({
 
   React.useEffect(() => {
     const handleStorageChange = (event: StorageEvent) => {
-      if (event.storageArea !== localStorage) {
+      if (event.storageArea !== globalThis.localStorage) {
         return
       }
 

@@ -82,14 +82,14 @@ export function TasksPage() {
   } = useTaskFilters(tasks)
 
   useEffect(() => {
-    const saved = localStorage.getItem(LS_KEY)
+    const saved = globalThis.localStorage.getItem(LS_KEY)
     if (saved && (saved === "priority" || saved === "due_date" || saved === "alpha")) {
       setSortBy(saved)
     }
   }, [setSortBy])
 
   useEffect(() => {
-    localStorage.setItem(LS_KEY, sortBy)
+    globalThis.localStorage.setItem(LS_KEY, sortBy)
   }, [sortBy])
 
   const handleToggleComplete = async (id: number) => {

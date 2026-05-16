@@ -13,13 +13,13 @@ const STORAGE_KEY = "pref_time_format"
 
 export function SettingsProvider({ children }: { readonly children: ReactNode }) {
   const [timeFormat, setTimeFormatState] = useState<TimeFormat>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY)
+    const saved = globalThis.localStorage.getItem(STORAGE_KEY)
     return (saved as TimeFormat) || "12h"
   })
 
   const setTimeFormat = (format: TimeFormat) => {
     setTimeFormatState(format)
-    localStorage.setItem(STORAGE_KEY, format)
+    globalThis.localStorage.setItem(STORAGE_KEY, format)
   }
 
   const value = useMemo(() => ({ timeFormat, setTimeFormat }), [timeFormat])

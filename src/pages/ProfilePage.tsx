@@ -96,7 +96,7 @@ function PreferencesCard() {
   React.useEffect(() => {
     const checkPermission = async () => {
       if ("Notification" in globalThis && "serviceWorker" in globalThis.navigator) {
-        if (Notification.permission === "granted") {
+        if (globalThis.Notification.permission === "granted") {
           const registration = await globalThis.navigator.serviceWorker.ready
           const subscription = await registration.pushManager.getSubscription()
           setPushEnabled(!!subscription)
@@ -121,7 +121,7 @@ function PreferencesCard() {
     if (enabled) {
       setIsRegistering(true)
       try {
-        const permission = await Notification.requestPermission()
+        const permission = await globalThis.Notification.requestPermission()
         if (permission !== "granted") {
           toast({
             title: "Permission denied",

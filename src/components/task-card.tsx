@@ -39,7 +39,7 @@ export const TaskCard = memo(function TaskCard({
   const [pendingAction, setPendingAction] = useState<{ type: 'task' | 'subtask', id: number, completed: boolean } | null>(null)
 
   const handleToggleTask = (completed: boolean) => {
-    const skipConfirm = localStorage.getItem('skip_completion_confirm') === 'true'
+    const skipConfirm = globalThis.localStorage.getItem('skip_completion_confirm') === 'true'
     if (completed && !skipConfirm) {
       setPendingAction({ type: 'task', id: task.id, completed })
       setShowConfirm(true)
@@ -49,7 +49,7 @@ export const TaskCard = memo(function TaskCard({
   }
 
   const handleToggleSubtask = (subtaskId: number, completed: boolean) => {
-    const skipConfirm = localStorage.getItem('skip_completion_confirm') === 'true'
+    const skipConfirm = globalThis.localStorage.getItem('skip_completion_confirm') === 'true'
     if (completed && !skipConfirm) {
       setPendingAction({ type: 'subtask', id: subtaskId, completed })
       setShowConfirm(true)
@@ -60,7 +60,7 @@ export const TaskCard = memo(function TaskCard({
 
   const confirmCompletion = async (dontShowAgain?: boolean) => {
     if (dontShowAgain) {
-      localStorage.setItem('skip_completion_confirm', 'true')
+      globalThis.localStorage.setItem('skip_completion_confirm', 'true')
     }
     
     if (pendingAction) {

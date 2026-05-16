@@ -14,7 +14,7 @@ import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persi
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import { get, set, del } from "idb-keyval"
 
-if ("serviceWorker" in navigator) {
+if ("serviceWorker" in globalThis.navigator) {
   registerSW({
     onNeedRefresh() {},
     onOfflineReady() {},
@@ -30,7 +30,7 @@ const persister = createAsyncStoragePersister({
   },
 })
 
-createRoot(document.getElementById("root")!).render(
+createRoot(globalThis.document.getElementById("root")!).render(
   <StrictMode>
     <PersistQueryClientProvider
       client={queryClient}
