@@ -195,7 +195,7 @@ export function LandingPage() {
                 },
               ].map((feature, i) => (
                 <motion.div
-                  key={i}
+                  key={feature.title}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
