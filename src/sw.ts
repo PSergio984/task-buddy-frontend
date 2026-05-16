@@ -37,7 +37,7 @@ self.addEventListener('notificationclick', (event) => {
         // Try to find an existing window and navigate it
         for (const client of clientList) {
           if (client.url.includes(self.location.origin) && 'focus' in client) {
-            return (client as WindowClient).focus().then((c) => c.navigate(action_url));
+            return client.focus().then((c) => c.navigate(action_url));
           }
         }
         // If no window is found, open a new one

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useMemo, type ReactNode } from "react"
+import { createContext, useContext, useState, useMemo, useEffect, type ReactNode } from "react"
 
 export type TimeFormat = "12h" | "24h"
 
@@ -12,15 +12,14 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 const STORAGE_KEY = "pref_time_format"
 
 export function SettingsProvider({ children }: { readonly children: ReactNode }) {
-  const [timeFormat, setTimeFormatState] = useState<TimeFormat>(() => {
+  const [timeFormat, setTimeFormat] = useState<TimeFormat>(() => {
     const saved = globalThis.localStorage.getItem(STORAGE_KEY)
     return (saved as TimeFormat) || "12h"
   })
 
-  const setTimeFormat = (format: TimeFormat) => {
-    setTimeFormatState(format)
-    globalThis.localStorage.setItem(STORAGE_KEY, format)
-  }
+  useEffect(() => {
+    globalThis.localStorage.setItem(STORAGE_KEY, timeFormat)
+  }, [timeFormat])
 
   const value = useMemo(() => ({ timeFormat, setTimeFormat }), [timeFormat])
 

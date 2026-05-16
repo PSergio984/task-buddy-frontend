@@ -8,16 +8,17 @@ import { useSubtaskManagement } from "./useSubtaskManagement"
 import { useTagManagement } from "./useTagManagement"
 import { useProjectManagement } from "./useProjectManagement"
 import { useTaskDirtyState } from "./useTaskDirtyState"
-import { useTaskDrawerActions } from "./useTaskDrawerActions"
+import { useTaskDrawerActions, type UseTaskDrawerActionsProps } from "./useTaskDrawerActions"
 
 interface UseTaskDrawerStateProps {
   initialTask: Task | null
   mode: "view" | "create"
   isOpen: boolean
-  onOpenChange: (open: boolean) => void
+  onOpen: () => void
+  onClose: () => void
 }
 
-export function useTaskDrawerState({ initialTask, mode, isOpen, onOpenChange }: UseTaskDrawerStateProps) {
+export function useTaskDrawerState({ initialTask, mode, isOpen, onClose }: UseTaskDrawerStateProps) {
   const { toast } = useToast()
   const { data: fetchedTask } = useTask(initialTask?.id ?? null)
   const task = fetchedTask || initialTask
@@ -53,17 +54,21 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onOpenChange }: 
   const [prevIsOpen, setPrevIsOpen] = useState(false)
   const currentTaskId = task?.id ?? (isCreate ? "new" : null)
 
-  if (isOpen && (isOpen !== prevIsOpen || currentTaskId !== prevTaskId)) {
-    setPrevIsOpen(isOpen)
-    setPrevTaskId(currentTaskId)
-
+  const resetForm = () => {
     const isNew = isCreate || !task
     setTitle(isNew ? "" : task.title)
     setDescription(isNew ? "" : (task.description ?? ""))
     setPriority(isNew ? "MEDIUM" : task.priority)
     setCompleted(isNew ? false : task.completed)
-    setProjectId(isNew ? "none" : (task.project_id?.toString() ?? "none"))
-    setDueDate(isNew ? undefined : (task.due_date ? new Date(task.due_date) : undefined))
+    
+    const initialProjectId = isNew ? "none" : (task.project_id?.toString() ?? "none")
+    setProjectId(initialProjectId)
+    
+    let initialDueDate: Date | undefined = undefined
+    if (!isNew && task.due_date) {
+      initialDueDate = new Date(task.due_date)
+    }
+    setDueDate(initialDueDate)
     
     subtasks.resetSubtasks(task)
     tags.resetTags(task)
@@ -72,6 +77,12 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onOpenChange }: 
     setShowDeleteConfirm(false)
     setShowSaveConfirm(false)
     setIsEditingTitle(false)
+  }
+
+  if (isOpen && (isOpen !== prevIsOpen || currentTaskId !== prevTaskId)) {
+    setPrevIsOpen(isOpen)
+    setPrevTaskId(currentTaskId)
+    resetForm()
   }
 
   // Dirty checks
@@ -89,10 +100,10 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onOpenChange }: 
   })
 
   // Actions
-  const actions = useTaskDrawerActions({
+  const actionsProps: UseTaskDrawerActionsProps = {
     task,
     isCreate,
-    onOpenChange,
+    onClose,
     title,
     description,
     priority,
@@ -103,26 +114,31 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onOpenChange }: 
     localSubtasks: subtasks.localSubtasks,
     pendingTags: tags.pendingTags,
     pendingSubtasks: subtasks.pendingSubtasks,
-  })
+  }
+  const actions = useTaskDrawerActions(actionsProps)
 
   const handleUpdate = useCallback((updates: Partial<Task>) => {
-    if (updates.title !== undefined) setTitle(updates.title)
-    if (updates.description !== undefined) setDescription(updates.description ?? "")
-    if (updates.priority !== undefined) setPriority(updates.priority)
-    if (updates.completed !== undefined) setCompleted(updates.completed)
-    if (updates.project_id !== undefined) setProjectId(updates.project_id?.toString() ?? "none")
-    if (updates.due_date !== undefined) setDueDate(updates.due_date ? new Date(updates.due_date) : undefined)
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === undefined) return
+
+      switch (key) {
+        case "title": setTitle(value as string); break
+        case "description": setDescription((value as string) ?? ""); break
+        case "priority": setPriority(value as TaskPriority); break
+        case "completed": setCompleted(value as boolean); break
+        case "project_id": setProjectId((value as number)?.toString() ?? "none"); break
+        case "due_date": setDueDate(value ? new Date(value as string) : undefined); break
+      }
+    })
   }, [setProjectId])
 
   const handleDateSelect = useCallback((d: Date | undefined, preserveTime = true) => {
-    if (!d) {
-      setDueDate(undefined)
-      return
-    }
+    if (!d) return setDueDate(undefined)
     
     const newDate = new Date(d)
     if (preserveTime) {
-      const current = dueDate || (task?.due_date ? new Date(task.due_date) : new Date())
+      const taskDate = task?.due_date ? new Date(task.due_date) : new Date()
+      const current = dueDate || taskDate
       newDate.setHours(current.getHours())
       newDate.setMinutes(current.getMinutes())
     }
@@ -154,7 +170,7 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onOpenChange }: 
     isSubtasksDirty: dirtyState.subtasks,
     projects,
     allTags,
-    ...actions,
+    actions,
     isCreatingTag: createTagMutation.isPending,
     isCreatingProject: createProjectMutation.isPending,
     handleUpdate,

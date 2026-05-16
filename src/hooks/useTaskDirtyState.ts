@@ -26,6 +26,11 @@ interface UseTaskDirtyStateProps {
   localSubtasks: Subtask[]
 }
 
+const getDirtyValue = <T>(isNew: boolean, current: T, original: T, compare?: (a: T, b: T) => boolean) => {
+  if (isNew) return false
+  return compare ? compare(current, original) : current !== original
+}
+
 export function useTaskDirtyState({
   task,
   isCreate,
@@ -37,40 +42,25 @@ export function useTaskDirtyState({
   dueDate,
   localTags,
   localSubtasks,
-}: UseTaskDirtyStateProps): {
-  title: boolean
-  description: boolean
-  priority: boolean
-  status: boolean
-  project: boolean
-  dueDate: boolean
-  tags: boolean
-  subtasks: boolean
-  hasChanges: boolean
-} {
+}: UseTaskDirtyStateProps) {
   return useMemo(() => {
     const isNew = isCreate || !task
-    
+    const originalTime = task?.due_date ? new Date(task.due_date).getTime() : undefined
+    const isDueDateDirty = getDirtyValue(isNew, dueDate?.getTime(), originalTime)
+
     const checks = {
-      title: !isNew && task ? title !== task.title : false,
-      description: !isNew && task ? description !== (task.description ?? "") : false,
-      priority: !isNew && task ? priority !== task.priority : false,
-      status: !isNew && task ? completed !== task.completed : false,
-      project: !isNew && task ? projectId !== (task.project_id?.toString() ?? "none") : false,
-      dueDate: !isNew && task ? dueDate?.getTime() !== (task.due_date ? new Date(task.due_date).getTime() : undefined) : false,
-      tags: !isNew && task ? areTagsDirty(localTags, task.tags || []) : false,
-      subtasks: !isNew && task ? areSubtasksDirty(localSubtasks, task.subtasks || []) : false,
+      title: getDirtyValue(isNew, title, task?.title),
+      description: getDirtyValue(isNew, description, task?.description ?? ""),
+      priority: getDirtyValue(isNew, priority, task?.priority),
+      status: getDirtyValue(isNew, completed, task?.completed),
+      project: getDirtyValue(isNew, projectId, task?.project_id?.toString() ?? "none"),
+      dueDate: isDueDateDirty,
+      tags: getDirtyValue(isNew, localTags, task?.tags || [], areTagsDirty),
+      subtasks: getDirtyValue(isNew, localSubtasks, task?.subtasks || [], areSubtasksDirty),
     }
 
     return {
-      title: checks.title,
-      description: checks.description,
-      priority: checks.priority,
-      status: checks.status,
-      project: checks.project,
-      dueDate: checks.dueDate,
-      tags: checks.tags,
-      subtasks: checks.subtasks,
+      ...checks,
       hasChanges: Object.values(checks).some(Boolean)
     }
   }, [isCreate, task, title, description, priority, completed, projectId, dueDate, localTags, localSubtasks])

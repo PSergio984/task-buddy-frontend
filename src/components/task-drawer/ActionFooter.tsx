@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 interface ActionFooterProps {
   readonly isCreate: boolean
   readonly isDirty: boolean
-  readonly onOpenChange: (v: boolean) => void
+  readonly onClose: () => void
   readonly handleCreate: () => void
   readonly handleUpdate: () => void
   readonly showDeleteConfirm: boolean
@@ -18,7 +18,7 @@ interface ActionFooterProps {
 }
 
 export function ActionFooter({
-  isCreate, isDirty, onOpenChange, handleCreate, handleUpdate,
+  isCreate, isDirty, onClose, handleCreate, handleUpdate,
   showDeleteConfirm, setShowDeleteConfirm, handleDelete,
   showSaveConfirm, setShowSaveConfirm,
   isCreating = false, isSaving = false, isDeleting = false
@@ -27,7 +27,7 @@ export function ActionFooter({
     <div className="px-8 py-6 border-t border-white/5 bg-white/[0.02] flex items-center justify-between shrink-0">
       {isCreate ? (
         <CreateModeFooter 
-          onCancel={() => onOpenChange(false)} 
+          onCancel={onClose} 
           onCreate={handleCreate} 
           isDirty={isDirty} 
           loading={isCreating}
@@ -35,7 +35,7 @@ export function ActionFooter({
       ) : (
         <EditModeFooter 
           isDirty={isDirty}
-          onOpenChange={onOpenChange}
+          onClose={onClose}
           showDeleteConfirm={showDeleteConfirm}
           setShowDeleteConfirm={setShowDeleteConfirm}
           handleDelete={handleDelete}
@@ -77,7 +77,7 @@ function CreateModeFooter({ onCancel, onCreate, isDirty, loading }: CreateModeFo
 
 interface EditModeFooterProps {
   readonly isDirty: boolean
-  readonly onOpenChange: (open: boolean) => void
+  readonly onClose: () => void
   readonly showDeleteConfirm: boolean
   readonly setShowDeleteConfirm: (v: boolean) => void
   readonly handleDelete: () => void
@@ -89,7 +89,7 @@ interface EditModeFooterProps {
 }
 
 function EditModeFooter({ 
-  isDirty, onOpenChange, showDeleteConfirm, setShowDeleteConfirm, handleDelete,
+  isDirty, onClose, showDeleteConfirm, setShowDeleteConfirm, handleDelete,
   showSaveConfirm, setShowSaveConfirm, handleUpdate,
   isSaving = false, isDeleting = false
 }: EditModeFooterProps) {
@@ -122,7 +122,7 @@ function EditModeFooter({
       <div className="flex items-center gap-2">
         <Button
           variant="ghost"
-          onClick={() => onOpenChange(false)}
+          onClick={onClose}
           className="text-xs font-bold text-foreground/40 hover:text-foreground hover:bg-white/5 h-11 px-6 rounded-xl transition-all"
         >
           {isDirty ? "Cancel" : "Close"}

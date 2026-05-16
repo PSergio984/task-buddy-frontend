@@ -14,7 +14,7 @@ export interface UseSubtaskManagementReturn {
   handleAddSubtask: () => void
   handleToggleSubtask: (subtaskId: number, completed: boolean) => void
   handleDeleteSubtask: (subtaskId: number) => void
-  handleReorderSubtasks: (newSubtasks: Subtask[] | { id: string; title: string }[]) => void
+  handleReorderSubtasks: (newSubtasks: (Subtask | { id: string; title: string })[]) => void
   resetSubtasks: (task: { subtasks?: Subtask[] } | null) => void
 }
 
@@ -53,9 +53,9 @@ export function useSubtaskManagement(isCreate: boolean, taskId: number | undefin
 
   const handleReorderSubtasks = useCallback((newSubtasks: (Subtask | { id: string; title: string })[]) => {
     if (isCreate) {
-      setPendingSubtasks(newSubtasks as { id: string; title: string }[])
+      setPendingSubtasks(newSubtasks as unknown as { id: string; title: string }[])
     } else {
-      setLocalSubtasks(newSubtasks as Subtask[])
+      setLocalSubtasks(newSubtasks as unknown as Subtask[])
     }
   }, [isCreate])
 

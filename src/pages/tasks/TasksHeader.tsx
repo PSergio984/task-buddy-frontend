@@ -17,16 +17,16 @@ import { animations } from "@/lib/animations"
 type SortMode = "priority" | "due_date" | "alpha"
 
 interface TasksHeaderProps {
-  searchQuery: string
-  setSearchQuery: (query: string) => void
-  sortBy: SortMode
-  setSortBy: (mode: SortMode) => void
-  sortLabels: Record<string, string>
-  isFiltersExpanded: boolean
-  setIsFiltersExpanded: (expanded: boolean) => void
-  selectedPriorities: string[]
-  togglePriority: (p: string) => void
-  clearAllFilters: () => void
+  readonly searchQuery: string
+  readonly setSearchQuery: (query: string) => void
+  readonly sortBy: SortMode
+  readonly setSortBy: (mode: SortMode) => void
+  readonly sortLabels: Record<string, string>
+  readonly isFiltersExpanded: boolean
+  readonly setIsFiltersExpanded: (expanded: boolean) => void
+  readonly selectedPriorities: string[]
+  readonly togglePriority: (p: string) => void
+  readonly clearAllFilters: () => void
 }
 
 export function TasksHeader({
@@ -89,7 +89,7 @@ export function TasksHeader({
             <Filter className="h-4 w-4" />
             <span className="hidden md:inline uppercase tracking-widest text-[10px]">Filter</span>
             {selectedPriorities.length > 0 && (
-              <Badge variant="primary" className="ml-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px] font-black">
+              <Badge variant="default" className="ml-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px] font-black">
                 {selectedPriorities.length}
               </Badge>
             )}

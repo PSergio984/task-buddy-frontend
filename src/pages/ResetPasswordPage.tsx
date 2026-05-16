@@ -21,7 +21,9 @@ export function ResetPasswordPage() {
 
   const passwordStrength = getPasswordStrength(newPassword)
   const isPasswordStrong = passwordStrength.score >= 4
+  const isPasswordWeak = !isPasswordStrong
   const passwordsMatch = newPassword === confirmPassword && newPassword !== ""
+  const hasPasswordMismatch = !passwordsMatch
 
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -147,13 +149,13 @@ export function ResetPasswordPage() {
             <Button
               type="submit"
               className="w-full h-12 rounded-xl text-lg font-semibold shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-              disabled={isLoading || !isPasswordStrong || !passwordsMatch}
+              disabled={isLoading || isPasswordWeak || hasPasswordMismatch}
             >
               {isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
-              ) : !isPasswordStrong ? (
+              ) : isPasswordWeak ? (
                 "Password too weak"
-              ) : !passwordsMatch ? (
+              ) : hasPasswordMismatch ? (
                 "Passwords mismatch"
               ) : (
                 <span className="flex items-center gap-2">Reset Password <Save className="h-4 w-4" /></span>

@@ -39,7 +39,7 @@ export function ConfirmationModal({
   isLoading = false,
   variant = "default",
   showDontShowAgain = false,
-}: ConfirmationModalProps) {
+}: Readonly<ConfirmationModalProps>) {
   const [dontShowAgain, setDontShowAgain] = useState(false)
 
   const getVariantStyles = (): "default" | "destructive" => {

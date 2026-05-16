@@ -34,7 +34,8 @@ export function TaskDetailDrawer({ task: initialTask, mode, isOpen, onOpen, onCl
     initialTask, 
     mode, 
     isOpen, 
-    onOpenChange: (open) => open ? onOpen() : onClose() 
+    onOpen,
+    onClose
   })
   const [subtasksLimit, setSubtasksLimit] = useState(5)
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false)
@@ -167,18 +168,18 @@ export function TaskDetailDrawer({ task: initialTask, mode, isOpen, onOpen, onCl
  
           <ActionFooter
             isCreate={state.isCreate}
-            isDirty={state.isCreate ? !!state.title.trim() : state.hasChanges}
-            onOpenChange={handleClose}
-            handleCreate={state.handleCreate}
-            handleUpdate={state.handleConfirmUpdate}
+            isDirty={state.hasChanges}
+            onClose={handleClose}
+            handleCreate={state.actions.handleCreate}
+            handleUpdate={state.actions.handleConfirmUpdate}
             showDeleteConfirm={state.showDeleteConfirm}
             setShowDeleteConfirm={state.setShowDeleteConfirm}
-            handleDelete={state.handleDelete}
+            handleDelete={state.actions.handleDelete}
             showSaveConfirm={state.showSaveConfirm}
             setShowSaveConfirm={state.setShowSaveConfirm}
-            isSaving={state.isSaving}
-            isDeleting={state.isDeleting}
-            isCreating={state.isCreating}
+            isSaving={state.actions.isSaving}
+            isDeleting={state.actions.isDeleting}
+            isCreating={state.actions.isCreating}
           />
       </SheetContent>
     </Sheet>

@@ -40,7 +40,7 @@ interface SubtaskSectionProps {
   readonly setPendingSubtasks: React.Dispatch<React.SetStateAction<{ id: string; title: string }[]>>
   readonly task: Task | null
   readonly isDirty?: boolean
-  readonly handleReorderSubtasks: (newSubtasks: Subtask[] | { id: string; title: string }[]) => void
+  readonly handleReorderSubtasks: (newSubtasks: (Subtask | { id: string; title: string })[]) => void
 }
 
 export function SubtaskSection({
@@ -70,7 +70,7 @@ export function SubtaskSection({
 
       if (oldIndex !== -1 && newIndex !== -1) {
         const newOrder = arrayMove([...allSubtasks], oldIndex, newIndex)
-        handleReorderSubtasks(newOrder as Subtask[] | { id: string; title: string }[])
+        handleReorderSubtasks(newOrder)
       }
     }
   }
@@ -206,24 +206,17 @@ function SubtaskItem({ sub, handleToggleSubtask, handleDeleteSubtask, setPending
         <GripVertical className="h-3.5 w-3.5" />
       </div>
 
-      <div 
-        role="button"
-        tabIndex={0}
+      <button 
+        type="button"
         aria-label={isCompleted ? "Mark subtask as incomplete" : "Mark subtask as complete"}
-        className="shrink-0 cursor-pointer hover:text-primary transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full"
+        className="shrink-0 cursor-pointer hover:text-primary transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full p-0 border-none bg-transparent"
         onClick={() => !isPending && handleToggleSubtask(sub.id as number, !isCompleted)}
-        onKeyDown={(e) => {
-          if ((e.key === "Enter" || e.key === " ") && !isPending) {
-            e.preventDefault()
-            handleToggleSubtask(sub.id as number, !isCompleted)
-          }
-        }}
       >
         {!isPending && isCompleted
           ? <CheckCircle2 className="h-4 w-4 text-primary" />
           : <Circle className="h-4 w-4 text-foreground/30" />
         }
-      </div>
+      </button>
       <span className={cn(
         "text-sm flex-1 transition-all",
         isCompleted && "line-through text-foreground/30"

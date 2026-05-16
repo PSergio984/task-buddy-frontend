@@ -4,10 +4,10 @@ import { useUpdateTask, useCreateTask, useDeleteTask } from "@/hooks/useTasks"
 import { useToast } from "@/hooks/use-toast"
 import { useTaskDrawerSync } from "./useTaskDrawerSync"
 
-interface UseTaskDrawerActionsProps {
+export interface UseTaskDrawerActionsProps {
   task: Task | null
   isCreate: boolean
-  onOpenChange: (open: boolean) => void
+  onClose: () => void
   title: string
   description: string
   priority: TaskPriority
@@ -31,7 +31,7 @@ export interface UseTaskDrawerActionsReturn {
 
 export function useTaskDrawerActions({
   task,
-  onOpenChange,
+  onClose,
   title,
   description,
   priority,
@@ -68,11 +68,11 @@ export function useTaskDrawerActions({
       await syncSubtasks(task.id, localSubtasks, task.subtasks || [])
 
       toast({ title: "Changes saved", variant: "success" })
-      onOpenChange(false)
+      onClose()
     } catch {
       toast({ title: "Failed to save changes", variant: "destructive" })
     }
-  }, [task, title, description, priority, completed, projectId, dueDate, localTags, localSubtasks, updateTask, syncTags, syncSubtasks, toast, onOpenChange])
+  }, [task, title, description, priority, completed, projectId, dueDate, localTags, localSubtasks, updateTask, syncTags, syncSubtasks, toast, onClose])
 
   const handleCreate = useCallback(async () => {
     if (!title.trim()) return
@@ -88,22 +88,22 @@ export function useTaskDrawerActions({
         subtasks: pendingSubtasks.map(st => ({ title: st.title }))
       })
       toast({ title: "Task created!", variant: "success" })
-      onOpenChange(false)
+      onClose()
     } catch {
       toast({ title: "Failed to create task", variant: "destructive" })
     }
-  }, [title, description, priority, projectId, dueDate, pendingTags, pendingSubtasks, createTask, toast, onOpenChange])
+  }, [title, description, priority, projectId, dueDate, pendingTags, pendingSubtasks, createTask, toast, onClose])
 
   const handleDelete = useCallback(async () => {
     if (!task) return
     try {
       await deleteTask.mutateAsync(task.id)
       toast({ title: "Task deleted", variant: "success" })
-      onOpenChange(false)
+      onClose()
     } catch {
       toast({ title: "Delete failed", variant: "destructive" })
     }
-  }, [task, deleteTask, toast, onOpenChange])
+  }, [task, deleteTask, toast, onClose])
 
   return {
     handleConfirmUpdate,

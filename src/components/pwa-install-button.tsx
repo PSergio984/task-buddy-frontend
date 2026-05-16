@@ -25,6 +25,9 @@ declare global {
   interface Window {
     MSStream?: unknown
   }
+  interface Navigator {
+    standalone?: boolean
+  }
   interface WindowEventMap {
     beforeinstallprompt: BeforeInstallPromptEvent
   }
@@ -55,8 +58,8 @@ export function PwaInstallButton({
     const isIOSDevice = /iPad|iPhone|iPod/.test(ua) && !window.MSStream
     
     const isStandaloneMode = globalThis.matchMedia?.("(display-mode: standalone)").matches ?? false
-    const isSafariStandalone = (globalThis.navigator as unknown as { standalone?: boolean })?.standalone ?? false
-    const isAndroidApp = document.referrer?.includes("android-app://")
+    const isSafariStandalone = globalThis.navigator.standalone ?? false
+    const isAndroidApp = globalThis.document?.referrer?.includes("android-app://")
 
     const timer = setTimeout(() => {
       setIsIOS(isIOSDevice)
@@ -70,17 +73,15 @@ export function PwaInstallButton({
   const [showInstructions, setShowInstructions] = useState(false)
 
   useEffect(() => {
-    if (globalThis.window === undefined) return
-
     const handler = ((e: BeforeInstallPromptEvent) => {
       e.preventDefault()
       setDeferredPrompt(e)
     }) as EventListener
 
-    globalThis.window.addEventListener("beforeinstallprompt", handler)
+    globalThis.addEventListener("beforeinstallprompt", handler)
 
     return () => {
-      globalThis.window?.removeEventListener("beforeinstallprompt", handler)
+      globalThis.removeEventListener("beforeinstallprompt", handler)
     }
   }, [])
 

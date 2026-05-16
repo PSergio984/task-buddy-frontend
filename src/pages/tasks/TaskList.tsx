@@ -6,14 +6,14 @@ import { animations } from "@/lib/animations"
 import type { Task } from "@/lib/api"
 
 interface TaskListProps {
-  tasks: Task[]
-  loading: boolean
-  viewMode: "grid" | "list"
-  onToggleComplete: (id: number) => void
-  onEdit: (task: Task) => void
-  onToggleSubtask: (subtaskId: number, completed: boolean) => void
-  onDeleteSubtask: (subtaskId: number) => void
-  onDetachTag: (taskId: number, tagId: number) => void
+  readonly tasks: Task[]
+  readonly loading: boolean
+  readonly viewMode: "grid" | "list"
+  readonly onToggleComplete: (id: number) => void
+  readonly onEdit: (task: Task) => void
+  readonly onToggleSubtask: (subtaskId: number, completed: boolean) => void
+  readonly onDeleteSubtask: (subtaskId: number) => void
+  readonly onDetachTag: (taskId: number, tagId: number) => void
 }
 
 export function TaskList({
