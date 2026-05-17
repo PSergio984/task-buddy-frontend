@@ -215,8 +215,8 @@ export const projectsApi = {
     const response = await api.put<Project>(`/api/v1/projects/${id}`, updates)
     return response.data
   },
-  delete: async (id: number) => {
-    await api.delete(`/api/v1/projects/${id}`)
+  delete: async (id: number, deleteTasks: boolean = false) => {
+    await api.delete(`/api/v1/projects/${id}`, { params: { delete_tasks: deleteTasks } })
   },
   reorder: async (orderedIds: number[]) => {
     await api.post("/api/v1/projects/reorder", orderedIds)

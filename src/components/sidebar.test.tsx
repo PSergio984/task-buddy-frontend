@@ -51,6 +51,23 @@ vi.mock("@/hooks/use-toast", () => ({
   useToast: vi.fn(() => ({ toast: vi.fn() })),
 }))
 
+vi.mock("@/contexts/AuthContext", () => ({
+  useAuth: vi.fn(() => ({
+    user: { id: "1", username: "testuser" },
+    loading: false,
+    logout: vi.fn(),
+  })),
+  AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}))
+
+vi.mock("@/hooks/useTasks", () => ({
+  useTasks: vi.fn(() => ({ data: [], isLoading: false })),
+  useUpdateTask: vi.fn(() => ({ mutateAsync: vi.fn() })),
+  useUpdateSubtask: vi.fn(() => ({ mutateAsync: vi.fn() })),
+  useDeleteSubtask: vi.fn(() => ({ mutateAsync: vi.fn() })),
+  useDetachTag: vi.fn(() => ({ mutateAsync: vi.fn() })),
+}))
+
 const mockSetActiveSidebarFilter = vi.fn()
 const mockSetActiveTagId = vi.fn()
 
@@ -106,8 +123,11 @@ describe("Sidebar CRUD Integration", () => {
     const deleteBtn = await screen.findByRole("menuitem", { name: /delete/i })
     await user.click(deleteBtn)
     
-    expect(screen.getByText(/delete project/i)).toBeInTheDocument()
-    expect(screen.getByText(/are you sure you want to delete "project a"/i)).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: /delete project/i })).toBeInTheDocument()
+    expect(screen.getByText((_content, element) => {
+      const hasText = (node: Element) => node.textContent === 'Type "Project A" to confirm deletion'
+      return hasText(element!) && Array.from(element?.children || []).every(child => !hasText(child))
+    })).toBeInTheDocument()
   })
 
   it("opens deletion modal when delete is clicked for a tag", async () => {
@@ -122,6 +142,6 @@ describe("Sidebar CRUD Integration", () => {
     await user.click(deleteBtn)
     
     expect(screen.getByText(/delete tag/i)).toBeInTheDocument()
-    expect(screen.getByText(/are you sure you want to delete "tag a"/i)).toBeInTheDocument()
+    expect(screen.getByText(/are you sure you want to delete the tag "tag a"/i)).toBeInTheDocument()
   })
 })

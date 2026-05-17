@@ -6,7 +6,7 @@ export function useStats() {
   const { user } = useAuth()
   
   return useQuery({
-    queryKey: ["stats"],
+    queryKey: ["stats", { userId: user?.id }],
     queryFn: statsApi.getOverview,
     enabled: !!user,
   })

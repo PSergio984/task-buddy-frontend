@@ -9,6 +9,7 @@ import { useTaskDrawerState } from "@/hooks/useTaskDrawerState"
 import { SubtaskSection } from "./task-drawer/SubtaskSection"
 import { MetaSidebar } from "./task-drawer/MetaSidebar"
 import { ActionFooter } from "./task-drawer/ActionFooter"
+import { ConfirmationModal } from "./confirmation-modal"
 
 import {
   AlertDialog,
@@ -114,6 +115,7 @@ export function TaskDetailDrawer({ task: initialTask, mode, isOpen, onOpen, onCl
               task={state.task}
               isDirty={state.isSubtasksDirty}
               handleReorderSubtasks={state.handleReorderSubtasks}
+              onDeleteSubtaskClick={state.setDeletingSubtask}
             />
           </div>
 
@@ -172,9 +174,13 @@ export function TaskDetailDrawer({ task: initialTask, mode, isOpen, onOpen, onCl
             onClose={handleClose}
             handleCreate={state.actions.handleCreate}
             handleUpdate={state.actions.handleConfirmUpdate}
-            showDeleteConfirm={state.showDeleteConfirm}
-            setShowDeleteConfirm={state.setShowDeleteConfirm}
-            handleDelete={state.actions.handleDelete}
+            setShowDeleteConfirm={(v) => {
+              if (v && state.preferences.skipTaskDeletionConfirm) {
+                state.actions.handleDelete()
+              } else {
+                state.setShowDeleteConfirm(v)
+              }
+            }}
             showSaveConfirm={state.showSaveConfirm}
             setShowSaveConfirm={state.setShowSaveConfirm}
             isSaving={state.actions.isSaving}
@@ -210,6 +216,40 @@ export function TaskDetailDrawer({ task: initialTask, mode, isOpen, onOpen, onCl
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+
+    {/* Task Deletion Confirmation */}
+    <ConfirmationModal
+      open={state.showDeleteConfirm}
+      onOpenChange={state.setShowDeleteConfirm}
+      title="Delete Task"
+      description="This action cannot be undone. All data for this task will be permanently removed."
+      confirmText="Delete Task"
+      variant="destructive"
+      isLoading={state.actions.isDeleting}
+      showDontShowAgain
+      onConfirm={async (dontShow) => {
+        if (dontShow) state.preferences.setPreference("skipTaskDeletionConfirm", true)
+        await state.actions.handleDelete()
+      }}
+    />
+
+    {/* Subtask Deletion Confirmation */}
+    <ConfirmationModal
+      open={!!state.deletingSubtask}
+      onOpenChange={(open) => !open && state.setDeletingSubtask(null)}
+      title="Remove Subtask"
+      description="Are you sure you want to remove this subtask?"
+      confirmText="Remove"
+      variant="destructive"
+      showDontShowAgain
+      onConfirm={async (dontShow) => {
+        if (dontShow) state.preferences.setPreference("skipSubtaskDeletionConfirm", true)
+        if (state.deletingSubtask !== null) {
+          state.handleDeleteSubtask(state.deletingSubtask as number)
+        }
+        state.setDeletingSubtask(null)
+      }}
+    />
     </>
   )
 }

@@ -18,7 +18,7 @@ export function DashboardDemo() {
 
   // For Dashboard, we want to fetch all tasks and filter them by time locally
   const { data: tasks = [], isLoading: loadingTasks, refetch: refreshTasks } = useTasks(undefined, projectIdParam, activeTagId || undefined)
-  const { data: stats = null, isLoading: loadingStats, refetch: refreshStats } = useStats()
+  const { data: stats = undefined, isLoading: loadingStats, refetch: refreshStats } = useStats()
 
   const handleRefresh = async () => {
     await Promise.all([refreshTasks(), refreshStats()])

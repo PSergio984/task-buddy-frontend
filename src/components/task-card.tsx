@@ -4,12 +4,11 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import type { Task } from "@/lib/api"
-import { Trash2, Calendar, X, CheckCircle2, Layers, ChevronDown, ChevronUp } from "lucide-react"
+import { Calendar, CheckCircle2, ChevronDown, ChevronUp, Layers, X, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import * as LucideIcons from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { useSettings } from "@/contexts/SettingsContext"
-import { ConfirmationModal } from "./confirmation-modal"
 
 export interface TaskCardProps {
   readonly task: Task
@@ -33,45 +32,15 @@ export const TaskCard = memo(function TaskCard({
   const { timeFormat } = useSettings()
   const is12h = timeFormat === '12h'
   const [showAllSubtasks, setShowAllSubtasks] = useState(false)
-  
-  // Confirmation states
-  const [showConfirm, setShowConfirm] = useState(false)
-  const [pendingAction, setPendingAction] = useState<{ type: 'task' | 'subtask', id: number, completed: boolean } | null>(null)
 
-  const handleToggleTask = (completed: boolean) => {
-    const skipConfirm = globalThis.localStorage.getItem('skip_completion_confirm') === 'true'
-    if (completed && !skipConfirm) {
-      setPendingAction({ type: 'task', id: task.id, completed })
-      setShowConfirm(true)
-    } else {
-      onToggleComplete(task.id)
-    }
+  const handleToggleTask = () => {
+    onToggleComplete(task.id)
   }
 
   const handleToggleSubtask = (subtaskId: number, completed: boolean) => {
-    const skipConfirm = globalThis.localStorage.getItem('skip_completion_confirm') === 'true'
-    if (completed && !skipConfirm) {
-      setPendingAction({ type: 'subtask', id: subtaskId, completed })
-      setShowConfirm(true)
-    } else if (onToggleSubtask) {
+    if (onToggleSubtask) {
       onToggleSubtask(subtaskId, completed)
     }
-  }
-
-  const confirmCompletion = async (dontShowAgain?: boolean) => {
-    if (dontShowAgain) {
-      globalThis.localStorage.setItem('skip_completion_confirm', 'true')
-    }
-    
-    if (pendingAction) {
-      if (pendingAction.type === 'task') {
-        onToggleComplete(pendingAction.id)
-      } else if (pendingAction.type === 'subtask' && onToggleSubtask) {
-        onToggleSubtask(pendingAction.id, pendingAction.completed)
-      }
-    }
-    setShowConfirm(false)
-    setPendingAction(null)
   }
 
   const formatDueDate = (dateStr: string) => {
@@ -104,9 +73,9 @@ export const TaskCard = memo(function TaskCard({
           }
         }}
         className={cn(
-          "group relative overflow-hidden border-none bg-white dark:bg-zinc-900 shadow-sm transition-all duration-300 hover:shadow-xl rounded-[2rem] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+          "group relative overflow-hidden border border-border/50 bg-card/80 dark:bg-white/10 dark:backdrop-blur-3xl transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5 hover:scale-[1.01] rounded-[2rem] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
           task.completed && "opacity-75",
-          disabled && "cursor-not-allowed hover:shadow-none"
+          disabled && "cursor-not-allowed hover:shadow-none hover:scale-100"
         )}
         onClick={(e) => {
           if (disabled) return
@@ -125,7 +94,7 @@ export const TaskCard = memo(function TaskCard({
               <div className="relative mt-1">
                 <Checkbox
                   checked={task.completed}
-                  onCheckedChange={(checked) => handleToggleTask(!!checked)}
+                  onCheckedChange={() => handleToggleTask()}
                   disabled={disabled}
                   className={cn(
                     "h-6 w-6 rounded-full border-2 border-primary/20 transition-all data-[state=checked]:bg-primary data-[state=checked]:border-primary",
@@ -173,23 +142,23 @@ export const TaskCard = memo(function TaskCard({
                     </div>
                     
                     {(() => {
-                      let priorityClass = "bg-blue-500/10 text-blue-600"
-                      let dotClass = "bg-blue-500"
+                      let priorityClass = "bg-emerald-500/30 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 shadow-[0_0_20px_-5px_rgba(16,185,129,0.4)]"
+                      let dotClass = "bg-emerald-500"
                       
                       if (task.priority === 'HIGH') {
-                        priorityClass = "bg-red-500/10 text-red-600"
+                        priorityClass = "bg-red-500/30 text-red-700 dark:text-red-300 border-red-500/30 shadow-[0_0_20px_-5px_rgba(239,68,68,0.4)]"
                         dotClass = "bg-red-500"
                       } else if (task.priority === 'MEDIUM') {
-                        priorityClass = "bg-amber-500/10 text-amber-600"
+                        priorityClass = "bg-amber-500/30 text-amber-700 dark:text-amber-300 border-amber-500/30 shadow-[0_0_20px_-5px_rgba(245,158,11,0.4)]"
                         dotClass = "bg-amber-500"
                       }
 
                       return (
                         <div className={cn(
-                          "flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+                          "flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest border",
                           priorityClass
                         )}>
-                          <div className={cn("h-1.5 w-1.5 rounded-full", dotClass)} />
+                          <div className={cn("h-1.5 w-1.5 rounded-full animate-pulse", dotClass)} />
                           {task.priority}
                         </div>
                       )
@@ -330,17 +299,6 @@ export const TaskCard = memo(function TaskCard({
         </CardContent>
       </Card>
 
-      <ConfirmationModal
-        open={showConfirm}
-        onOpenChange={setShowConfirm}
-        onConfirm={confirmCompletion}
-        title="Mark as Complete?"
-        description={`Are you sure you want to mark this ${pendingAction?.type === 'task' ? 'task' : 'sub-task'} as complete?`}
-        confirmText="Yes, Complete It"
-        cancelText="Not Yet"
-        variant="success"
-        showDontShowAgain={true}
-      />
     </motion.div>
   )
 })

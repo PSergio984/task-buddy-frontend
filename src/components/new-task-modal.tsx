@@ -32,6 +32,7 @@ import {
 import { cn } from "@/lib/utils"
 import { TimePicker } from "@/components/ui/time-picker"
 import { animations } from "@/lib/animations"
+import { useToast } from "@/hooks/use-toast"
 
 export interface NewTaskModalProps {
   readonly open: boolean
@@ -48,6 +49,7 @@ export function NewTaskModal({
   onSubmit,
   isLoading,
 }: Readonly<NewTaskModalProps>) {
+  const { toast } = useToast()
   const { data: projects = [] } = useProjects()
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
@@ -85,6 +87,16 @@ export function NewTaskModal({
 
     if (!title.trim()) return
 
+    const tagList = tags.split(",").map(t => t.trim()).filter(t => t !== "")
+    if (tagList.length > 10) {
+      toast({
+        title: "Too Many Tags",
+        description: "A task can have a maximum of 10 tags.",
+        variant: "destructive"
+      })
+      return
+    }
+
     const taskData = {
       title: title.trim(),
       description: description.trim() || undefined,
@@ -92,7 +104,7 @@ export function NewTaskModal({
       due_date: dueDate ? dueDate.toISOString() : undefined,
       completed: false,
       priority,
-      tags: tags.split(",").map(t => t.trim()).filter(t => t !== ""),
+      tags: tagList,
     }
 
     try {
@@ -150,7 +162,7 @@ export function NewTaskModal({
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   required
-                  className="h-14 rounded-2xl border-border bg-muted/50 dark:bg-zinc-800/50 px-6 text-lg font-semibold focus-visible:ring-primary/20 placeholder:text-muted-foreground/30"
+                  className="h-16 rounded-[1.25rem] border-2 border-border/50 bg-muted/30 dark:bg-zinc-800/80 px-6 text-xl font-bold focus-visible:ring-primary/10 focus-visible:border-primary placeholder:text-muted-foreground/30 shadow-inner transition-all hover:border-border"
                 />
               </div>
 

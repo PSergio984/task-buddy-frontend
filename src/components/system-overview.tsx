@@ -11,7 +11,7 @@ export function SystemOverview({
   timeframeTasks,
   timeframeLabel,
 }: Readonly<{
-  stats: StatsOverview | null
+  stats: StatsOverview | null | undefined
   loading: boolean
   timeframeTasks?: readonly Task[]
   timeframeLabel?: string
@@ -94,7 +94,7 @@ export function SystemOverview({
               <Target className="h-5 w-5" />
             </div>
             <h3 className="text-sm font-bold tracking-[0.2em] text-foreground uppercase">
-              Efficiency
+              Status
             </h3>
           </div>
           <TrendingUp className="h-5 w-5 text-accent/50" />
@@ -114,7 +114,7 @@ export function SystemOverview({
                 {Math.round(displayPercentage)}%
               </p>
               <p className="mt-2 text-xs text-muted-foreground font-semibold uppercase tracking-widest">
-                Optimization Level
+                Completion Rate
               </p>
              </div>
           </motion.div>
@@ -122,7 +122,7 @@ export function SystemOverview({
           {/* Progress Bar */}
           <div className="space-y-3">
             <div className="flex items-center justify-between px-1">
-               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Momentum</span>
+               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Progress</span>
                <span className="text-[10px] font-bold text-primary">{displayCompleted} / {displayTotal}</span>
             </div>
             <motion.div
@@ -168,7 +168,7 @@ export function SystemOverview({
               <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                 <div className="flex items-center gap-2">
                   <PieChart className="h-3.5 w-3.5" />
-                  <span>Category Flow</span>
+                  <span>Tag Usage</span>
                 </div>
               </div>
               <div className="grid grid-cols-1 gap-3">

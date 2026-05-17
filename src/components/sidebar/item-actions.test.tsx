@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, it, expect, vi } from "vitest"
 import { SidebarItemActions } from "./item-actions"
-import React from "react"
+
 
 describe("SidebarItemActions", () => {
   it("renders the ellipsis trigger", () => {

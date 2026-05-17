@@ -9,6 +9,7 @@ import {
 } from "react"
 import { api } from "@/lib/api"
 import axios from "axios"
+import { queryClient } from "@/lib/query-client"
 import {
   getAuthErrorMessage,
   normalizeAuthUser,
@@ -62,6 +63,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     setUser(null)
     setError(null)
     globalThis.localStorage.removeItem(USER_STORAGE_KEY)
+    queryClient.clear()
   }, [])
 
   const refreshUser = useCallback(async () => {

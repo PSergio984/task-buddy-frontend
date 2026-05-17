@@ -7,6 +7,7 @@ import { AuditTrail } from "@/components/audit-trail"
 import { SystemOverview } from "@/components/system-overview"
 import { ConfirmationModal } from "@/components/confirmation-modal"
 import { useFilters } from "@/contexts/FilterContext"
+import { useUserPreferences } from "@/hooks/useUserPreferences"
 import {
   isToday,
   isTomorrow,
@@ -54,7 +55,8 @@ export function Dashboard({
   stats,
   loadingStats,
 }: Readonly<DashboardProps>) {
-  const { logout } = useAuth()
+  const { user, logout } = useAuth()
+  const { skipTaskCompletionConfirm, skipSubtaskCompletionConfirm, setPreference } = useUserPreferences(user?.id ?? "default")
   const { mutateAsync: updateTask, isPending: isUpdatingTask } = useUpdateTask()
   const { mutateAsync: updateSubtask, isPending: isUpdatingSubtask } = useUpdateSubtask()
   const { mutateAsync: deleteSubtask } = useDeleteSubtask()
@@ -66,7 +68,8 @@ export function Dashboard({
   const [confirmData, setConfirmData] = useState<{
     id: number
     title: string
-    type: "task" | "subtask"
+    type: "task" | "subtask" | "detach_tag"
+    taskId?: number
   } | null>(null)
 
   const filteredTasks = useMemo(() => {
@@ -92,15 +95,29 @@ export function Dashboard({
 
   const handleToggleComplete = useCallback(
     async (id: number) => {
+      const skipConfirm = skipTaskCompletionConfirm
       const task = tasks.find((t) => t.id === id)
-      if (task) {
+      
+      if (task && !skipConfirm) {
         setConfirmData({ id, title: task.title, type: "task" })
+      } else if (task) {
+        // Immediate update if skipping confirmation
+        try {
+          await updateTask({ id, updates: { completed: true } })
+          onRefresh()
+        } catch (err) {
+          console.error("Failed to complete task:", err)
+        }
       }
     },
-    [tasks]
+    [tasks, updateTask, onRefresh, skipTaskCompletionConfirm]
   )
 
-  const handleConfirmAction = async () => {
+  const handleConfirmAction = async (dontShowAgain?: boolean) => {
+    if (dontShowAgain) {
+      if (confirmData?.type === "task") setPreference('skipTaskCompletionConfirm', true)
+      else if (confirmData?.type === "subtask") setPreference('skipSubtaskCompletionConfirm', true)
+    }
     if (!confirmData) return
     try {
       if (confirmData.type === "task") {
@@ -110,14 +127,16 @@ export function Dashboard({
           description: "Task marked as finished.",
           variant: "success",
         })
-      } else {
+      } else if (confirmData.type === "subtask") {
         await updateSubtask({ id: confirmData.id, updates: { completed: true } })
         toast({
           title: "Subtask Finished",
           variant: "success",
         })
+      } else if (confirmData.type === "detach_tag" && confirmData.taskId) {
+        await detachTag({ taskId: confirmData.taskId, tagId: confirmData.id })
+        toast({ title: "Tag removed", variant: "success" })
       }
-      onRefresh()
     } catch (err) {
       if (axios.isAxiosError(err) && err.response?.status === 401) {
         logout()
@@ -135,9 +154,11 @@ export function Dashboard({
   const handleToggleSubtask = useCallback(
     async (subtaskId: number, completed: boolean) => {
       if (completed) {
+        const skipConfirm = skipSubtaskCompletionConfirm
         const allSubtasks = tasks.flatMap(t => t.subtasks || [])
         const subtask = allSubtasks.find(s => s.id === subtaskId)
-        if (subtask) {
+        
+        if (subtask && !skipConfirm) {
           setConfirmData({ id: subtaskId, title: subtask.title, type: "subtask" })
           return
         }
@@ -145,12 +166,11 @@ export function Dashboard({
       
       try {
         await updateSubtask({ id: subtaskId, updates: { completed } })
-        onRefresh()
       } catch (err) {
         console.error("Failed to update subtask:", err)
       }
     },
-    [tasks, updateSubtask, onRefresh]
+    [tasks, updateSubtask, skipSubtaskCompletionConfirm]
   )
 
   const handleDeleteSubtask = useCallback(
@@ -161,7 +181,6 @@ export function Dashboard({
           title: "Subtask deleted",
           variant: "success",
         })
-        onRefresh()
       } catch (err) {
         console.error("Failed to delete subtask:", err)
         toast({
@@ -171,37 +190,45 @@ export function Dashboard({
         })
       }
     },
-    [deleteSubtask, onRefresh, toast]
+    [deleteSubtask, toast]
   )
 
   const handleDetachTag = useCallback(
     async (taskId: number, tagId: number) => {
-      try {
-        await detachTag({ taskId, tagId })
-        onRefresh()
-      } catch (err) {
-        console.error("Failed to detach tag:", err)
-        toast({
-          title: "Detach failed",
-          description: "Could not remove tag from task.",
-          variant: "destructive",
+      const task = tasks.find(t => t.id === taskId)
+      const tag = task?.tags?.find(t => t.id === tagId)
+      if (task && tag) {
+        setConfirmData({
+          type: "detach_tag",
+          id: tagId,
+          taskId,
+          title: tag.name
         })
       }
     },
-    [detachTag, onRefresh, toast]
+    [tasks]
   )
 
   return (
     <React.Fragment>
       <ConfirmationModal
-        open={confirmData !== null}
+        open={!!confirmData}
         onOpenChange={(open) => !open && setConfirmData(null)}
         onConfirm={handleConfirmAction}
-        title={confirmData?.type === "task" ? "Complete Objective?" : "Subtask Finished?"}
-        description={`Confirm completion of: "${confirmData?.title}"`}
-        variant="success"
-        confirmText="Mark as Complete"
+        title={
+          confirmData?.type === "task" ? "Mission Accomplished?" : 
+          confirmData?.type === "detach_tag" ? "Remove Tag?" :
+          "Sub-objective Complete?"
+        }
+        description={
+          confirmData?.type === "detach_tag" 
+            ? `Are you sure you want to remove the tag "${confirmData?.title}"?`
+            : `Confirm completion of: "${confirmData?.title}"`
+        }
+        variant={confirmData?.type === "detach_tag" ? "destructive" : "success"}
+        confirmText={confirmData?.type === "detach_tag" ? "Remove Tag" : "Mark as Complete"}
         isLoading={isUpdatingTask || isUpdatingSubtask}
+        showDontShowAgain={confirmData?.type !== "detach_tag"}
       />
       <motion.div
         initial={{ opacity: 0 }}
@@ -215,9 +242,9 @@ export function Dashboard({
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 shadow-inner">
               <LayoutDashboard className="h-6 w-6" />
             </div>
-            <h1 className="font-heading text-4xl font-black tracking-tighter uppercase">Executive Dashboard</h1>
+            <h1 className="font-heading text-4xl font-black tracking-tighter uppercase">Dashboard</h1>
           </div>
-          <p className="text-lg font-medium text-foreground/60 ml-16">High-performance tracking for your strategic objectives.</p>
+          <p className="text-lg font-medium text-foreground/60 ml-16">Manage your daily goals and track your progress.</p>
         </header>
 
         {/* Primary: Stats & Audit */}
@@ -225,7 +252,7 @@ export function Dashboard({
           <div className="lg:col-span-1">
             <SystemOverview
               stats={stats}
-              loading={loadingStats}
+              loading={!!loadingStats}
               timeframeTasks={filteredTasks}
               timeframeLabel={(() => {
                 if (activeStatus === "all") return "All Time"
@@ -235,7 +262,7 @@ export function Dashboard({
               })()}
             />
           </div>
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 h-[500px]">
             <AuditTrail limit={5} />
           </div>
         </div>

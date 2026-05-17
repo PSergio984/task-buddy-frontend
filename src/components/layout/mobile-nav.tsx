@@ -1,6 +1,8 @@
 import { Calendar, Inbox, Plus, ListChecks, Layers } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useFilters } from "@/contexts/FilterContext"
+import { useStats } from "@/hooks/useStats"
+import { useToast } from "@/hooks/use-toast"
 
 interface MobileNavProps {
   readonly onNewTask: () => void
@@ -9,6 +11,23 @@ interface MobileNavProps {
 
 export function MobileNav({ onNewTask, onOpenWorkspace }: Readonly<MobileNavProps>) {
   const { activeSidebarFilter, setActiveSidebarFilter, setActiveTagId } = useFilters()
+  const { data: stats } = useStats()
+  const { toast } = useToast()
+
+  const taskCount = stats?.task_stats?.total_tasks ?? 0
+  const isTaskLimitReached = taskCount >= 1000
+
+  const handleNewTaskClick = () => {
+    if (isTaskLimitReached) {
+      toast({
+        title: "Task Limit Reached",
+        description: "You have reached the maximum of 1000 tasks. Please complete or delete some tasks first.",
+        variant: "destructive"
+      })
+      return
+    }
+    onNewTask()
+  }
 
   const tabs = [
     { id: "today", label: "Today", icon: Calendar, filter: "today" },
@@ -39,8 +58,13 @@ export function MobileNav({ onNewTask, onOpenWorkspace }: Readonly<MobileNavProp
 
       {/* Center Create Button */}
       <button
-        onClick={onNewTask}
-        className="relative -top-8 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-2xl shadow-primary/40 ring-4 ring-background transition-transform active:scale-95"
+        onClick={handleNewTaskClick}
+        className={cn(
+          "relative -top-8 flex h-16 w-16 items-center justify-center rounded-2xl shadow-2xl ring-4 ring-background transition-all active:scale-95",
+          isTaskLimitReached 
+            ? "bg-muted text-foreground/20 cursor-not-allowed grayscale" 
+            : "bg-primary text-primary-foreground shadow-primary/40"
+        )}
       >
         <Plus className="h-8 w-8" />
       </button>

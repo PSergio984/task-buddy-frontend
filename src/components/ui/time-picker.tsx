@@ -1,20 +1,14 @@
 import * as React from "react"
-import { Clock, ChevronDown } from "lucide-react"
+import { Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useSettings } from "@/contexts/SettingsContext"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 
 export interface TimePickerProps {
   readonly id?: string
@@ -27,62 +21,139 @@ export function TimePicker({ id, value, onChange, className }: TimePickerProps) 
   const { timeFormat } = useSettings()
   const is12h = timeFormat === "12h"
 
-  // Parse "HH:mm" into hours and minutes
-  const { hour24, minute } = React.useMemo(() => {
-    if (!value) return { hour24: 12, minute: 0 }
-    const [h, m] = value.split(":").map(Number)
-    return { hour24: h || 0, minute: m || 0 }
-  }, [value])
-
-  const { hour12, period } = React.useMemo(() => {
-    let h12 = hour24 % 12
-    if (h12 === 0) h12 = 12
-    const p = hour24 >= 12 ? "PM" : "AM"
-    return { hour12: h12, period: p }
-  }, [hour24])
-
-  const updateTime = (newHour24: number, newMinute: number) => {
-    const h = newHour24.toString().padStart(2, "0")
-    const m = newMinute.toString().padStart(2, "0")
-    onChange(`${h}:${m}`)
-  }
-
-  const get24Hour = (h: number, p: string) => {
-    if (p === "PM") return h === 12 ? 12 : h + 12
-    return h === 12 ? 0 : h
-  }
-
-  const handleHourChange = (val: string) => {
-    const h = Number.parseInt(val, 10)
+  // Internal state for segments
+  const [hour, setHour] = React.useState(() => {
+    if (!value) return is12h ? "12" : "12" // Or "00" if 24h, but keeping "12"
+    const h24 = Number(value.split(":")[0])
     if (is12h) {
-      updateTime(get24Hour(h, period), minute)
-    } else {
-      updateTime(h, minute)
+      let h12 = h24 % 12
+      if (h12 === 0) h12 = 12
+      return h12.toString().padStart(2, "0")
+    }
+    return h24.toString().padStart(2, "0")
+  })
+  
+  const [min, setMin] = React.useState(() => {
+    if (!value) return "00"
+    return value.split(":")[1].padStart(2, "0")
+  })
+  
+  const [period, setPeriod] = React.useState<"AM" | "PM">(() => {
+    if (!value) return "AM"
+    const h24 = Number(value.split(":")[0])
+    return h24 >= 12 ? "PM" : "AM"
+  })
+
+  // Sync internal state when prop changes (during render pattern)
+  const [prevValue, setPrevValue] = React.useState(value)
+  const [prev12h, setPrev12h] = React.useState(is12h)
+
+  if (value !== prevValue || is12h !== prev12h) {
+    setPrevValue(value)
+    setPrev12h(is12h)
+
+    if (value) {
+      const [h24, m] = value.split(":").map(Number)
+      const mm = m.toString().padStart(2, "0")
+      
+      if (is12h) {
+        let h12 = h24 % 12
+        if (h12 === 0) h12 = 12
+        setHour(h12.toString().padStart(2, "0"))
+        setMin(mm)
+        setPeriod(h24 >= 12 ? "PM" : "AM")
+      } else {
+        setHour(h24.toString().padStart(2, "0"))
+        setMin(mm)
+      }
     }
   }
 
-  const handleMinuteChange = (val: string) => {
-    updateTime(hour24, Number.parseInt(val, 10))
+  const updateParent = (h: string, m: string, p: "AM" | "PM") => {
+    let hh = Number.parseInt(h, 10) || 0
+    const mm = Number.parseInt(m, 10) || 0
+
+    if (is12h) {
+      if (p === "PM") hh = hh === 12 ? 12 : hh + 12
+      else hh = hh === 12 ? 0 : hh
+    }
+
+    const hStr = hh.toString().padStart(2, "0")
+    const mStr = mm.toString().padStart(2, "0")
+    onChange(`${hStr}:${mStr}`)
   }
 
-  const handlePeriodChange = (val: string) => {
-    const h12 = hour24 % 12
-    const h = h12 === 0 ? 12 : h12
-    updateTime(get24Hour(h, val), minute)
+  // Rolling Digit Logic for Hour
+  const handleHourKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace") {
+      e.preventDefault()
+      setHour("00")
+      updateParent("00", min, period)
+      return
+    }
+
+    if (!/\d/.test(e.key)) return
+    e.preventDefault()
+
+    const digit = e.key
+    setHour((prevHour) => {
+      let newVal = (prevHour.slice(-1) + digit).padStart(2, "0")
+      
+      // Validate for 12h/24h
+      const num = Number.parseInt(newVal, 10)
+      if (is12h) {
+        if (num > 12) newVal = "0" + digit // Start over if invalid
+        if (num === 0) newVal = "12" 
+      } else {
+        if (num > 23) newVal = "0" + digit
+      }
+
+      updateParent(newVal, min, period)
+      return newVal
+    })
   }
 
-  const hours = is12h 
-    ? Array.from({ length: 12 }, (_, i) => i + 1)
-    : Array.from({ length: 24 }, (_, i) => i)
+  // Rolling Digit Logic for Minute
+  const handleMinKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace") {
+      e.preventDefault()
+      setMin("00")
+      updateParent(hour, "00", period)
+      return
+    }
+
+    if (!/\d/.test(e.key)) return
+    e.preventDefault()
+
+    const digit = e.key
+    setMin((prevMin) => {
+      let newVal = (prevMin.slice(-1) + digit).padStart(2, "0")
+      
+      const num = Number.parseInt(newVal, 10)
+      if (num > 59) newVal = "0" + digit
+
+      updateParent(hour, newVal, period)
+      return newVal
+    })
+  }
+
+  const togglePeriod = () => {
+    const newPeriod = period === "AM" ? "PM" : "AM"
+    setPeriod(newPeriod)
+    updateParent(hour, min, newPeriod)
+  }
 
   const displayTime = React.useMemo(() => {
+    if (!value) return is12h ? "12:00 AM" : "12:00"
+    const [h24, m] = value.split(":").map(Number)
+    const mm = m.toString().padStart(2, "0")
     if (is12h) {
-      const h = hour12.toString().padStart(2, "0")
-      const m = minute.toString().padStart(2, "0")
-      return `${h}:${m} ${period}`
+      let h12 = h24 % 12
+      if (h12 === 0) h12 = 12
+      return `${h12.toString().padStart(2, "0")}:${mm} ${h24 >= 12 ? "PM" : "AM"}`
     }
-    return `${hour24.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`
-  }, [hour12, minute, period, hour24, is12h])
+    return `${h24.toString().padStart(2, "0")}:${mm}`
+  }, [value, is12h])
 
   return (
     <div className={cn("flex flex-col gap-2", className)}>
@@ -90,69 +161,81 @@ export function TimePicker({ id, value, onChange, className }: TimePickerProps) 
         <PopoverTrigger asChild>
           <Button
             id={id}
-            variant="outline"
+            variant="ghost"
             className={cn(
-              "h-14 w-full justify-start rounded-2xl bg-muted/50 border-border px-4 font-black text-lg hover:bg-muted transition-all shadow-xl",
+              "h-14 w-full justify-start rounded-2xl bg-muted/50 border-2 border-transparent px-6 font-black text-lg hover:bg-muted focus:bg-background focus:border-primary/30 focus:outline-none transition-all shadow-xl",
               !value && "text-muted-foreground/30"
             )}
           >
-            <Clock className="mr-3 h-5 w-5 text-primary" />
+            <Clock className="mr-4 h-5 w-5 text-primary" />
             {displayTime}
-            <ChevronDown className="ml-auto h-4 w-4 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-4 rounded-[2rem] border-border bg-background/95 backdrop-blur-2xl shadow-2xl" align="start">
-          <div className="flex items-center gap-3">
-            {/* Hour Select */}
-            <div className="flex flex-col gap-1.5">
-              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-1">Hour</span>
-              <Select value={is12h ? hour12.toString() : hour24.toString()} onValueChange={handleHourChange}>
-                <SelectTrigger className="w-[70px] h-12 rounded-xl border-none bg-white/5 font-bold text-lg">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="rounded-2xl border-border">
-                  {hours.map((h) => (
-                    <SelectItem key={h} value={h.toString()} className="rounded-lg font-bold">
-                      {h.toString().padStart(2, "0")}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <span className="mt-5 text-2xl font-black text-muted-foreground/30">:</span>
-
-            {/* Minute Select */}
-            <div className="flex flex-col gap-1.5">
-              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-1">Min</span>
-              <Select value={minute.toString()} onValueChange={handleMinuteChange}>
-                <SelectTrigger className="w-[70px] h-12 rounded-xl border-none bg-white/5 font-bold text-lg">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="rounded-2xl border-border">
-                  {Array.from({ length: 60 }, (_, i) => i).map((m) => (
-                    <SelectItem key={m} value={m.toString()} className="rounded-lg font-bold">
-                      {m.toString().padStart(2, "0")}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {is12h && (
-              <div className="flex flex-col gap-1.5">
-                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-1">AM/PM</span>
-                <Select value={period} onValueChange={handlePeriodChange}>
-                  <SelectTrigger className="w-[70px] h-12 rounded-xl border-none bg-white/5 font-bold text-lg">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-2xl border-border">
-                    <SelectItem value="AM" className="rounded-lg font-bold">AM</SelectItem>
-                    <SelectItem value="PM" className="rounded-lg font-bold">PM</SelectItem>
-                  </SelectContent>
-                </Select>
+        <PopoverContent className="w-auto p-6 rounded-[2rem] border-border bg-background/95 backdrop-blur-2xl shadow-2xl" align="start">
+          <div className="flex flex-col gap-6 items-center">
+            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground self-start px-2">Set Time</span>
+            
+            <div className="flex items-center gap-3">
+              {/* Hour Segment */}
+              <div className="flex flex-col items-center gap-2">
+                <Input
+                  id={`${id}-hour`}
+                  value={hour}
+                  onKeyDown={handleHourKeyDown}
+                  readOnly // We handle input via onKeyDown for the "rolling" effect
+                  className="w-16 h-16 text-center text-3xl font-black rounded-2xl border-none bg-white/5 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-text"
+                  placeholder="12"
+                />
+                <span className="text-[10px] font-bold uppercase text-muted-foreground/50">Hour</span>
               </div>
-            )}
+
+              <span className="text-3xl font-black text-muted-foreground/20 -mt-6">:</span>
+
+              {/* Minute Segment */}
+              <div className="flex flex-col items-center gap-2">
+                <Input
+                  id={`${id}-min`}
+                  value={min}
+                  onKeyDown={handleMinKeyDown}
+                  readOnly
+                  className="w-16 h-16 text-center text-3xl font-black rounded-2xl border-none bg-white/5 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-text"
+                  placeholder="00"
+                />
+                <span className="text-[10px] font-bold uppercase text-muted-foreground/50">Min</span>
+              </div>
+
+              {is12h && (
+                <div className="flex flex-col items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    onClick={togglePeriod}
+                    className="w-16 h-16 rounded-2xl bg-primary/5 text-primary text-xl font-black hover:bg-primary/10 transition-all"
+                  >
+                    {period}
+                  </Button>
+                  <span className="text-[10px] font-bold uppercase text-muted-foreground/50">AM/PM</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-2 w-full">
+              {[
+                { label: "Morning", time: "09:00" },
+                { label: "Noon", time: "12:00" },
+                { label: "Evening", time: "18:00" },
+                { label: "Night", time: "21:00" }
+              ].map((preset) => (
+                <Button
+                  key={preset.label}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onChange(preset.time)}
+                  className="flex-1 text-[10px] font-bold uppercase tracking-tighter rounded-lg bg-white/5 hover:bg-primary/10 hover:text-primary transition-all"
+                >
+                  {preset.label}
+                </Button>
+              ))}
+            </div>
           </div>
         </PopoverContent>
       </Popover>

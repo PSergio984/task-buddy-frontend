@@ -135,41 +135,41 @@
 
 
 .dark {
-  /* Dark theme overrides: deep navy background, light foreground */
-  --background: #0f172a;
-  --foreground: #f1f5f9;
-  --card: #0f172a;
-  --card-foreground: #f1f5f9;
-  --popover: #0f172a;
-  --popover-foreground: #f1f5f9;
-  --primary: #f1f5f9;
-  --primary-foreground: #0f172a;
-  --secondary: #1f2937; /* slightly lighter deep navy */
-  --secondary-foreground: #f1f5f9;
-  --muted: #111827;
-  --muted-foreground: #cbd5e1;
-  --accent: #c2a388;
-  --accent-foreground: #0f172a;
-  --destructive: #f87171;
-  --destructive-foreground: #000000;
-  --success: #34d399;
-  --success-foreground: #064e3b;
-  --border: #0b1220;
-  --input: #0b1220;
-  --ring: #c2a388;
-  --chart-1: #c2a388;
-  --chart-2: #84cc16;
-  --chart-3: #94a3b8;
-  --chart-4: #64748b;
-  --chart-5: #0b1220;
-  --sidebar: #071122;
-  --sidebar-foreground: #f1f5f9;
-  --sidebar-primary: #f1f5f9;
-  --sidebar-primary-foreground: #0f172a;
-  --sidebar-accent: #c2a388;
-  --sidebar-accent-foreground: #0f172a;
-  --sidebar-border: #0b1220;
-  --sidebar-ring: #c2a388;
+  /* Obsidian High-Contrast Theme */
+  --background: #020202;
+  --foreground: #fafafa;
+  --card: #0a0a0a;
+  --card-foreground: #fafafa;
+  --popover: #080808;
+  --popover-foreground: #fafafa;
+  --primary: #ffffff;
+  --primary-foreground: #000000;
+  --secondary: #111111;
+  --secondary-foreground: #fafafa;
+  --muted: #0a0a0a;
+  --muted-foreground: #a1a1aa;
+  --accent: #3b82f6; /* Electric Blue */
+  --accent-foreground: #ffffff;
+  --destructive: #ff4d4d;
+  --destructive-foreground: #ffffff;
+  --success: #10b981;
+  --success-foreground: #ffffff;
+  --border: #1a1a1a;
+  --input: #1a1a1a;
+  --ring: #3b82f6;
+  --chart-1: #3b82f6;
+  --chart-2: #10b981;
+  --chart-3: #f59e0b;
+  --chart-4: #8b5cf6;
+  --chart-5: #000000;
+  --sidebar: #080808;
+  --sidebar-foreground: #fafafa;
+  --sidebar-primary: #ffffff;
+  --sidebar-primary-foreground: #000000;
+  --sidebar-accent: #111111;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #1a1a1a;
+  --sidebar-ring: #3b82f6;
   --toast-destructive-bg: #450a0a;
   --toast-destructive-border: #7f1d1d;
   --toast-destructive-text: #fef2f2;

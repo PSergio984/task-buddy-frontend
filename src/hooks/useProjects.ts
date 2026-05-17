@@ -34,7 +34,7 @@ export function useProjects() {
   const { user } = useAuth()
   
   return useQuery({
-    queryKey: ["projects"],
+    queryKey: ["projects", { userId: user?.id }],
     queryFn: projectsApi.list,
     enabled: !!user,
   })
@@ -121,8 +121,9 @@ export function useDeleteProject() {
   const { toast } = useToast()
   
   return useMutation({
-    mutationFn: projectsApi.delete,
-    onMutate: async (id) => {
+    mutationFn: ({ id, deleteTasks }: { id: number; deleteTasks?: boolean }) => 
+      projectsApi.delete(id, deleteTasks),
+    onMutate: async ({ id }) => {
       await queryClient.cancelQueries({ queryKey: ["projects"] })
       const previousProjects = queryClient.getQueryData<Project[]>(["projects"])
       
@@ -131,7 +132,7 @@ export function useDeleteProject() {
       
       return { previousProjects }
     },
-    onError: (_err, _id, context) => {
+    onError: (_err, _variables, context) => {
       if (context?.previousProjects) {
         queryClient.setQueryData(["projects"], context.previousProjects)
       }

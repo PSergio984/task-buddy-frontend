@@ -10,6 +10,12 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { PwaInstallButton } from "./pwa-install-button"
 import { cn } from "@/lib/utils"
 import { NotificationBell } from "@/components/notification-bell"
+import { useStats } from "@/hooks/useStats"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 export interface TopNavProps {
   readonly onNewTask: () => void
@@ -18,10 +24,14 @@ export interface TopNavProps {
 export function TopNav({ onNewTask }: Readonly<TopNavProps>) {
   const { user, logout } = useAuth()
   const { toast } = useToast()
+  const { data: stats } = useStats()
   const navigate = useNavigate()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+
+  const taskCount = stats?.task_stats?.total_tasks ?? 0
+  const isTaskLimitReached = taskCount >= 1000
 
   const handleLogout = async () => {
     setIsLogoutDialogOpen(false)
@@ -77,14 +87,28 @@ export function TopNav({ onNewTask }: Readonly<TopNavProps>) {
 
         <div className="flex items-center gap-4 ml-4">
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="hidden sm:block">
-            <Button
-              id="new-task-btn"
-              onClick={onNewTask}
-              className="h-12 px-6 gap-2 rounded-2xl bg-primary text-primary-foreground shadow-xl shadow-primary/20 hover:bg-primary/90 hover:shadow-primary/30 transition-all font-bold tracking-tight"
-            >
-              <Plus className="h-5 w-5" />
-              <span>Create Task</span>
-            </Button>
+            {isTaskLimitReached ? (
+              <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <div className="h-12 px-6 gap-2 rounded-2xl bg-primary/10 text-primary/40 border border-primary/10 flex items-center justify-center font-bold tracking-tight cursor-not-allowed grayscale">
+                    <Plus className="h-5 w-5" />
+                    <span>Create Task</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="bg-destructive text-destructive-foreground border-none font-bold">
+                  Task limit reached (1000)
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <Button
+                id="new-task-btn"
+                onClick={onNewTask}
+                className="h-12 px-6 gap-2 rounded-2xl bg-primary text-primary-foreground shadow-xl shadow-primary/20 hover:bg-primary/90 hover:shadow-primary/30 transition-all font-bold tracking-tight"
+              >
+                <Plus className="h-5 w-5" />
+                <span>Create Task</span>
+              </Button>
+            )}
           </motion.div>
 
           {/* User Account Dropdown */}

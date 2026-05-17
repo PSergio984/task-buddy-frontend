@@ -3,7 +3,7 @@ import { motion } from "framer-motion"
 import { useTasks, useUpdateTask, useUpdateSubtask, useDeleteSubtask, useDetachTag } from "@/hooks/useTasks"
 import { useFilters } from "@/contexts/FilterContext"
 import { useOutletContext } from "react-router-dom"
-import type { Task } from "@/lib/api"
+import type { Task, Tag } from "@/lib/api"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
 import axios from "axios"
@@ -15,6 +15,7 @@ import { ConfirmationModal } from "@/components/confirmation-modal"
 import { useTaskFilters } from "@/hooks/useTaskFilters"
 import { TasksHeader } from "./tasks/TasksHeader"
 import { TaskList } from "./tasks/TaskList"
+import { useUserPreferences } from "@/hooks/useUserPreferences"
 
 type SortMode = "priority" | "due_date" | "alpha"
 
@@ -41,7 +42,7 @@ export function TasksPage() {
   } = useFilters()
   
   const { toast } = useToast()
-  const { logout } = useAuth()
+  const { user, logout } = useAuth()
   const { data: projects = [] } = useProjects()
   const { data: tags = [] } = useTags()
 
@@ -49,10 +50,11 @@ export function TasksPage() {
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false)
   const [isCompleting, setIsCompleting] = useState(false)
   const [confirmData, setConfirmData] = useState<{
-    type: "task" | "subtask"
+    type: "task" | "subtask" | "detach_tag" | "delete_subtask"
     id: number
     title: string
-    completed: boolean
+    completed?: boolean
+    taskId?: number
   } | null>(null)
 
   const isProjectFilter = activeSidebarFilter.startsWith("project:")
@@ -92,6 +94,14 @@ export function TasksPage() {
     globalThis.localStorage.setItem(LS_KEY, sortBy)
   }, [sortBy])
 
+  const { 
+    skipTaskCompletionConfirm, 
+    skipSubtaskCompletionConfirm,
+    skipTagDetachmentConfirm,
+    skipSubtaskDeletionConfirm,
+    setPreference 
+  } = useUserPreferences(user?.id ?? "default")
+
   const handleToggleComplete = async (id: number) => {
     const task = tasks.find((t: Task) => t.id === id)
     if (!task) return
@@ -99,6 +109,11 @@ export function TasksPage() {
     const nextStatus = !task.completed
     
     if (nextStatus) {
+      if (skipTaskCompletionConfirm) {
+        await performToggle(id, nextStatus)
+        return
+      }
+
       setConfirmData({
         type: "task",
         id,
@@ -111,18 +126,60 @@ export function TasksPage() {
     await performToggle(id, nextStatus)
   }
 
-  const handleConfirmAction = async () => {
+  const handleDeleteSubtask = async (subtaskId: number) => {
+    if (skipSubtaskDeletionConfirm) {
+      try {
+        await deleteSubtask(subtaskId)
+        refreshTasks()
+        toast({
+          title: "Subtask deleted",
+          variant: "success",
+        })
+        return
+      } catch (err) {
+        console.error("Failed to delete subtask:", err)
+      }
+    }
+
+    // Find subtask to get its title
+    const subtask = tasks.flatMap((t: Task) => t.subtasks || []).find(s => s.id === subtaskId)
+    setConfirmData({
+      type: "delete_subtask",
+      id: subtaskId,
+      title: subtask?.title || "this subtask"
+    })
+  }
+
+  const handleConfirmAction = async (dontShowAgain?: boolean) => {
     if (!confirmData) return
     
     setIsCompleting(true)
     try {
       if (confirmData.type === "task") {
-        await performToggle(confirmData.id, confirmData.completed)
-      } else {
-        await updateSubtask({ id: confirmData.id, updates: { completed: confirmData.completed } })
+        if (dontShowAgain) setPreference('skipTaskCompletionConfirm', true)
+        await performToggle(confirmData.id, confirmData.completed ?? false)
+      } else if (confirmData.type === "subtask") {
+        if (dontShowAgain) setPreference('skipSubtaskCompletionConfirm', true)
+        await updateSubtask({ id: confirmData.id, updates: { completed: confirmData.completed ?? false } })
         refreshTasks()
         toast({
           title: "Subtask completed!",
+          variant: "success",
+        })
+      } else if (confirmData.type === "detach_tag" && confirmData.taskId) {
+        if (dontShowAgain) setPreference('skipTagDetachmentConfirm', true)
+        await detachTag({ taskId: confirmData.taskId, tagId: confirmData.id })
+        refreshTasks()
+        toast({
+          title: "Tag removed",
+          variant: "success",
+        })
+      } else if (confirmData.type === "delete_subtask") {
+        if (dontShowAgain) setPreference('skipSubtaskDeletionConfirm', true)
+        await deleteSubtask(confirmData.id)
+        refreshTasks()
+        toast({
+          title: "Subtask deleted",
           variant: "success",
         })
       }
@@ -170,6 +227,16 @@ export function TasksPage() {
 
   const handleToggleSubtask = async (subtaskId: number, completed: boolean) => {
     if (completed) {
+      if (skipSubtaskCompletionConfirm) {
+        try {
+          await updateSubtask({ id: subtaskId, updates: { completed: true } })
+          refreshTasks()
+          return
+        } catch (err) {
+          console.error("Failed to update subtask:", err)
+        }
+      }
+
       const allSubtasks = tasks.flatMap(t => t.subtasks || [])
       const subtask = allSubtasks.find(s => s.id === subtaskId)
       if (subtask) {
@@ -191,21 +258,31 @@ export function TasksPage() {
     }
   }
 
-  const handleDeleteSubtask = async (subtaskId: number) => {
-    try {
-      await deleteSubtask(subtaskId)
-      refreshTasks()
-    } catch (err) {
-      console.error("Failed to delete subtask:", err)
-    }
-  }
 
   const handleDetachTag = async (taskId: number, tagId: number) => {
-    try {
-      await detachTag({ taskId, tagId })
-      refreshTasks()
-    } catch (err) {
-      console.error("Failed to detach tag:", err)
+    if (skipTagDetachmentConfirm) {
+      try {
+        await detachTag({ taskId, tagId })
+        refreshTasks()
+        toast({
+          title: "Tag removed",
+          variant: "success",
+        })
+        return
+      } catch (err) {
+        console.error("Failed to detach tag:", err)
+      }
+    }
+
+    const task = tasks.find((t: Task) => t.id === taskId)
+    const tag = tags.find((t: Tag) => t.id === tagId)
+    if (task && tag) {
+      setConfirmData({
+        type: "detach_tag",
+        id: tagId,
+        taskId,
+        title: tag.name
+      })
     }
   }
 
@@ -218,10 +295,35 @@ export function TasksPage() {
       open={!!confirmData}
       onOpenChange={(open) => !open && setConfirmData(null)}
       onConfirm={handleConfirmAction}
-      title={confirmData?.type === "task" ? "Mission Accomplished?" : "Sub-objective Complete?"}
-      description={`Confirm completion of: "${confirmData?.title}"`}
-      confirmText="Mark Finished"
-      variant="success"
+      title={
+        confirmData?.type === "task" ? "Mission Accomplished?" : 
+        confirmData?.type === "detach_tag" ? "Remove Tag?" :
+        confirmData?.type === "delete_subtask" ? "Delete Subtask?" :
+        "Sub-objective Complete?"
+      }
+      description={
+        confirmData?.type === "detach_tag" 
+          ? `Are you sure you want to remove the tag "${confirmData?.title}"?` :
+        confirmData?.type === "delete_subtask"
+          ? `Are you sure you want to delete the subtask "${confirmData?.title}"? This action cannot be undone.`
+          : `Confirm completion of: "${confirmData?.title}"`
+      }
+      confirmText={
+        confirmData?.type === "detach_tag" ? "Remove Tag" : 
+        confirmData?.type === "delete_subtask" ? "Delete Subtask" : 
+        "Mark Finished"
+      }
+      variant={
+        (confirmData?.type === "detach_tag" || confirmData?.type === "delete_subtask") 
+          ? "destructive" 
+          : "success"
+      }
+      showDontShowAgain={true}
+      dontShowAgainLabel={
+        confirmData?.type === "detach_tag" ? "Don't ask again for tag removal" :
+        confirmData?.type === "delete_subtask" ? "Don't ask again for subtask deletion" :
+        "Don't ask again for completion"
+      }
       isLoading={isCompleting}
     />
 
@@ -235,7 +337,7 @@ export function TasksPage() {
           <div className="space-y-2">
             <div className="flex items-center gap-3 text-primary">
               <Badge variant="outline" className="rounded-full px-4 py-1 text-[10px] font-black tracking-widest uppercase border-primary/20 bg-primary/5 text-primary">
-                {activeSidebarFilter === "all" ? "Strategic Ops" : (activeProject?.name || activeSidebarFilter.toUpperCase())}
+                {activeSidebarFilter === "all" ? "All Tasks" : (activeProject?.name || activeSidebarFilter.replace("project:", "").toUpperCase())}
               </Badge>
               {activeTag && (
                 <Badge variant="secondary" className="rounded-full px-4 py-1 text-[10px] font-black tracking-widest uppercase bg-accent/10 text-accent">
@@ -244,7 +346,7 @@ export function TasksPage() {
               )}
             </div>
             <h1 className="font-heading text-4xl md:text-6xl font-black tracking-tighter text-foreground uppercase leading-none">
-              Objective <span className="text-primary italic">Terminal</span>
+              Tasks
             </h1>
           </div>
 

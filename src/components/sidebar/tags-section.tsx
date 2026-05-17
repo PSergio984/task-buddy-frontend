@@ -62,7 +62,7 @@ export function TagsSection({
         )}
         {isCollapsed ? (
           <TagIcon className="h-4 w-4 text-foreground/20" />
-        ) : (
+        ) : tags.length < 50 ? (
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
@@ -71,9 +71,21 @@ export function TagsSection({
               onAddTag()
             }}
             className="p-1 rounded-md hover:bg-white/10 text-foreground/40 hover:text-foreground transition-colors cursor-pointer"
+            aria-label="Add Tag"
           >
             <Plus className="h-4 w-4" />
           </motion.button>
+        ) : (
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              <div className="p-1 text-foreground/10 cursor-not-allowed">
+                <Plus className="h-4 w-4" />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent className="bg-destructive text-destructive-foreground border-none font-bold">
+              Tag limit reached (50)
+            </TooltipContent>
+          </Tooltip>
         )}
       </div>
 

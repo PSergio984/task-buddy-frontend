@@ -19,7 +19,7 @@ export function useTags() {
   const { user } = useAuth()
 
   return useQuery({
-    queryKey: ["tags"],
+    queryKey: ["tags", { userId: user?.id }],
     queryFn: tagsApi.list,
     enabled: !!user,
   })

@@ -2,15 +2,18 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { notificationsApi } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { useEffect, useRef } from "react"
+import { useAuth } from "@/contexts/AuthContext"
 
 export function useNotifications(params?: { limit?: number; offset?: number; read?: boolean }) {
   const { toast } = useToast()
+  const { user } = useAuth()
   
   const query = useQuery({
-    queryKey: ["notifications", params],
+    queryKey: ["notifications", { userId: user?.id, ...params }],
     queryFn: () => notificationsApi.list(params),
     refetchInterval: 120000, // 2 minutes
     refetchOnWindowFocus: true,
+    enabled: !!user,
   })
 
   // Ref to track already toasted notification IDs to avoid duplicates

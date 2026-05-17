@@ -60,9 +60,14 @@ function removeSubtaskFromTasks(tasks: Task[], subtaskId: number): Task[] {
  * Helper to add a tag to a task in a list.
  */
 function addTagToTaskInList(tasks: Task[], taskId: number, tag: Tag): Task[] {
-  return tasks.map(task =>
-    task.id === taskId ? { ...task, tags: [...(task.tags || []), tag] } : task
-  )
+  return tasks.map(task => {
+    if (task.id === taskId) {
+      const hasTag = task.tags?.some(t => t.id === tag.id)
+      if (hasTag) return task
+      return { ...task, tags: [...(task.tags || []), tag] }
+    }
+    return task
+  })
 }
 
 /**
@@ -97,7 +102,7 @@ export function useTasks(filter?: string, project_id?: number, tag_id?: number) 
   const { user } = useAuth()
   
   return useQuery({
-    queryKey: ["tasks", { filter, project_id, tag_id }],
+    queryKey: ["tasks", { userId: user?.id, filter, project_id, tag_id }],
     queryFn: () => tasksApi.list(filter, project_id, tag_id),
     enabled: !!user,
   })
@@ -107,7 +112,7 @@ export function useTask(id: number | null) {
   const { user } = useAuth()
   
   return useQuery({
-    queryKey: ["task", id],
+    queryKey: ["task", { userId: user?.id, id }],
     queryFn: () => id ? tasksApi.get(id) : null,
     enabled: !!user && !!id,
   })
@@ -260,6 +265,7 @@ export function useUpdateSubtask() {
       subtasksApi.update(id, updates),
     onMutate: async ({ id, updates }) => {
       await queryClient.cancelQueries({ queryKey: ["tasks"] })
+      // Cancel all task detail queries to be safe, or we could find the specific one
       await queryClient.cancelQueries({ queryKey: ["task"] })
 
       const previousTasks = queryClient.getQueryData<Task[]>(["tasks"])
@@ -269,9 +275,18 @@ export function useUpdateSubtask() {
         queryClient.setQueryData<Task[]>(["tasks"], updateSubtaskInTasks(previousTasks, id, updates))
       }
 
-      // Note: Detail update is more complex because it could be any task.
-      // For now, we only update the list which is most common.
-      // If we want to update all cached task details, we can use setQueriesData but that's Level 3.
+      // Also try to find the task this subtask belongs to and update its detail query
+      if (previousTasks) {
+        for (const task of previousTasks) {
+          if (task.subtasks?.some(s => s.id === id)) {
+            const previousTask = queryClient.getQueryData<Task>(["task", task.id])
+            if (previousTask) {
+              queryClient.setQueryData<Task>(["task", task.id], updateSubtaskInTask(previousTask, id, updates))
+            }
+            break
+          }
+        }
+      }
 
       return { previousTasks }
     },
@@ -289,7 +304,7 @@ export function useUpdateSubtask() {
     onSuccess: (data) => {
       toast({
         title: "Subtask updated",
-        description: `Subtask "${data.title}" has been updated.`,
+        description: data?.title ? `Subtask "${data.title}" has been updated.` : "Subtask has been updated.",
         variant: "success",
       })
     },
@@ -373,7 +388,7 @@ export function useCreateSubtask() {
         queryClient.setQueryData(["task", taskId], context.previousTask)
       }
     },
-    onSettled: (data, _error, variables) => {
+    onSettled: (_data, _error, variables) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
       queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] })
     },
@@ -448,10 +463,13 @@ export function useAttachTag() {
       }
 
       if (previousTask) {
-        queryClient.setQueryData<Task>(["task", taskId], {
-          ...previousTask,
-          tags: [...(previousTask.tags || []), tag]
-        })
+        const hasTag = previousTask.tags?.some(t => t.id === tag.id)
+        if (!hasTag) {
+          queryClient.setQueryData<Task>(["task", taskId], {
+            ...previousTask,
+            tags: [...(previousTask.tags || []), tag]
+          })
+        }
       }
 
       return { previousTasks, previousTask }

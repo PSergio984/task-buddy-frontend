@@ -170,9 +170,15 @@ function PreferencesCard() {
       } catch (err) {
         console.error("Failed to subscribe to push notifications:", err)
         setPushEnabled(false)
+
+        let description = "Could not register for push notifications."
+        if (err instanceof Error && err.message.includes("push service error")) {
+          description = "Your browser's push service is unavailable. If using Brave, enable 'Use Google Services for Push Messaging' in Privacy settings."
+        }
+
         toast({
           title: "Setup failed",
-          description: "Could not register for push notifications.",
+          description,
           variant: "destructive",
         })
       } finally {

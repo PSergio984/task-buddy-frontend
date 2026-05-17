@@ -1,6 +1,5 @@
-import { useState } from "react"
+import React, { useState, useCallback } from "react"
 import { PRESET_COLORS } from "@/components/color-icon-picker"
-import { type UseMutationResult } from "@tanstack/react-query"
 import { type Project } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 
@@ -15,17 +14,13 @@ export interface UseProjectManagementReturn {
   setNewProjectColor: (color: string) => void
   newProjectIcon: string
   setNewProjectIcon: (icon: string) => void
-  handleCreateProject: () => Promise<void>
+  handleCreateProject: () => void
+  localUnsavedProjects: { name: string; color: string; icon: string; tempId: number }[]
+  resetProjects: (task: { project_id?: number } | null) => void
 }
 
-type CreateProjectMutation = UseMutationResult<
-  Project, 
-  Error, 
-  { name: string; color?: string; icon?: string }
->
-
 export function useProjectManagement(
-  createProject: CreateProjectMutation, 
+  projects: Project[],
   toast: ReturnType<typeof useToast>["toast"]
 ): UseProjectManagementReturn {
   const [projectId, setProjectId] = useState<string>("none")
@@ -33,32 +28,61 @@ export function useProjectManagement(
   const [isProjectPickerOpen, setIsProjectPickerOpen] = useState(false)
   const [newProjectColor, setNewProjectColor] = useState(PRESET_COLORS[0])
   const [newProjectIcon, setNewProjectIcon] = useState("Layers")
+  const [localUnsavedProjects, setLocalUnsavedProjects] = useState<{ name: string; color: string; icon: string; tempId: number }[]>([])
 
-  const handleCreateProject = async () => {
+  const unsavedIdCounter = React.useRef(0)
+
+  const handleCreateProject = useCallback(() => {
     if (!projectSearch.trim()) return
-    try {
-      const p = await createProject.mutateAsync({ 
-        name: projectSearch.trim(),
-        color: newProjectColor,
-        icon: newProjectIcon
-      })
-      setProjectId(p.id.toString())
-      setProjectSearch("")
-      setIsProjectPickerOpen(false)
-      setNewProjectColor(PRESET_COLORS[0])
-      setNewProjectIcon("Layers")
-      toast({ title: "Project created!", variant: "success" })
-    } catch {
-      toast({ title: "Failed to create project", variant: "destructive" })
+
+    const nameLower = projectSearch.trim().toLowerCase()
+    const existsInAll = projects.some(p => p.name.toLowerCase() === nameLower)
+    const existsInUnsaved = localUnsavedProjects.some(p => p.name.toLowerCase() === nameLower)
+
+    if (existsInAll || existsInUnsaved) {
+      toast({ title: "Project already exists", variant: "warning" })
+      return
     }
-  }
+
+    unsavedIdCounter.current += 1
+    const tempId = -unsavedIdCounter.current
+    
+    setLocalUnsavedProjects(prev => [...prev, {
+      name: projectSearch.trim(),
+      color: newProjectColor,
+      icon: newProjectIcon,
+      tempId
+    }])
+
+    setProjectId(tempId.toString())
+    setProjectSearch("")
+    setIsProjectPickerOpen(false)
+    setNewProjectColor(PRESET_COLORS[0])
+    setNewProjectIcon("Layers")
+  }, [projectSearch, projects, localUnsavedProjects, newProjectColor, newProjectIcon, toast])
+
+  const resetProjects = useCallback((task: { project_id?: number } | null) => {
+    setProjectId(task?.project_id?.toString() ?? "none")
+    setProjectSearch("")
+    setIsProjectPickerOpen(false)
+    setNewProjectColor(PRESET_COLORS[0])
+    setNewProjectIcon("Layers")
+    setLocalUnsavedProjects([])
+  }, [])
 
   return {
-    projectId, setProjectId,
-    projectSearch, setProjectSearch,
-    isProjectPickerOpen, setIsProjectPickerOpen,
-    newProjectColor, setNewProjectColor,
-    newProjectIcon, setNewProjectIcon,
-    handleCreateProject
+    projectId,
+    setProjectId,
+    projectSearch,
+    setProjectSearch,
+    isProjectPickerOpen,
+    setIsProjectPickerOpen,
+    newProjectColor,
+    setNewProjectColor,
+    newProjectIcon,
+    setNewProjectIcon,
+    handleCreateProject,
+    localUnsavedProjects,
+    resetProjects
   }
 }

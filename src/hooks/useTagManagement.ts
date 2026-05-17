@@ -1,7 +1,6 @@
 import { useState, useCallback, useMemo } from "react"
 import { type Tag } from "@/lib/api"
 import { PRESET_COLORS } from "@/components/color-icon-picker"
-import { type UseMutationResult } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
 
 export interface UseTagManagementReturn {
@@ -24,18 +23,12 @@ export interface UseTagManagementReturn {
   handleCreateAndAttachTag: () => Promise<void>
   handleDetachTag: (tagId: number) => void
   resetTags: (task: { tags?: Tag[] } | null) => void
+  localUnsavedTags: { name: string, color: string, icon: string, tempId: number }[]
 }
-
-type CreateTagMutation = UseMutationResult<
-  Tag,
-  Error,
-  { name: string; color?: string; icon?: string }
->
 
 export function useTagManagement(
   isCreate: boolean, 
   allTags: Tag[], 
-  createTag: CreateTagMutation, 
   toast: ReturnType<typeof useToast>["toast"]
 ): UseTagManagementReturn {
   const [tagSearch, setTagSearch] = useState("")
@@ -44,6 +37,7 @@ export function useTagManagement(
   const [pendingTags, setPendingTags] = useState<Tag[]>([])
   const [newTagColor, setNewTagColor] = useState(PRESET_COLORS[0])
   const [newTagIcon, setNewTagIcon] = useState("Tag")
+  const [localUnsavedTags, setLocalUnsavedTags] = useState<{ name: string, color: string, icon: string, tempId: number }[]>([])
 
   const currentTags = isCreate ? pendingTags : localTags
 
@@ -60,32 +54,55 @@ export function useTagManagement(
 
   const handleCreateAndAttachTag = async () => {
     if (!tagSearch.trim()) return
-    try {
-      const newTag = await createTag.mutateAsync({ 
-        name: tagSearch.trim(),
-        color: newTagColor,
-        icon: newTagIcon
-      })
-      if (isCreate) setPendingTags(prev => [...prev, newTag])
-      else setLocalTags(prev => [...prev, newTag])
-      
-      setTagSearch("")
-      setIsTagPickerOpen(false)
-      setNewTagColor(PRESET_COLORS[0])
-      setNewTagIcon("Tag")
-    } catch {
-      toast({ title: "Failed to create tag", variant: "destructive" })
+    
+    // Check if tag already exists in allTags or localUnsavedTags
+    const existsInAll = allTags.some(t => t.name.toLowerCase() === tagSearch.trim().toLowerCase())
+    const existsInUnsaved = localUnsavedTags.some(t => t.name.toLowerCase() === tagSearch.trim().toLowerCase())
+    
+    if (existsInAll || existsInUnsaved) {
+      toast({ title: "Tag already exists", variant: "warning" })
+      return
     }
+
+    const tempId = -(localUnsavedTags.length + 1)
+    const newVirtualTag: Tag = {
+      id: tempId,
+      name: tagSearch.trim(),
+      color: newTagColor,
+      icon: newTagIcon,
+      user_id: 0, // placeholder
+      created_at: new Date().toISOString()
+    }
+
+    setLocalUnsavedTags(prev => [...prev, { 
+      name: tagSearch.trim(), 
+      color: newTagColor, 
+      icon: newTagIcon, 
+      tempId 
+    }])
+
+    if (isCreate) setPendingTags(prev => [...prev, newVirtualTag])
+    else setLocalTags(prev => [...prev, newVirtualTag])
+    
+    setTagSearch("")
+    setIsTagPickerOpen(false)
+    setNewTagColor(PRESET_COLORS[0])
+    setNewTagIcon("Tag")
   }
 
   const handleDetachTag = useCallback((tagId: number) => {
     if (isCreate) setPendingTags(prev => prev.filter(t => t.id !== tagId))
     else setLocalTags(prev => prev.filter(t => t.id !== tagId))
+
+    if (tagId < 0) {
+      setLocalUnsavedTags(prev => prev.filter(t => t.tempId !== tagId))
+    }
   }, [isCreate])
 
   const resetTags = useCallback((task: { tags?: Tag[] } | null) => {
     setLocalTags(!isCreate && task ? (task.tags || []) : [])
     setPendingTags([])
+    setLocalUnsavedTags([])
     setTagSearch("")
     setIsTagPickerOpen(false)
     setNewTagColor(PRESET_COLORS[0])
@@ -112,6 +129,7 @@ export function useTagManagement(
     handleAttachTag,
     handleCreateAndAttachTag,
     handleDetachTag,
-    resetTags
+    resetTags,
+    localUnsavedTags
   }
 }

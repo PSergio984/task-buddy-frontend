@@ -109,7 +109,7 @@ export function CreateProjectModal({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
-                  className="h-14 rounded-2xl border-border bg-muted/50 dark:bg-zinc-800/50 px-6 text-lg font-semibold focus-visible:ring-primary/20 placeholder:text-muted-foreground/30"
+                  className="h-16 rounded-[1.25rem] border-2 border-border/50 bg-muted/30 dark:bg-zinc-800/80 px-6 text-xl font-bold focus-visible:ring-primary/10 focus-visible:border-primary placeholder:text-muted-foreground/30 shadow-inner transition-all hover:border-border"
                 />
               </div>
 

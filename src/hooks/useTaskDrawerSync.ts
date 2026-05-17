@@ -7,6 +7,7 @@ import {
   useDeleteSubtask, 
   useReorderSubtasks 
 } from "./useTasks"
+import { useCreateTag } from "./useTags"
 
 export interface UseTaskDrawerSyncReturn {
   syncTags: (taskId: number, currentTags: Tag[], originalTags: Tag[]) => Promise<void>
@@ -17,6 +18,7 @@ export interface UseTaskDrawerSyncReturn {
 export function useTaskDrawerSync(): UseTaskDrawerSyncReturn {
   const attachTag = useAttachTag()
   const detachTag = useDetachTag()
+  const createTag = useCreateTag()
   const createSubtask = useCreateSubtask()
   const updateSubtask = useUpdateSubtask()
   const deleteSubtask = useDeleteSubtask()
@@ -25,13 +27,28 @@ export function useTaskDrawerSync(): UseTaskDrawerSyncReturn {
   const syncTags = async (taskId: number, currentTags: Tag[], originalTags: Tag[]) => {
     const originalTagIds = originalTags.map(t => t.id)
     const currentTagIds = currentTags.map(t => t.id)
-    const tagsToAdd = currentTagIds.filter(id => !originalTagIds.includes(id))
+    
+    // 1. Detach tags that are no longer present
     const tagsToRemove = originalTagIds.filter(id => !currentTagIds.includes(id))
     
+    // 2. Separate tags to add: existing vs new (virtual)
+    const existingTagsToAdd = currentTags.filter(t => t.id > 0 && !originalTagIds.includes(t.id))
+    const newTagsToCreate = currentTags.filter(t => t.id < 0)
+
     await Promise.all([
-      ...tagsToAdd.map(id => attachTag.mutateAsync({ taskId, tagId: id })),
-      ...tagsToRemove.map(id => detachTag.mutateAsync({ taskId, tagId: id }))
+      ...tagsToRemove.map(id => detachTag.mutateAsync({ taskId, tagId: id })),
+      ...existingTagsToAdd.map(t => attachTag.mutateAsync({ taskId, tagId: t.id }))
     ])
+
+    // 3. Create and attach new tags
+    for (const t of newTagsToCreate) {
+      const created = await createTag.mutateAsync({ 
+        name: t.name, 
+        color: t.color, 
+        icon: t.icon 
+      })
+      await attachTag.mutateAsync({ taskId, tagId: created.id })
+    }
   }
 
   const syncSubtasks = async (taskId: number, local: Subtask[], original: Subtask[]) => {
@@ -64,6 +81,6 @@ export function useTaskDrawerSync(): UseTaskDrawerSyncReturn {
   return {
     syncTags,
     syncSubtasks,
-    isSyncing: attachTag.isPending || detachTag.isPending || createSubtask.isPending || updateSubtask.isPending || deleteSubtask.isPending || reorderSubtasks.isPending
+    isSyncing: attachTag.isPending || detachTag.isPending || createTag.isPending || createSubtask.isPending || updateSubtask.isPending || deleteSubtask.isPending || reorderSubtasks.isPending
   }
 }

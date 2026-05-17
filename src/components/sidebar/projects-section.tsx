@@ -64,7 +64,7 @@ export function ProjectsSection({
         )}
         {isCollapsed ? (
           <Layers className="h-4 w-4 text-foreground/20" />
-        ) : (
+        ) : projects.length < 20 ? (
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
@@ -73,9 +73,21 @@ export function ProjectsSection({
               onAddProject()
             }}
             className="p-1 rounded-md hover:bg-white/10 text-foreground/40 hover:text-foreground transition-colors cursor-pointer"
+            aria-label="Add Project"
           >
             <Plus className="h-4 w-4" />
           </motion.button>
+        ) : (
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              <div className="p-1 text-foreground/10 cursor-not-allowed">
+                <Plus className="h-4 w-4" />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent className="bg-destructive text-destructive-foreground border-none font-bold">
+              Project limit reached (20)
+            </TooltipContent>
+          </Tooltip>
         )}
       </div>
 

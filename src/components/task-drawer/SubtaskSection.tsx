@@ -4,6 +4,7 @@ import { CheckCircle2, Circle, Plus, Trash2, Check, X, GripVertical } from "luci
 import { type Subtask, type Task } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { useUserPreferences } from "@/hooks/useUserPreferences"
 import {
   DndContext,
   closestCenter,
@@ -21,6 +22,8 @@ import {
   useSortable,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
+
+import { useAuth } from "@/contexts/AuthContext"
 
 interface SubtaskSectionProps {
   readonly isCreate: boolean
@@ -41,6 +44,7 @@ interface SubtaskSectionProps {
   readonly task: Task | null
   readonly isDirty?: boolean
   readonly handleReorderSubtasks: (newSubtasks: (Subtask | { id: string; title: string })[]) => void
+  readonly onDeleteSubtaskClick: (id: number | string) => void
 }
 
 export function SubtaskSection({
@@ -48,8 +52,10 @@ export function SubtaskSection({
   newSubtaskTitle, setNewSubtaskTitle, handleAddSubtask,
   visibleSubtasks, allSubtasks, handleToggleSubtask, handleDeleteSubtask,
   subtaskInputRef, subtasksLimit, setSubtasksLimit, pendingSubtasks, setPendingSubtasks,
-  task, isDirty, handleReorderSubtasks
+  task, isDirty, handleReorderSubtasks, onDeleteSubtaskClick
 }: Readonly<SubtaskSectionProps>) {
+  const { user } = useAuth()
+  const preferences = useUserPreferences(user?.id ?? "default")
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -108,7 +114,14 @@ export function SubtaskSection({
                   id={sub.id.toString()}
                   sub={sub}
                   handleToggleSubtask={handleToggleSubtask}
-                  handleDeleteSubtask={handleDeleteSubtask}
+                  handleDeleteSubtask={(id) => {
+                    if (preferences.skipSubtaskDeletionConfirm) {
+                      handleDeleteSubtask(id as number)
+                    } else {
+                      onDeleteSubtaskClick(id)
+                    }
+                  }}
+                  pendingSubtasks={pendingSubtasks}
                   setPendingSubtasks={setPendingSubtasks}
                 />
               ))}
@@ -144,8 +157,12 @@ export function SubtaskSection({
             handleAddSubtask={handleAddSubtask}
             setIsAddingSubtask={setIsAddingSubtask}
           />
-        ) : (
+        ) : allSubtasks.length < 50 ? (
           <AddSubtaskButton onClick={() => setIsAddingSubtask(true)} />
+        ) : (
+          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-destructive/40 px-3 py-2 italic select-none">
+            Maximum sub-tasks reached (50)
+          </div>
         )}
       </div>
     </div>
@@ -179,17 +196,17 @@ function SortableSubtaskItem({ id, ...props }: Readonly<SubtaskItemProps & { id:
 interface SubtaskItemProps {
   readonly sub: Subtask | { id: string; title: string }
   readonly handleToggleSubtask: (id: number, completed: boolean) => void
-  readonly handleDeleteSubtask: (id: number) => void
-  readonly setPendingSubtasks: React.Dispatch<React.SetStateAction<{ id: string; title: string }[]>>
+  readonly handleDeleteSubtask: (id: number | string) => void
+  readonly pendingSubtasks?: readonly { id: string; title: string }[]
+  readonly setPendingSubtasks?: React.Dispatch<React.SetStateAction<{ id: string; title: string }[]>>
   readonly attributes?: DraggableAttributes
   readonly listeners?: DraggableSyntheticListeners
 }
 
-function SubtaskItem({ sub, handleToggleSubtask, handleDeleteSubtask, setPendingSubtasks, attributes, listeners }: Readonly<SubtaskItemProps>) {
+function SubtaskItem({ sub, handleToggleSubtask, handleDeleteSubtask, attributes, listeners }: Readonly<Omit<SubtaskItemProps, "pendingSubtasks" | "setPendingSubtasks">>) {
   const isPending = typeof sub.id === "string"
   const subTitle = sub.title
   const isCompleted = "completed" in sub && sub.completed
-  const [confirmDelete, setConfirmDelete] = React.useState(false)
 
   return (
     <motion.div
@@ -224,39 +241,13 @@ function SubtaskItem({ sub, handleToggleSubtask, handleDeleteSubtask, setPending
         {subTitle}
       </span>
       
-      {confirmDelete ? (
-        <div className="flex items-center gap-1 animate-in slide-in-from-right-2 duration-200">
-          <button
-            onClick={() => {
-              if (isPending) {
-                setPendingSubtasks((prev) => prev.filter((s) => s.id !== sub.id))
-              } else {
-                handleDeleteSubtask(sub.id as number)
-              }
-              setConfirmDelete(false)
-            }}
-            className="p-1 text-red-500 hover:bg-red-500/10 rounded-md transition-colors"
-            aria-label="Confirm delete"
-          >
-            <Check className="h-3.5 w-3.5" />
-          </button>
-          <button
-            onClick={() => setConfirmDelete(false)}
-            className="p-1 text-foreground/30 hover:bg-white/10 rounded-md transition-colors"
-            aria-label="Cancel delete"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      ) : (
-        <button
-          onClick={() => setConfirmDelete(true)}
-          aria-label={`Delete subtask: ${subTitle}`}
-          className="opacity-0 group-hover/sub:opacity-100 transition-opacity text-foreground/20 hover:text-red-500 focus-visible:opacity-100 outline-none"
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </button>
-      )}
+      <button
+        onClick={() => handleDeleteSubtask(sub.id)}
+        aria-label={`Delete subtask: ${subTitle}`}
+        className="opacity-0 group-hover/sub:opacity-100 transition-opacity text-foreground/20 hover:text-red-500 focus-visible:opacity-100 outline-none"
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+      </button>
     </motion.div>
   )
 }
@@ -290,7 +281,7 @@ function SubtaskInput({ subtaskInputRef, newSubtaskTitle, setNewSubtaskTitle, ha
         }}
         placeholder="Sub-task title... (Enter to add)"
         aria-label="New sub-task title"
-        className="flex-1 bg-white/5 border border-primary/30 rounded-xl px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/60"
+        className="flex-1 bg-white/10 border-2 border-primary/20 rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/60 hover:border-primary/40 transition-all shadow-inner"
       />
       <button onClick={handleAddSubtask} className="text-primary hover:text-primary/80" aria-label="Confirm add subtask">
         <Check className="h-4 w-4" />

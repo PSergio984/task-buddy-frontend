@@ -10,6 +10,9 @@ import { useProjectManagement } from "./useProjectManagement"
 import { useTaskDirtyState } from "./useTaskDirtyState"
 import { useTaskDrawerActions, type UseTaskDrawerActionsProps } from "./useTaskDrawerActions"
 
+import { useUserPreferences } from "@/hooks/useUserPreferences"
+import { useAuth } from "@/contexts/AuthContext"
+
 interface UseTaskDrawerStateProps {
   initialTask: Task | null
   mode: "view" | "create"
@@ -40,14 +43,18 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onClose }: UseTa
   // Modal states
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showSaveConfirm, setShowSaveConfirm] = useState(false)
+  const [deletingSubtask, setDeletingSubtask] = useState<number | string | null>(null)
   const isCreate = mode === "create"
+
+  const { user } = useAuth()
+  const preferences = useUserPreferences(user?.id ?? "default")
 
   // Sub-hooks for management
   const subtasks = useSubtaskManagement(isCreate, task?.id)
-  const tags = useTagManagement(isCreate, allTags, createTagMutation, toast)
-  const projectMgmt = useProjectManagement(createProjectMutation, toast)
+  const tags = useTagManagement(isCreate, allTags, toast)
+  const projectMgmt = useProjectManagement(projects, toast)
 
-  const { projectId, setProjectId, setProjectSearch } = projectMgmt
+  const { projectId, setProjectId } = projectMgmt
 
   // Initialization & Reset - Adjusted during render to avoid cascading renders in useEffect
   const [prevTaskId, setPrevTaskId] = useState<number | string | null>(null)
@@ -61,28 +68,28 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onClose }: UseTa
     setPriority(isNew ? "MEDIUM" : task.priority)
     setCompleted(isNew ? false : task.completed)
     
-    const initialProjectId = isNew ? "none" : (task.project_id?.toString() ?? "none")
-    setProjectId(initialProjectId)
-    
     let initialDueDate: Date | undefined = undefined
     if (!isNew && task.due_date) {
       initialDueDate = new Date(task.due_date)
     }
     setDueDate(initialDueDate)
     
-    subtasks.resetSubtasks(task)
-    tags.resetTags(task)
+    subtasks.resetSubtasks(isNew ? null : task)
+    tags.resetTags(isNew ? null : task)
+    projectMgmt.resetProjects(isNew ? null : task)
 
-    setProjectSearch("")
     setShowDeleteConfirm(false)
     setShowSaveConfirm(false)
+    setDeletingSubtask(null)
     setIsEditingTitle(false)
   }
 
-  if (isOpen && (isOpen !== prevIsOpen || currentTaskId !== prevTaskId)) {
+  if (isOpen !== prevIsOpen || currentTaskId !== prevTaskId) {
     setPrevIsOpen(isOpen)
     setPrevTaskId(currentTaskId)
-    resetForm()
+    if (isOpen) {
+      resetForm()
+    }
   }
 
   // Dirty checks
@@ -159,6 +166,8 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onClose }: UseTa
     ...projectMgmt,
     showDeleteConfirm, setShowDeleteConfirm,
     showSaveConfirm, setShowSaveConfirm,
+    deletingSubtask, setDeletingSubtask,
+    preferences,
     hasChanges: dirtyState.hasChanges,
     isTitleDirty: dirtyState.title,
     isDescriptionDirty: dirtyState.description,

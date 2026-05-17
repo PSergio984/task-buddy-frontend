@@ -7,8 +7,12 @@ import { type Project as ProjectType, type Tag as TagType } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { type DragEndEvent } from "@dnd-kit/core"
 import { arrayMove } from "@dnd-kit/sortable"
+import { useUserPreferences } from "@/hooks/useUserPreferences"
+
+import { useAuth } from "@/contexts/AuthContext"
 
 export function useSidebarActions() {
+  const { user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const { toast } = useToast()
@@ -25,6 +29,7 @@ export function useSidebarActions() {
   const deleteProject = useDeleteProject()
   const reorderProjects = useReorderProjects()
   const reorderTags = useReorderTags()
+  const { skipTagDeletionConfirm, setPreference } = useUserPreferences(user?.id ?? "default")
 
   const [editingTag, setEditingTag] = useState<TagType | undefined>()
   const [editingProject, setEditingProject] = useState<ProjectType | undefined>()
@@ -89,16 +94,17 @@ export function useSidebarActions() {
     }
   }, [reorderTags])
 
-  const handleConfirmDelete = useCallback(async () => {
+  const handleConfirmDelete = useCallback(async (option?: boolean) => {
     if (!deletingItem) return
     
     try {
       if (deletingItem.type === "project") {
-        await deleteProject.mutateAsync(deletingItem.id)
+        await deleteProject.mutateAsync({ id: deletingItem.id, deleteTasks: option })
         if (activeSidebarFilter === `project:${deletingItem.id}`) {
           setActiveSidebarFilter("all")
         }
       } else {
+        if (option) setPreference('skipTagDeletionConfirm', true)
         await deleteTag.mutateAsync(deletingItem.id)
         if (activeTagId === deletingItem.id) {
           setActiveTagId(null)
@@ -118,7 +124,7 @@ export function useSidebarActions() {
     } finally {
       setDeletingItem(null)
     }
-  }, [deletingItem, deleteProject, deleteTag, activeSidebarFilter, activeTagId, setActiveSidebarFilter, setActiveTagId, toast])
+  }, [deletingItem, deleteProject, deleteTag, activeSidebarFilter, activeTagId, setActiveSidebarFilter, setActiveTagId, toast, setPreference])
 
   const openCreateProjectModal = useCallback(() => {
     setEditingProject(undefined)
@@ -145,8 +151,27 @@ export function useSidebarActions() {
   }, [])
 
   const openDeleteTagModal = useCallback((tag: TagType) => {
+    if (skipTagDeletionConfirm) {
+      deleteTag.mutateAsync(tag.id).then(() => {
+        if (activeTagId === tag.id) {
+          setActiveTagId(null)
+          setActiveSidebarFilter("all")
+        }
+        toast({
+          title: "Deleted",
+          description: "Tag deleted successfully",
+        })
+      }).catch(() => {
+        toast({
+          title: "Error",
+          description: "Failed to delete tag",
+          variant: "destructive",
+        })
+      })
+      return
+    }
     setDeletingItem({ type: "tag", id: tag.id, name: tag.name })
-  }, [])
+  }, [skipTagDeletionConfirm, deleteTag, activeTagId, setActiveTagId, setActiveSidebarFilter, toast])
 
   const closeCreateProjectModal = useCallback(() => {
     setIsCreateProjectModalOpen(false)

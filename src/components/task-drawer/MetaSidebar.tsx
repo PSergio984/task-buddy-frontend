@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { TimePicker } from "@/components/ui/time-picker"
 import { Calendar as CalendarPicker } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { ColorIconPicker } from "../color-icon-picker"
 import { useSettings } from "@/contexts/SettingsContext"
 import { cn } from "@/lib/utils"
@@ -61,6 +62,7 @@ interface MetaSidebarProps {
   readonly dirtySections?: DirtySections
   readonly isCreatingTag?: boolean
   readonly isCreatingProject?: boolean
+  readonly allTags?: readonly Tag[]
 }
 
 const PRIORITY_STYLES = {
@@ -76,7 +78,7 @@ export function MetaSidebar(props: MetaSidebarProps) {
       {!props.isCreate && <StatusSection {...props} />}
       <PrioritySection {...props} />
       <ProjectSection {...props} />
-      <TagsSection {...props} />
+      <TagsSection {...props} totalTagsCount={props.allTags?.length || 0} />
     </div>
   )
 }
@@ -126,11 +128,7 @@ function PrioritySection({ priority, setPriority, dirtySections }: Pick<MetaSide
           </div>
         </SelectTrigger>
         <SelectContent className="bg-background/95 backdrop-blur-xl border-white/10">
-          {priority !== "HIGH" && priority !== "MEDIUM" && priority !== "LOW" && (
-            <SelectItem value={priority} className="hidden">{priority}</SelectItem>
-          )}
-          <SelectItem value="HIGH" className="focus:bg-rose-500/10 focus:text-rose-500 rounded-xl transition-all font-bold">
-High</SelectItem>
+          <SelectItem value="HIGH" className="text-red-500 font-bold text-xs uppercase tracking-widest">High</SelectItem>
           <SelectItem value="MEDIUM" className="text-amber-500 font-bold text-xs uppercase tracking-widest">Medium</SelectItem>
           <SelectItem value="LOW" className="text-blue-500 font-bold text-xs uppercase tracking-widest">Low</SelectItem>
         </SelectContent>
@@ -198,22 +196,28 @@ function ProjectSection({
               ))}
             {projectSearch.trim() && !projects.some(p => p.name.toLowerCase() === projectSearch.toLowerCase()) && (
               <div className="flex items-center gap-1 border-t border-white/5 pt-2 mt-1">
-                <ColorIconPicker
-                  color={newProjectColor}
-                  icon={newProjectIcon}
-                  onSelect={(c, i) => {
-                    setNewProjectColor(c)
-                    setNewProjectIcon(i)
-                  }}
-                />
-                <button
-                  onClick={handleCreateProject}
-                  disabled={isCreatingProject}
-                  className="flex-1 text-left px-3 py-2 rounded-lg text-xs font-bold text-primary hover:bg-primary/10 transition-colors flex items-center gap-2 disabled:opacity-50"
-                >
-                  <Plus className={cn("h-3 w-3", isCreatingProject && "animate-spin")} />
-                  {isCreatingProject ? "Creating..." : `Create "${projectSearch}"`}
-                </button>
+                {projects.length < 20 ? (
+                  <>
+                    <ColorIconPicker
+                      color={newProjectColor}
+                      icon={newProjectIcon}
+                      onSelect={(c, i) => {
+                        setNewProjectColor(c)
+                        setNewProjectIcon(i)
+                      }}
+                    />
+                    <button
+                      onClick={handleCreateProject}
+                      disabled={isCreatingProject}
+                      className="flex-1 text-left px-3 py-2 rounded-lg text-xs font-bold text-primary hover:bg-primary/10 transition-colors flex items-center gap-2 disabled:opacity-50"
+                    >
+                      <Plus className={cn("h-3 w-3", isCreatingProject && "animate-spin")} />
+                      {isCreatingProject ? "Creating..." : `Create "${projectSearch}"`}
+                    </button>
+                  </>
+                ) : (
+                  <p className="px-3 py-2 text-[10px] font-bold text-destructive/60 uppercase tracking-tight">Project limit reached (20)</p>
+                )}
               </div>
             )}
           </div>
@@ -346,8 +350,8 @@ function TagsSection({
   currentTags, handleDetachTag, isTagPickerOpen, setIsTagPickerOpen,
   tagSearch, setTagSearch, filteredTags, handleAttachTag, canCreateTag,
   handleCreateAndAttachTag, newTagColor, setNewTagColor, newTagIcon, setNewTagIcon,
-  dirtySections, isCreatingTag
-}: Pick<MetaSidebarProps, "currentTags" | "handleDetachTag" | "isTagPickerOpen" | "setIsTagPickerOpen" | "tagSearch" | "setTagSearch" | "filteredTags" | "handleAttachTag" | "canCreateTag" | "handleCreateAndAttachTag" | "newTagColor" | "setNewTagColor" | "newTagIcon" | "setNewTagIcon" | "dirtySections" | "isCreatingTag">) {
+  dirtySections, isCreatingTag, totalTagsCount
+}: Pick<MetaSidebarProps, "currentTags" | "handleDetachTag" | "isTagPickerOpen" | "setIsTagPickerOpen" | "tagSearch" | "setTagSearch" | "filteredTags" | "handleAttachTag" | "canCreateTag" | "handleCreateAndAttachTag" | "newTagColor" | "setNewTagColor" | "newTagIcon" | "setNewTagIcon" | "dirtySections" | "isCreatingTag"> & { totalTagsCount: number }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
@@ -358,56 +362,75 @@ function TagsSection({
         {currentTags?.map((tag) => (
           <TagBadge key={tag.id} tag={tag} onDetach={() => handleDetachTag(tag.id)} />
         ))}
-        <Popover open={isTagPickerOpen} onOpenChange={setIsTagPickerOpen}>
-          <PopoverTrigger asChild>
-            <button className="h-6 w-6 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary/10 hover:text-primary transition-colors">
-              <Plus className="h-3 w-3 text-foreground/40" />
-            </button>
-          </PopoverTrigger>
-          <PopoverContent className="w-56 p-2 rounded-xl border-white/10 bg-background/95 backdrop-blur-xl" align="end">
-            <input
-              id="tag-search"
-              value={tagSearch}
-              onChange={(e) => setTagSearch(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && canCreateTag && !isCreatingTag && handleCreateAndAttachTag()}
-              disabled={isCreatingTag}
-              placeholder="Search or create tag..."
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/50 mb-2 disabled:opacity-50"
-            />
-            <div className="space-y-1 max-h-40 overflow-y-auto">
-              {filteredTags.map((tag) => (
-                <button
-                  key={tag.id}
-                  onClick={() => handleAttachTag(tag.id)}
-                  className="w-full text-left px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-2"
-                >
-                  <div className="h-2 w-2 rounded-full" style={{ backgroundColor: tag.color || "#6366f1" }} />
-                  {tag.name}
-                </button>
-              ))}
-              {canCreateTag && (
-                <div className="flex items-center gap-1 border-t border-white/5 pt-2 mt-1">
-                  <ColorIconPicker
-                    color={newTagColor}
-                    icon={newTagIcon}
-                    onSelect={(c, i) => {
-                      setNewTagColor(c)
-                      setNewTagIcon(i)
-                    }}
-                  />
+        {currentTags.length < 10 ? (
+          <Popover open={isTagPickerOpen} onOpenChange={setIsTagPickerOpen}>
+            <PopoverTrigger asChild>
+              <button className="h-6 w-6 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary/10 hover:text-primary transition-colors">
+                <Plus className="h-3 w-3 text-foreground/40" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-2 rounded-xl border-white/10 bg-background/95 backdrop-blur-xl" align="end">
+              <input
+                id="tag-search"
+                value={tagSearch}
+                onChange={(e) => setTagSearch(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && canCreateTag && !isCreatingTag && handleCreateAndAttachTag()}
+                disabled={isCreatingTag}
+                placeholder="Search or create tag..."
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/50 mb-2 disabled:opacity-50"
+              />
+              <div className="space-y-1 max-h-40 overflow-y-auto">
+                {filteredTags.map((tag) => (
                   <button
-                    onClick={handleCreateAndAttachTag}
-                    disabled={isCreatingTag}
-                    className="flex-1 text-left px-3 py-2 rounded-lg text-xs font-bold text-primary hover:bg-primary/10 transition-colors flex items-center gap-2 disabled:opacity-50"
+                    key={tag.id}
+                    onClick={() => handleAttachTag(tag.id)}
+                    className="w-full text-left px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-2"
                   >
-                    <Plus className={cn("h-3 w-3", isCreatingTag && "animate-spin")} />
-                    {isCreatingTag ? "Creating..." : `Create "${tagSearch}"`}
+                    <div className="h-2 w-2 rounded-full" style={{ backgroundColor: tag.color || "#6366f1" }} />
+                    {tag.name}
                   </button>
-                </div>
-              )}
-            </div>
-          </PopoverContent>
-        </Popover>
+                ))}
+                {canCreateTag && (
+                  <div className="flex items-center gap-1 border-t border-white/5 pt-2 mt-1">
+                    {totalTagsCount < 50 ? (
+                      <>
+                        <ColorIconPicker
+                          color={newTagColor}
+                          icon={newTagIcon}
+                          onSelect={(c, i) => {
+                            setNewTagColor(c)
+                            setNewTagIcon(i)
+                          }}
+                        />
+                        <button
+                          onClick={handleCreateAndAttachTag}
+                          disabled={isCreatingTag}
+                          className="flex-1 text-left px-3 py-2 rounded-lg text-xs font-bold text-primary hover:bg-primary/10 transition-colors flex items-center gap-2 disabled:opacity-50"
+                        >
+                          <Plus className={cn("h-3 w-3", isCreatingTag && "animate-spin")} />
+                          {isCreatingTag ? "Creating..." : `Create "${tagSearch}"`}
+                        </button>
+                      </>
+                    ) : (
+                      <p className="px-3 py-2 text-[10px] font-bold text-destructive/60 uppercase tracking-tight">Tag limit reached (50)</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
+        ) : (
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              <div className="h-6 w-6 rounded-full bg-white/5 flex items-center justify-center text-foreground/10 cursor-not-allowed">
+                <Plus className="h-3 w-3" />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent className="bg-destructive text-destructive-foreground border-none font-bold">
+              Tag limit reached (10 per task)
+            </TooltipContent>
+          </Tooltip>
+        )}
       </div>
     </div>
   )

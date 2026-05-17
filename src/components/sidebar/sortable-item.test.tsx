@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react"
 import { describe, it, expect, vi } from "vitest"
 import { SortableSidebarItem } from "./sortable-item"
-import React from "react"
+
 
 // Mock dnd-kit hooks since they require a DndContext parent
 vi.mock("@dnd-kit/sortable", () => ({
