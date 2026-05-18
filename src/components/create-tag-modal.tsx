@@ -17,6 +17,7 @@ import { useCreateTag, useUpdateTag } from "@/hooks/useTags"
 import { type Tag } from "@/lib/api"
 import { ColorIconPicker, PRESET_COLORS, PRESET_ICONS } from "./color-icon-picker"
 import { animations } from "@/lib/animations"
+import { CharacterCounter } from "./ui/character-counter"
 
 interface CreateTagModalProps {
   readonly open: boolean
@@ -100,14 +101,18 @@ export function CreateTagModal({
 
             <form onSubmit={handleSubmit} className="space-y-8">
               <div className="space-y-3">
-                <Label htmlFor="tagName" className="text-[10px] font-black uppercase tracking-[0.2em] ml-1 text-foreground/40">
-                  Tag Name
-                </Label>
+                <div className="flex items-center justify-between ml-1">
+                  <Label htmlFor="tagName" className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/40">
+                    Tag Name
+                  </Label>
+                  <CharacterCounter current={name.length} limit={50} />
+                </div>
                 <Input
                   id="tagName"
                   placeholder="e.g., Critical, Research, Phase 1"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  maxLength={50}
                   required
                   className="h-14 rounded-2xl border-border bg-muted/50 dark:bg-zinc-800/50 px-6 text-lg font-semibold focus-visible:ring-primary/20 placeholder:text-muted-foreground/30"
                 />

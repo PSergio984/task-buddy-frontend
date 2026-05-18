@@ -13,13 +13,14 @@ interface ActionFooterProps {
   readonly isCreating?: boolean
   readonly isSaving?: boolean
   readonly isDeleting?: boolean
+  readonly isValid?: boolean
 }
 
 export function ActionFooter({
   isCreate, isDirty, onClose, handleCreate, handleUpdate,
   setShowDeleteConfirm,
   showSaveConfirm, setShowSaveConfirm,
-  isCreating = false, isSaving = false, isDeleting = false
+  isCreating = false, isSaving = false, isDeleting = false, isValid = true
 }: ActionFooterProps) {
   return (
     <div className="px-8 py-6 border-t border-white/5 bg-white/[0.02] flex items-center justify-between shrink-0">
@@ -28,6 +29,7 @@ export function ActionFooter({
           onCancel={onClose} 
           onCreate={handleCreate} 
           isDirty={isDirty} 
+          isValid={isValid}
           loading={isCreating}
         />
       ) : (
@@ -50,10 +52,11 @@ interface CreateModeFooterProps {
   readonly onCancel: () => void
   readonly onCreate: () => void
   readonly isDirty: boolean
+  readonly isValid?: boolean
   readonly loading?: boolean
 }
 
-function CreateModeFooter({ onCancel, onCreate, isDirty, loading }: CreateModeFooterProps) {
+function CreateModeFooter({ onCancel, onCreate, isDirty, isValid = true, loading }: CreateModeFooterProps) {
   return (
     <>
       <Button variant="ghost" onClick={onCancel} className="text-xs font-bold hover:bg-white/5">
@@ -61,7 +64,7 @@ function CreateModeFooter({ onCancel, onCreate, isDirty, loading }: CreateModeFo
       </Button>
       <Button
         onClick={onCreate}
-        disabled={!isDirty || loading}
+        disabled={!isDirty || !isValid || loading}
         loading={loading}
         className="px-8 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 h-11 rounded-xl text-xs font-black uppercase tracking-widest gap-2"
       >

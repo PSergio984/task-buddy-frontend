@@ -9,6 +9,7 @@ import { useTaskDrawerState } from "@/hooks/useTaskDrawerState"
 import { SubtaskSection } from "./task-drawer/SubtaskSection"
 import { MetaSidebar } from "./task-drawer/MetaSidebar"
 import { ActionFooter } from "./task-drawer/ActionFooter"
+import { CharacterCounter } from "./ui/character-counter"
 import { ConfirmationModal } from "./confirmation-modal"
 
 import {
@@ -171,6 +172,7 @@ export function TaskDetailDrawer({ task: initialTask, mode, isOpen, onOpen, onCl
           <ActionFooter
             isCreate={state.isCreate}
             isDirty={state.hasChanges}
+            isValid={state.title.trim() !== ""}
             onClose={handleClose}
             handleCreate={state.actions.handleCreate}
             handleUpdate={state.actions.handleConfirmUpdate}
@@ -254,7 +256,7 @@ export function TaskDetailDrawer({ task: initialTask, mode, isOpen, onOpen, onCl
   )
 }
 
-function DrawerHeader({ isCreate, onClose }: Readonly<{ isCreate: boolean; onClose: () => void }>) {
+function DrawerHeader({ isCreate }: Readonly<{ isCreate: boolean; onClose?: () => void }>) {
   return (
     <div className="flex items-center justify-between px-8 py-6 border-b border-white/5 shrink-0">
       <div className="flex items-center gap-3">
@@ -265,12 +267,6 @@ function DrawerHeader({ isCreate, onClose }: Readonly<{ isCreate: boolean; onClo
           {isCreate ? "New Task" : "Task Details"}
         </span>
       </div>
-      <button 
-        onClick={onClose}
-        className="h-8 w-8 flex items-center justify-center rounded-xl hover:bg-white/5 transition-colors text-foreground/40 hover:text-foreground"
-      >
-        <Icons.X className="h-4 w-4" />
-      </button>
     </div>
   )
 }
@@ -289,10 +285,14 @@ interface TitleSectionProps {
 function TitleSection({ isCreate, isEditingTitle, setIsEditingTitle, title, setTitle, task, handleUpdate, isDirty }: Readonly<TitleSectionProps>) {
   if (isCreate || isEditingTitle) {
     return (
-      <div className="pt-2">
+      <div className="pt-2 space-y-2">
+        <div className="flex justify-end px-1">
+          <CharacterCounter current={title.length} limit={100} />
+        </div>
         <Input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+          maxLength={100}
           onBlur={() => { 
             setIsEditingTitle(false)
             if (!isCreate && task && title !== task.title && title.trim()) {
@@ -341,15 +341,19 @@ interface DescriptionSectionProps {
 function DescriptionSection({ isCreate, description, setDescription, task, handleUpdate, isDirty }: Readonly<DescriptionSectionProps>) {
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between px-1">
         <label htmlFor="task-notes" className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Notes</label>
-        {isDirty && <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
+        <div className="flex items-center gap-3">
+          <CharacterCounter current={description.length} limit={2000} />
+          {isDirty && <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
+        </div>
       </div>
       <Textarea
         id="task-notes"
         placeholder="Add notes, context, or details..."
         value={description}
         onChange={(e) => setDescription(e.target.value)}
+        maxLength={2000}
         onBlur={() => { 
           if (!isCreate && task && description !== (task.description ?? "")) {
             handleUpdate({ description })

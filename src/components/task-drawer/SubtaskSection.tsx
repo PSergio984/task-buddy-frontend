@@ -24,6 +24,7 @@ import {
 import { CSS } from "@dnd-kit/utilities"
 
 import { useAuth } from "@/contexts/AuthContext"
+import { CharacterCounter } from "../ui/character-counter"
 
 interface SubtaskSectionProps {
   readonly isCreate: boolean
@@ -266,29 +267,35 @@ function SubtaskInput({ subtaskInputRef, newSubtaskTitle, setNewSubtaskTitle, ha
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
-      className="flex items-center gap-2"
+      className="space-y-2"
     >
-      <input
-        ref={subtaskInputRef}
-        value={newSubtaskTitle}
-        onChange={(e) => setNewSubtaskTitle(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") handleAddSubtask()
-          if (e.key === "Escape") {
-            setIsAddingSubtask(false)
-            setNewSubtaskTitle("")
-          }
-        }}
-        placeholder="Sub-task title... (Enter to add)"
-        aria-label="New sub-task title"
-        className="flex-1 bg-white/10 border-2 border-primary/20 rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/60 hover:border-primary/40 transition-all shadow-inner"
-      />
-      <button onClick={handleAddSubtask} className="text-primary hover:text-primary/80" aria-label="Confirm add subtask">
-        <Check className="h-4 w-4" />
-      </button>
-      <button onClick={() => { setIsAddingSubtask(false); setNewSubtaskTitle("") }} className="text-foreground/30 hover:text-foreground" aria-label="Cancel add subtask">
-        <X className="h-4 w-4" />
-      </button>
+      <div className="flex items-center gap-2">
+        <input
+          ref={subtaskInputRef}
+          value={newSubtaskTitle}
+          onChange={(e) => setNewSubtaskTitle(e.target.value)}
+          maxLength={80}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleAddSubtask()
+            if (e.key === "Escape") {
+              setIsAddingSubtask(false)
+              setNewSubtaskTitle("")
+            }
+          }}
+          placeholder="Sub-task title... (Enter to add)"
+          aria-label="New sub-task title"
+          className="flex-1 bg-white/10 border-2 border-primary/20 rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/60 hover:border-primary/40 transition-all shadow-inner"
+        />
+        <button onClick={handleAddSubtask} className="text-primary hover:text-primary/80" aria-label="Confirm add subtask">
+          <Check className="h-4 w-4" />
+        </button>
+        <button onClick={() => { setIsAddingSubtask(false); setNewSubtaskTitle("") }} className="text-foreground/30 hover:text-foreground" aria-label="Cancel add subtask">
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+      <div className="flex justify-end px-2">
+        <CharacterCounter current={newSubtaskTitle.length} limit={80} />
+      </div>
     </motion.div>
   )
 }

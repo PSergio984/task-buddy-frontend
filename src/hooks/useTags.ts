@@ -30,7 +30,8 @@ export function useCreateTag() {
   const { toast } = useToast()
 
   return useMutation({
-    mutationFn: tagsApi.create,
+    mutationFn: (newTag: Parameters<typeof tagsApi.create>[0] & { silent?: boolean }) => 
+      tagsApi.create(newTag),
     onMutate: async (newTag) => {
       await queryClient.cancelQueries({ queryKey: ["tags"] })
       const previousTags = queryClient.getQueryData<Tag[]>(["tags"])
@@ -57,12 +58,14 @@ export function useCreateTag() {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["tags"] })
     },
-    onSuccess: (data) => {
-      toast({
-        title: "Tag created",
-        description: `Tag "${data.name}" has been created.`,
-        variant: "success",
-      })
+    onSuccess: (data, variables) => {
+      if (!variables.silent) {
+        toast({
+          title: "Tag created",
+          description: `Tag "${data.name}" has been created.`,
+          variant: "success",
+        })
+      }
     },
   })
 }
@@ -72,8 +75,12 @@ export function useDeleteTag() {
   const { toast } = useToast()
 
   return useMutation({
-    mutationFn: tagsApi.delete,
-    onMutate: async (id) => {
+    mutationFn: (variables: number | { id: number; silent?: boolean }) => {
+      const id = typeof variables === 'number' ? variables : variables.id
+      return tagsApi.delete(id)
+    },
+    onMutate: async (variables) => {
+      const id = typeof variables === 'number' ? variables : variables.id
       await queryClient.cancelQueries({ queryKey: ["tags"] })
       const previousTags = queryClient.getQueryData<Tag[]>(["tags"])
       
@@ -92,12 +99,15 @@ export function useDeleteTag() {
       // Also invalidate tasks because they might have this tag
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
     },
-    onSuccess: () => {
-      toast({
-        title: "Tag deleted",
-        description: "Tag has been removed successfully.",
-        variant: "success",
-      })
+    onSuccess: (_data, variables) => {
+      const silent = typeof variables === 'object' && variables.silent
+      if (!silent) {
+        toast({
+          title: "Tag deleted",
+          description: "Tag has been removed successfully.",
+          variant: "success",
+        })
+      }
     },
   })
 }
@@ -107,7 +117,7 @@ export function useUpdateTag() {
   const { toast } = useToast()
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: { name?: string; color?: string; icon?: string } }) =>
+    mutationFn: ({ id, data }: { id: number; data: { name?: string; color?: string; icon?: string }; silent?: boolean }) =>
       tagsApi.update(id, data),
     onMutate: async ({ id, data }) => {
       await queryClient.cancelQueries({ queryKey: ["tags"] })
@@ -127,12 +137,14 @@ export function useUpdateTag() {
       queryClient.invalidateQueries({ queryKey: ["tags"] })
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
     },
-    onSuccess: (data) => {
-      toast({
-        title: "Tag updated",
-        description: `Tag "${data.name}" has been updated.`,
-        variant: "success",
-      })
+    onSuccess: (data, variables) => {
+      if (!variables.silent) {
+        toast({
+          title: "Tag updated",
+          description: `Tag "${data.name}" has been updated.`,
+          variant: "success",
+        })
+      }
     },
   })
 }

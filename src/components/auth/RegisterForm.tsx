@@ -27,6 +27,7 @@ import {
 } from "@/lib/auth"
 import { useToast } from "@/hooks/use-toast"
 import { PasswordStrengthMeter } from "./PasswordStrengthMeter"
+import { CharacterCounter } from "../ui/character-counter"
 
 export function RegisterForm() {
   const [username, setUsername] = useState("")
@@ -112,9 +113,12 @@ export function RegisterForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2">
-        <Label htmlFor="username" className="text-sm font-black uppercase tracking-widest ml-1 text-foreground">
-          Username
-        </Label>
+        <div className="flex items-center justify-between ml-1">
+          <Label htmlFor="username" className="text-sm font-black uppercase tracking-widest text-foreground">
+            Username
+          </Label>
+          <CharacterCounter current={username.length} limit={50} />
+        </div>
         <div className="relative group">
           <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-foreground transition-colors group-focus-within:text-accent" />
           <Input
@@ -123,6 +127,7 @@ export function RegisterForm() {
             placeholder="your_handle"
             value={username}
             onChange={(e) => setUsername(sanitizeUsername(e.target.value))}
+            maxLength={50}
             required
             className="h-14 rounded-2xl border-border bg-background/50 pl-12 text-lg focus-visible:ring-accent/30 text-foreground"
           />
@@ -133,9 +138,12 @@ export function RegisterForm() {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="email" className="text-sm font-black uppercase tracking-widest ml-1 text-foreground">
-          Email Address
-        </Label>
+        <div className="flex items-center justify-between ml-1">
+          <Label htmlFor="email" className="text-sm font-black uppercase tracking-widest text-foreground">
+            Email Address
+          </Label>
+          <CharacterCounter current={email.length} limit={254} />
+        </div>
         <div className="relative group">
           <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-foreground transition-colors group-focus-within:text-accent" />
           <Input
@@ -144,6 +152,7 @@ export function RegisterForm() {
             placeholder="you@example.com"
             value={email}
             onChange={(e) => setEmail(sanitizeEmail(e.target.value))}
+            maxLength={254}
             required
             className="h-14 rounded-2xl border-border bg-background/50 pl-12 text-lg focus-visible:ring-accent/30 text-foreground"
           />
@@ -154,9 +163,12 @@ export function RegisterForm() {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password" title="At least 8 characters" className="text-sm font-black uppercase tracking-widest ml-1 text-foreground">
-          Password
-        </Label>
+        <div className="flex items-center justify-between ml-1">
+          <Label htmlFor="password" title="At least 8 characters" className="text-sm font-black uppercase tracking-widest text-foreground">
+            Password
+          </Label>
+          <CharacterCounter current={password.length} limit={128} />
+        </div>
         <div className="relative group">
           <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-foreground transition-colors group-focus-within:text-accent" />
           <Input
@@ -165,6 +177,7 @@ export function RegisterForm() {
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(sanitizePassword(e.target.value))}
+            maxLength={128}
             required
             className="h-14 rounded-2xl border-border bg-background/50 pl-12 pr-12 text-lg focus-visible:ring-accent/30 text-foreground"
           />

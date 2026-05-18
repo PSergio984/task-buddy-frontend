@@ -18,7 +18,7 @@ type BackendErrorDetail = {
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const USERNAME_REGEX =
-  /^(?=.{3,32}$)[A-Za-z0-9](?:[A-Za-z0-9._@\- ]*[A-Za-z0-9])?$/
+  /^(?=.{3,50}$)[A-Za-z0-9](?:[A-Za-z0-9._@\- ]*[A-Za-z0-9])?$/
 // eslint-disable-next-line no-control-regex
 const CONTROL_CHARS = /[\u0000-\u001F\u007F]/g
 
@@ -121,7 +121,7 @@ export function validateUsername(value: string) {
   }
 
   if (!USERNAME_REGEX.test(value)) {
-    return "Use 3-32 characters with letters, numbers, dots, underscores, or hyphens."
+    return "Use 3-50 characters with letters, numbers, dots, underscores, or hyphens."
   }
 
   return null

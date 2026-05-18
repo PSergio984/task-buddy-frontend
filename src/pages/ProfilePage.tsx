@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label"
 import { 
   User, KeyRound, Save, ArrowLeft, CheckCircle2, 
   Circle, ShieldCheck, BadgeCheck, Eye, EyeOff, 
-  Settings2, Clock, Bell
+  Settings2, Clock, Bell, HelpCircle, AlertTriangle,
+  CheckSquare, Trash2, Tag, XCircle
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { sanitizeUsername, sanitizePassword, validatePassword } from "@/lib/auth"
@@ -17,6 +18,9 @@ import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import axios from "axios"
 import { useRegisterPush, useVapidKey } from "@/hooks/useNotifications"
+import { Checkbox } from "@/components/ui/checkbox"
+import { useUserPreferences } from "@/hooks/useUserPreferences"
+import { CharacterCounter } from "@/components/ui/character-counter"
 
 function getErrorMessage(err: unknown): string {
   if (axios.isAxiosError(err)) {
@@ -77,10 +81,122 @@ export function ProfilePage() {
         <div className="grid gap-12">
           <UsernameCard />
           <PreferencesCard />
+          <ConfirmationPreferencesCard />
           <SecurityCard />
         </div>
       </motion.div>
     </div>
+  )
+}
+
+function ConfirmationPreferencesCard() {
+  const { user } = useAuth()
+  const preferences = useUserPreferences(user?.id ?? "default")
+
+  const confirmationSettings = [
+    {
+      key: "skipTaskCompletionConfirm",
+      label: "Task Completion",
+      description: "Confirm before marking a major task as finished.",
+      icon: CheckSquare,
+    },
+    {
+      key: "skipSubtaskCompletionConfirm",
+      label: "Subtask Completion",
+      description: "Confirm before marking subtasks as complete.",
+      icon: CheckCircle2,
+    },
+    {
+      key: "skipTaskDeletionConfirm",
+      label: "Task Deletion",
+      description: "Ask for confirmation before permanently deleting a task.",
+      icon: Trash2,
+      destructive: true,
+    },
+    {
+      key: "skipSubtaskDeletionConfirm",
+      label: "Subtask Deletion",
+      description: "Ask for confirmation before removing a subtask.",
+      icon: Trash2,
+      destructive: true,
+    },
+    {
+      key: "skipTagDeletionConfirm",
+      label: "Tag Deletion",
+      description: "Confirm before deleting a tag from the system.",
+      icon: Tag,
+      destructive: true,
+    },
+    {
+      key: "skipTagDetachmentConfirm",
+      label: "Tag Removal",
+      description: "Confirm before removing a tag from a specific task.",
+      icon: XCircle,
+    },
+  ] as const
+
+  return (
+    <Card className="overflow-hidden border bg-background/50 p-8 shadow-2xl shadow-primary/5 backdrop-blur-xl rounded-[2rem]">
+      <div className="mb-8 flex items-center gap-4">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500">
+          <HelpCircle className="h-6 w-6" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold">Confirmation Prompts</h2>
+          <p className="text-sm text-muted-foreground">Control which actions require a second look.</p>
+        </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        {confirmationSettings.map((setting) => {
+          const Icon = setting.icon
+          const isSkip = preferences[setting.key]
+          
+          return (
+            <div 
+              key={setting.key}
+              className="flex items-start gap-4 p-5 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all group"
+            >
+              <div className={cn(
+                "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors",
+                setting.destructive ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"
+              )}>
+                <Icon className="h-5 w-5" />
+              </div>
+              
+              <div className="flex-1 space-y-1">
+                <div className="flex items-center justify-between">
+                  <label 
+                    htmlFor={setting.key}
+                    className="text-sm font-bold tracking-tight cursor-pointer"
+                  >
+                    {setting.label}
+                  </label>
+                  <Checkbox
+                    id={setting.key}
+                    checked={!isSkip}
+                    onCheckedChange={(checked) => {
+                      preferences.setPreference(setting.key, !checked)
+                    }}
+                    className="h-5 w-5 rounded-lg border-2"
+                  />
+                </div>
+                <p className="text-[10px] font-medium leading-relaxed text-muted-foreground/60 group-hover:text-muted-foreground transition-colors">
+                  {setting.description}
+                </p>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      
+      <div className="mt-8 flex items-center gap-3 px-2 py-3 rounded-xl bg-amber-500/5 border border-amber-500/10">
+        <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
+        <p className="text-[10px] font-bold text-amber-600/80 uppercase tracking-widest">
+          Disabling confirmations will execute actions immediately. Use with caution.
+        </p>
+      </div>
+    </Card>
   )
 }
 
@@ -346,13 +462,17 @@ function UsernameCard() {
 
       <form onSubmit={handleUpdateUsername} className="space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="username" className="text-sm font-semibold ml-1">Username</Label>
+          <div className="flex items-center justify-between ml-1">
+            <Label htmlFor="username" className="text-sm font-semibold">Username</Label>
+            <CharacterCounter current={newUsername.length} limit={50} />
+          </div>
           <div className="relative group">
             <BadgeCheck className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground transition-colors group-focus-within:text-accent" />
             <Input
               id="username"
               value={newUsername}
               onChange={(e) => setNewUsername(e.target.value)}
+              maxLength={50}
               placeholder="Enter your username"
               className="h-14 rounded-2xl border-border bg-background/50 pl-12 text-lg focus-visible:ring-accent/30"
             />

@@ -11,7 +11,9 @@ interface UserPreferences {
   setPreference: (key: keyof Omit<UserPreferences, 'setPreference'>, value: boolean) => void
 }
 
-const stores = new Map<number | string, ReturnType<typeof create<UserPreferences>>>()
+import { type UseBoundStore, type StoreApi } from 'zustand'
+
+const stores = new Map<number | string, UseBoundStore<StoreApi<UserPreferences>>>()
 
 export const useUserPreferences = (userId: number | string = "default") => {
   if (!stores.has(userId)) {

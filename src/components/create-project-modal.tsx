@@ -17,6 +17,7 @@ import { useCreateProject, useUpdateProject } from "@/hooks/useProjects"
 import { type Project } from "@/lib/api"
 import { ColorIconPicker, PRESET_COLORS, PRESET_ICONS } from "./color-icon-picker"
 import { animations } from "@/lib/animations"
+import { CharacterCounter } from "./ui/character-counter"
 
 interface CreateProjectModalProps {
   readonly open: boolean
@@ -100,14 +101,18 @@ export function CreateProjectModal({
 
             <form onSubmit={handleSubmit} className="space-y-8">
               <div className="space-y-3">
-                <Label htmlFor="projectName" className="text-[10px] font-black uppercase tracking-[0.2em] ml-1 text-foreground/40">
-                  Project Name
-                </Label>
+                <div className="flex items-center justify-between ml-1">
+                  <Label htmlFor="projectName" className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/40">
+                    Project Name
+                  </Label>
+                  <CharacterCounter current={name.length} limit={50} />
+                </div>
                 <Input
                   id="projectName"
                   placeholder="e.g., Strategic Expansion 2026"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  maxLength={50}
                   required
                   className="h-16 rounded-[1.25rem] border-2 border-border/50 bg-muted/30 dark:bg-zinc-800/80 px-6 text-xl font-bold focus-visible:ring-primary/10 focus-visible:border-primary placeholder:text-muted-foreground/30 shadow-inner transition-all hover:border-border"
                 />

@@ -33,6 +33,7 @@ import { cn } from "@/lib/utils"
 import { TimePicker } from "@/components/ui/time-picker"
 import { animations } from "@/lib/animations"
 import { useToast } from "@/hooks/use-toast"
+import { CharacterCounter } from "./ui/character-counter"
 
 export interface NewTaskModalProps {
   readonly open: boolean
@@ -81,6 +82,8 @@ export function NewTaskModal({
                   dueDate !== undefined ||
                   tags.trim() !== "" ||
                   priority !== "MEDIUM"
+
+  const canSubmit = title.trim() !== "" && !isLoading
 
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -154,13 +157,17 @@ export function NewTaskModal({
                   <Label htmlFor="title" className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
                     Objective Title
                   </Label>
-                  {isDirty && <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse mr-1" />}
+                  <div className="flex items-center gap-3">
+                    <CharacterCounter current={title.length} limit={100} />
+                    {isDirty && <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse mr-1" />}
+                  </div>
                 </div>
                 <Input
                   id="title"
                   placeholder="e.g., Finalize architecture review"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
+                  maxLength={100}
                   required
                   className="h-16 rounded-[1.25rem] border-2 border-border/50 bg-muted/30 dark:bg-zinc-800/80 px-6 text-xl font-bold focus-visible:ring-primary/10 focus-visible:border-primary placeholder:text-muted-foreground/30 shadow-inner transition-all hover:border-border"
                 />
@@ -301,14 +308,18 @@ export function NewTaskModal({
 
               {/* Description Section */}
               <div className="space-y-2">
-                <Label htmlFor="description" className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
-                  Description
-                </Label>
+                <div className="flex items-center justify-between ml-1">
+                  <Label htmlFor="description" className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
+                    Description
+                  </Label>
+                  <CharacterCounter current={description.length} limit={2000} />
+                </div>
                 <Textarea
                   id="description"
                   placeholder="Define scope and dependencies..."
                   value={description}
                   onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)}
+                  maxLength={2000}
                   className="flex min-h-[100px] w-full rounded-2xl border border-border bg-muted/50 dark:bg-zinc-800/50 px-6 py-4 text-sm font-medium text-foreground placeholder:text-muted-foreground/30 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all outline-none resize-none"
                 />
               </div>
@@ -326,7 +337,7 @@ export function NewTaskModal({
                   <Button
                     type="submit"
                     loading={isLoading}
-                    disabled={!isDirty || !title.trim() || isLoading}
+                    disabled={!canSubmit}
                     className="h-12 px-10 rounded-2xl bg-primary text-primary-foreground shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all font-bold tracking-tight disabled:opacity-50 disabled:grayscale-[0.5]"
                   >
                     <span>{isEditMode ? "Update Task" : "Create Task"}</span>

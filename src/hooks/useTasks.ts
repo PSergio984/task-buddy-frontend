@@ -123,7 +123,8 @@ export function useCreateTask() {
   const { toast } = useToast()
   
   return useMutation({
-    mutationFn: tasksApi.create,
+    mutationFn: (newTaskData: Parameters<typeof tasksApi.create>[0] & { silent?: boolean }) => 
+      tasksApi.create(newTaskData),
     onMutate: async (newTaskData) => {
       await queryClient.cancelQueries({ queryKey: ["tasks"] })
       const previousTasks = queryClient.getQueryData<Task[]>(["tasks"])
@@ -154,12 +155,14 @@ export function useCreateTask() {
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
       queryClient.invalidateQueries({ queryKey: ["stats"] })
     },
-    onSuccess: (data) => {
-      toast({
-        title: "Task created",
-        description: `Task "${data.title}" has been created.`,
-        variant: "success",
-      })
+    onSuccess: (data, variables) => {
+      if (!variables.silent) {
+        toast({
+          title: "Task created",
+          description: `Task "${data.title}" has been created.`,
+          variant: "success",
+        })
+      }
     },
   })
 }
@@ -169,7 +172,7 @@ export function useUpdateTask() {
   const { toast } = useToast()
   
   return useMutation({
-    mutationFn: ({ id, updates }: { id: number; updates: Partial<Task> }) =>
+    mutationFn: ({ id, updates }: { id: number; updates: Partial<Task>; silent?: boolean }) =>
       tasksApi.update(id, updates),
     // Optimistic Update
     onMutate: async ({ id, updates }) => {
@@ -208,12 +211,14 @@ export function useUpdateTask() {
       queryClient.invalidateQueries({ queryKey: ["stats"] })
       queryClient.invalidateQueries({ queryKey: ["task", variables.id] })
     },
-    onSuccess: (data) => {
-      toast({
-        title: "Task updated",
-        description: `Task "${data.title}" has been updated.`,
-        variant: "success",
-      })
+    onSuccess: (data, variables) => {
+      if (!variables.silent) {
+        toast({
+          title: "Task updated",
+          description: `Task "${data.title}" has been updated.`,
+          variant: "success",
+        })
+      }
     }
   })
 }
@@ -223,9 +228,13 @@ export function useDeleteTask() {
   const { toast } = useToast()
   
   return useMutation({
-    mutationFn: tasksApi.delete,
+    mutationFn: (variables: number | { id: number; silent?: boolean }) => {
+      const id = typeof variables === 'number' ? variables : variables.id
+      return tasksApi.delete(id)
+    },
     // Optimistic Update
-    onMutate: async (id) => {
+    onMutate: async (variables) => {
+      const id = typeof variables === 'number' ? variables : variables.id
       await queryClient.cancelQueries({ queryKey: ["tasks"] })
       await queryClient.cancelQueries({ queryKey: ["task", id] })
       
@@ -246,12 +255,15 @@ export function useDeleteTask() {
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
       queryClient.invalidateQueries({ queryKey: ["stats"] })
     },
-    onSuccess: () => {
-      toast({
-        title: "Task deleted",
-        description: "Task has been removed successfully.",
-        variant: "success",
-      })
+    onSuccess: (_data, variables) => {
+      const silent = typeof variables === 'object' && variables !== null && 'silent' in variables && (variables as { silent?: boolean }).silent
+      if (!silent) {
+        toast({
+          title: "Task deleted",
+          description: "Task has been removed successfully.",
+          variant: "success",
+        })
+      }
     }
   })
 }
@@ -261,7 +273,7 @@ export function useUpdateSubtask() {
   const { toast } = useToast()
   
   return useMutation({
-    mutationFn: ({ id, updates }: { id: number; updates: Partial<Subtask> }) =>
+    mutationFn: ({ id, updates }: { id: number; updates: Partial<Subtask>; silent?: boolean }) =>
       subtasksApi.update(id, updates),
     onMutate: async ({ id, updates }) => {
       await queryClient.cancelQueries({ queryKey: ["tasks"] })
@@ -301,12 +313,14 @@ export function useUpdateSubtask() {
         queryClient.invalidateQueries({ queryKey: ["task", data.task_id] })
       }
     },
-    onSuccess: (data) => {
-      toast({
-        title: "Subtask updated",
-        description: data?.title ? `Subtask "${data.title}" has been updated.` : "Subtask has been updated.",
-        variant: "success",
-      })
+    onSuccess: (data, variables) => {
+      if (!variables.silent) {
+        toast({
+          title: "Subtask updated",
+          description: data?.title ? `Subtask "${data.title}" has been updated.` : "Subtask has been updated.",
+          variant: "success",
+        })
+      }
     },
   })
 }
@@ -316,8 +330,10 @@ export function useDeleteSubtask() {
   const { toast } = useToast()
   
   return useMutation({
-    mutationFn: subtasksApi.delete,
-    onMutate: async (id) => {
+    mutationFn: (id: number | { id: number; silent?: boolean }) => 
+      typeof id === 'number' ? subtasksApi.delete(id) : subtasksApi.delete(id.id),
+    onMutate: async (variables) => {
+      const id = typeof variables === 'number' ? variables : variables.id
       await queryClient.cancelQueries({ queryKey: ["tasks"] })
       await queryClient.cancelQueries({ queryKey: ["task"] })
 
@@ -338,12 +354,15 @@ export function useDeleteSubtask() {
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
       queryClient.invalidateQueries({ queryKey: ["task"] })
     },
-    onSuccess: () => {
-      toast({
-        title: "Subtask deleted",
-        description: "Subtask has been removed.",
-        variant: "success",
-      })
+    onSuccess: (_data, variables) => {
+      const silent = typeof variables === 'object' && variables.silent
+      if (!silent) {
+        toast({
+          title: "Subtask deleted",
+          description: "Subtask has been removed.",
+          variant: "success",
+        })
+      }
     },
   })
 }
@@ -353,7 +372,7 @@ export function useCreateSubtask() {
   const { toast } = useToast()
 
   return useMutation({
-    mutationFn: ({ taskId, ...data }: { taskId: number; title: string; completed?: boolean; description?: string; due_date?: string }) =>
+    mutationFn: ({ taskId, ...data }: { taskId: number; title: string; completed?: boolean; description?: string; due_date?: string; silent?: boolean }) =>
       subtasksApi.create(taskId, data),
     onMutate: async ({ taskId, title, completed }) => {
       await queryClient.cancelQueries({ queryKey: ["tasks"] })
@@ -392,12 +411,14 @@ export function useCreateSubtask() {
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
       queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] })
     },
-    onSuccess: (data) => {
-      toast({
-        title: "Subtask created",
-        description: `Subtask "${data.title}" has been created.`,
-        variant: "success",
-      })
+    onSuccess: (data, variables) => {
+      if (!variables.silent) {
+        toast({
+          title: "Subtask created",
+          description: `Subtask "${data.title}" has been created.`,
+          variant: "success",
+        })
+      }
     },
   })
 }
@@ -407,7 +428,7 @@ export function useReorderSubtasks() {
   const { toast } = useToast()
 
   return useMutation({
-    mutationFn: ({ taskId, orderedIds }: { taskId: number; orderedIds: number[] }) =>
+    mutationFn: ({ taskId, orderedIds }: { taskId: number; orderedIds: number[]; silent?: boolean }) =>
       subtasksApi.reorder(taskId, orderedIds),
     onMutate: async ({ taskId, orderedIds }) => {
       await queryClient.cancelQueries({ queryKey: ["task", taskId] })
@@ -430,12 +451,14 @@ export function useReorderSubtasks() {
     onSettled: (_, _error, variables) => {
       queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] })
     },
-    onSuccess: () => {
-      toast({
-        title: "Subtasks reordered",
-        description: "Your subtask order has been saved.",
-        variant: "success",
-      })
+    onSuccess: (_data, variables) => {
+      if (!variables.silent) {
+        toast({
+          title: "Subtasks reordered",
+          description: "Your subtask order has been saved.",
+          variant: "success",
+        })
+      }
     },
   })
 }
@@ -445,7 +468,7 @@ export function useAttachTag() {
   const { toast } = useToast()
 
   return useMutation({
-    mutationFn: ({ taskId, tagId }: { taskId: number; tagId: number }) =>
+    mutationFn: ({ taskId, tagId }: { taskId: number; tagId: number; silent?: boolean }) =>
       tagsApi.attach(taskId, tagId),
     onMutate: async ({ taskId, tagId }) => {
       await queryClient.cancelQueries({ queryKey: ["tasks"] })
@@ -486,12 +509,14 @@ export function useAttachTag() {
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
       queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] })
     },
-    onSuccess: () => {
-      toast({
-        title: "Tag attached",
-        description: "Tag has been added to the task.",
-        variant: "success",
-      })
+    onSuccess: (_data, variables) => {
+      if (!variables.silent) {
+        toast({
+          title: "Tag attached",
+          description: "Tag has been added to the task.",
+          variant: "success",
+        })
+      }
     },
   })
 }
@@ -501,7 +526,7 @@ export function useDetachTag() {
   const { toast } = useToast()
   
   return useMutation({
-    mutationFn: ({ taskId, tagId }: { taskId: number; tagId: number }) =>
+    mutationFn: ({ taskId, tagId }: { taskId: number; tagId: number; silent?: boolean }) =>
       tagsApi.detach(taskId, tagId),
     onMutate: async ({ taskId, tagId }) => {
       await queryClient.cancelQueries({ queryKey: ["tasks"] })
@@ -535,12 +560,14 @@ export function useDetachTag() {
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
       queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] })
     },
-    onSuccess: () => {
-      toast({
-        title: "Tag detached",
-        description: "Tag has been removed from the task.",
-        variant: "success",
-      })
+    onSuccess: (_data, variables) => {
+      if (!variables.silent) {
+        toast({
+          title: "Tag detached",
+          description: "Tag has been removed from the task.",
+          variant: "success",
+        })
+      }
     },
   })
 }

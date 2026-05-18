@@ -10,8 +10,8 @@ import {
 import { useCreateTag } from "./useTags"
 
 export interface UseTaskDrawerSyncReturn {
-  syncTags: (taskId: number, currentTags: Tag[], originalTags: Tag[]) => Promise<void>
-  syncSubtasks: (taskId: number, local: Subtask[], original: Subtask[]) => Promise<void>
+  syncTags: (taskId: number, currentTags: Tag[], originalTags: Tag[], silent?: boolean) => Promise<void>
+  syncSubtasks: (taskId: number, local: Subtask[], original: Subtask[], silent?: boolean) => Promise<void>
   isSyncing: boolean
 }
 
@@ -24,7 +24,7 @@ export function useTaskDrawerSync(): UseTaskDrawerSyncReturn {
   const deleteSubtask = useDeleteSubtask()
   const reorderSubtasks = useReorderSubtasks()
 
-  const syncTags = async (taskId: number, currentTags: Tag[], originalTags: Tag[]) => {
+  const syncTags = async (taskId: number, currentTags: Tag[], originalTags: Tag[], silent = false) => {
     const originalTagIds = originalTags.map(t => t.id)
     const currentTagIds = currentTags.map(t => t.id)
     
@@ -36,8 +36,8 @@ export function useTaskDrawerSync(): UseTaskDrawerSyncReturn {
     const newTagsToCreate = currentTags.filter(t => t.id < 0)
 
     await Promise.all([
-      ...tagsToRemove.map(id => detachTag.mutateAsync({ taskId, tagId: id })),
-      ...existingTagsToAdd.map(t => attachTag.mutateAsync({ taskId, tagId: t.id }))
+      ...tagsToRemove.map(id => detachTag.mutateAsync({ taskId, tagId: id, silent })),
+      ...existingTagsToAdd.map(t => attachTag.mutateAsync({ taskId, tagId: t.id, silent }))
     ])
 
     // 3. Create and attach new tags
@@ -45,13 +45,14 @@ export function useTaskDrawerSync(): UseTaskDrawerSyncReturn {
       const created = await createTag.mutateAsync({ 
         name: t.name, 
         color: t.color, 
-        icon: t.icon 
+        icon: t.icon,
+        silent
       })
-      await attachTag.mutateAsync({ taskId, tagId: created.id })
+      await attachTag.mutateAsync({ taskId, tagId: created.id, silent })
     }
   }
 
-  const syncSubtasks = async (taskId: number, local: Subtask[], original: Subtask[]) => {
+  const syncSubtasks = async (taskId: number, local: Subtask[], original: Subtask[], silent = false) => {
     const subtasksToCreate = local.filter(s => s.id < 0)
     const subtasksToUpdate = local.filter(s => s.id > 0 && (
       original.find(os => os.id === s.id)?.title !== s.title ||
@@ -60,13 +61,13 @@ export function useTaskDrawerSync(): UseTaskDrawerSyncReturn {
     const subtasksToDelete = original.filter(os => !local.some(ls => ls.id === os.id))
 
     await Promise.all([
-      ...subtasksToDelete.map(s => deleteSubtask.mutateAsync(s.id)),
-      ...subtasksToUpdate.map(s => updateSubtask.mutateAsync({ id: s.id, updates: { title: s.title, completed: s.completed } }))
+      ...subtasksToDelete.map(s => deleteSubtask.mutateAsync({ id: s.id, silent })),
+      ...subtasksToUpdate.map(s => updateSubtask.mutateAsync({ id: s.id, updates: { title: s.title, completed: s.completed }, silent }))
     ])
     
     const idMap = new Map<number, number>()
     for (const s of subtasksToCreate) {
-      const newSub = await createSubtask.mutateAsync({ taskId, title: s.title, completed: s.completed })
+      const newSub = await createSubtask.mutateAsync({ taskId, title: s.title, completed: s.completed, silent })
       idMap.set(s.id, newSub.id)
     }
     
@@ -74,7 +75,7 @@ export function useTaskDrawerSync(): UseTaskDrawerSyncReturn {
     
     if (hasOrderingChanged) {
       const orderedIds = local.map(s => s.id < 0 ? idMap.get(s.id)! : s.id)
-      await reorderSubtasks.mutateAsync({ taskId, orderedIds })
+      await reorderSubtasks.mutateAsync({ taskId, orderedIds, silent })
     }
   }
 

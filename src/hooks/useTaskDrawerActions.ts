@@ -52,20 +52,38 @@ export function useTaskDrawerActions({
   const handleConfirmUpdate = useCallback(async () => {
     if (!task) return
     try {
-      await updateTask.mutateAsync({
-        id: task.id,
-        updates: {
-          title: title.trim(),
-          description: description.trim() || undefined,
-          priority,
-          completed,
-          project_id: projectId === "none" ? undefined : Number.parseInt(projectId, 10),
-          due_date: dueDate?.toISOString(),
-        }
-      })
+      const updates: Partial<Task> = {}
+      
+      if (title.trim() !== task.title) updates.title = title.trim()
+      
+      const currentDesc = task.description ?? ""
+      const newDesc = description.trim()
+      if (newDesc !== currentDesc) updates.description = newDesc || undefined
 
-      await syncTags(task.id, localTags, task.tags || [])
-      await syncSubtasks(task.id, localSubtasks, task.subtasks || [])
+      if (priority !== task.priority) updates.priority = priority
+      if (completed !== task.completed) updates.completed = completed
+      
+      const currentProjId = task.project_id?.toString() ?? "none"
+      if (projectId !== currentProjId) {
+        updates.project_id = projectId === "none" ? undefined : Number.parseInt(projectId, 10)
+      }
+
+      const originalTime = task.due_date ? new Date(task.due_date).getTime() : undefined
+      const newTime = dueDate?.getTime()
+      if (newTime !== originalTime) {
+        updates.due_date = dueDate?.toISOString()
+      }
+
+      if (Object.keys(updates).length > 0) {
+        await updateTask.mutateAsync({
+          id: task.id,
+          updates,
+          silent: true
+        })
+      }
+
+      await syncTags(task.id, localTags, task.tags || [], true)
+      await syncSubtasks(task.id, localSubtasks, task.subtasks || [], true)
 
       toast({ title: "Changes saved", variant: "success" })
       onClose()
@@ -85,7 +103,8 @@ export function useTaskDrawerActions({
         due_date: dueDate?.toISOString(),
         completed: false,
         tags: pendingTags.map(t => t.name),
-        subtasks: pendingSubtasks.map(st => ({ title: st.title }))
+        subtasks: pendingSubtasks.map(st => ({ title: st.title })),
+        silent: true
       })
       toast({ title: "Task created!", variant: "success" })
       onClose()
@@ -97,7 +116,7 @@ export function useTaskDrawerActions({
   const handleDelete = useCallback(async () => {
     if (!task) return
     try {
-      await deleteTask.mutateAsync(task.id)
+      await deleteTask.mutateAsync({ id: task.id, silent: true })
       toast({ title: "Task deleted", variant: "success" })
       onClose()
     } catch {
