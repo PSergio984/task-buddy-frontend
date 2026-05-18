@@ -1,109 +1,56 @@
 <!-- generated-by: gsd-doc-writer -->
-# Codebase Structure
+# Project Structure
 
-**Analysis Date: 2024-05-13**
+This document describes the directory layout and architectural organization of the Task Buddy Frontend.
 
-## Directory Layout
+## Root Directory
 
-```
-[project-root]/
-├── public/                 # Static public assets (icons, images)
-├── src/                    # Primary source code directory
-│   ├── assets/             # Media assets imported via bundler
-│   ├── components/         # React UI components
-│   │   ├── auth/           # Authentication related components
-│   │   ├── layout/         # Shared layout components (Sidebar, TopNav)
-│   │   ├── task-drawer/    # Task detail and edit drawer components
-│   │   └── ui/             # Generic shadcn/ui primitives
-│   ├── contexts/           # React Context providers (Auth, Settings, Filter)
-│   ├── hooks/              # Custom React hooks (TanStack Query wrappers)
-│   ├── lib/                # Utility functions, API client, and helpers
-│   ├── pages/              # View-level route components
-│   └── sw.ts               # Service Worker implementation (PWA)
-├── tests/                  # E2E Tests (Playwright)
-├── playwright-report/      # E2E Test reports
-└── dist/                   # Production build output
-```
+- `.planning/`: Documentation of project goals, phases, and technical decisions.
+- `docs/`: Supplemental documentation and codebase scans.
+- `public/`: Static assets (icons, manifest).
+- `src/`: Application source code.
+- `tests/`: Playwright E2E tests.
 
-## Directory Purposes
+## Source Directory (`src/`)
 
-**`src/pages/`:**
-- Purpose: Route entry points and full-page assemblies.
-- Key files:
-  - `TasksPage.tsx`: Primary task management view.
-  - `TaskDetailPage.tsx`: Detailed view for a single task.
-  - `ProfilePage.tsx`: User profile and settings.
-  - `AuditLogsPage.tsx`: History of actions.
-  - `LandingPage.tsx`: Marketing/Welcome page.
-  - `LoginPage.tsx`, `RegisterPage.tsx`: Auth entry points.
+The application follows a modular, feature-based structure within `src/`.
 
-**`src/hooks/`:**
-- Purpose: Encapsulate data fetching (TanStack Query) and component logic.
-- Key files:
-  - `useTasks.ts`: CRUD operations for tasks.
-  - `useProjects.ts`, `useTags.ts`: Metadata management.
-  - `useNotifications.ts`: Push notification and alert management.
-  - `useTaskDrawerState.ts`: UI state management for task interactions.
-  - `use-toast.ts`: shadcn/ui toast notifications.
+### `assets/`
+Images and global styles (including `index.css` which houses Tailwind v4 directives).
 
-**`src/components/ui/`:**
-- Purpose: Atomic UI primitives (shadcn/ui), styled with Tailwind v4.
-- Contains: Button, Input, Dialog, Drawer, Popover, Toast, etc.
+### `components/`
+Reusable UI and layout components, grouped by feature:
+- `auth/`: Authentication forms and password strength logic.
+- `layout/`: Main application shells (`main-layout.tsx`, navigation).
+- `sidebar/`: Complex sidebar components (projects, tags, smart lists).
+- `task-drawer/`: Specialized components for the task detail view.
+- `ui/`: Design system primitives (buttons, inputs, dialogs), based on Shadcn/Radix.
 
-**`src/contexts/`:**
-- Purpose: Global application state and configuration.
-- Key files:
-  - `AuthContext.tsx`: Session and identity management.
-  - `SettingsContext.tsx`: User preferences and theme state.
-  - `FilterContext.tsx`: Shared task filtering logic across pages.
+### `contexts/`
+React Context providers for global application state:
+- `AuthContext.tsx`: Authentication state and cookie handling.
+- `FilterContext.tsx`: Shared task filtering logic.
+- `SettingsContext.tsx`: User preferences and theme management.
 
-**`src/lib/`:**
-- Purpose: Non-React utilities and shared configurations.
-- Key files:
-  - `api.ts`: Central Axios instance with interceptors.
-  - `utils.ts`: Tailwind class merging and formatting helpers.
-  - `auth.ts`: Validation and sanitization logic.
+### `hooks/`
+Custom hooks containing business logic and API interactions. Examples:
+- `useTasks.ts`: CRUD operations and state for tasks.
+- `useProjects.ts`: Management of user projects.
+- `useSidebarActions.ts`: Logic for sidebar interactions and Drag-and-Drop.
 
-**`src/sw.ts`:**
-- Purpose: Service Worker for PWA support, handling precaching and push notifications.
+### `lib/`
+Configuration and utility libraries:
+- `api.ts`: Axios instance and API function definitions.
+- `auth.ts`: Authentication helper functions and types.
+- `query-client.ts`: TanStack Query configuration.
+- `utils.ts`: Shared helper functions (e.g., `cn` for Tailwind class merging).
 
-## Key File Locations
+### `pages/`
+The main views of the application, corresponding to top-level routes:
+- `LoginPage.tsx` / `RegisterPage.tsx`: Auth views.
+- `TasksPage.tsx`: The primary task management interface.
+- `DashboardDemo.tsx`: High-level overview and statistics.
+- `ProfilePage.tsx`: User settings and profile management.
 
-**Entry Points:**
-- `src/main.tsx`: React DOM hydration and root provider setup.
-- `src/App.tsx`: Central router configuration and protected route logic.
-- `src/index.css`: Tailwind v4 configuration and global styles.
-
-**Configuration:**
-- `vite.config.ts`: Vite config with PWA and Tailwind v4 plugins.
-- `tailwind.config.js`: (Legacy/Bridge) Tailwind configuration.
-- `playwright.config.ts`: E2E test runner setup.
-- `vitest.config.ts`: Unit/Component test runner setup.
-
-## Naming Conventions
-
-**Files:**
-- React Components/Pages: PascalCase (e.g., `TaskCard.tsx`, `TasksPage.tsx`).
-- Hooks: camelCase with `use` prefix (e.g., `useTasks.ts`, `use-toast.ts`).
-- Utility/Lib: camelCase or kebab-case (e.g., `api.ts`, `auth-helpers.ts`).
-- Tests: `.test.ts`, `.test.tsx` (Vitest) or `.spec.ts` (Playwright).
-
-**Directories:**
-- Kebab-case (lowercase, hyphen-separated).
-
-## Where to Add New Code
-
-**New API Interaction:**
-- Create/update hook in `src/hooks/` using `useQuery` or `useMutation`.
-- Define TypeScript interfaces in `src/lib/api.ts` if shared.
-
-**New Feature View:**
-- Add page component to `src/pages/`.
-- Register route in `src/App.tsx`.
-
-**New UI Primitive:**
-- Add to `src/components/ui/` (usually via `npx shadcn@latest add`).
-
----
-
-*Structure analysis: 2024-05-13*
+### `test/`
+Vitest setup and unit test utilities.

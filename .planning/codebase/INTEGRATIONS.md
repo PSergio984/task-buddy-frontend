@@ -1,68 +1,43 @@
 <!-- generated-by: gsd-doc-writer -->
-# External Integrations
+# Integrations
 
-**Analysis Date: 2024-05-13**
+This document describes the external service integrations and API configurations for the Task Buddy Frontend.
 
-## APIs & External Services
+## Backend API
 
-**Task Buddy API (Backend):**
-- Primary data source for tasks, projects, tags, and users.
-- Auth: JWT (Bearer token in header).
-- Client: Axios with interceptors in `src/lib/api.ts`.
-- Synchronization: TanStack Query (React Query) v5.
+The frontend communicates with a FastAPI backend.
 
-## Data Storage
+- **Base URL:** Configurable via `VITE_API_BASE_URL` (defaults to `http://localhost:8000`).
+- **Client:** [Axios](https://axios-http.com/) is used for all HTTP requests.
+- **Configuration:** Centralized in `src/lib/api.ts`.
 
-**Client-Side Cache:**
-- TanStack Query: In-memory cache for server data with background revalidation.
-- Configuration: Managed in `src/lib/query-client.ts` and provided in `src/main.tsx`.
+### Axios Configuration
+- `withCredentials: true`: Ensures HttpOnly cookies are sent with every request.
+- **Idempotency:** A request interceptor automatically adds an `X-Idempotency-Key` header to mutating requests (POST, PUT, PATCH, DELETE) to prevent duplicate operations in case of network retries.
+- **Error Handling:** 
+    - `401 Unauthorized`: Dispatches a global `auth:unauthorized` event to trigger logout cleanup.
+    - `429 Too Many Requests`: Displays a toast notification with rate limit details.
 
-**Persistence:**
-- `localStorage`: Used for persisting the JWT token and user basic info (`AuthContext`).
-- IndexedDB (Implicit): Used by Service Worker (Workbox) for precaching static assets.
+## Authentication (HttpOnly Cookies)
 
-## Progressive Web App (PWA)
+Task Buddy uses a secure HttpOnly cookie-based authentication system.
 
-**PWA Engine:**
-- Vite PWA Plugin (`vite-plugin-pwa`): Manages manifest generation and Service Worker registration.
-- Service Worker: `src/sw.ts` implements `injectManifest` strategy for custom logic (precaching + push).
+1. **Login:** The user submits credentials to `/api/v1/users/token`. On success, the backend sets an `access_token` HttpOnly cookie.
+2. **Persistence:** The browser automatically manages the cookie. The frontend stores basic user profile information in `localStorage` for UI consistency between page loads.
+3. **Logout:** Calling `/api/v1/users/logout` instructs the backend to clear the auth cookie. The frontend then clears its local state.
+4. **Auth Context:** The `AuthContext` (in `src/contexts/AuthContext.tsx`) provides the `user`, `login`, `register`, and `logout` functions to the application.
 
-**Capabilities:**
-- Installable: Desktop and mobile (Android/iOS).
-- Offline Support: Precaching of core application assets.
-- Push Notifications: Integrated with browser Push API via the Service Worker.
+## State Management
 
-## Authentication & Identity
+### TanStack Query (React Query)
+- **Purpose:** Server state management, caching, and synchronization.
+- **Persistence:** Configured with `async-storage-persister` and `idb-keyval` to persist the cache in IndexedDB for offline support.
+- **Client:** Configured in `src/lib/query-client.ts`.
 
-**JWT Implementation:**
-- Custom backend-issued tokens.
-- Frontend Lifecycle:
-  - Token stored on login/register.
-  - Injected into every request via Axios interceptors.
-  - Token cleared on logout or 401 response.
+### Zustand
+- **Purpose:** Lightweight client-side state (e.g., sidebar collapse state, UI preferences).
 
-## Monitoring & Observability
+## PWA and Notifications
 
-**Error Tracking:**
-- Sentry: Configured for backend (not currently active in frontend repo, but planned/optional).
-- Logs: Browser console for development; Toast notifications for user-facing errors.
-
-## CI/CD & Deployment
-
-**GitHub Actions:**
-- Frontend flows include Datadog synthetics and general CI checks.
-- Build Process: `npm run build` generates a production-ready `dist/` folder via Vite.
-
-**Hosting Requirements:**
-- Must support HTTPS for PWA features.
-- Needs to handle SPA routing (redirecting all non-file requests to `index.html`).
-
-## Environment Configuration
-
-**Vite Environment Variables:**
-- `VITE_API_BASE_URL`: Base URL for the backend API.
-- `VITE_VAPID_PUBLIC_KEY`: (Optional) For push notification subscription.
-
----
-
-*Integration audit: 2024-05-13*
+- **PWA:** Managed by `vite-plugin-pwa`. Supports offline mode and "Add to Home Screen".
+- **Push Notifications:** Integrates with the backend notification service using VAPID keys. Users can subscribe to task reminders and system alerts.

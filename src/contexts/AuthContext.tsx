@@ -95,8 +95,18 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
 
   // On mount, attempt to refresh the user and listen for unauthorized events
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    refreshUser()
+    let mounted = true
+    
+    // Initial refresh
+    const init = async () => {
+      // Small delay to ensure mount is stable
+      await Promise.resolve()
+      if (mounted) {
+        await refreshUser()
+      }
+    }
+    
+    void init()
 
     const handleUnauthorized = () => {
       logout()
@@ -104,6 +114,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
 
     globalThis.addEventListener("auth:unauthorized", handleUnauthorized)
     return () => {
+      mounted = false
       globalThis.removeEventListener("auth:unauthorized", handleUnauthorized)
     }
   }, [refreshUser, logout])

@@ -99,12 +99,14 @@ function ConfirmationPreferencesCard() {
       label: "Task Completion",
       description: "Confirm before marking a major task as finished.",
       icon: CheckSquare,
+      destructive: false,
     },
     {
       key: "skipSubtaskCompletionConfirm",
       label: "Subtask Completion",
       description: "Confirm before marking subtasks as complete.",
       icon: CheckCircle2,
+      destructive: false,
     },
     {
       key: "skipTaskDeletionConfirm",
@@ -132,6 +134,7 @@ function ConfirmationPreferencesCard() {
       label: "Tag Removal",
       description: "Confirm before removing a tag from a specific task.",
       icon: XCircle,
+      destructive: false,
     },
   ] as const
 

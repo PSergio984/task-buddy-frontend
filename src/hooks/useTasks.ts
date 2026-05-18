@@ -151,9 +151,12 @@ export function useCreateTask() {
         queryClient.setQueryData(["tasks"], context.previousTasks)
       }
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] })
-      queryClient.invalidateQueries({ queryKey: ["stats"] })
+    onSettled: (_data, _error, variables) => {
+      const silent = typeof variables === 'object' && variables !== null && 'silent' in variables && (variables as { silent?: boolean }).silent
+      if (!silent) {
+        queryClient.invalidateQueries({ queryKey: ["tasks"] })
+        queryClient.invalidateQueries({ queryKey: ["stats"] })
+      }
     },
     onSuccess: (data, variables) => {
       if (!variables.silent) {
@@ -207,8 +210,10 @@ export function useUpdateTask() {
       }
     },
     onSettled: (_data, _error, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] })
-      queryClient.invalidateQueries({ queryKey: ["stats"] })
+      if (!variables.silent) {
+        queryClient.invalidateQueries({ queryKey: ["tasks"] })
+        queryClient.invalidateQueries({ queryKey: ["stats"] })
+      }
       queryClient.invalidateQueries({ queryKey: ["task", variables.id] })
     },
     onSuccess: (data, variables) => {
@@ -251,9 +256,12 @@ export function useDeleteTask() {
         queryClient.setQueryData(["tasks"], context.previousTasks)
       }
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] })
-      queryClient.invalidateQueries({ queryKey: ["stats"] })
+    onSettled: (_data, _error, variables) => {
+      const silent = typeof variables === 'object' && variables !== null && 'silent' in variables && (variables as { silent?: boolean }).silent
+      if (!silent) {
+        queryClient.invalidateQueries({ queryKey: ["tasks"] })
+        queryClient.invalidateQueries({ queryKey: ["stats"] })
+      }
     },
     onSuccess: (_data, variables) => {
       const silent = typeof variables === 'object' && variables !== null && 'silent' in variables && (variables as { silent?: boolean }).silent
@@ -307,10 +315,15 @@ export function useUpdateSubtask() {
         queryClient.setQueryData(["tasks"], context.previousTasks)
       }
     },
-    onSettled: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] })
-      if (data?.task_id) {
-        queryClient.invalidateQueries({ queryKey: ["task", data.task_id] })
+    onSettled: (_data, _error, variables) => {
+      const v = variables as { silent?: boolean; taskId?: number; id?: number }
+      if (!v.silent) {
+        queryClient.invalidateQueries({ queryKey: ["tasks"] })
+        queryClient.invalidateQueries({ queryKey: ["stats"] })
+      }
+      const taskId = v.taskId ?? v.id
+      if (taskId) {
+        queryClient.invalidateQueries({ queryKey: ["task", taskId] })
       }
     },
     onSuccess: (data, variables) => {
@@ -350,9 +363,16 @@ export function useDeleteSubtask() {
         queryClient.setQueryData(["tasks"], context.previousTasks)
       }
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] })
-      queryClient.invalidateQueries({ queryKey: ["task"] })
+    onSettled: (_data, _error, variables) => {
+      const v = variables as { silent?: boolean; taskId?: number; id?: number }
+      if (!v.silent) {
+        queryClient.invalidateQueries({ queryKey: ["tasks"] })
+        queryClient.invalidateQueries({ queryKey: ["stats"] })
+      }
+      const taskId = v.taskId ?? v.id
+      if (taskId) {
+        queryClient.invalidateQueries({ queryKey: ["task", taskId] })
+      }
     },
     onSuccess: (_data, variables) => {
       const silent = typeof variables === 'object' && variables.silent
@@ -408,8 +428,15 @@ export function useCreateSubtask() {
       }
     },
     onSettled: (_data, _error, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] })
-      queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] })
+      const v = variables as { silent?: boolean; taskId?: number; id?: number }
+      if (!v.silent) {
+        queryClient.invalidateQueries({ queryKey: ["tasks"] })
+        queryClient.invalidateQueries({ queryKey: ["stats"] })
+      }
+      const taskId = v.taskId ?? v.id
+      if (taskId) {
+        queryClient.invalidateQueries({ queryKey: ["task", taskId] })
+      }
     },
     onSuccess: (data, variables) => {
       if (!variables.silent) {
@@ -448,8 +475,16 @@ export function useReorderSubtasks() {
         queryClient.setQueryData(["task", taskId], context.previousTask)
       }
     },
-    onSettled: (_, _error, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] })
+    onSettled: (_data, _error, variables) => {
+      const v = variables as { silent?: boolean; taskId?: number; id?: number }
+      if (!v.silent) {
+        queryClient.invalidateQueries({ queryKey: ["tasks"] })
+        queryClient.invalidateQueries({ queryKey: ["stats"] })
+      }
+      const taskId = v.taskId ?? v.id
+      if (taskId) {
+        queryClient.invalidateQueries({ queryKey: ["task", taskId] })
+      }
     },
     onSuccess: (_data, variables) => {
       if (!variables.silent) {
@@ -505,9 +540,16 @@ export function useAttachTag() {
         queryClient.setQueryData(["task", taskId], context.previousTask)
       }
     },
-    onSettled: (_, _error, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] })
-      queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] })
+    onSettled: (_data, _error, variables) => {
+      const v = variables as { silent?: boolean; taskId?: number; id?: number }
+      if (!v.silent) {
+        queryClient.invalidateQueries({ queryKey: ["tasks"] })
+        queryClient.invalidateQueries({ queryKey: ["stats"] })
+      }
+      const taskId = v.taskId ?? v.id
+      if (taskId) {
+        queryClient.invalidateQueries({ queryKey: ["task", taskId] })
+      }
     },
     onSuccess: (_data, variables) => {
       if (!variables.silent) {
@@ -556,9 +598,16 @@ export function useDetachTag() {
         queryClient.setQueryData(["task", taskId], context.previousTask)
       }
     },
-    onSettled: (_, _error, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] })
-      queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] })
+    onSettled: (_data, _error, variables) => {
+      const v = variables as { silent?: boolean; taskId?: number; id?: number }
+      if (!v.silent) {
+        queryClient.invalidateQueries({ queryKey: ["tasks"] })
+        queryClient.invalidateQueries({ queryKey: ["stats"] })
+      }
+      const taskId = v.taskId ?? v.id
+      if (taskId) {
+        queryClient.invalidateQueries({ queryKey: ["task", taskId] })
+      }
     },
     onSuccess: (_data, variables) => {
       if (!variables.silent) {

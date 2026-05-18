@@ -51,18 +51,33 @@ export function useTaskDrawerActions({
 
   const handleConfirmUpdate = useCallback(async () => {
     if (!task) return
+
+    // Validate tag limit
+    if (localTags.length > 10) {
+      toast({
+        title: "Too many tags",
+        description: "A task can have a maximum of 10 tags.",
+        variant: "destructive"
+      })
+      return
+    }
+
     try {
       const updates: Partial<Task> = {}
-      
+
       if (title.trim() !== task.title) updates.title = title.trim()
-      
+
       const currentDesc = task.description ?? ""
       const newDesc = description.trim()
-      if (newDesc !== currentDesc) updates.description = newDesc || undefined
+      if (newDesc !== currentDesc) {
+        // If the new description is empty, explicitly set it to null or empty string if that's what the backend expects
+        // Based on the schema, description is Optional[str] = Field(None, max_length=2000)
+        updates.description = newDesc || ""
+      }
 
       if (priority !== task.priority) updates.priority = priority
       if (completed !== task.completed) updates.completed = completed
-      
+
       const currentProjId = task.project_id?.toString() ?? "none"
       if (projectId !== currentProjId) {
         updates.project_id = projectId === "none" ? undefined : Number.parseInt(projectId, 10)
@@ -74,10 +89,15 @@ export function useTaskDrawerActions({
         updates.due_date = dueDate?.toISOString()
       }
 
-      if (Object.keys(updates).length > 0) {
+      // Filter out undefined values to prevent empty object if only undefined keys were added
+      const cleanUpdates = Object.fromEntries(
+        Object.entries(updates).filter((entry) => entry[1] !== undefined)
+      )
+
+      if (Object.keys(cleanUpdates).length > 0) {
         await updateTask.mutateAsync({
           id: task.id,
-          updates,
+          updates: cleanUpdates,
           silent: true
         })
       }
@@ -87,11 +107,11 @@ export function useTaskDrawerActions({
 
       toast({ title: "Changes saved", variant: "success" })
       onClose()
-    } catch {
+    } catch (err) {
+      console.error("Update failed:", err)
       toast({ title: "Failed to save changes", variant: "destructive" })
     }
   }, [task, title, description, priority, completed, projectId, dueDate, localTags, localSubtasks, updateTask, syncTags, syncSubtasks, toast, onClose])
-
   const handleCreate = useCallback(async () => {
     if (!title.trim()) return
     try {

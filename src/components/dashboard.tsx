@@ -25,6 +25,7 @@ import {
 import type { Task, StatsOverview } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import axios from "axios"
+import { Skeleton } from "@/components/ui/skeleton"
 import { LayoutDashboard, ListChecks, Calendar } from "lucide-react"
 import { animations } from "@/lib/animations"
 
@@ -41,7 +42,7 @@ function TaskListSkeleton() {
   return (
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
       {[1, 2, 3, 4].map((i) => (
-        <div key={i} className="h-48 rounded-[2rem] bg-white/5 animate-pulse border border-white/5" />
+        <Skeleton key={i} className="h-48 rounded-[2rem] border border-white/5" />
       ))}
     </div>
   )
@@ -310,7 +311,7 @@ export function Dashboard({
                 if (loadingTasks) return <TaskListSkeleton />
                 if (filteredTasks.length === 0) {
                   return (
-                    <div className="flex h-80 flex-col items-center justify-center rounded-[3rem] border-2 border-dashed border-border/30 bg-white/5 text-center animate-in fade-in zoom-in-95 duration-500">
+                    <div className="flex h-80 flex-col items-center justify-center rounded-[3rem] border-2 border-dashed border-border/30 bg-black/5 dark:bg-white/5 text-center animate-in fade-in zoom-in-95 duration-500">
                       <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[2rem] bg-muted/20">    
                         <ListChecks className="h-10 w-10 text-muted-foreground/20" />
                       </div>

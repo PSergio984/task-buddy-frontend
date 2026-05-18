@@ -1,91 +1,68 @@
 <!-- generated-by: gsd-doc-writer -->
-# Testing Patterns
+# Testing Strategy
 
-**Analysis Date: 2024-05-13**
+This document details the testing strategy for the Task Buddy Frontend project, utilizing Vitest for unit/integration tests and Playwright for end-to-end tests.
 
-## Test Frameworks
+## Overview
 
-**Unit & Component Testing:**
-- Runner: Vitest v4.1.5
-- Library: React Testing Library
-- Browser Environment: jsdom
-- Configuration: `vitest.config.ts`
+We follow a balanced testing pyramid:
+- **Unit Tests (Vitest):** Fast tests for utility functions, hooks, and individual components.
+- **Integration Tests (Vitest + RTL):** Testing groups of components and their interactions with contexts.
+- **End-to-End Tests (Playwright):** Full user flow validation, including authentication and persistent layout.
 
-**End-to-End (E2E) Testing:**
-- Runner: Playwright v1.59.1
-- Configuration: `playwright.config.ts`
+## Unit & Integration Testing (Vitest)
 
-## Run Commands
+### Setup
+- **Framework:** [Vitest](https://vitest.dev/)
+- **Environment:** `jsdom`
+- **Configuration:** `vitest.config.ts`
+- **Setup File:** `src/test/setup.ts` (includes `@testing-library/jest-dom` matchers)
 
+### Running Tests
 ```bash
-# Unit/Component Tests
-npm run test           # Run Vitest
-npm run test:ui        # Vitest UI mode
-npm run test:coverage  # Coverage report
+# Run all tests
+npm test
 
-# E2E Tests
-npm run test:e2e       # Run Playwright tests
-npx playwright show-report # View last E2E report
+# Run tests in UI mode
+npm run test:ui
+
+# Generate coverage report
+npm run test:coverage
 ```
 
-## Test Organization
+### Conventions
+- Test files should be named `*.test.tsx` or `*.test.ts` and placed alongside the file they test.
+- Use `screen` from `@testing-library/react` for querying.
+- Mock external dependencies (like Axios) using Vitest mocks.
 
-**Vitest (Unit/Component):**
-- Co-located with source code using `.test.ts` or `.test.tsx` suffix.
-- Examples: `src/lib/utils.test.ts`, `src/contexts/SettingsContext.test.tsx`.
+## End-to-End Testing (Playwright)
 
-**Playwright (E2E):**
-- Located in the root `tests/` directory.
-- Suffix: `.spec.ts`.
-- Examples: `tests/auth.spec.ts`, `tests/advanced-tasks.spec.ts`.
+### Setup
+- **Framework:** [Playwright](https://playwright.dev/)
+- **Configuration:** `playwright.config.ts`
+- **Test Directory:** `tests/`
 
-## Test Patterns
+### Running Tests
+```bash
+# Run all E2E tests
+npm run test:e2e
 
-**Unit Testing Utilities:**
-```typescript
-// src/lib/utils.test.ts
-import { cn } from "./utils"
-import { describe, it, expect } from "vitest"
-
-describe("cn", () => {
-  it("merges tailwind classes correctly", () => {
-    expect(cn("bg-red-500", "p-4")).toBe("bg-red-500 p-4")
-  })
-})
+# Run tests in UI mode
+npx playwright test --ui
 ```
 
-**E2E Functional Steps:**
-```typescript
-// tests/auth.spec.ts
-test("user can login", async ({ page }) => {
-  await page.goto("/login")
-  await page.fill('input[type="email"]', "test@example.com")
-  await page.fill('input[type="password"]', "password")
-  await page.click('button[type="submit"]')
-  await expect(page).toHaveURL("/dashboard")
-})
-```
+### Strategy
+- **Authentication:** Tests verify the login/logout flow and persistence across page reloads.
+- **Layout Persistence:** Validates that the `Sidebar` and `TopNav` remain stable during navigation.
+- **Task Management:** Covers creating, updating, and deleting tasks, including drag-and-drop interactions.
 
-## Mocking Strategies
+## Continuous Integration
 
-**Component Tests (Vitest):**
-- Use `vi.mock()` for external libraries or complex hooks.
-- Mock TanStack Query hooks to return predictable data states.
+Tests are run on every pull request to ensuring no regressions are introduced.
 
-**E2E Tests (Playwright):**
-- **Live Backend:** Default for integration-style E2E.
-- **Network Interception:** Use `page.route()` to mock specific API responses for edge-case UI testing (e.g., 500 errors, rate limiting).
-
-## Coverage Requirements
-
-- Coverage is tracked via Vitest using the `v8` or `istanbul` provider.
-- Focus areas: `src/lib/` (logic), `src/hooks/` (data flow), and `src/components/` (interaction).
-
-## CI Integration
-
-- Tests are run in GitHub Actions as part of the PR validation workflow.
-- E2E tests often run against a preview deployment or a local dev server in the CI environment.
-
----
-
-*Testing patterns analysis: 2024-05-13*
+| Test Type | Runner | Enforcement |
+|-----------|--------|-------------|
+| Unit/Integration | Vitest | CI Job (Build/Test) |
+| E2E | Playwright | CI Job (E2E) |
+| Linting | ESLint | CI Job (Lint) |
+| Type Checking | TypeScript | CI Job (Build) |

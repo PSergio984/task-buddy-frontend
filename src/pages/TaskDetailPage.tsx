@@ -34,6 +34,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 
 
@@ -85,12 +86,48 @@ export function TaskDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-[80vh] items-center justify-center">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-          className="shadow-glow h-12 w-12 rounded-full border-4 border-primary border-t-transparent"
-        />
+      <div className="mx-auto max-w-5xl space-y-10 px-4 py-8 sm:px-6 lg:px-8">
+        {/* Header Skeleton */}
+        <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-5 w-20 rounded-full" />
+                <Skeleton className="h-5 w-24 rounded-full" />
+              </div>
+              <Skeleton className="h-10 w-64 md:w-96 rounded-2xl" />
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-14 w-40 rounded-2xl" />
+            <Skeleton className="h-14 w-14 rounded-2xl" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+          {/* Main Content Skeleton */}
+          <div className="space-y-8 lg:col-span-2">
+            <Skeleton className="h-48 w-full rounded-[2.5rem]" />
+            <div className="space-y-6">
+              <div className="flex items-center justify-between px-2">
+                <Skeleton className="h-8 w-32 rounded-xl" />
+                <Skeleton className="h-6 w-20 rounded-full" />
+              </div>
+              <div className="grid gap-4">
+                <Skeleton className="h-20 w-full rounded-3xl" />
+                <Skeleton className="h-20 w-full rounded-3xl" />
+                <Skeleton className="h-16 w-full rounded-3xl" />
+              </div>
+            </div>
+          </div>
+
+          {/* Sidebar Info Skeleton */}
+          <div className="space-y-8">
+            <Skeleton className="h-[280px] w-full rounded-[2.5rem]" />
+            <Skeleton className="h-40 w-full rounded-[2.5rem]" />
+          </div>
+        </div>
       </div>
     )
   }

@@ -28,7 +28,7 @@ export function TaskList({
 }: TaskListProps) {
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 gap-6" : "flex flex-col gap-4"}>
         {["t1", "t2", "t3", "t4"].map((id) => (
           <Skeleton key={id} className="h-[200px] rounded-[2.5rem]" />
         ))}

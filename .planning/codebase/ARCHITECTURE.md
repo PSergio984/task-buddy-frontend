@@ -2,6 +2,7 @@
 # Architecture
 
 **Analysis Date: 2026-05-13**
+**Updated: 2026-05-15**
 
 ## System Overview
 
@@ -16,7 +17,8 @@
          ▼                  ▼                     ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                 Components & Hooks Layer                     │
-│ `src/components/` (Domain-specific: TaskCard, Sidebar)      │
+│ `MainLayout` (Persistent shell: Sidebar, TopNav, Outlet)    │
+│ `src/components/` (Domain-specific: TaskCard, TaskDrawer)   │
 │ `src/hooks/` (Data: useTasks, useNotifications)              │
 │ `src/contexts/` (Global: Auth, Settings, Filter)             │
 └─────────────────────────────────────────────────────────────┘
@@ -25,8 +27,8 @@
 ┌─────────────────────────────────────────────────────────────┐
 │                 Client Infrastructure                       │
 │ `TanStack Query` (Server State / Cache)                     │
-│ `Zustand` (UI State) / `Axios` (HTTP Client)                │
-│ `Service Worker` (PWA / Push Notifications)                 │
+│ `Axios` (HTTP Client / withCredentials: true)               │
+│ `Service Worker` (PWA / Push Notifications / Offline)       │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -35,7 +37,8 @@
 | Component | Responsibility | File |
 |-----------|----------------|------|
 | `App` | Core routing, route guards (`ProtectedRoute`), and PWA updates. | `src/App.tsx` |
-| `AuthContext` | JWT session management, login/logout, and unauthorized redirection. | `src/contexts/AuthContext.tsx` |
+| `MainLayout` | Persistent shell with collapsible `Sidebar`, `TopNav`, and `TaskDetailDrawer`. | `src/components/layout/main-layout.tsx` |
+| `AuthContext` | Session management via HttpOnly cookies and user metadata hydration. | `src/contexts/AuthContext.tsx` |
 | `SettingsContext` | User preferences, theme (dark/light), and PWA install state. | `src/contexts/SettingsContext.tsx` |
 | `FilterContext` | Shared task filtering (status, priority, search) across views. | `src/contexts/FilterContext.tsx` |
 | Domain Hooks | Data fetching wrappers using TanStack Query for caching and sync. | `src/hooks/` |
@@ -47,12 +50,18 @@
 
 **Key Characteristics:**
 - **Server State with TanStack Query:** Data fetching, caching, and background synchronization are managed centrally via Query hooks.
+- **Persistent Layout:** The application uses a central `MainLayout` shell providing a consistent `Sidebar` and `TopNav` across authenticated routes.
 - **Tailwind CSS v4:** Uses the latest CSS-first configuration engine for improved build performance and modern CSS features.
 - **PWA / Service Worker:** Offline capabilities and Push Notifications are handled via `vite-plugin-pwa` and a custom `sw.ts` implementing `injectManifest`.
 - **Atomic UI Components:** UI is built on top of `shadcn/ui` primitives, ensuring accessibility and consistency.
 - **Context-based Feature State:** Complex shared state (like filters) is managed via React Context to avoid prop-drilling.
 
 ## Layers
+
+**Layout Layer:**
+- Purpose: Provide a persistent shell (Sidebar, TopNav) for authenticated pages.
+- Location: `src/components/layout/`
+- Pattern: Uses `Outlet` from `react-router-dom` to render nested page content.
 
 **Pages Layer:**
 - Purpose: Orchestrate complex views by assembling components and hooks.
@@ -120,7 +129,7 @@
 ## Architectural Constraints
 
 - **No Direct API Calls:** Components must use custom hooks from `src/hooks/` instead of calling `axios` directly.
-- **Server State vs. Client State:** Use TanStack Query for anything that comes from the API; use Context/Zustand only for local UI state.
+- **Server State vs. Client State:** Use TanStack Query for anything that comes from the API; use Context for global settings/auth.
 - **Tailwind v4 First:** Avoid inline styles or complex CSS files; prefer Tailwind classes and CSS variables defined in `index.css`.
 
 ## Error Handling
@@ -130,10 +139,16 @@
 
 ## Cross-Cutting Concerns
 
-- **Authentication:** JWT stored in HttpOnly cookies (backend-managed); user metadata in `localStorage`.
+- **Authentication:** HttpOnly Cookies (backend-managed) for session security; user metadata in `localStorage` for hydration.
 - **Styling:** Tailwind CSS v4 with a unified theme defined in `index.css`.
 - **Theming:** `SettingsContext` manages dark/light mode by toggling the `.dark` class on the root element.
 
+## Deployment & Infrastructure
+
+- **Hosting Platform:** Vercel (Frontend SPA).
+- **Routing Configuration:** `vercel.json` rewrite rules are mandatory to support client-side routing (React Router) on page refresh (rewriting all requests to `/index.html`).
+- **PWA Support:** Service worker (`sw.ts`) managed by `vite-plugin-pwa` for offline caching and push notifications.
+
 ---
 
-*Architecture analysis: 2026-05-13*
+*Architecture analysis: 2026-05-15*

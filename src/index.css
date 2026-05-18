@@ -222,11 +222,11 @@
 .animate-shimmer {
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.05) 25%,
-    rgba(255, 255, 255, 0.1) 50%,
-    rgba(255, 255, 255, 0.05) 75%,
-    rgba(255, 255, 255, 0) 100%
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 0.05) 25%,
+    rgba(0, 0, 0, 0.1) 50%,
+    rgba(0, 0, 0, 0.05) 75%,
+    rgba(0, 0, 0, 0) 100%
   );
   background-size: 200% 100%;
   animation: var(--animate-shimmer);
@@ -235,17 +235,16 @@
 .dark .animate-shimmer {
   background: linear-gradient(
     90deg,
-    rgba(0, 0, 0, 0) 0%,
-    rgba(255, 255, 255, 0.02) 25%,
-    rgba(255, 255, 255, 0.04) 50%,
-    rgba(255, 255, 255, 0.02) 75%,
-    rgba(0, 0, 0, 0) 100%
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.05) 25%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.05) 75%,
+    rgba(255, 255, 255, 0) 100%
   );
-  background-size: 200% 100%;
 }
 
 .premium-glass {
-  @apply bg-white/5 backdrop-blur-2xl border border-white/10 shadow-2xl;
+  @apply bg-black/5 dark:bg-white/5 backdrop-blur-2xl border border-black/5 dark:border-white/10 shadow-2xl;
 }
 
 .premium-card {

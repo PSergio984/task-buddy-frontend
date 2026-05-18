@@ -12,18 +12,34 @@ export const api = axios.create({
 
 // Helper to generate a deterministic hash for idempotency
 async function generateIdempotencyKey(config: InternalAxiosRequestConfig): Promise<string> {
-  const payload = JSON.stringify({
-    method: config.method?.toLowerCase(),
-    url: config.url,
-    data: config.data,
-    params: config.params,
-  })
+  // Robust payload construction
+  const dataPart = (() => {
+    if (!config.data) return "null"
+    if (config.data instanceof FormData) return "[form-data]"
+    if (config.data instanceof URLSearchParams) return config.data.toString()
+    try {
+      return JSON.stringify(config.data)
+    } catch {
+      return "[complex-data]"
+    }
+  })()
+
+  const paramsPart = (() => {
+    if (!config.params) return "null"
+    if (config.params instanceof URLSearchParams) return config.params.toString()
+    try {
+      return JSON.stringify(config.params)
+    } catch {
+      return "[complex-params]"
+    }
+  })()
+
+  const payload = `${config.method?.toLowerCase()}|${config.url}|${dataPart}|${paramsPart}`
   const msgUint8 = new TextEncoder().encode(payload)
   const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8)
   const hashArray = Array.from(new Uint8Array(hashBuffer))
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("")
 }
-
 // Add a request interceptor for idempotency
 api.interceptors.request.use(async (config) => {
   // Only add idempotency key for mutating requests
