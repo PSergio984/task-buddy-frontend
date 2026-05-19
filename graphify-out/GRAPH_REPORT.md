@@ -1,16 +1,16 @@
 # Graph Report - task-buddy-frontend  (2026-05-19)
 
 ## Corpus Check
-- 158 files · ~166,996 words
+- 158 files · ~167,241 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1745 nodes · 2730 edges · 153 communities (148 shown, 5 thin omitted)
+- 1748 nodes · 2735 edges · 152 communities (147 shown, 5 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 2 edges (avg confidence: 0.9)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `8f59a50c`
+- Built from commit: `caad4796`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -153,12 +153,11 @@
 - [[_COMMUNITY_Community 135|Community 135]]
 - [[_COMMUNITY_Community 136|Community 136]]
 - [[_COMMUNITY_Community 137|Community 137]]
-- [[_COMMUNITY_Community 138|Community 138]]
+- [[_COMMUNITY_Community 139|Community 139]]
 - [[_COMMUNITY_Community 140|Community 140]]
 - [[_COMMUNITY_Community 141|Community 141]]
-- [[_COMMUNITY_Community 142|Community 142]]
 - [[_COMMUNITY_Community 143|Community 143]]
-- [[_COMMUNITY_Community 152|Community 152]]
+- [[_COMMUNITY_Community 151|Community 151]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `useToast()` - 56 edges
@@ -177,14 +176,14 @@
   src/App.tsx → public/task-buddy-icon.svg
 - `API Hooks` --implements--> `Backend API Docs`  [INFERRED]
   src/hooks/useApi.ts → API.md
-- `RootElement()` --calls--> `useAuth()`  [EXTRACTED]
-  src/App.tsx → src/contexts/AuthContext.tsx
 - `handleSubmit()` --calls--> `toast()`  [EXTRACTED]
   src/components/create-project-modal.tsx → src/hooks/use-toast.ts
 - `handleNewTaskClick()` --calls--> `toast()`  [EXTRACTED]
   src/components/layout/mobile-nav.tsx → src/hooks/use-toast.ts
+- `handleSubmit()` --calls--> `toast()`  [EXTRACTED]
+  src/pages/ForgotPasswordPage.tsx → src/hooks/use-toast.ts
 
-## Communities (153 total, 5 thin omitted)
+## Communities (152 total, 5 thin omitted)
 
 ### Community 0 - "Authentication & Authorization"
 Cohesion: 0.04
@@ -192,7 +191,7 @@ Nodes (46): attachTag, createSubtask, createTag, createTask, { data: allTags = [
 
 ### Community 1 - "Core UI Components"
 Cohesion: 0.05
-Nodes (44): markAllRead, { notifications, unreadCount }, handleClick(), iconMap, markRead, navigate, NotificationItemProps, useMarkAllRead() (+36 more)
+Nodes (38): [confirmationInput, setConfirmationInput], ConfirmationModalProps, [dontShowAgain, setDontShowAgain], [shake, setShake], [confirmationInput, setConfirmationInput], DeleteProjectModalProps, [deleteTasks, setDeleteTasks], [lastOpen, setLastOpen] (+30 more)
 
 ### Community 2 - "User Navigation & Theme"
 Cohesion: 0.05
@@ -222,185 +221,180 @@ Cohesion: 0.06
 Nodes (32): AuditEntry, AuditTrailProps, controller, [currentLimit, setCurrentLimit], [error, setError], EXCLUDED_ACTIONS, fetchAuditLog, fieldChanges (+24 more)
 
 ### Community 4 - "Task Management Forms"
-Cohesion: 0.19
-Nodes (30): useToast(), useProjectManagement(), useCreateProject(), useProjects(), useSubtaskManagement(), useTagManagement(), useCreateTag(), useTags() (+22 more)
+Cohesion: 0.07
+Nodes (30): confirmationSettings, [confirmPassword, setConfirmPassword], [currentPassword, setCurrentPassword], { data: vapidData }, { data: vapidData, isLoading: isLoadingVapid }, getErrorMessage(), handleTogglePush(), handleUpdateUsername() (+22 more)
 
 ### Community 5 - "State Management & Actions"
-Cohesion: 0.07
-Nodes (29): useFilters(), PRIORITY_ORDER, SortMode, useTaskFilters(), Task, { 
-    activeSidebarFilter, 
-    activeStatus, 
-    setActiveStatus, 
-    activeTagId,
-  }, [confirmData, setConfirmData], { data: projects = [] } (+21 more)
-
-### Community 6 - "Theme Utilities"
 Cohesion: 0.06
 Nodes (30): API Endpoints, Base URL Configuration, code:typescript (interface Task {), code:typescript (const { deleteTask, loading, error } = useDeleteTask();), code:typescript (const { tasks, loading, error } = useTasks();), code:block12 (Content-Type: application/json), code:env (VITE_API_BASE_URL=http://127.0.0.1:8000), code:typescript (const { createTask, loading } = useCreateTask();) (+22 more)
+
+### Community 6 - "Theme Utilities"
+Cohesion: 0.08
+Nodes (14): Group, isLogoutRequest, mutatingMethods, statsApi, subtasksApi, TagDistribution, tagsApi, TaskCreateData (+6 more)
 
 ### Community 7 - "Testing & Validation"
 Cohesion: 0.08
 Nodes (20): displayTime, [h24, m], handleHourKeyDown(), handleMinKeyDown(), [hour, setHour], hourRef, [inputValue, setInputValue], [isFocused, setIsFocused] (+12 more)
 
 ### Community 8 - "API Documentation & Integration"
-Cohesion: 0.09
-Nodes (22): LoadingScreen(), ProtectedRoute(), ProtectedRouteProps, PublicRoute(), { token, loading }, { user, loading }, VerifyEmailPage(), App() (+14 more)
+Cohesion: 0.15
+Nodes (20): useSubtaskManagement(), UseSubtaskManagementReturn, useTags(), useTaskDirtyState(), UseTaskDirtyStateProps, useTaskDrawerActions(), UseTaskDrawerActionsProps, UseTaskDrawerActionsReturn (+12 more)
 
 ### Community 9 - "Main Application Shell"
 Cohesion: 0.08
-Nodes (23): { activeStatus, setActiveStatus }, [activeTab, setActiveTab], [confirmData, setConfirmData], DashboardProps, filteredTasks, handleDelete, handleDeleteSubtask, handleDetachTag (+15 more)
+Nodes (24): { activeStatus, setActiveStatus }, [activeTab, setActiveTab], [confirmData, setConfirmData], DashboardProps, filteredTasks, handleDelete, handleDeleteSubtask, handleDetachTag (+16 more)
 
 ### Community 10 - "Data Models & Entities"
-Cohesion: 0.1
-Nodes (16): CreateProjectMutation, UseProjectManagementReturn, UseSubtaskManagementReturn, UseTaskDirtyStateProps, Group, isLogoutRequest, mutatingMethods, Project (+8 more)
+Cohesion: 0.08
+Nodes (19): LogoutDialogProps, BeforeInstallPromptEvent, [deferredPrompt, setDeferredPrompt], handler, isAndroidApp, [isIOS], [isIOS, setIsIOS], [isStandalone] (+11 more)
 
 ### Community 11 - "Linting Configuration"
-Cohesion: 0.1
-Nodes (23): RegisterForm(), validateEmail(), validatePasswordConfirmation(), validateUsername(), [confirmPassword, setConfirmPassword], confirmPasswordError, [email, setEmail], emailError (+15 more)
-
-### Community 12 - "Playwright Testing Config"
-Cohesion: 0.09
-Nodes (18): BeforeInstallPromptEvent, [deferredPrompt, setDeferredPrompt], handler, isAndroidApp, [isIOS], [isIOS, setIsIOS], [isStandalone], [isStandalone, setIsStandalone] (+10 more)
-
-### Community 13 - "Tailwind CSS Styling"
-Cohesion: 0.13
-Nodes (13): GripHandle, GripHandleProps, SidebarItemActions(), SidebarItemActionsProps, onDelete, onEdit, parentClick, trigger (+5 more)
-
-### Community 14 - "Build & Vite Configuration"
-Cohesion: 0.09
-Nodes (21): Additional Forbidden Patterns, Anti-Patterns (Do NOT Use), Buttons, Cards, code:css (@import url('https://fonts.googleapis.com/css2?family=Fira+C), code:css (/* Primary Button */), code:css (.card {), code:css (.input {) (+13 more)
-
-### Community 15 - "Project Documentation"
-Cohesion: 0.22
-Nodes (16): NewTaskModal(), Sidebar(), TopNav(), TopNavProps, Task, useCreateTask(), useStats(), useTasks() (+8 more)
-
-### Community 16 - "Community 16"
-Cohesion: 0.11
-Nodes (18): act, bold(), createdName, date, fieldChanges, fieldsMatch, handleTaskUpdate(), IconConfig (+10 more)
-
-### Community 17 - "Community 17"
-Cohesion: 0.1
-Nodes (19): A premium productivity application with a dual-identity design:, Brand Identity, Cards, clean & minimal in light mode, deep navy & warm amber in dark mode., Color Usage Rules, Component Patterns, Dual-Mode Identity, Empty States (+11 more)
-
-### Community 18 - "Community 18"
-Cohesion: 0.14
-Nodes (16): {
+Cohesion: 0.12
+Nodes (19): SystemOverview(), StatsOverview, {
     data: task,
     isLoading,
     error,
-  }, deleteMutation, { id }, [isDeleting, setIsDeleting], navigate, priorityColors, queryClient, { toast } (+8 more)
+  }, deleteMutation, { id }, [isDeleting, setIsDeleting], navigate, priorityColors (+11 more)
+
+### Community 12 - "Playwright Testing Config"
+Cohesion: 0.09
+Nodes (17): [category, setCategory], { data: groups = [] }, { data: projects = [] }, [description, setDescription], [dueDate, setDueDate], [groupId, setGroupId], { groups }, [lastOpen, setLastOpen] (+9 more)
+
+### Community 13 - "Tailwind CSS Styling"
+Cohesion: 0.1
+Nodes (20): LoadingScreen(), ProtectedRoute(), ProtectedRouteProps, PublicRoute(), { token, loading }, { user, loading }, VerifyEmailPage(), AuditLogsPage (+12 more)
+
+### Community 14 - "Build & Vite Configuration"
+Cohesion: 0.1
+Nodes (21): RegisterForm(), validateEmail(), validatePasswordConfirmation(), validateUsername(), [confirmPassword, setConfirmPassword], confirmPasswordError, [email, setEmail], emailError (+13 more)
+
+### Community 15 - "Project Documentation"
+Cohesion: 0.1
+Nodes (16): DirtySections, [hours, minutes], MetaSidebar(), MetaSidebarProps, newDate, [popoverOpen, setPopoverOpen], PRIORITY_STYLES, quickDates (+8 more)
+
+### Community 16 - "Community 16"
+Cohesion: 0.09
+Nodes (21): Additional Forbidden Patterns, Anti-Patterns (Do NOT Use), Buttons, Cards, code:css (@import url('https://fonts.googleapis.com/css2?family=Fira+C), code:css (/* Primary Button */), code:css (.card {), code:css (.input {) (+13 more)
+
+### Community 17 - "Community 17"
+Cohesion: 0.18
+Nodes (11): GripHandle, GripHandleProps, ProjectsSectionProps, SmartLink, SmartListsSectionProps, SortableSidebarItem(), SortableSidebarItemProps, TagsSectionProps (+3 more)
+
+### Community 18 - "Community 18"
+Cohesion: 0.11
+Nodes (18): act, bold(), createdName, date, fieldChanges, fieldsMatch, handleTaskUpdate(), IconConfig (+10 more)
 
 ### Community 19 - "Community 19"
-Cohesion: 0.17
-Nodes (8): ColorIconPickerProps, cn(), result, SidebarBrandingProps, CharacterCounterProps, InputProps, labelVariants, TextareaProps
+Cohesion: 0.1
+Nodes (19): A premium productivity application with a dual-identity design:, Brand Identity, Cards, clean & minimal in light mode, deep navy & warm amber in dark mode., Color Usage Rules, Component Patterns, Dual-Mode Identity, Empty States (+11 more)
 
 ### Community 20 - "Community 20"
 Cohesion: 0.17
-Nodes (11): useDeleteProject(), useReorderProjects(), useUpdateProject(), useSidebarActions(), useDeleteTag(), useReorderTags(), stores, UserPreferences (+3 more)
+Nodes (18): Dashboard(), NotificationWatcher(), useAuth(), Group, Subtask, Tag, TagDistribution, Task (+10 more)
 
 ### Community 21 - "Community 21"
-Cohesion: 0.19
-Nodes (17): Dashboard(), NotificationWatcher(), useAuth(), Group, StatsOverview, Subtask, Tag, TagDistribution (+9 more)
+Cohesion: 0.22
+Nodes (16): NewTaskModal(), Sidebar(), TopNav(), TopNavProps, StatsOverview, useCreateTask(), useStats(), useTasks() (+8 more)
 
 ### Community 22 - "Community 22"
-Cohesion: 0.11
-Nodes (18): [confirmPassword, setConfirmPassword], confirmPasswordError, [email, setEmail], emailError, handleSubmit(), navigate, [password, setPassword], passwordError (+10 more)
+Cohesion: 0.13
+Nodes (16): markAllRead, { notifications, unreadCount }, deleteNotification, handleClick(), iconMap, markRead, navigate, NotificationItemProps (+8 more)
 
 ### Community 23 - "Community 23"
 Cohesion: 0.12
-Nodes (5): tasksApi, mockTask, mockTasks, { result }, task
+Nodes (14): [color, setColor], COLORS, createProject, CreateProjectModalProps, handleSubmit(), [icon, setIcon], [lastOpen, setLastOpen], [name, setName] (+6 more)
 
 ### Community 24 - "Community 24"
-Cohesion: 0.12
-Nodes (14): [category, setCategory], { data: groups = [] }, { data: projects = [] }, [description, setDescription], [dueDate, setDueDate], [groupId, setGroupId], { groups }, [lastOpen, setLastOpen] (+6 more)
+Cohesion: 0.16
+Nodes (12): met, PASSWORD_RULES, PasswordStrengthMeterProps, { score, label }, BackendErrorDetail, extractAccessToken(), formatFirstBackendError(), getAuthErrorMessage() (+4 more)
 
 ### Community 25 - "Community 25"
 Cohesion: 0.12
-Nodes (13): DirtySections, [hours, minutes], MetaSidebar(), MetaSidebarProps, newDate, [popoverOpen, setPopoverOpen], PRIORITY_STYLES, quickDates (+5 more)
+Nodes (16): [confirmPassword, setConfirmPassword], confirmPasswordError, [email, setEmail], emailError, [password, setPassword], passwordError, passwordStrength, { register, loading } (+8 more)
 
 ### Community 26 - "Community 26"
 Cohesion: 0.12
 Nodes (16): code:html (<!-- In <head> -->), code:bash (git commit -m "chore: finalize mobile nav integration"), code:css (/* Add to end of src/index.css */), code:bash (git add index.html src/index.css), code:tsx (import { motion } from "framer-motion"), code:bash (git add src/components/layout/mobile-nav.tsx), code:tsx (import { Sheet, SheetContent, SheetHeader, SheetTitle } from), code:bash (git add src/components/layout/mobile-drawer.tsx) (+8 more)
 
 ### Community 27 - "Community 27"
-Cohesion: 0.17
-Nodes (8): [confirmationInput, setConfirmationInput], ConfirmationModalProps, [dontShowAgain, setDontShowAgain], [shake, setShake], DeleteConfirmationModalProps, AlertDialog(), AlertDialogCancel(), ConfirmationModalProps
+Cohesion: 0.14
+Nodes (8): ColorIconPickerProps, { activeSidebarFilter, setActiveSidebarFilter, activeTagId, setActiveTagId }, { data: projects = [] }, { data: tags = [] }, MobileDrawerProps, cn(), result, SidebarBrandingProps
 
 ### Community 28 - "Community 28"
-Cohesion: 0.13
-Nodes (14): PRESET_COLORS, [color, setColor], createTag, CreateTagModal(), CreateTagModalProps, handleSubmit(), [icon, setIcon], [lastOpen, setLastOpen] (+6 more)
+Cohesion: 0.17
+Nodes (14): sanitizePassword(), validatePassword(), [email, setEmail], emailError, handleSubmit(), { login, loading }, { login, loading, error }, navigate (+6 more)
 
 ### Community 29 - "Community 29"
-Cohesion: 0.16
-Nodes (9): [confirmationInput, setConfirmationInput], DeleteProjectModalProps, [deleteTasks, setDeleteTasks], [lastOpen, setLastOpen], [shake, setShake], animations, SortMode, TasksHeaderProps (+1 more)
+Cohesion: 0.18
+Nodes (6): DeleteConfirmationModalProps, AlertDialog(), AlertDialogCancel(), extraProps, isDisabled, ConfirmationModalProps
 
 ### Community 30 - "Community 30"
 Cohesion: 0.13
 Nodes (13): actionsTrigger, deleteBtn, deleteButtons, DeleteConfirmationModalProps, deleteModalButton, editButtons, mockSetActiveSidebarFilter, mockSetActiveTagId (+5 more)
 
 ### Community 31 - "Community 31"
-Cohesion: 0.14
-Nodes (15): handleConfirmAction(), handleSubmit(), handleConfirmDelete(), handleAddSubtask(), handleAttachTag(), handleCreate(), handleCreateAndAttachTag(), handleDelete() (+7 more)
-
-### Community 32 - "Community 32"
-Cohesion: 0.13
-Nodes (12): PRESET_ICONS, [color, setColor], COLORS, createProject, CreateProjectModalProps, handleSubmit(), [icon, setIcon], [lastOpen, setLastOpen] (+4 more)
-
-### Community 33 - "Community 33"
-Cohesion: 0.17
-Nodes (14): sanitizePassword(), validatePassword(), [email, setEmail], emailError, handleSubmit(), { login, loading }, { login, loading, error }, navigate (+6 more)
-
-### Community 34 - "Community 34"
-Cohesion: 0.15
-Nodes (9): [color, setColor], COLORS, createGroup, CreateGroupModalProps, [name, setName], { toast }, useCreateGroup(), useGroups() (+1 more)
-
-### Community 35 - "Community 35"
 Cohesion: 0.16
 Nodes (8): ResolvedTheme, Theme, THEME_VALUES, ThemeProviderContext, ThemeProviderProps, ThemeProviderState, useTheme(), ThemeToggle()
 
-### Community 36 - "Community 36"
-Cohesion: 0.24
-Nodes (12): AuthContext, AuthContextType, AuthUser, BackendErrorDetail, extractAccessToken(), formatFirstBackendError(), getAuthErrorMessage(), normalizeAuthUser() (+4 more)
+### Community 32 - "Community 32"
+Cohesion: 0.14
+Nodes (7): categoryConfig, [pendingAction, setPendingAction], priorityConfig, [showAllSubtasks, setShowAllSubtasks], [showConfirm, setShowConfirm], TaskCardProps, { timeFormat }
 
-### Community 37 - "Community 37"
+### Community 33 - "Community 33"
 Cohesion: 0.14
 Nodes (13): createButton, filtered, method, mockTags, mockTasks, newTask, payload, subtaskCheckbox (+5 more)
 
-### Community 38 - "Community 38"
+### Community 34 - "Community 34"
 Cohesion: 0.14
 Nodes (13): 1) Architectural Style, 2) System Flow, 3) Layer/Module Responsibilities, 4) Reused Patterns, 5) Graphify Insights (Core Abstractions), 5) Known Architectural Risks, 6) Evidence, 6) Known Architectural Risks (+5 more)
 
-### Community 39 - "Community 39"
+### Community 35 - "Community 35"
 Cohesion: 0.15
-Nodes (7): categoryConfig, [pendingAction, setPendingAction], priorityConfig, [showAllSubtasks, setShowAllSubtasks], [showConfirm, setShowConfirm], TaskCardProps, { timeFormat }
+Nodes (9): [color, setColor], COLORS, createGroup, CreateGroupModalProps, [name, setName], { toast }, useCreateGroup(), useGroups() (+1 more)
 
-### Community 40 - "Community 40"
+### Community 36 - "Community 36"
+Cohesion: 0.17
+Nodes (12): PRESET_ICONS, [color, setColor], createTag, CreateTagModal(), CreateTagModalProps, handleSubmit(), [icon, setIcon], [lastOpen, setLastOpen] (+4 more)
+
+### Community 37 - "Community 37"
+Cohesion: 0.27
+Nodes (9): useDeleteProject(), useReorderProjects(), useSidebarActions(), useDeleteTag(), useReorderTags(), stores, UserPreferences, useUserPreferences() (+1 more)
+
+### Community 38 - "Community 38"
+Cohesion: 0.18
+Nodes (8): SidebarItemActions(), SidebarItemActionsProps, onDelete, onEdit, parentClick, trigger, user, DropdownMenu()
+
+### Community 39 - "Community 39"
 Cohesion: 0.15
 Nodes (12): Browser Support, code:env (# API Configuration), Color Palette, Contributing, Design System, Environment Variables, License, Overview (+4 more)
 
-### Community 41 - "Community 41"
+### Community 40 - "Community 40"
 Cohesion: 0.15
 Nodes (12): Audit Trail Context & Time Formatting Implementation Plan, code:typescript (// src/lib/audit-trail-helpers.tsx), code:bash (git add src/lib/audit-trail-helpers.tsx), code:typescript (// src/components/audit-trail.tsx), code:bash (git add src/components/audit-trail.tsx), code:typescript (// src/components/task-card.tsx), code:bash (git add src/components/task-card.tsx), code:bash (npm run lint) (+4 more)
 
-### Community 42 - "Community 42"
+### Community 41 - "Community 41"
 Cohesion: 0.15
 Nodes (12): code:typescript (import { renderHook, act } from "@testing-library/react"), code:typescript (import React, { createContext, useContext, useState, useEffe), code:bash (git add src/contexts/SettingsContext.tsx src/contexts/Settin), code:typescript (// src/App.tsx), code:bash (git add src/App.tsx), code:typescript (// src/pages/ProfilePage.tsx), code:typescript (export function ProfilePage() {), code:bash (git add src/pages/ProfilePage.tsx) (+4 more)
+
+### Community 42 - "Community 42"
+Cohesion: 0.17
+Nodes (12): handleConfirmAction(), handleSubmit(), handleConfirmDelete(), handleAddSubtask(), handleAttachTag(), handleCreate(), handleCreateAndAttachTag(), handleDelete() (+4 more)
 
 ### Community 43 - "Community 43"
 Cohesion: 0.2
 Nodes (11): Action, ActionType, actionTypes, addToRemoveQueue(), dispatch(), listeners, memoryState, reducer() (+3 more)
 
 ### Community 44 - "Community 44"
-Cohesion: 0.17
-Nodes (9): FilterContext, FilterContextType, FilterProvider(), { activeSidebarFilter, setActiveSidebarFilter, setActiveTagId }, { data: stats }, handleNewTaskClick(), MobileNavProps, tabs (+1 more)
+Cohesion: 0.41
+Nodes (11): useToast(), useCreateTag(), useTaskDrawerSync(), UseTaskDrawerSyncReturn, useAttachTag(), useCreateSubtask(), useDeleteSubtask(), useDetachTag() (+3 more)
 
 ### Community 45 - "Community 45"
-Cohesion: 0.17
-Nodes (11): handleA, handleB, handles, mockProjects, mockTags, projectA, projectB, projectsSection (+3 more)
+Cohesion: 0.23
+Nodes (7): ThemeProvider(), AuthContext, AuthContextType, AuthProvider(), AuthUser, queryClient, persister
 
 ### Community 46 - "Community 46"
-Cohesion: 0.22
-Nodes (5): buttonVariants, extraProps, isDisabled, Calendar(), CalendarProps
+Cohesion: 0.17
+Nodes (11): handleA, handleB, handles, mockProjects, mockTags, projectA, projectB, projectsSection (+3 more)
 
 ### Community 47 - "Community 47"
 Cohesion: 0.18
@@ -419,8 +413,8 @@ Cohesion: 0.24
 Nodes (8): TaskCard(), SettingsContext, SettingsContextType, SettingsProvider(), { result }, TimeFormat, useSettings(), TimePicker()
 
 ### Community 51 - "Community 51"
-Cohesion: 0.24
-Nodes (6): met, PASSWORD_RULES, PasswordStrengthMeterProps, { score, label }, getPasswordStrength(), ResetPasswordPage()
+Cohesion: 0.2
+Nodes (8): PRESET_COLORS, CreateProjectMutation, useProjectManagement(), UseProjectManagementReturn, CreateTagMutation, useTagManagement(), UseTagManagementReturn, Project
 
 ### Community 52 - "Community 52"
 Cohesion: 0.2
@@ -491,36 +485,36 @@ Cohesion: 0.2
 Nodes (9): code:block1 (TypeError: Cannot read properties of null (reading 'complete), code:block2 (Error: page.waitForTimeout: Target page, context or browser ), code:yaml (- generic [ref=e2]:), code:ts (42  |     await page.route("**/api/v1/tasks/**", async (rout), Error details, Instructions, Page snapshot, Test info (+1 more)
 
 ### Community 69 - "Community 69"
+Cohesion: 0.22
+Nodes (7): useStats(), { activeSidebarFilter, setActiveSidebarFilter, setActiveTagId }, { data: stats }, handleNewTaskClick(), MobileNavProps, tabs, { toast }
+
+### Community 70 - "Community 70"
 Cohesion: 0.2
 Nodes (9): code:block1 (Test timeout of 30000ms exceeded.), code:block2 (Error: locator.fill: Test timeout of 30000ms exceeded.), code:yaml (- generic [ref=e2]:), code:ts (1   | import { test, expect } from "@playwright/test"), Error details, Instructions, Page snapshot, Test info (+1 more)
 
-### Community 70 - "Community 70"
-Cohesion: 0.22
-Nodes (8): 1. Karpathy Behavioral Guidelines, 2. Type Safety & Standards, 3. Accessibility (WCAG), 4. React 19 Compatibility, 5. Code Quality & Patterns, 6. Project-Specific Context, code:tsx (// Correct), Frontend Standards & Guidelines (Task Buddy)
-
 ### Community 71 - "Community 71"
-Cohesion: 0.22
-Nodes (9): Add a new UI component, Add API integration, Adding New Features, code:bash (# Create in src/components/ui/), code:typescript (// Add new hook to src/hooks/useApi.ts), code:css (:root {), Common Tasks, Customize colors (+1 more)
+Cohesion: 0.28
+Nodes (6): SortMode, TasksHeaderProps, Badge(), BadgeProps, badgeVariants, InputProps
 
 ### Community 72 - "Community 72"
 Cohesion: 0.22
-Nodes (8): 1) Top-Level Map, 2) Entry Points, 3) Module Boundaries, 4) Naming and Organization Rules, 5) Evidence, Codebase Structure, Core Sections (Required), Extended Sections (Optional)
+Nodes (8): 1. Karpathy Behavioral Guidelines, 2. Type Safety & Standards, 3. Accessibility (WCAG), 4. React 19 Compatibility, 5. Code Quality & Patterns, 6. Project-Specific Context, code:tsx (// Correct), Frontend Standards & Guidelines (Task Buddy)
 
 ### Community 73 - "Community 73"
 Cohesion: 0.22
-Nodes (8): Automated Tests, code:tsx (import { useSettings } from "@/contexts/SettingsContext"), Manual Verification, Task 1: Refactor TimePicker with Format Support and Suggestions, Task 2: Integrate Time Format in NewTaskModal, Task 3: Integrate Time Format in MetaSidebar, Time System Refinement Implementation Plan, Verification Plan
+Nodes (9): Add a new UI component, Add API integration, Adding New Features, code:bash (# Create in src/components/ui/), code:typescript (// Add new hook to src/hooks/useApi.ts), code:css (:root {), Common Tasks, Customize colors (+1 more)
 
 ### Community 74 - "Community 74"
 Cohesion: 0.22
-Nodes (8): Application Integration, Architecture, Data Flow, Global Settings Management Design, ProfilePage Preferences Section, SettingsContext, Success Criteria, Testing Strategy
+Nodes (8): 1) Top-Level Map, 2) Entry Points, 3) Module Boundaries, 4) Naming and Organization Rules, 5) Evidence, Codebase Structure, Core Sections (Required), Extended Sections (Optional)
 
 ### Community 75 - "Community 75"
 Cohesion: 0.22
-Nodes (8): code:block1 (Error: expect(locator).toBeVisible() failed), code:yaml (- generic [ref=e2]:), code:ts (29  |       globalThis.localStorage.setItem('auth_user', JSO), Error details, Instructions, Page snapshot, Test info, Test source
+Nodes (8): Automated Tests, code:tsx (import { useSettings } from "@/contexts/SettingsContext"), Manual Verification, Task 1: Refactor TimePicker with Format Support and Suggestions, Task 2: Integrate Time Format in NewTaskModal, Task 3: Integrate Time Format in MetaSidebar, Time System Refinement Implementation Plan, Verification Plan
 
 ### Community 76 - "Community 76"
 Cohesion: 0.22
-Nodes (8): code:block1 (Error: expect(locator).toBeVisible() failed), code:yaml (- generic [ref=e2]:), code:ts (29  |       globalThis.localStorage.setItem('auth_user', JSO), Error details, Instructions, Page snapshot, Test info, Test source
+Nodes (8): Application Integration, Architecture, Data Flow, Global Settings Management Design, ProfilePage Preferences Section, SettingsContext, Success Criteria, Testing Strategy
 
 ### Community 77 - "Community 77"
 Cohesion: 0.22
@@ -536,39 +530,39 @@ Nodes (8): code:block1 (Error: expect(locator).toBeVisible() failed), code:yaml 
 
 ### Community 80 - "Community 80"
 Cohesion: 0.22
-Nodes (8): code:block1 (Error: expect(locator).toHaveCount(expected) failed), code:yaml (- generic [ref=e2]:), code:ts (5   |     { id: 1, name: "Project A", color: "#FF0000", icon), Error details, Instructions, Page snapshot, Test info, Test source
+Nodes (8): code:block1 (Error: expect(locator).toBeVisible() failed), code:yaml (- generic [ref=e2]:), code:ts (29  |       globalThis.localStorage.setItem('auth_user', JSO), Error details, Instructions, Page snapshot, Test info, Test source
 
 ### Community 81 - "Community 81"
 Cohesion: 0.22
-Nodes (8): code:block1 (Error: expect(locator).toBeVisible() failed), code:yaml (- generic:), code:ts (73  |           const subtaskId = Number.parseInt(url.pathna), Error details, Instructions, Page snapshot, Test info, Test source
+Nodes (8): code:block1 (Error: expect(locator).toBeVisible() failed), code:yaml (- generic [ref=e2]:), code:ts (29  |       globalThis.localStorage.setItem('auth_user', JSO), Error details, Instructions, Page snapshot, Test info, Test source
 
 ### Community 82 - "Community 82"
 Cohesion: 0.22
-Nodes (8): code:block1 (Error: expect(locator).toBeVisible() failed), code:yaml (- generic [ref=e2]:), code:ts (1  | import { test, expect } from "@playwright/test"), Error details, Instructions, Page snapshot, Test info, Test source
+Nodes (8): code:block1 (Error: expect(locator).toHaveCount(expected) failed), code:yaml (- generic [ref=e2]:), code:ts (5   |     { id: 1, name: "Project A", color: "#FF0000", icon), Error details, Instructions, Page snapshot, Test info, Test source
 
 ### Community 83 - "Community 83"
 Cohesion: 0.22
-Nodes (8): code:block1 (Error: expect(locator).toHaveCount(expected) failed), code:yaml (- generic [ref=e2]:), code:ts (33  |           status: 200,), Error details, Instructions, Page snapshot, Test info, Test source
+Nodes (8): code:block1 (Error: expect(locator).toBeVisible() failed), code:yaml (- generic:), code:ts (73  |           const subtaskId = Number.parseInt(url.pathna), Error details, Instructions, Page snapshot, Test info, Test source
 
 ### Community 84 - "Community 84"
 Cohesion: 0.22
-Nodes (8): code:block1 (Error: expect(locator).toBeVisible() failed), code:yaml (- generic [ref=e2]:), code:ts (1   | import { test, expect } from "@playwright/test"), Error details, Instructions, Page snapshot, Test info, Test source
+Nodes (8): code:block1 (Error: expect(locator).toBeVisible() failed), code:yaml (- generic [ref=e2]:), code:ts (1  | import { test, expect } from "@playwright/test"), Error details, Instructions, Page snapshot, Test info, Test source
 
 ### Community 85 - "Community 85"
 Cohesion: 0.22
-Nodes (8): code:block1 (Error: expect(locator).toBeEnabled() failed), code:yaml (- generic [ref=e2]:), code:ts (4   |   test.beforeEach(async ({ page }) => {), Error details, Instructions, Page snapshot, Test info, Test source
+Nodes (8): code:block1 (Error: expect(locator).toHaveCount(expected) failed), code:yaml (- generic [ref=e2]:), code:ts (33  |           status: 200,), Error details, Instructions, Page snapshot, Test info, Test source
 
 ### Community 86 - "Community 86"
 Cohesion: 0.22
-Nodes (7): code:block1 (Error: expect(locator).toBeDisabled() failed), code:yaml (- generic [ref=e2]:), Error details, Instructions, Page snapshot, Test info, Test source
+Nodes (8): code:block1 (Error: expect(locator).toBeVisible() failed), code:yaml (- generic [ref=e2]:), code:ts (1   | import { test, expect } from "@playwright/test"), Error details, Instructions, Page snapshot, Test info, Test source
 
 ### Community 87 - "Community 87"
 Cohesion: 0.22
-Nodes (8): code:block1 (Error: expect(locator).toBeVisible() failed), code:yaml (- generic [ref=e2]:), code:ts (1  | import { test, expect } from "@playwright/test"), Error details, Instructions, Page snapshot, Test info, Test source
+Nodes (8): code:block1 (Error: expect(locator).toBeEnabled() failed), code:yaml (- generic [ref=e2]:), code:ts (4   |   test.beforeEach(async ({ page }) => {), Error details, Instructions, Page snapshot, Test info, Test source
 
 ### Community 88 - "Community 88"
 Cohesion: 0.22
-Nodes (8): code:block1 (Error: expect(locator).toContainText(expected) failed), code:yaml (- generic [ref=e2]:), code:ts (48  |           }),), Error details, Instructions, Page snapshot, Test info, Test source
+Nodes (7): code:block1 (Error: expect(locator).toBeDisabled() failed), code:yaml (- generic [ref=e2]:), Error details, Instructions, Page snapshot, Test info, Test source
 
 ### Community 89 - "Community 89"
 Cohesion: 0.22
@@ -576,27 +570,27 @@ Nodes (8): code:block1 (Error: expect(locator).toBeVisible() failed), code:yaml 
 
 ### Community 90 - "Community 90"
 Cohesion: 0.22
-Nodes (7): code:block1 (Error: expect(locator).toBeDisabled() failed), code:yaml (- generic [ref=e2]:), Error details, Instructions, Page snapshot, Test info, Test source
+Nodes (8): code:block1 (Error: expect(locator).toContainText(expected) failed), code:yaml (- generic [ref=e2]:), code:ts (48  |           }),), Error details, Instructions, Page snapshot, Test info, Test source
 
 ### Community 91 - "Community 91"
 Cohesion: 0.22
-Nodes (8): code:block1 (Error: expect(locator).toBeEnabled() failed), code:yaml (- generic [ref=e2]:), code:ts (4   |   test.beforeEach(async ({ page }) => {), Error details, Instructions, Page snapshot, Test info, Test source
+Nodes (8): code:block1 (Error: expect(locator).toBeVisible() failed), code:yaml (- generic [ref=e2]:), code:ts (1  | import { test, expect } from "@playwright/test"), Error details, Instructions, Page snapshot, Test info, Test source
 
 ### Community 92 - "Community 92"
 Cohesion: 0.22
-Nodes (8): code:block1 (Error: expect(locator).toBeVisible() failed), code:yaml (- generic [ref=e2]:), code:ts (1   | import { test, expect } from "@playwright/test"), Error details, Instructions, Page snapshot, Test info, Test source
+Nodes (7): code:block1 (Error: expect(locator).toBeDisabled() failed), code:yaml (- generic [ref=e2]:), Error details, Instructions, Page snapshot, Test info, Test source
 
 ### Community 93 - "Community 93"
 Cohesion: 0.22
-Nodes (8): code:block1 (Error: expect(locator).toContainText(expected) failed), code:yaml (- generic [ref=e2]:), code:ts (48  |           }),), Error details, Instructions, Page snapshot, Test info, Test source
+Nodes (8): code:block1 (Error: expect(locator).toBeEnabled() failed), code:yaml (- generic [ref=e2]:), code:ts (4   |   test.beforeEach(async ({ page }) => {), Error details, Instructions, Page snapshot, Test info, Test source
 
 ### Community 94 - "Community 94"
 Cohesion: 0.22
-Nodes (8): code:block1 (Error: expect(locator).toBeVisible() failed), code:yaml (- generic [ref=e2]:), code:ts (1  | import { test, expect } from "@playwright/test"), Error details, Instructions, Page snapshot, Test info, Test source
+Nodes (8): code:block1 (Error: expect(locator).toBeVisible() failed), code:yaml (- generic [ref=e2]:), code:ts (1   | import { test, expect } from "@playwright/test"), Error details, Instructions, Page snapshot, Test info, Test source
 
 ### Community 95 - "Community 95"
 Cohesion: 0.22
-Nodes (8): code:block1 (Error: expect(locator).toBeVisible() failed), code:yaml (- generic [ref=e2]:), code:ts (1  | import { test, expect } from "@playwright/test"), Error details, Instructions, Page snapshot, Test info, Test source
+Nodes (8): code:block1 (Error: expect(locator).toContainText(expected) failed), code:yaml (- generic [ref=e2]:), code:ts (48  |           }),), Error details, Instructions, Page snapshot, Test info, Test source
 
 ### Community 96 - "Community 96"
 Cohesion: 0.22
@@ -604,11 +598,11 @@ Nodes (8): code:block1 (Error: expect(locator).toBeVisible() failed), code:yaml 
 
 ### Community 97 - "Community 97"
 Cohesion: 0.22
-Nodes (8): code:block1 (Error: expect(locator).toHaveCount(expected) failed), code:yaml (- generic [ref=e2]:), code:ts (5   |     { id: 1, name: "Project A", color: "#FF0000", icon), Error details, Instructions, Page snapshot, Test info, Test source
+Nodes (8): code:block1 (Error: expect(locator).toBeVisible() failed), code:yaml (- generic [ref=e2]:), code:ts (1  | import { test, expect } from "@playwright/test"), Error details, Instructions, Page snapshot, Test info, Test source
 
 ### Community 98 - "Community 98"
 Cohesion: 0.22
-Nodes (8): code:block1 (Error: expect(locator).toHaveCount(expected) failed), code:yaml (- generic [ref=e2]:), code:ts (33  |           status: 200,), Error details, Instructions, Page snapshot, Test info, Test source
+Nodes (8): code:block1 (Error: expect(locator).toBeVisible() failed), code:yaml (- generic [ref=e2]:), code:ts (1  | import { test, expect } from "@playwright/test"), Error details, Instructions, Page snapshot, Test info, Test source
 
 ### Community 99 - "Community 99"
 Cohesion: 0.22
@@ -616,71 +610,71 @@ Nodes (8): code:block1 (Error: expect(locator).toHaveCount(expected) failed), co
 
 ### Community 100 - "Community 100"
 Cohesion: 0.22
-Nodes (8): code:block1 (Error: expect(locator).toBeEnabled() failed), code:yaml (- generic [ref=e2]:), code:ts (4   |   test.beforeEach(async ({ page }) => {), Error details, Instructions, Page snapshot, Test info, Test source
+Nodes (8): code:block1 (Error: expect(locator).toHaveCount(expected) failed), code:yaml (- generic [ref=e2]:), code:ts (33  |           status: 200,), Error details, Instructions, Page snapshot, Test info, Test source
 
 ### Community 101 - "Community 101"
 Cohesion: 0.22
-Nodes (8): code:block1 (Error: expect(locator).toContainText(expected) failed), code:yaml (- generic [ref=e2]:), code:ts (48  |           }),), Error details, Instructions, Page snapshot, Test info, Test source
+Nodes (8): code:block1 (Error: expect(locator).toHaveCount(expected) failed), code:yaml (- generic [ref=e2]:), code:ts (5   |     { id: 1, name: "Project A", color: "#FF0000", icon), Error details, Instructions, Page snapshot, Test info, Test source
 
 ### Community 102 - "Community 102"
-Cohesion: 0.22
-Nodes (7): code:block1 (Error: expect(locator).toBeDisabled() failed), code:yaml (- generic [ref=e2]:), Error details, Instructions, Page snapshot, Test info, Test source
+Cohesion: 0.28
+Nodes (7): FilterContext, FilterContextType, FilterProvider(), useFilters(), PRIORITY_ORDER, SortMode, useTaskFilters()
 
 ### Community 103 - "Community 103"
 Cohesion: 0.22
-Nodes (8): code:block1 (Error: expect(locator).toBeVisible() failed), code:yaml (- generic [ref=e2]:), code:ts (1   | import { test, expect } from "@playwright/test"), Error details, Instructions, Page snapshot, Test info, Test source
+Nodes (8): code:block1 (Error: expect(locator).toBeEnabled() failed), code:yaml (- generic [ref=e2]:), code:ts (4   |   test.beforeEach(async ({ page }) => {), Error details, Instructions, Page snapshot, Test info, Test source
 
 ### Community 104 - "Community 104"
 Cohesion: 0.22
-Nodes (8): code:block1 (Error: locator.fill: Error: strict mode violation: getByLabe), code:yaml (- generic [ref=e5]:), code:ts (1   | import { test, expect } from "@playwright/test"), Error details, Instructions, Page snapshot, Test info, Test source
+Nodes (8): code:block1 (Error: expect(locator).toContainText(expected) failed), code:yaml (- generic [ref=e2]:), code:ts (48  |           }),), Error details, Instructions, Page snapshot, Test info, Test source
 
 ### Community 105 - "Community 105"
 Cohesion: 0.22
-Nodes (8): code:block1 (Error: locator.fill: Error: strict mode violation: getByLabe), code:yaml (- generic [ref=e5]:), code:ts (47  |             user: { id: "user-1", username: "demo.user), Error details, Instructions, Page snapshot, Test info, Test source
+Nodes (7): code:block1 (Error: expect(locator).toBeDisabled() failed), code:yaml (- generic [ref=e2]:), Error details, Instructions, Page snapshot, Test info, Test source
 
 ### Community 106 - "Community 106"
 Cohesion: 0.22
-Nodes (8): code:block1 (Error: locator.fill: Error: strict mode violation: getByLabe), code:yaml (- generic [ref=e5]:), code:ts (1   | import { test, expect } from "@playwright/test"), Error details, Instructions, Page snapshot, Test info, Test source
+Nodes (8): code:block1 (Error: expect(locator).toBeVisible() failed), code:yaml (- generic [ref=e2]:), code:ts (1   | import { test, expect } from "@playwright/test"), Error details, Instructions, Page snapshot, Test info, Test source
 
 ### Community 107 - "Community 107"
 Cohesion: 0.22
-Nodes (8): code:block1 (Error: expect(locator).toBeVisible() failed), code:yaml (- generic [ref=e5]:), code:ts (1   | import { test, expect } from "@playwright/test"), Error details, Instructions, Page snapshot, Test info, Test source
+Nodes (8): code:block1 (Error: locator.fill: Error: strict mode violation: getByLabe), code:yaml (- generic [ref=e5]:), code:ts (1   | import { test, expect } from "@playwright/test"), Error details, Instructions, Page snapshot, Test info, Test source
 
 ### Community 108 - "Community 108"
 Cohesion: 0.22
-Nodes (8): code:block1 (Error: locator.fill: Error: strict mode violation: getByLabe), code:yaml (- generic [ref=e5]:), code:ts (28  |   })), Error details, Instructions, Page snapshot, Test info, Test source
+Nodes (8): code:block1 (Error: locator.fill: Error: strict mode violation: getByLabe), code:yaml (- generic [ref=e5]:), code:ts (47  |             user: { id: "user-1", username: "demo.user), Error details, Instructions, Page snapshot, Test info, Test source
 
 ### Community 109 - "Community 109"
-Cohesion: 0.25
-Nodes (6): api, [email, setEmail], handleSubmit(), [isLoading, setIsLoading], [isSubmitted, setIsSubmitted], { toast }
+Cohesion: 0.22
+Nodes (8): code:block1 (Error: locator.fill: Error: strict mode violation: getByLabe), code:yaml (- generic [ref=e5]:), code:ts (1   | import { test, expect } from "@playwright/test"), Error details, Instructions, Page snapshot, Test info, Test source
 
 ### Community 110 - "Community 110"
-Cohesion: 0.25
-Nodes (6): ActionFilter, DateFilter, useAuditTrail(), UseAuditTrailOptions, AuditEntry, groupByDate()
+Cohesion: 0.22
+Nodes (8): code:block1 (Error: expect(locator).toBeVisible() failed), code:yaml (- generic [ref=e5]:), code:ts (1   | import { test, expect } from "@playwright/test"), Error details, Instructions, Page snapshot, Test info, Test source
 
 ### Community 111 - "Community 111"
+Cohesion: 0.22
+Nodes (8): code:block1 (Error: locator.fill: Error: strict mode violation: getByLabe), code:yaml (- generic [ref=e5]:), code:ts (28  |   })), Error details, Instructions, Page snapshot, Test info, Test source
+
+### Community 112 - "Community 112"
 Cohesion: 0.25
 Nodes (6): preferences, sensors, subtaskIds, SubtaskSection(), SubtaskSectionProps, { user }
 
-### Community 112 - "Community 112"
-Cohesion: 0.32
-Nodes (5): SmartLink, SmartListsSectionProps, NavLink, WorkspacesSectionProps, TooltipContent()
-
 ### Community 113 - "Community 113"
-Cohesion: 0.29
-Nodes (4): ThemeProvider(), AuthProvider(), queryClient, persister
+Cohesion: 0.25
+Nodes (6): api, [email, setEmail], handleSubmit(), [isLoading, setIsLoading], [isSubmitted, setIsSubmitted], { toast }
 
 ### Community 114 - "Community 114"
 Cohesion: 0.25
-Nodes (7): 1. Objective, 2.1 MobileNav (`components/layout/mobile-nav.tsx`), 2.2 MobileDrawer (`components/layout/mobile-drawer.tsx`), 2. Components, 3. Technical Integration, 4. Success Criteria, Design Spec: Mobile Navigation & PWA Polish
+Nodes (6): ActionFilter, DateFilter, useAuditTrail(), UseAuditTrailOptions, AuditEntry, groupByDate()
 
 ### Community 115 - "Community 115"
-Cohesion: 0.38
-Nodes (4): SystemOverview(), StatsOverview, TaskListProps, Skeleton()
+Cohesion: 0.25
+Nodes (7): 1. Objective, 2.1 MobileNav (`components/layout/mobile-nav.tsx`), 2.2 MobileDrawer (`components/layout/mobile-drawer.tsx`), 2. Components, 3. Technical Integration, 4. Success Criteria, Design Spec: Mobile Navigation & PWA Polish
 
 ### Community 116 - "Community 116"
-Cohesion: 0.29
-Nodes (4): { activeSidebarFilter, setActiveSidebarFilter, activeTagId, setActiveTagId }, { data: projects = [] }, { data: tags = [] }, MobileDrawerProps
+Cohesion: 0.38
+Nodes (7): handleSubmit(), navigate, normalizeText(), sanitizeEmail(), sanitizeUsername(), handleSubmit(), navigate
 
 ### Community 117 - "Community 117"
 Cohesion: 0.29
@@ -688,31 +682,31 @@ Nodes (6): code:typescript (export function useCreateTag() {), Sidebar & Tag Cre
 
 ### Community 118 - "Community 118"
 Cohesion: 0.47
-Nodes (6): clearHubFilters(), handleLogout(), handleProjectClick(), handleSidebarFilterClick(), handleTagClick(), navigate
-
-### Community 119 - "Community 119"
-Cohesion: 0.47
 Nodes (4): Toast, toastVariants, ToastViewport, { toasts }
 
-### Community 120 - "Community 120"
+### Community 119 - "Community 119"
 Cohesion: 0.33
 Nodes (5): badge, bell, mockNotifications, toggleButton, url
 
-### Community 121 - "Community 121"
+### Community 120 - "Community 120"
 Cohesion: 0.33
 Nodes (4): Core Workflows, Project: Task Buddy, Quality Playbook (READ FIRST), Tech Stack
 
-### Community 122 - "Community 122"
+### Community 121 - "Community 121"
 Cohesion: 0.33
 Nodes (6): `dashboard.tsx`, Key Components, `new-task-modal.tsx`, `sidebar.tsx`, `task-card.tsx`, `topnav.tsx`
 
-### Community 123 - "Community 123"
+### Community 122 - "Community 122"
 Cohesion: 0.33
 Nodes (5): code:tsx (import { Button } from "@/components/ui/button"), code:bash (git add src/components/task-drawer/MetaSidebar.tsx), Fix Missing Button Import in MetaSidebar Implementation Plan, Task 1: Add Button Import to MetaSidebar.tsx, Task 2: Verification
 
-### Community 124 - "Community 124"
+### Community 123 - "Community 123"
 Cohesion: 0.33
 Nodes (5): Execution UX, Field Reference Table, Protocol: Integration Testing (Task Buddy), Safety Constraints, Test Matrix
+
+### Community 124 - "Community 124"
+Cohesion: 0.47
+Nodes (6): clearHubFilters(), handleLogout(), handleProjectClick(), handleSidebarFilterClick(), handleTagClick(), navigate
 
 ### Community 125 - "Community 125"
 Cohesion: 0.4
@@ -743,49 +737,45 @@ Cohesion: 0.4
 Nodes (4): 📋 Comprehensive Test Cases, Task Buddy — Comprehensive User Acceptance Testing (UAT), 📋 UAT Test Cases (Basic Website Functionality), Unified Task Buddy Test Cases
 
 ### Community 132 - "Community 132"
-Cohesion: 0.67
-Nodes (3): Badge(), BadgeProps, badgeVariants
-
-### Community 133 - "Community 133"
 Cohesion: 0.5
 Nodes (3): payload, strengthBar, strengthLabel
 
-### Community 134 - "Community 134"
+### Community 133 - "Community 133"
 Cohesion: 0.5
 Nodes (3): profileLink, sidebar, toggleButton
 
-### Community 135 - "Community 135"
+### Community 134 - "Community 134"
 Cohesion: 0.5
 Nodes (4): Dashboard Insights, Features, Task Management, User Experience
 
-### Community 136 - "Community 136"
+### Community 135 - "Community 135"
 Cohesion: 0.5
 Nodes (4): Audit Trail, Backend API Docs, API Hooks, Dashboard Page
 
-### Community 137 - "Community 137"
+### Community 136 - "Community 136"
 Cohesion: 0.67
 Nodes (3): TaskBuddy App, Auth Context, App Icon
 
-### Community 138 - "Community 138"
+### Community 137 - "Community 137"
 Cohesion: 0.67
 Nodes (3): Subtask Model, Tag Model, Task Model
 
 ## Knowledge Gaps
-- **992 isolated node(s):** `mockTasks`, `{ result }`, `mockTask`, `task`, `LoginPage` (+987 more)
+- **994 isolated node(s):** `mockTasks`, `{ result }`, `mockTask`, `task`, `LoginPage` (+989 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **5 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `useToast()` connect `Task Management Forms` to `Authentication & Authorization`, `Core UI Components`, `User Navigation & Theme`, `State Management & Actions`, `Main Application Shell`, `Data Models & Entities`, `Linting Configuration`, `Project Documentation`, `Community 18`, `Community 20`, `Community 21`, `Community 22`, `Community 23`, `Community 24`, `Community 28`, `Community 32`, `Community 33`, `Community 34`, `Community 43`, `Community 44`, `Community 51`, `Community 109`, `Community 119`?**
+- **Why does `useToast()` connect `Community 44` to `Authentication & Authorization`, `Core UI Components`, `User Navigation & Theme`, `Task Management Forms`, `Theme Utilities`, `API Documentation & Integration`, `Main Application Shell`, `Linting Configuration`, `Playwright Testing Config`, `Build & Vite Configuration`, `Community 20`, `Community 21`, `Community 22`, `Community 23`, `Community 24`, `Community 25`, `Community 28`, `Community 35`, `Community 36`, `Community 37`, `Community 43`, `Community 51`, `Community 69`, `Community 113`, `Community 118`?**
+  _High betweenness centrality (0.022) - this node is a cross-community bridge._
+- **Why does `cn()` connect `Community 27` to `Authentication & Authorization`, `Core UI Components`, `User Navigation & Theme`, `Audit & Activity Logging`, `Task Management Forms`, `Testing & Validation`, `Main Application Shell`, `Data Models & Entities`, `Linting Configuration`, `Playwright Testing Config`, `Project Documentation`, `Community 17`, `Community 21`, `Community 22`, `Community 29`, `Community 32`, `Community 38`, `Community 69`, `Community 71`, `Community 112`, `Community 118`?**
   _High betweenness centrality (0.020) - this node is a cross-community bridge._
-- **Why does `cn()` connect `Community 19` to `Authentication & Authorization`, `Core UI Components`, `User Navigation & Theme`, `Audit & Activity Logging`, `Community 132`, `State Management & Actions`, `Testing & Validation`, `Main Application Shell`, `Playwright Testing Config`, `Tailwind CSS Styling`, `Project Documentation`, `Community 18`, `Community 24`, `Community 25`, `Community 27`, `Community 29`, `Community 32`, `Community 39`, `Community 44`, `Community 46`, `Community 111`, `Community 112`, `Community 115`, `Community 116`, `Community 119`?**
-  _High betweenness centrality (0.019) - this node is a cross-community bridge._
-- **Why does `useAuth()` connect `Community 21` to `Core UI Components`, `Community 33`, `Audit & Activity Logging`, `Community 36`, `Task Management Forms`, `State Management & Actions`, `User Navigation & Theme`, `API Documentation & Integration`, `Main Application Shell`, `Community 34`, `Linting Configuration`, `Community 110`, `Community 111`, `Project Documentation`, `Community 20`, `Community 22`, `Community 23`?**
-  _High betweenness centrality (0.015) - this node is a cross-community bridge._
+- **Why does `useAuth()` connect `Community 20` to `Core UI Components`, `User Navigation & Theme`, `Audit & Activity Logging`, `Task Management Forms`, `Theme Utilities`, `API Documentation & Integration`, `Main Application Shell`, `Tailwind CSS Styling`, `Build & Vite Configuration`, `Community 21`, `Community 22`, `Community 23`, `Community 25`, `Community 28`, `Community 35`, `Community 37`, `Community 44`, `Community 45`, `Community 69`, `Community 112`, `Community 114`?**
+  _High betweenness centrality (0.013) - this node is a cross-community bridge._
 - **What connects `mockTasks`, `{ result }`, `mockTask` to the rest of the system?**
-  _992 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _994 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Authentication & Authorization` be split into smaller, more focused modules?**
   _Cohesion score 0.04 - nodes in this community are weakly interconnected._
 - **Should `Core UI Components` be split into smaller, more focused modules?**

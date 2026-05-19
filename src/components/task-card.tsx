@@ -4,7 +4,15 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import type { Task } from "@/lib/api"
-import { Calendar, CheckCircle2, ChevronDown, ChevronUp, Layers, X, Trash2 } from "lucide-react"
+import {
+  Calendar,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Layers,
+  X,
+  Trash2,
+} from "lucide-react"
 import { cn } from "@/lib/utils"
 import * as LucideIcons from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -27,10 +35,10 @@ export const TaskCard = memo(function TaskCard({
   onToggleSubtask,
   onDeleteSubtask,
   onDetachTag,
-  disabled = false
+  disabled = false,
 }: Readonly<TaskCardProps>) {
   const { timeFormat } = useSettings()
-  const is12h = timeFormat === '12h'
+  const is12h = timeFormat === "12h"
   const [showAllSubtasks, setShowAllSubtasks] = useState(false)
 
   const handleToggleTask = () => {
@@ -46,11 +54,11 @@ export const TaskCard = memo(function TaskCard({
   const formatDueDate = (dateStr: string) => {
     const date = new Date(dateStr)
     return new Intl.DateTimeFormat(undefined, {
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: 'numeric',
-      hour12: is12h
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+      hour12: is12h,
     }).format(date)
   }
 
@@ -73,9 +81,9 @@ export const TaskCard = memo(function TaskCard({
           }
         }}
         className={cn(
-          "group relative overflow-hidden border border-border/50 bg-card/80 dark:bg-white/10 dark:backdrop-blur-3xl transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5 hover:scale-[1.01] rounded-[2rem] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+          "group relative cursor-pointer overflow-hidden rounded-[2rem] border border-border/50 bg-card/80 transition-all duration-300 hover:scale-[1.01] hover:shadow-2xl hover:shadow-primary/5 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none dark:bg-white/10 dark:backdrop-blur-3xl",
           task.completed && "opacity-75",
-          disabled && "cursor-not-allowed hover:shadow-none hover:scale-100"
+          disabled && "cursor-not-allowed hover:scale-100 hover:shadow-none"
         )}
         onClick={(e) => {
           if (disabled) return
@@ -97,8 +105,8 @@ export const TaskCard = memo(function TaskCard({
                   onCheckedChange={() => handleToggleTask()}
                   disabled={disabled}
                   className={cn(
-                    "h-6 w-6 rounded-full border-2 border-primary/20 transition-all data-[state=checked]:bg-primary data-[state=checked]:border-primary",
-                    disabled && "opacity-50 cursor-not-allowed"
+                    "h-6 w-6 rounded-full border-2 border-primary/20 transition-all data-[state=checked]:border-primary data-[state=checked]:bg-primary",
+                    disabled && "cursor-not-allowed opacity-50"
                   )}
                 />
                 {task.completed && (
@@ -118,47 +126,69 @@ export const TaskCard = memo(function TaskCard({
                     onClick={() => !disabled && onEdit(task)}
                     disabled={disabled}
                     className={cn(
-                      "text-left group/title focus:outline-none transition-all",
+                      "group/title text-left transition-all focus:outline-none",
                       disabled && "cursor-not-allowed"
                     )}
                   >
                     <h3
                       className={cn(
-                        "font-heading text-lg font-bold tracking-tight text-foreground transition-all",
-                        task.completed && "text-muted-foreground/50 line-through"
+                        "font-heading text-lg font-bold tracking-tight break-words whitespace-normal text-foreground transition-all",
+                        task.completed &&
+                          "text-muted-foreground/50 line-through"
                       )}
                     >
                       {task.title}
                     </h3>
                   </button>
-                  
+
                   <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1.5 rounded-full bg-muted/50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    <div className="flex items-center gap-1.5 rounded-full bg-muted/50 px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                       {(() => {
-                        const ProjectIcon = (LucideIcons as unknown as Record<string, LucideIcons.LucideIcon>)[task.project?.icon || "Layers"] || Layers
-                        return <ProjectIcon className="h-2.5 w-2.5" style={{ color: task.project?.color || "gray" }} />
+                        const ProjectIcon =
+                          (
+                            LucideIcons as unknown as Record<
+                              string,
+                              LucideIcons.LucideIcon
+                            >
+                          )[task.project?.icon || "Layers"] || Layers
+                        return (
+                          <ProjectIcon
+                            className="h-2.5 w-2.5"
+                            style={{ color: task.project?.color || "gray" }}
+                          />
+                        )
                       })()}
                       {task.project?.name || "Inbox"}
                     </div>
-                    
+
                     {(() => {
-                      let priorityClass = "bg-emerald-500/30 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 shadow-[0_0_20px_-5px_rgba(16,185,129,0.4)]"
+                      let priorityClass =
+                        "bg-emerald-500/30 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 shadow-[0_0_20px_-5px_rgba(16,185,129,0.4)]"
                       let dotClass = "bg-emerald-500"
-                      
-                      if (task.priority === 'HIGH') {
-                        priorityClass = "bg-red-500/30 text-red-700 dark:text-red-300 border-red-500/30 shadow-[0_0_20px_-5px_rgba(239,68,68,0.4)]"
+
+                      if (task.priority === "HIGH") {
+                        priorityClass =
+                          "bg-red-500/30 text-red-700 dark:text-red-300 border-red-500/30 shadow-[0_0_20px_-5px_rgba(239,68,68,0.4)]"
                         dotClass = "bg-red-500"
-                      } else if (task.priority === 'MEDIUM') {
-                        priorityClass = "bg-amber-500/30 text-amber-700 dark:text-amber-300 border-amber-500/30 shadow-[0_0_20px_-5px_rgba(245,158,11,0.4)]"
+                      } else if (task.priority === "MEDIUM") {
+                        priorityClass =
+                          "bg-amber-500/30 text-amber-700 dark:text-amber-300 border-amber-500/30 shadow-[0_0_20px_-5px_rgba(245,158,11,0.4)]"
                         dotClass = "bg-amber-500"
                       }
 
                       return (
-                        <div className={cn(
-                          "flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest border",
-                          priorityClass
-                        )}>
-                          <div className={cn("h-1.5 w-1.5 rounded-full animate-pulse", dotClass)} />
+                        <div
+                          className={cn(
+                            "flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-black tracking-widest uppercase",
+                            priorityClass
+                          )}
+                        >
+                          <div
+                            className={cn(
+                              "h-1.5 w-1.5 animate-pulse rounded-full",
+                              dotClass
+                            )}
+                          />
                           {task.priority}
                         </div>
                       )
@@ -167,10 +197,12 @@ export const TaskCard = memo(function TaskCard({
                 </div>
 
                 {task?.description && (
-                  <p className={cn(
-                    "line-clamp-2 text-sm leading-relaxed text-muted-foreground",
-                    task.completed && "text-muted-foreground/40"
-                  )}>
+                  <p
+                    className={cn(
+                      "line-clamp-2 text-sm leading-relaxed text-muted-foreground",
+                      task.completed && "text-muted-foreground/40"
+                    )}
+                  >
                     {task.description}
                   </p>
                 )}
@@ -189,17 +221,17 @@ export const TaskCard = memo(function TaskCard({
                       <Badge
                         key={tag.id}
                         variant="outline"
-                        className="rounded-full bg-primary/5 text-[10px] font-black uppercase tracking-widest text-primary border-primary/20 py-0.5 px-3 flex items-center gap-1.5"
+                        className="flex items-center gap-1.5 rounded-full border-primary/20 bg-primary/5 px-3 py-0.5 text-[10px] font-black tracking-widest text-primary uppercase"
                       >
                         {tag.name}
                         {!disabled && onDetachTag && (
                           <button
                             onClick={(e) => {
-                              e.stopPropagation();
-                              onDetachTag(task.id, tag.id);
+                              e.stopPropagation()
+                              onDetachTag(task.id, tag.id)
                             }}
                             disabled={disabled}
-                            className="hover:text-foreground/80 transition-colors"
+                            className="transition-colors hover:text-foreground/80"
                           >
                             <X className="h-2.5 w-2.5" />
                           </button>
@@ -210,26 +242,28 @@ export const TaskCard = memo(function TaskCard({
                 </div>
               </div>
             </div>
-
           </div>
 
           {/* Subtasks Section */}
           {(task?.subtasks?.length ?? 0) > 0 && (
             <div className="mt-6 space-y-3 border-t border-border/50 pt-5">
               <div className="flex items-center justify-between px-1">
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/50">
+                <span className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground/50 uppercase">
                   Sub-Tasks Progress
                 </span>
                 <span className="text-[10px] font-bold text-primary/70">
-                  {task.subtasks?.filter(s => s.completed).length ?? 0}/{task.subtasks?.length ?? 0}
+                  {task.subtasks?.filter((s) => s.completed).length ?? 0}/
+                  {task.subtasks?.length ?? 0}
                 </span>
               </div>
               <div className="space-y-2">
                 {(() => {
                   const limit = 3
                   const hasMore = (task.subtasks?.length ?? 0) > limit
-                  const displayedSubtasks = showAllSubtasks ? task.subtasks : task.subtasks?.slice(0, limit)
-                  
+                  const displayedSubtasks = showAllSubtasks
+                    ? task.subtasks
+                    : task.subtasks?.slice(0, limit)
+
                   return (
                     <>
                       {displayedSubtasks?.map((subtask) => (
@@ -241,13 +275,19 @@ export const TaskCard = memo(function TaskCard({
                             <Checkbox
                               checked={subtask.completed}
                               disabled={disabled}
-                              onCheckedChange={(checked) => handleToggleSubtask(subtask.id, !!checked)}
+                              onCheckedChange={(checked) =>
+                                handleToggleSubtask(subtask.id, !!checked)
+                              }
                               className="h-4 w-4 rounded-md border-2 border-primary/20"
                             />
-                            <span className={cn(
-                              "text-xs font-medium transition-all",
-                              subtask.completed ? "text-muted-foreground/40 line-through" : "text-muted-foreground"
-                            )}>
+                            <span
+                              className={cn(
+                                "text-xs font-medium transition-all",
+                                subtask.completed
+                                  ? "text-muted-foreground/40 line-through"
+                                  : "text-muted-foreground"
+                              )}
+                            >
                               {subtask.title}
                             </span>
                           </div>
@@ -266,7 +306,7 @@ export const TaskCard = memo(function TaskCard({
                           )}
                         </div>
                       ))}
-                      
+
                       {hasMore && (
                         <Button
                           variant="ghost"
@@ -275,7 +315,7 @@ export const TaskCard = memo(function TaskCard({
                             e.stopPropagation()
                             setShowAllSubtasks(!showAllSubtasks)
                           }}
-                          className="mt-2 w-full gap-2 rounded-xl border border-dashed border-border/50 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70 hover:bg-muted/50 hover:text-primary"
+                          className="mt-2 w-full gap-2 rounded-xl border border-dashed border-border/50 py-1 text-[10px] font-bold tracking-wider text-muted-foreground/70 uppercase hover:bg-muted/50 hover:text-primary"
                         >
                           {showAllSubtasks ? (
                             <>
@@ -285,7 +325,8 @@ export const TaskCard = memo(function TaskCard({
                           ) : (
                             <>
                               <ChevronDown className="h-3 w-3" />
-                              View {(task.subtasks?.length ?? 0) - limit} More Subtasks
+                              View {(task.subtasks?.length ?? 0) - limit} More
+                              Subtasks
                             </>
                           )}
                         </Button>
@@ -298,7 +339,6 @@ export const TaskCard = memo(function TaskCard({
           )}
         </CardContent>
       </Card>
-
     </motion.div>
   )
 })

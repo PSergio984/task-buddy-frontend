@@ -1,5 +1,11 @@
 import { useCallback } from "react"
-import { type Task, type TaskPriority, type Tag, type Subtask } from "@/lib/api"
+import {
+  type Task,
+  type TaskPriority,
+  type Tag,
+  type Subtask,
+  createIdempotencyKey,
+} from "@/lib/api"
 import { useUpdateTask, useCreateTask, useDeleteTask } from "@/hooks/useTasks"
 import { useToast } from "@/hooks/use-toast"
 import { useTaskDrawerSync } from "./useTaskDrawerSync"
@@ -13,6 +19,18 @@ export interface UseTaskDrawerActionsProps {
   priority: TaskPriority
   completed: boolean
   projectId: string
+  localUnsavedProjects: {
+    name: string
+    color: string
+    icon: string
+    tempId: number
+  }[]
+  createProject: (data: {
+    name: string
+    color?: string
+    icon?: string
+    idempotencyKey?: string
+  }) => Promise<{ id: number }>
   dueDate: Date | undefined
   localTags: Tag[]
   localSubtasks: Subtask[]
@@ -37,6 +55,8 @@ export function useTaskDrawerActions({
   priority,
   completed,
   projectId,
+  localUnsavedProjects,
+  createProject,
   dueDate,
   localTags,
   localSubtasks,
@@ -49,6 +69,24 @@ export function useTaskDrawerActions({
   const deleteTask = useDeleteTask()
   const { syncTags, syncSubtasks, isSyncing } = useTaskDrawerSync()
 
+  const resolveProjectId = useCallback(async () => {
+    if (projectId === "none") return undefined
+    const numericId = Number.parseInt(projectId, 10)
+    if (Number.isNaN(numericId)) return undefined
+    if (numericId > 0) return numericId
+
+    const unsaved = localUnsavedProjects.find((p) => p.tempId === numericId)
+    if (!unsaved) return undefined
+
+    const created = await createProject({
+      name: unsaved.name,
+      color: unsaved.color,
+      icon: unsaved.icon,
+      idempotencyKey: createIdempotencyKey(),
+    })
+    return created.id
+  }, [projectId, localUnsavedProjects, createProject])
+
   const handleConfirmUpdate = useCallback(async () => {
     if (!task) return
 
@@ -57,7 +95,7 @@ export function useTaskDrawerActions({
       toast({
         title: "Too many tags",
         description: "A task can have a maximum of 10 tags.",
-        variant: "destructive"
+        variant: "destructive",
       })
       return
     }
@@ -80,10 +118,12 @@ export function useTaskDrawerActions({
 
       const currentProjId = task.project_id?.toString() ?? "none"
       if (projectId !== currentProjId) {
-        updates.project_id = projectId === "none" ? undefined : Number.parseInt(projectId, 10)
+        updates.project_id = await resolveProjectId()
       }
 
-      const originalTime = task.due_date ? new Date(task.due_date).getTime() : undefined
+      const originalTime = task.due_date
+        ? new Date(task.due_date).getTime()
+        : undefined
       const newTime = dueDate?.getTime()
       if (newTime !== originalTime) {
         updates.due_date = dueDate?.toISOString()
@@ -98,7 +138,7 @@ export function useTaskDrawerActions({
         await updateTask.mutateAsync({
           id: task.id,
           updates: cleanUpdates,
-          silent: true
+          silent: true,
         })
       }
 
@@ -111,27 +151,58 @@ export function useTaskDrawerActions({
       console.error("Update failed:", err)
       toast({ title: "Failed to save changes", variant: "destructive" })
     }
-  }, [task, title, description, priority, completed, projectId, dueDate, localTags, localSubtasks, updateTask, syncTags, syncSubtasks, toast, onClose])
+  }, [
+    task,
+    title,
+    description,
+    priority,
+    completed,
+    projectId,
+    resolveProjectId,
+    dueDate,
+    localTags,
+    localSubtasks,
+    updateTask,
+    syncTags,
+    syncSubtasks,
+    toast,
+    onClose,
+  ])
   const handleCreate = useCallback(async () => {
     if (!title.trim()) return
+
     try {
+      const resolvedProjectId = await resolveProjectId()
       await createTask.mutateAsync({
         title: title.trim(),
         description: description.trim() || undefined,
         priority,
-        project_id: projectId === "none" ? undefined : Number.parseInt(projectId, 10),
+        project_id: resolvedProjectId,
         due_date: dueDate?.toISOString(),
         completed: false,
-        tags: pendingTags.map(t => t.name),
-        subtasks: pendingSubtasks.map(st => ({ title: st.title })),
-        silent: true
+        tags: pendingTags.map((t) => t.name),
+        subtasks: pendingSubtasks.map((st) => ({ title: st.title })),
+        silent: true,
+        idempotencyKey: createIdempotencyKey(),
       })
       toast({ title: "Task created!", variant: "success" })
       onClose()
     } catch {
       toast({ title: "Failed to create task", variant: "destructive" })
     }
-  }, [title, description, priority, projectId, dueDate, pendingTags, pendingSubtasks, createTask, toast, onClose])
+  }, [
+    title,
+    description,
+    priority,
+    projectId,
+    resolveProjectId,
+    dueDate,
+    pendingTags,
+    pendingSubtasks,
+    createTask,
+    toast,
+    onClose,
+  ])
 
   const handleDelete = useCallback(async () => {
     if (!task) return
@@ -153,4 +224,3 @@ export function useTaskDrawerActions({
     isDeleting: deleteTask.isPending,
   }
 }
-

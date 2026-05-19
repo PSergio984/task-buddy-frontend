@@ -14,8 +14,12 @@ import { motion } from "framer-motion"
 import { Tag as TagIcon } from "lucide-react"
 import * as LucideIcons from "lucide-react"
 import { useCreateTag, useUpdateTag } from "@/hooks/useTags"
-import { type Tag } from "@/lib/api"
-import { ColorIconPicker, PRESET_COLORS, PRESET_ICONS } from "./color-icon-picker"
+import { type Tag, createIdempotencyKey } from "@/lib/api"
+import {
+  ColorIconPicker,
+  PRESET_COLORS,
+  PRESET_ICONS,
+} from "./color-icon-picker"
 import { animations } from "@/lib/animations"
 import { CharacterCounter } from "./ui/character-counter"
 
@@ -64,6 +68,7 @@ export function CreateTagModal({
           name: name.trim(),
           color,
           icon,
+          idempotencyKey: createIdempotencyKey(),
         })
       }
       onOpenChange(false)
@@ -72,21 +77,27 @@ export function CreateTagModal({
     }
   }
 
-  const TagIconComp = (LucideIcons as unknown as Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>>)[icon || "Tag"] || LucideIcons.Tag
+  const TagIconComp =
+    (
+      LucideIcons as unknown as Record<
+        string,
+        React.ComponentType<{ className?: string; style?: React.CSSProperties }>
+      >
+    )[icon || "Tag"] || LucideIcons.Tag
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl overflow-hidden border-none bg-transparent p-0 shadow-none pointer-events-none">
+      <DialogContent className="pointer-events-none overflow-hidden border-none bg-transparent p-0 shadow-none sm:max-w-xl">
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
           transition={animations.spring.snappy}
-          className="pointer-events-auto overflow-hidden border-none bg-white dark:bg-zinc-900 p-0 shadow-sm rounded-[2.5rem]"
+          className="pointer-events-auto overflow-hidden rounded-[2.5rem] border-none bg-white p-0 shadow-sm dark:bg-zinc-900"
         >
           <div className="p-8 sm:p-10">
             <DialogHeader className="mb-10 text-left">
-              <div className="flex items-center gap-3 mb-2">
+              <div className="mb-2 flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
                   <TagIcon className="h-5 w-5" />
                 </div>
@@ -94,15 +105,18 @@ export function CreateTagModal({
                   {tag ? "Edit Tag" : "New Tag"}
                 </DialogTitle>
               </div>
-              <DialogDescription className="text-sm font-medium text-muted-foreground tracking-wide ml-13">
+              <DialogDescription className="ml-13 text-sm font-medium tracking-wide text-muted-foreground">
                 Label your objectives for granular tracking.
               </DialogDescription>
             </DialogHeader>
 
             <form onSubmit={handleSubmit} className="space-y-8">
               <div className="space-y-3">
-                <div className="flex items-center justify-between ml-1">
-                  <Label htmlFor="tagName" className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/40">
+                <div className="ml-1 flex items-center justify-between">
+                  <Label
+                    htmlFor="tagName"
+                    className="text-[10px] font-black tracking-[0.2em] text-foreground/40 uppercase"
+                  >
                     Tag Name
                   </Label>
                   <CharacterCounter current={name.length} limit={50} />
@@ -114,37 +128,39 @@ export function CreateTagModal({
                   onChange={(e) => setName(e.target.value)}
                   maxLength={50}
                   required
-                  className="h-14 rounded-2xl border-border bg-muted/50 dark:bg-zinc-800/50 px-6 text-lg font-semibold focus-visible:ring-primary/20 placeholder:text-muted-foreground/30"
+                  className="h-14 rounded-2xl border-border bg-muted/50 px-6 text-lg font-semibold placeholder:text-muted-foreground/30 focus-visible:ring-primary/20 dark:bg-zinc-800/50"
                 />
               </div>
 
               <div className="space-y-3">
-                <Label className="text-[10px] font-black uppercase tracking-[0.2em] ml-1 text-foreground/40">
+                <Label className="ml-1 text-[10px] font-black tracking-[0.2em] text-foreground/40 uppercase">
                   Visual Identity
                 </Label>
                 <div className="pl-1">
-                  <ColorIconPicker 
-                    color={color} 
-                    icon={icon} 
+                  <ColorIconPicker
+                    color={color}
+                    icon={icon}
                     onSelect={(c, i) => {
                       setColor(c)
                       setIcon(i)
                     }}
                     trigger={
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        className="h-14 w-full justify-start gap-4 rounded-2xl border-border bg-muted/50 dark:bg-zinc-800/50 px-6 hover:bg-muted dark:hover:bg-zinc-800 transition-all"
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-14 w-full justify-start gap-4 rounded-2xl border-border bg-muted/50 px-6 transition-all hover:bg-muted dark:bg-zinc-800/50 dark:hover:bg-zinc-800"
                       >
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-background shadow-sm">
-                          <TagIconComp 
-                            className="h-4 w-4"
-                            style={{ color }}
-                          />
+                          <TagIconComp className="h-4 w-4" style={{ color }} />
                         </div>
-                        <span className="text-sm font-semibold text-foreground">Select Color & Icon</span>
+                        <span className="text-sm font-semibold text-foreground">
+                          Select Color & Icon
+                        </span>
                         <div className="ml-auto flex items-center gap-2">
-                          <div className="h-3 w-3 rounded-full" style={{ backgroundColor: color }} />
+                          <div
+                            className="h-3 w-3 rounded-full"
+                            style={{ backgroundColor: color }}
+                          />
                         </div>
                       </Button>
                     }
@@ -152,21 +168,24 @@ export function CreateTagModal({
                 </div>
               </div>
 
-              <DialogFooter className="pt-6 border-t border-border/50 gap-4 flex sm:justify-end">
+              <DialogFooter className="flex gap-4 border-t border-border/50 pt-6 sm:justify-end">
                 <Button
                   type="button"
                   variant="ghost"
                   onClick={() => onOpenChange(false)}
-                  className="h-12 px-6 rounded-2xl text-muted-foreground hover:text-foreground hover:bg-muted transition-all font-bold"
+                  className="h-12 rounded-2xl px-6 font-bold text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
                 >
                   Discard
                 </Button>
-                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
                   <Button
                     type="submit"
                     loading={createTag.isPending || updateTag.isPending}
                     disabled={!name.trim()}
-                    className="h-12 px-8 rounded-2xl bg-primary text-primary-foreground shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all font-bold tracking-tight"
+                    className="h-12 rounded-2xl bg-primary px-8 font-bold tracking-tight text-primary-foreground shadow-xl shadow-primary/20 transition-all hover:bg-primary/90"
                   >
                     <span>{tag ? "Save Changes" : "Create Tag"}</span>
                   </Button>

@@ -11,7 +11,7 @@ export function useNotifications(params?: { limit?: number; offset?: number; rea
   const query = useQuery({
     queryKey: ["notifications", { userId: user?.id, ...params }],
     queryFn: () => notificationsApi.list(params),
-    refetchInterval: 120000, // 2 minutes
+    refetchInterval: 30000, // 30 seconds
     refetchOnWindowFocus: true,
     enabled: !!user,
   })
@@ -22,16 +22,16 @@ export function useNotifications(params?: { limit?: number; offset?: number; rea
 
   useEffect(() => {
     if (query.data?.items && query.data.items.length > 0) {
-      // Find unread high-priority notifications that haven't been toasted yet
+      // Find unread notifications that haven't been toasted yet
       const newHighPriority = query.data.items.filter(
-        (n) => !n.read && n.priority >= 2 && !toastedIds.current.has(n.id)
+        (n) => !n.is_read && !toastedIds.current.has(n.id)
       )
 
       if (newHighPriority.length > 0) {
         newHighPriority.forEach(n => {
           toast({
             title: n.title,
-            description: n.body,
+            description: n.message,
           })
           toastedIds.current.add(n.id)
         })
@@ -41,7 +41,7 @@ export function useNotifications(params?: { limit?: number; offset?: number; rea
 
   // Derived state for unread count
   // Note: This only counts unread notifications in the current page/result set
-  const unreadCount = query.data?.items?.filter(n => !n.read).length || 0
+  const unreadCount = query.data?.items?.filter(n => !n.is_read).length || 0
 
   return {
     ...query,
@@ -67,6 +67,17 @@ export function useMarkAllRead() {
   
   return useMutation({
     mutationFn: () => notificationsApi.markAllRead(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] })
+    },
+  })
+}
+
+export function useDeleteNotification() {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: (id: number) => notificationsApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notifications"] })
     },

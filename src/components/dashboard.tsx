@@ -73,14 +73,13 @@ export function Dashboard({
     taskId?: number
   } | null>(null)
 
-  const filteredTasks = useMemo(() => {
+  const timeframeTasks = useMemo(() => {
     const today = startOfToday()
     const tomorrow = new Date(today)
     tomorrow.setDate(today.getDate() + 1)
     const weekEnd = endOfWeek(today)
 
     return tasks.filter((task) => {
-      if (task.completed) return false
       if (activeStatus === "all") return true
       if (!task.due_date) return false
 
@@ -93,6 +92,10 @@ export function Dashboard({
       return true
     })
   }, [tasks, activeStatus])
+
+  const filteredTasks = useMemo(() => {
+    return timeframeTasks.filter((task) => !task.completed)
+  }, [timeframeTasks])
 
   const handleToggleComplete = useCallback(
     async (id: number) => {
@@ -257,7 +260,7 @@ export function Dashboard({
             <SystemOverview
               stats={stats}
               loading={!!loadingStats}
-              timeframeTasks={filteredTasks}
+              timeframeTasks={timeframeTasks}
               timeframeLabel={(() => {
                 if (activeStatus === "all") return "All Time"
                 if (activeStatus === "today") return "Today"

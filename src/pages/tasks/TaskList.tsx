@@ -57,7 +57,7 @@ export function TaskList({
       <AnimatePresence mode="popLayout">
         {tasks.map((task, index) => (
           <motion.div
-            key={task.id}
+            key={`${task.id}-${index}`}
             layout
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}

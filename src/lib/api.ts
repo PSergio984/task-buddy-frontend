@@ -10,10 +10,22 @@ export const api = axios.create({
   withCredentials: true,
 })
 
-// Helper to generate a deterministic hash for idempotency
+export const createIdempotencyKey = () => {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
+    return crypto.randomUUID()
+  }
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`
+}
+
+// Helper to generate an idempotency key (unique per request)
 async function generateIdempotencyKey(
   config: InternalAxiosRequestConfig
 ): Promise<string> {
+  const nonce = createIdempotencyKey()
+
   // Robust payload construction
   const dataPart = (() => {
     if (!config.data) return "null"
@@ -37,7 +49,7 @@ async function generateIdempotencyKey(
     }
   })()
 
-  const payload = `${config.method?.toLowerCase()}|${config.url}|${dataPart}|${paramsPart}`
+  const payload = `${config.method?.toLowerCase()}|${config.url}|${dataPart}|${paramsPart}|${nonce}`
   const msgUint8 = new TextEncoder().encode(payload)
   const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8)
   const hashArray = Array.from(new Uint8Array(hashBuffer))
@@ -50,7 +62,10 @@ api.interceptors.request.use(async (config) => {
   // different state transitions (e.g. toggling a checkbox on and off).
   if (config.method?.toLowerCase() === "post") {
     try {
-      config.headers["X-Idempotency-Key"] = await generateIdempotencyKey(config)
+      if (!config.headers["X-Idempotency-Key"]) {
+        config.headers["X-Idempotency-Key"] =
+          await generateIdempotencyKey(config)
+      }
     } catch (error) {
       console.error("Failed to generate idempotency key:", error)
     }
@@ -146,6 +161,7 @@ export interface TagDistribution {
 export type NotificationType =
   | "TASK_DUE"
   | "TASK_OVERDUE"
+  | "REMINDER_BEFORE"
   | "REMINDER_DUE"
   | "REMINDER_OVERDUE"
   | "SYSTEM"
@@ -154,11 +170,11 @@ export interface Notification {
   id: number
   user_id: number
   title: string
-  body: string
+  message: string
   type: NotificationType
-  priority: number
+  task_id?: number
   action_url?: string
-  read: boolean
+  is_read: boolean
   created_at: string
 }
 
@@ -204,8 +220,15 @@ export const tasksApi = {
     const data = response.data
     return Array.isArray(data) ? data : data.items || []
   },
-  create: async (taskData: TaskCreateData) => {
-    const response = await api.post<Task>("/api/v1/tasks/", taskData)
+  create: async (
+    taskData: TaskCreateData,
+    options?: { idempotencyKey?: string }
+  ) => {
+    const response = await api.post<Task>("/api/v1/tasks/", taskData, {
+      headers: options?.idempotencyKey
+        ? { "X-Idempotency-Key": options.idempotencyKey }
+        : undefined,
+    })
     return response.data
   },
   get: async (id: number) => {
@@ -236,12 +259,15 @@ export const projectsApi = {
     const data = response.data
     return Array.isArray(data) ? data : data.items || []
   },
-  create: async (projectData: {
-    name: string
-    color?: string
-    icon?: string
-  }) => {
-    const response = await api.post<Project>("/api/v1/projects/", projectData)
+  create: async (
+    projectData: { name: string; color?: string; icon?: string },
+    options?: { idempotencyKey?: string }
+  ) => {
+    const response = await api.post<Project>("/api/v1/projects/", projectData, {
+      headers: options?.idempotencyKey
+        ? { "X-Idempotency-Key": options.idempotencyKey }
+        : undefined,
+    })
     return response.data
   },
   update: async (
@@ -299,8 +325,15 @@ export const tagsApi = {
     const data = response.data
     return Array.isArray(data) ? data : data.items || []
   },
-  create: async (data: { name: string; color?: string; icon?: string }) => {
-    const response = await api.post<Tag>("/api/v1/tasks/tags/", data)
+  create: async (
+    data: { name: string; color?: string; icon?: string },
+    options?: { idempotencyKey?: string }
+  ) => {
+    const response = await api.post<Tag>("/api/v1/tasks/tags/", data, {
+      headers: options?.idempotencyKey
+        ? { "X-Idempotency-Key": options.idempotencyKey }
+        : undefined,
+    })
     return response.data
   },
   update: async (
@@ -336,11 +369,11 @@ export const notificationsApi = {
     offset?: number
     read?: boolean
   }) => {
-    const response = await api.get<{ items: Notification[]; total: number }>(
-      "/api/v1/notifications/",
-      { params }
-    )
-    return response.data
+    const response = await api.get<
+      Notification[] | { items: Notification[]; total: number }
+    >("/api/v1/notifications/", { params })
+    const data = response.data
+    return Array.isArray(data) ? { items: data, total: data.length } : data
   },
   markRead: async (id: number) => {
     const response = await api.patch<Notification>(
@@ -350,6 +383,9 @@ export const notificationsApi = {
   },
   markAllRead: async () => {
     await api.post("/api/v1/notifications/read-all")
+  },
+  delete: async (id: number) => {
+    await api.delete(`/api/v1/notifications/${id}`)
   },
   registerPushSubscription: async (subscription: {
     endpoint: string

@@ -8,7 +8,10 @@ import { useSubtaskManagement } from "./useSubtaskManagement"
 import { useTagManagement } from "./useTagManagement"
 import { useProjectManagement } from "./useProjectManagement"
 import { useTaskDirtyState } from "./useTaskDirtyState"
-import { useTaskDrawerActions, type UseTaskDrawerActionsProps } from "./useTaskDrawerActions"
+import {
+  useTaskDrawerActions,
+  type UseTaskDrawerActionsProps,
+} from "./useTaskDrawerActions"
 
 import { useUserPreferences } from "@/hooks/useUserPreferences"
 import { useAuth } from "@/contexts/AuthContext"
@@ -21,14 +24,19 @@ interface UseTaskDrawerStateProps {
   onClose: () => void
 }
 
-export function useTaskDrawerState({ initialTask, mode, isOpen, onClose }: UseTaskDrawerStateProps) {
+export function useTaskDrawerState({
+  initialTask,
+  mode,
+  isOpen,
+  onClose,
+}: UseTaskDrawerStateProps) {
   const { toast } = useToast()
   const { data: fetchedTask } = useTask(initialTask?.id ?? null)
   const task = fetchedTask || initialTask
 
   const createTagMutation = useCreateTag()
   const createProjectMutation = useCreateProject()
-  
+
   const { data: projects = [] } = useProjects()
   const { data: allTags = [] } = useTags()
 
@@ -43,7 +51,9 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onClose }: UseTa
   // Modal states
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showSaveConfirm, setShowSaveConfirm] = useState(false)
-  const [deletingSubtask, setDeletingSubtask] = useState<number | string | null>(null)
+  const [deletingSubtask, setDeletingSubtask] = useState<
+    number | string | null
+  >(null)
   const isCreate = mode === "create"
 
   const { user } = useAuth()
@@ -54,7 +64,7 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onClose }: UseTa
   const tags = useTagManagement(isCreate, allTags, toast)
   const projectMgmt = useProjectManagement(projects, toast)
 
-  const { projectId, setProjectId } = projectMgmt
+  const { projectId, setProjectId, localUnsavedProjects } = projectMgmt
 
   // Initialization & Reset - Adjusted during render to avoid cascading renders in useEffect
   const [prevTaskId, setPrevTaskId] = useState<number | string | null>(null)
@@ -67,13 +77,13 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onClose }: UseTa
     setDescription(isNew ? "" : (task.description ?? ""))
     setPriority(isNew ? "MEDIUM" : task.priority)
     setCompleted(isNew ? false : task.completed)
-    
+
     let initialDueDate: Date | undefined = undefined
     if (!isNew && task.due_date) {
       initialDueDate = new Date(task.due_date)
     }
     setDueDate(initialDueDate)
-    
+
     subtasks.resetSubtasks(isNew ? null : task)
     tags.resetTags(isNew ? null : task)
     projectMgmt.resetProjects(isNew ? null : task)
@@ -116,6 +126,8 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onClose }: UseTa
     priority,
     completed,
     projectId,
+    localUnsavedProjects,
+    createProject: createProjectMutation.mutateAsync,
     dueDate,
     localTags: tags.localTags,
     localSubtasks: subtasks.localSubtasks,
@@ -124,49 +136,76 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onClose }: UseTa
   }
   const actions = useTaskDrawerActions(actionsProps)
 
-  const handleUpdate = useCallback((updates: Partial<Task>) => {
-    Object.entries(updates).forEach(([key, value]) => {
-      if (value === undefined) return
+  const handleUpdate = useCallback(
+    (updates: Partial<Task>) => {
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === undefined) return
 
-      switch (key) {
-        case "title": setTitle(value as string); break
-        case "description": setDescription((value as string) ?? ""); break
-        case "priority": setPriority(value as TaskPriority); break
-        case "completed": setCompleted(value as boolean); break
-        case "project_id": setProjectId((value as number)?.toString() ?? "none"); break
-        case "due_date": setDueDate(value ? new Date(value as string) : undefined); break
+        switch (key) {
+          case "title":
+            setTitle(value as string)
+            break
+          case "description":
+            setDescription((value as string) ?? "")
+            break
+          case "priority":
+            setPriority(value as TaskPriority)
+            break
+          case "completed":
+            setCompleted(value as boolean)
+            break
+          case "project_id":
+            setProjectId((value as number)?.toString() ?? "none")
+            break
+          case "due_date":
+            setDueDate(value ? new Date(value as string) : undefined)
+            break
+        }
+      })
+    },
+    [setProjectId]
+  )
+
+  const handleDateSelect = useCallback(
+    (d: Date | undefined, preserveTime = true) => {
+      if (!d) return setDueDate(undefined)
+
+      const newDate = new Date(d)
+      if (preserveTime) {
+        const taskDate = task?.due_date ? new Date(task.due_date) : new Date()
+        const current = dueDate || taskDate
+        newDate.setHours(current.getHours())
+        newDate.setMinutes(current.getMinutes())
       }
-    })
-  }, [setProjectId])
-
-  const handleDateSelect = useCallback((d: Date | undefined, preserveTime = true) => {
-    if (!d) return setDueDate(undefined)
-    
-    const newDate = new Date(d)
-    if (preserveTime) {
-      const taskDate = task?.due_date ? new Date(task.due_date) : new Date()
-      const current = dueDate || taskDate
-      newDate.setHours(current.getHours())
-      newDate.setMinutes(current.getMinutes())
-    }
-    setDueDate(newDate)
-  }, [dueDate, task])
+      setDueDate(newDate)
+    },
+    [dueDate, task]
+  )
 
   return {
     task,
     isCreate,
-    title, setTitle,
-    description, setDescription,
-    priority, setPriority,
-    completed, setCompleted,
-    dueDate, setDueDate,
-    isEditingTitle, setIsEditingTitle,
+    title,
+    setTitle,
+    description,
+    setDescription,
+    priority,
+    setPriority,
+    completed,
+    setCompleted,
+    dueDate,
+    setDueDate,
+    isEditingTitle,
+    setIsEditingTitle,
     ...subtasks,
     ...tags,
     ...projectMgmt,
-    showDeleteConfirm, setShowDeleteConfirm,
-    showSaveConfirm, setShowSaveConfirm,
-    deletingSubtask, setDeletingSubtask,
+    showDeleteConfirm,
+    setShowDeleteConfirm,
+    showSaveConfirm,
+    setShowSaveConfirm,
+    deletingSubtask,
+    setDeletingSubtask,
     preferences,
     hasChanges: dirtyState.hasChanges,
     isTitleDirty: dirtyState.title,
@@ -179,6 +218,7 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onClose }: UseTa
     isSubtasksDirty: dirtyState.subtasks,
     projects,
     allTags,
+    localUnsavedProjects,
     actions,
     isCreatingTag: createTagMutation.isPending,
     isCreatingProject: createProjectMutation.isPending,
@@ -187,4 +227,3 @@ export function useTaskDrawerState({ initialTask, mode, isOpen, onClose }: UseTa
     toast,
   }
 }
-

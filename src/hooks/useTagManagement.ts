@@ -23,12 +23,17 @@ export interface UseTagManagementReturn {
   handleCreateAndAttachTag: () => Promise<void>
   handleDetachTag: (tagId: number) => void
   resetTags: (task: { tags?: Tag[] } | null) => void
-  localUnsavedTags: { name: string, color: string, icon: string, tempId: number }[]
+  localUnsavedTags: {
+    name: string
+    color: string
+    icon: string
+    tempId: number
+  }[]
 }
 
 export function useTagManagement(
-  isCreate: boolean, 
-  allTags: Tag[], 
+  isCreate: boolean,
+  allTags: Tag[],
   toast: ReturnType<typeof useToast>["toast"]
 ): UseTagManagementReturn {
   const [tagSearch, setTagSearch] = useState("")
@@ -37,28 +42,52 @@ export function useTagManagement(
   const [pendingTags, setPendingTags] = useState<Tag[]>([])
   const [newTagColor, setNewTagColor] = useState(PRESET_COLORS[0])
   const [newTagIcon, setNewTagIcon] = useState("Tag")
-  const [localUnsavedTags, setLocalUnsavedTags] = useState<{ name: string, color: string, icon: string, tempId: number }[]>([])
+  const [localUnsavedTags, setLocalUnsavedTags] = useState<
+    { name: string; color: string; icon: string; tempId: number }[]
+  >([])
 
-  const currentTags = isCreate ? pendingTags : localTags
+  const normalizedLocalTags = useMemo(() => {
+    return localTags.flatMap((tag) => {
+      if (tag.id < 0) return [tag]
+      const latest = allTags.find((t) => t.id === tag.id)
+      return latest ? [latest] : []
+    })
+  }, [localTags, allTags])
 
-  const handleAttachTag = useCallback((tagId: number) => {
-    const tag = allTags.find(t => t.id === tagId)
-    if (!tag) return
-    if (isCreate) {
-      setPendingTags(prev => [...prev, tag])
-    } else if (!localTags.some(t => t.id === tagId)) {
-      setLocalTags(prev => [...prev, tag])
-    }
-    setTagSearch("")
-  }, [allTags, isCreate, localTags])
+  const normalizedPendingTags = useMemo(() => {
+    return pendingTags.map((tag) => {
+      if (tag.id < 0) return tag
+      return allTags.find((t) => t.id === tag.id) ?? tag
+    })
+  }, [pendingTags, allTags])
+
+  const currentTags = isCreate ? normalizedPendingTags : normalizedLocalTags
+
+  const handleAttachTag = useCallback(
+    (tagId: number) => {
+      const tag = allTags.find((t) => t.id === tagId)
+      if (!tag) return
+      if (isCreate) {
+        setPendingTags((prev) => [...prev, tag])
+      } else if (!localTags.some((t) => t.id === tagId)) {
+        setLocalTags((prev) => [...prev, tag])
+      }
+      setTagSearch("")
+    },
+    [allTags, isCreate, localTags]
+  )
 
   const handleCreateAndAttachTag = async () => {
     if (!tagSearch.trim()) return
-    
+
     // Check if tag already exists in allTags or localUnsavedTags
-    const existsInAll = allTags.some(t => t.name.toLowerCase() === tagSearch.trim().toLowerCase())
-    const existsInUnsaved = localUnsavedTags.some(t => t.name.toLowerCase() === tagSearch.trim().toLowerCase())
-    
+    const existsInAll = allTags.some(
+      (t) => t.name.toLowerCase() === tagSearch.trim().toLowerCase()
+    )
+    const existsInUnsaved = localUnsavedTags.some(
+      (t) => t.name.toLowerCase() === tagSearch.trim().toLowerCase()
+    )
+
     if (existsInAll || existsInUnsaved) {
       toast({ title: "Tag already exists", variant: "warning" })
       return
@@ -71,58 +100,80 @@ export function useTagManagement(
       color: newTagColor,
       icon: newTagIcon,
       user_id: 0, // placeholder
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
     }
 
-    setLocalUnsavedTags(prev => [...prev, { 
-      name: tagSearch.trim(), 
-      color: newTagColor, 
-      icon: newTagIcon, 
-      tempId 
-    }])
+    setLocalUnsavedTags((prev) => [
+      ...prev,
+      {
+        name: tagSearch.trim(),
+        color: newTagColor,
+        icon: newTagIcon,
+        tempId,
+      },
+    ])
 
-    if (isCreate) setPendingTags(prev => [...prev, newVirtualTag])
-    else setLocalTags(prev => [...prev, newVirtualTag])
-    
+    if (isCreate) setPendingTags((prev) => [...prev, newVirtualTag])
+    else setLocalTags((prev) => [...prev, newVirtualTag])
+
     setTagSearch("")
     setIsTagPickerOpen(false)
     setNewTagColor(PRESET_COLORS[0])
     setNewTagIcon("Tag")
   }
 
-  const handleDetachTag = useCallback((tagId: number) => {
-    if (isCreate) setPendingTags(prev => prev.filter(t => t.id !== tagId))
-    else setLocalTags(prev => prev.filter(t => t.id !== tagId))
+  const handleDetachTag = useCallback(
+    (tagId: number) => {
+      if (isCreate) setPendingTags((prev) => prev.filter((t) => t.id !== tagId))
+      else setLocalTags((prev) => prev.filter((t) => t.id !== tagId))
 
-    if (tagId < 0) {
-      setLocalUnsavedTags(prev => prev.filter(t => t.tempId !== tagId))
-    }
-  }, [isCreate])
+      if (tagId < 0) {
+        setLocalUnsavedTags((prev) => prev.filter((t) => t.tempId !== tagId))
+      }
+    },
+    [isCreate]
+  )
 
-  const resetTags = useCallback((task: { tags?: Tag[] } | null) => {
-    setLocalTags(!isCreate && task ? (task.tags || []) : [])
-    setPendingTags([])
-    setLocalUnsavedTags([])
-    setTagSearch("")
-    setIsTagPickerOpen(false)
-    setNewTagColor(PRESET_COLORS[0])
-    setNewTagIcon("Tag")
-  }, [isCreate])
+  const resetTags = useCallback(
+    (task: { tags?: Tag[] } | null) => {
+      setLocalTags(!isCreate && task ? task.tags || [] : [])
+      setPendingTags([])
+      setLocalUnsavedTags([])
+      setTagSearch("")
+      setIsTagPickerOpen(false)
+      setNewTagColor(PRESET_COLORS[0])
+      setNewTagIcon("Tag")
+    },
+    [isCreate]
+  )
 
-  const filteredTags = useMemo(() => allTags.filter(t =>
-    t.name.toLowerCase().includes(tagSearch.toLowerCase()) &&
-    !currentTags?.some(tt => tt.id === t.id)
-  ), [allTags, tagSearch, currentTags])
+  const filteredTags = useMemo(
+    () =>
+      allTags.filter(
+        (t) =>
+          t.name.toLowerCase().includes(tagSearch.toLowerCase()) &&
+          !currentTags?.some((tt) => tt.id === t.id)
+      ),
+    [allTags, tagSearch, currentTags]
+  )
 
-  const canCreateTag = !!tagSearch.trim() && !allTags.some(t => t.name.toLowerCase() === tagSearch.toLowerCase())
+  const canCreateTag =
+    !!tagSearch.trim() &&
+    !allTags.some((t) => t.name.toLowerCase() === tagSearch.toLowerCase())
 
   return {
-    tagSearch, setTagSearch,
-    isTagPickerOpen, setIsTagPickerOpen,
-    localTags, setLocalTags,
-    pendingTags, setPendingTags,
-    newTagColor, setNewTagColor,
-    newTagIcon, setNewTagIcon,
+    tagSearch,
+    setTagSearch,
+    isTagPickerOpen,
+    setIsTagPickerOpen,
+    localTags: normalizedLocalTags,
+    setLocalTags,
+    pendingTags: normalizedPendingTags,
+    setPendingTags,
+    newTagColor,
+    setNewTagColor,
+    newTagIcon,
+    setNewTagIcon,
     currentTags,
     filteredTags,
     canCreateTag,
@@ -130,6 +181,6 @@ export function useTagManagement(
     handleCreateAndAttachTag,
     handleDetachTag,
     resetTags,
-    localUnsavedTags
+    localUnsavedTags,
   }
 }
