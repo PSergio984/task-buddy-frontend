@@ -123,6 +123,7 @@ export function Dashboard({
     try {
       if (confirmData.type === "task") {
         await updateTask({ id: confirmData.id, updates: { completed: true } })
+        onRefresh()
         toast({
           title: "Objective Complete",
           description: "Task marked as finished.",
@@ -130,6 +131,7 @@ export function Dashboard({
         })
       } else if (confirmData.type === "subtask") {
         await updateSubtask({ id: confirmData.id, updates: { completed: true } })
+        onRefresh()
         toast({
           title: "Subtask Finished",
           variant: "success",
@@ -167,11 +169,12 @@ export function Dashboard({
       
       try {
         await updateSubtask({ id: subtaskId, updates: { completed } })
+        onRefresh()
       } catch (err) {
         console.error("Failed to update subtask:", err)
       }
     },
-    [tasks, updateSubtask, skipSubtaskCompletionConfirm]
+    [tasks, updateSubtask, onRefresh, skipSubtaskCompletionConfirm]
   )
 
   const handleDeleteSubtask = useCallback(

@@ -22,6 +22,7 @@ export function useSidebarActions() {
     setActiveSidebarFilter,
     activeTagId,
     setActiveTagId,
+    setActiveStatus,
     setSelectedPriorities,
   } = useFilters()
 
@@ -48,8 +49,9 @@ export function useSidebarActions() {
       setActiveSidebarFilter(filter)
       clearHubFilters()
     }
+    setActiveStatus("all")
     if (location.pathname !== "/tasks") navigate("/tasks")
-  }, [activeSidebarFilter, setActiveSidebarFilter, clearHubFilters, location.pathname, navigate])
+  }, [activeSidebarFilter, setActiveSidebarFilter, setActiveStatus, clearHubFilters, location.pathname, navigate])
 
   const handleProjectClick = useCallback((projectId: number) => {
     const filterId = `project:${projectId}`
@@ -60,8 +62,9 @@ export function useSidebarActions() {
       setActiveTagId(null)
       clearHubFilters()
     }
+    setActiveStatus("all")
     if (location.pathname !== "/tasks") navigate("/tasks")
-  }, [activeSidebarFilter, activeTagId, setActiveSidebarFilter, setActiveTagId, clearHubFilters, location.pathname, navigate])
+  }, [activeSidebarFilter, activeTagId, setActiveSidebarFilter, setActiveTagId, setActiveStatus, clearHubFilters, location.pathname, navigate])
 
   const handleTagClick = useCallback((tagId: number) => {
     if (activeTagId === tagId) {
@@ -71,8 +74,9 @@ export function useSidebarActions() {
       setActiveSidebarFilter("all")
       clearHubFilters()
     }
+    setActiveStatus("all")
     if (location.pathname !== "/tasks") navigate("/tasks")
-  }, [activeTagId, setActiveTagId, setActiveSidebarFilter, clearHubFilters, location.pathname, navigate])
+  }, [activeTagId, setActiveTagId, setActiveSidebarFilter, setActiveStatus, clearHubFilters, location.pathname, navigate])
 
   const handleProjectDragEnd = useCallback((event: DragEndEvent, projects: ProjectType[]) => {
     const { active, over } = event

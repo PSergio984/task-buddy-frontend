@@ -149,12 +149,20 @@ function parseProjectChange(details: string, name: string): React.ReactNode {
 }
 
 function handleTaskUpdate(detLow: string, details: string, name: string): React.ReactNode {
-  if (detLow.includes("completed: true") || detLow.includes("status: completed")) 
+  // Match transition direction: "completed: false -> true" = marked done, opposite = reopened
+  if (/completed[^:]*:\s*['"]?false['"]?\s*->\s*['"]?true['"]?/i.test(detLow))
     return <span>Marked {name ? bold(name) : "a task"} as done</span>
-  
-  if (detLow.includes("completed: false")) 
+
+  if (/completed[^:]*:\s*['"]?true['"]?\s*->\s*['"]?false['"]?/i.test(detLow))
     return <span>Reopened {name ? bold(name) : "a task"}</span>
-  
+
+  // Fallback for logs that only record the new value (no arrow notation)
+  if (detLow.includes("status: completed") || /\bcompleted:\s*['"]?true['"]?$/.test(detLow))
+    return <span>Marked {name ? bold(name) : "a task"} as done</span>
+
+  if (/\bcompleted:\s*['"]?false['"]?$/.test(detLow))
+    return <span>Reopened {name ? bold(name) : "a task"}</span>
+
   if (detLow.includes("attached tag")) return parseTagChange(details, name)
   if (detLow.includes("detached tag")) return <span>Removed a tag from {name ? bold(name) : "task"}</span>
   
@@ -166,6 +174,7 @@ function handleTaskUpdate(detLow: string, details: string, name: string): React.
   
   return <span>Updated task {name ? bold(name) : ""}</span>
 }
+
 
 export function describeTaskAction(act: string, details: string): React.ReactNode {
   const name = getTargetName(details, "task")

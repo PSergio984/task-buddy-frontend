@@ -11,7 +11,9 @@ export const api = axios.create({
 })
 
 // Helper to generate a deterministic hash for idempotency
-async function generateIdempotencyKey(config: InternalAxiosRequestConfig): Promise<string> {
+async function generateIdempotencyKey(
+  config: InternalAxiosRequestConfig
+): Promise<string> {
   // Robust payload construction
   const dataPart = (() => {
     if (!config.data) return "null"
@@ -26,7 +28,8 @@ async function generateIdempotencyKey(config: InternalAxiosRequestConfig): Promi
 
   const paramsPart = (() => {
     if (!config.params) return "null"
-    if (config.params instanceof URLSearchParams) return config.params.toString()
+    if (config.params instanceof URLSearchParams)
+      return config.params.toString()
     try {
       return JSON.stringify(config.params)
     } catch {
@@ -40,11 +43,12 @@ async function generateIdempotencyKey(config: InternalAxiosRequestConfig): Promi
   const hashArray = Array.from(new Uint8Array(hashBuffer))
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("")
 }
-// Add a request interceptor for idempotency
+// Add a request interceptor for idempotency (POST-only)
 api.interceptors.request.use(async (config) => {
-  // Only add idempotency key for mutating requests
-  const mutatingMethods = ["post", "put", "patch", "delete"]
-  if (config.method && mutatingMethods.includes(config.method.toLowerCase())) {
+  // Only POST creates need idempotency protection against accidental double-submission.
+  // PUT/PATCH/DELETE are excluded: the same URL+body can legitimately represent
+  // different state transitions (e.g. toggling a checkbox on and off).
+  if (config.method?.toLowerCase() === "post") {
     try {
       config.headers["X-Idempotency-Key"] = await generateIdempotencyKey(config)
     } catch (error) {
@@ -60,14 +64,16 @@ api.interceptors.response.use(
   (error) => {
     // Prevent infinite loop: don't trigger logout if the request that failed was already a logout request
     const isLogoutRequest = error.config?.url?.endsWith("/api/v1/users/logout")
-    
+
     if (error.response?.status === 401 && !isLogoutRequest) {
       // Dispatch a custom event to notify AuthContext
       globalThis.dispatchEvent(new CustomEvent("auth:unauthorized"))
     }
 
     if (error.response?.status === 429) {
-      const detail = error.response.data?.detail || "Too many attempts. Please try again later."
+      const detail =
+        error.response.data?.detail ||
+        "Too many attempts. Please try again later."
       toast({
         title: "Slow down",
         description: detail,
@@ -137,7 +143,12 @@ export interface TagDistribution {
   task_count: number
 }
 
-export type NotificationType = "TASK_DUE" | "TASK_OVERDUE" | "REMINDER_DUE" | "REMINDER_OVERDUE" | "SYSTEM"
+export type NotificationType =
+  | "TASK_DUE"
+  | "TASK_OVERDUE"
+  | "REMINDER_DUE"
+  | "REMINDER_OVERDUE"
+  | "SYSTEM"
 
 export interface Notification {
   id: number
@@ -219,27 +230,46 @@ export const statsApi = {
 
 export const projectsApi = {
   list: async () => {
-    const response = await api.get<Project[] | { items: Project[] }>("/api/v1/projects/")
+    const response = await api.get<Project[] | { items: Project[] }>(
+      "/api/v1/projects/"
+    )
     const data = response.data
     return Array.isArray(data) ? data : data.items || []
   },
-  create: async (projectData: { name: string; color?: string; icon?: string }) => {
+  create: async (projectData: {
+    name: string
+    color?: string
+    icon?: string
+  }) => {
     const response = await api.post<Project>("/api/v1/projects/", projectData)
     return response.data
   },
-  update: async (id: number, updates: { name?: string; color?: string; icon?: string }) => {
+  update: async (
+    id: number,
+    updates: { name?: string; color?: string; icon?: string }
+  ) => {
     const response = await api.put<Project>(`/api/v1/projects/${id}`, updates)
     return response.data
   },
   delete: async (id: number, deleteTasks: boolean = false) => {
-    await api.delete(`/api/v1/projects/${id}`, { params: { delete_tasks: deleteTasks } })
+    await api.delete(`/api/v1/projects/${id}`, {
+      params: { delete_tasks: deleteTasks },
+    })
   },
   reorder: async (orderedIds: number[]) => {
     await api.post("/api/v1/projects/reorder", orderedIds)
   },
 }
 export const subtasksApi = {
-  create: async (taskId: number, data: { title: string; completed?: boolean; description?: string; due_date?: string }) => {
+  create: async (
+    taskId: number,
+    data: {
+      title: string
+      completed?: boolean
+      description?: string
+      due_date?: string
+    }
+  ) => {
     const response = await api.post<Subtask>(`/api/v1/tasks/subtask`, {
       ...data,
       task_id: taskId,
@@ -247,7 +277,10 @@ export const subtasksApi = {
     return response.data
   },
   update: async (id: number, updates: Partial<Subtask>) => {
-    const response = await api.put<Subtask>(`/api/v1/tasks/subtask/${id}`, updates)
+    const response = await api.put<Subtask>(
+      `/api/v1/tasks/subtask/${id}`,
+      updates
+    )
     return response.data
   },
   delete: async (id: number) => {
@@ -260,7 +293,9 @@ export const subtasksApi = {
 
 export const tagsApi = {
   list: async () => {
-    const response = await api.get<Tag[] | { items: Tag[] }>("/api/v1/tasks/tags/")
+    const response = await api.get<Tag[] | { items: Tag[] }>(
+      "/api/v1/tasks/tags/"
+    )
     const data = response.data
     return Array.isArray(data) ? data : data.items || []
   },
@@ -268,7 +303,10 @@ export const tagsApi = {
     const response = await api.post<Tag>("/api/v1/tasks/tags/", data)
     return response.data
   },
-  update: async (id: number, data: { name?: string; color?: string; icon?: string }) => {
+  update: async (
+    id: number,
+    data: { name?: string; color?: string; icon?: string }
+  ) => {
     const response = await api.put<Tag>(`/api/v1/tasks/tags/${id}`, data)
     return response.data
   },
@@ -288,21 +326,36 @@ export const tagsApi = {
 
 export const notificationsApi = {
   getVapidKey: async () => {
-    const response = await api.get<{ public_key: string }>("/api/v1/notifications/vapid-key")
+    const response = await api.get<{ public_key: string }>(
+      "/api/v1/notifications/vapid-key"
+    )
     return response.data
   },
-  list: async (params?: { limit?: number; offset?: number; read?: boolean }) => {
-    const response = await api.get<{ items: Notification[]; total: number }>("/api/v1/notifications/", { params })
+  list: async (params?: {
+    limit?: number
+    offset?: number
+    read?: boolean
+  }) => {
+    const response = await api.get<{ items: Notification[]; total: number }>(
+      "/api/v1/notifications/",
+      { params }
+    )
     return response.data
   },
   markRead: async (id: number) => {
-    const response = await api.patch<Notification>(`/api/v1/notifications/${id}/read`)
+    const response = await api.patch<Notification>(
+      `/api/v1/notifications/${id}/read`
+    )
     return response.data
   },
   markAllRead: async () => {
     await api.post("/api/v1/notifications/read-all")
   },
-  registerPushSubscription: async (subscription: { endpoint: string; p256dh: string; auth: string }) => {
+  registerPushSubscription: async (subscription: {
+    endpoint: string
+    p256dh: string
+    auth: string
+  }) => {
     await api.post("/api/v1/notifications/push-subscription", subscription)
   },
 }

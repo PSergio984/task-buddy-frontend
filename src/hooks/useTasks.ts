@@ -127,36 +127,36 @@ export function useCreateTask() {
       tasksApi.create(newTaskData),
     onMutate: async (newTaskData) => {
       await queryClient.cancelQueries({ queryKey: ["tasks"] })
-      const previousTasks = queryClient.getQueryData<Task[]>(["tasks"])
+      const previousTasksQueries = queryClient.getQueriesData<Task[]>({ queryKey: ["tasks"] })
 
-      if (previousTasks) {
-        const tempTask: Task = {
-          id: Math.random(),
-          title: newTaskData.title,
-          description: newTaskData.description,
-          completed: newTaskData.completed ?? false,
-          priority: newTaskData.priority ?? "MEDIUM",
-          project_id: newTaskData.project_id,
-          due_date: newTaskData.due_date,
-          created_at: new Date().toISOString(),
-          user_id: 0,
-        }
-        queryClient.setQueryData<Task[]>(["tasks"], [tempTask, ...previousTasks])
+      const tempTask: Task = {
+        id: Math.random(),
+        title: newTaskData.title,
+        description: newTaskData.description,
+        completed: newTaskData.completed ?? false,
+        priority: newTaskData.priority ?? "MEDIUM",
+        project_id: newTaskData.project_id,
+        due_date: newTaskData.due_date,
+        created_at: new Date().toISOString(),
+        user_id: 0,
       }
 
-      return { previousTasks }
+      previousTasksQueries.forEach(([queryKey, previousTasks]) => {
+        if (previousTasks) {
+          queryClient.setQueryData<Task[]>(queryKey, [tempTask, ...previousTasks])
+        }
+      })
+
+      return { previousTasksQueries }
     },
     onError: (_err, _variables, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(["tasks"], context.previousTasks)
-      }
+      context?.previousTasksQueries?.forEach(([queryKey, previousTasks]) => {
+        queryClient.setQueryData(queryKey, previousTasks)
+      })
     },
-    onSettled: (_data, _error, variables) => {
-      const silent = typeof variables === 'object' && variables !== null && 'silent' in variables && (variables as { silent?: boolean }).silent
-      if (!silent) {
-        queryClient.invalidateQueries({ queryKey: ["tasks"] })
-        queryClient.invalidateQueries({ queryKey: ["stats"] })
-      }
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      queryClient.invalidateQueries({ queryKey: ["stats"] })
     },
     onSuccess: (data, variables) => {
       if (!variables.silent) {
@@ -181,40 +181,43 @@ export function useUpdateTask() {
     onMutate: async ({ id, updates }) => {
       // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
       await queryClient.cancelQueries({ queryKey: ["tasks"] })
-      await queryClient.cancelQueries({ queryKey: ["task", id] })
+      await queryClient.cancelQueries({ queryKey: ["task"] })
 
       // Snapshot the previous value
-      const previousTasks = queryClient.getQueryData<Task[]>(["tasks"])
-      const previousTask = queryClient.getQueryData<Task>(["task", id])
+      const previousTasksQueries = queryClient.getQueriesData<Task[]>({ queryKey: ["tasks"] })
+      const previousTaskQueries = queryClient.getQueriesData<Task>({ queryKey: ["task"] })
 
       // Optimistically update to the new value in the list
-      if (previousTasks) {
-        queryClient.setQueryData<Task[]>(["tasks"], updateTaskInList(previousTasks, id, updates))
-      }
+      previousTasksQueries.forEach(([queryKey, previousTasks]) => {
+        if (previousTasks) {
+          queryClient.setQueryData<Task[]>(queryKey, updateTaskInList(previousTasks, id, updates))
+        }
+      })
 
       // Optimistically update the detail view
-      if (previousTask) {
-        queryClient.setQueryData<Task>(["task", id], { ...previousTask, ...updates })
-      }
+      previousTaskQueries.forEach(([queryKey, previousTask]) => {
+        const queryKeyObj = queryKey[1] as { id?: number } | undefined
+        if (queryKeyObj?.id === id && previousTask) {
+          queryClient.setQueryData<Task>(queryKey, { ...previousTask, ...updates })
+        }
+      })
 
       // Return a context object with the snapshotted value
-      return { previousTasks, previousTask }
+      return { previousTasksQueries, previousTaskQueries }
     },
     // If the mutation fails, use the context returned from onMutate to roll back
-    onError: (_err, { id }, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(["tasks"], context.previousTasks)
-      }
-      if (context?.previousTask) {
-        queryClient.setQueryData(["task", id], context.previousTask)
-      }
+    onError: (_err, _variables, context) => {
+      context?.previousTasksQueries?.forEach(([queryKey, previousTasks]) => {
+        queryClient.setQueryData(queryKey, previousTasks)
+      })
+      context?.previousTaskQueries?.forEach(([queryKey, previousTask]) => {
+        queryClient.setQueryData(queryKey, previousTask)
+      })
     },
-    onSettled: (_data, _error, variables) => {
-      if (!variables.silent) {
-        queryClient.invalidateQueries({ queryKey: ["tasks"] })
-        queryClient.invalidateQueries({ queryKey: ["stats"] })
-      }
-      queryClient.invalidateQueries({ queryKey: ["task", variables.id] })
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      queryClient.invalidateQueries({ queryKey: ["stats"] })
+      queryClient.invalidateQueries({ queryKey: ["task"] })
     },
     onSuccess: (data, variables) => {
       if (!variables.silent) {
@@ -241,27 +244,26 @@ export function useDeleteTask() {
     onMutate: async (variables) => {
       const id = typeof variables === 'number' ? variables : variables.id
       await queryClient.cancelQueries({ queryKey: ["tasks"] })
-      await queryClient.cancelQueries({ queryKey: ["task", id] })
+      await queryClient.cancelQueries({ queryKey: ["task"] })
       
-      const previousTasks = queryClient.getQueryData<Task[]>(["tasks"])
+      const previousTasksQueries = queryClient.getQueriesData<Task[]>({ queryKey: ["tasks"] })
 
-      if (previousTasks) {
-        queryClient.setQueryData<Task[]>(["tasks"], previousTasks.filter((task) => task.id !== id))
-      }
+      previousTasksQueries.forEach(([queryKey, previousTasks]) => {
+        if (previousTasks) {
+          queryClient.setQueryData<Task[]>(queryKey, previousTasks.filter((task) => task.id !== id))
+        }
+      })
 
-      return { previousTasks }
+      return { previousTasksQueries }
     },
     onError: (_err, _variables, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(["tasks"], context.previousTasks)
-      }
+      context?.previousTasksQueries?.forEach(([queryKey, previousTasks]) => {
+        queryClient.setQueryData(queryKey, previousTasks)
+      })
     },
-    onSettled: (_data, _error, variables) => {
-      const silent = typeof variables === 'object' && variables !== null && 'silent' in variables && (variables as { silent?: boolean }).silent
-      if (!silent) {
-        queryClient.invalidateQueries({ queryKey: ["tasks"] })
-        queryClient.invalidateQueries({ queryKey: ["stats"] })
-      }
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      queryClient.invalidateQueries({ queryKey: ["stats"] })
     },
     onSuccess: (_data, variables) => {
       const silent = typeof variables === 'object' && variables !== null && 'silent' in variables && (variables as { silent?: boolean }).silent
@@ -285,46 +287,49 @@ export function useUpdateSubtask() {
       subtasksApi.update(id, updates),
     onMutate: async ({ id, updates }) => {
       await queryClient.cancelQueries({ queryKey: ["tasks"] })
-      // Cancel all task detail queries to be safe, or we could find the specific one
       await queryClient.cancelQueries({ queryKey: ["task"] })
 
-      const previousTasks = queryClient.getQueryData<Task[]>(["tasks"])
+      const previousTasksQueries = queryClient.getQueriesData<Task[]>({ queryKey: ["tasks"] })
+      const previousTaskQueries = queryClient.getQueriesData<Task>({ queryKey: ["task"] })
       
       // Update in ["tasks"] list
-      if (previousTasks) {
-        queryClient.setQueryData<Task[]>(["tasks"], updateSubtaskInTasks(previousTasks, id, updates))
-      }
+      previousTasksQueries.forEach(([queryKey, previousTasks]) => {
+        if (previousTasks) {
+          queryClient.setQueryData<Task[]>(queryKey, updateSubtaskInTasks(previousTasks, id, updates))
+        }
+      })
 
       // Also try to find the task this subtask belongs to and update its detail query
-      if (previousTasks) {
-        for (const task of previousTasks) {
-          if (task.subtasks?.some(s => s.id === id)) {
-            const previousTask = queryClient.getQueryData<Task>(["task", task.id])
-            if (previousTask) {
-              queryClient.setQueryData<Task>(["task", task.id], updateSubtaskInTask(previousTask, id, updates))
+      previousTasksQueries.forEach(([, previousTasks]) => {
+        if (previousTasks) {
+          for (const task of previousTasks) {
+            if (task.subtasks?.some(s => s.id === id)) {
+              previousTaskQueries.forEach(([queryKey, previousTask]) => {
+                const queryKeyObj = queryKey[1] as { id?: number } | undefined
+                if (queryKeyObj?.id === task.id && previousTask) {
+                  queryClient.setQueryData<Task>(queryKey, updateSubtaskInTask(previousTask, id, updates))
+                }
+              })
+              break
             }
-            break
           }
         }
-      }
+      })
 
-      return { previousTasks }
+      return { previousTasksQueries, previousTaskQueries }
     },
     onError: (_err, _variables, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(["tasks"], context.previousTasks)
-      }
+      context?.previousTasksQueries?.forEach(([queryKey, previousTasks]) => {
+        queryClient.setQueryData(queryKey, previousTasks)
+      })
+      context?.previousTaskQueries?.forEach(([queryKey, previousTask]) => {
+        queryClient.setQueryData(queryKey, previousTask)
+      })
     },
-    onSettled: (_data, _error, variables) => {
-      const v = variables as { silent?: boolean; taskId?: number; id?: number }
-      if (!v.silent) {
-        queryClient.invalidateQueries({ queryKey: ["tasks"] })
-        queryClient.invalidateQueries({ queryKey: ["stats"] })
-      }
-      const taskId = v.taskId ?? v.id
-      if (taskId) {
-        queryClient.invalidateQueries({ queryKey: ["task", taskId] })
-      }
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      queryClient.invalidateQueries({ queryKey: ["stats"] })
+      queryClient.invalidateQueries({ queryKey: ["task"] })
     },
     onSuccess: (data, variables) => {
       if (!variables.silent) {
@@ -350,29 +355,25 @@ export function useDeleteSubtask() {
       await queryClient.cancelQueries({ queryKey: ["tasks"] })
       await queryClient.cancelQueries({ queryKey: ["task"] })
 
-      const previousTasks = queryClient.getQueryData<Task[]>(["tasks"])
+      const previousTasksQueries = queryClient.getQueriesData<Task[]>({ queryKey: ["tasks"] })
       
-      if (previousTasks) {
-        queryClient.setQueryData<Task[]>(["tasks"], removeSubtaskFromTasks(previousTasks, id))
-      }
+      previousTasksQueries.forEach(([queryKey, previousTasks]) => {
+        if (previousTasks) {
+          queryClient.setQueryData<Task[]>(queryKey, removeSubtaskFromTasks(previousTasks, id))
+        }
+      })
 
-      return { previousTasks }
+      return { previousTasksQueries }
     },
     onError: (_err, _id, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(["tasks"], context.previousTasks)
-      }
+      context?.previousTasksQueries?.forEach(([queryKey, previousTasks]) => {
+        queryClient.setQueryData(queryKey, previousTasks)
+      })
     },
-    onSettled: (_data, _error, variables) => {
-      const v = variables as { silent?: boolean; taskId?: number; id?: number }
-      if (!v.silent) {
-        queryClient.invalidateQueries({ queryKey: ["tasks"] })
-        queryClient.invalidateQueries({ queryKey: ["stats"] })
-      }
-      const taskId = v.taskId ?? v.id
-      if (taskId) {
-        queryClient.invalidateQueries({ queryKey: ["task", taskId] })
-      }
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      queryClient.invalidateQueries({ queryKey: ["stats"] })
+      queryClient.invalidateQueries({ queryKey: ["task"] })
     },
     onSuccess: (_data, variables) => {
       const silent = typeof variables === 'object' && variables.silent
@@ -396,10 +397,10 @@ export function useCreateSubtask() {
       subtasksApi.create(taskId, data),
     onMutate: async ({ taskId, title, completed }) => {
       await queryClient.cancelQueries({ queryKey: ["tasks"] })
-      await queryClient.cancelQueries({ queryKey: ["task", taskId] })
+      await queryClient.cancelQueries({ queryKey: ["task"] })
 
-      const previousTasks = queryClient.getQueryData<Task[]>(["tasks"])
-      const previousTask = queryClient.getQueryData<Task>(["task", taskId])
+      const previousTasksQueries = queryClient.getQueriesData<Task[]>({ queryKey: ["tasks"] })
+      const previousTaskQueries = queryClient.getQueriesData<Task>({ queryKey: ["task"] })
 
       const tempSub: Subtask = {
         id: Math.random(),
@@ -409,34 +410,33 @@ export function useCreateSubtask() {
         created_at: new Date().toISOString()
       }
 
-      if (previousTasks) {
-        queryClient.setQueryData<Task[]>(["tasks"], addSubtaskToTasks(previousTasks, taskId, tempSub))
-      }
+      previousTasksQueries.forEach(([queryKey, previousTasks]) => {
+        if (previousTasks) {
+          queryClient.setQueryData<Task[]>(queryKey, addSubtaskToTasks(previousTasks, taskId, tempSub))
+        }
+      })
 
-      if (previousTask) {
-        queryClient.setQueryData<Task>(["task", taskId], addSubtaskToTask(previousTask, tempSub))
-      }
+      previousTaskQueries.forEach(([queryKey, previousTask]) => {
+        const queryKeyObj = queryKey[1] as { id?: number } | undefined
+        if (queryKeyObj?.id === taskId && previousTask) {
+          queryClient.setQueryData<Task>(queryKey, addSubtaskToTask(previousTask, tempSub))
+        }
+      })
 
-      return { previousTasks, previousTask }
+      return { previousTasksQueries, previousTaskQueries }
     },
-    onError: (_err, { taskId }, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(["tasks"], context.previousTasks)
-      }
-      if (context?.previousTask) {
-        queryClient.setQueryData(["task", taskId], context.previousTask)
-      }
+    onError: (_err, _variables, context) => {
+      context?.previousTasksQueries?.forEach(([queryKey, previousTasks]) => {
+        queryClient.setQueryData(queryKey, previousTasks)
+      })
+      context?.previousTaskQueries?.forEach(([queryKey, previousTask]) => {
+        queryClient.setQueryData(queryKey, previousTask)
+      })
     },
-    onSettled: (_data, _error, variables) => {
-      const v = variables as { silent?: boolean; taskId?: number; id?: number }
-      if (!v.silent) {
-        queryClient.invalidateQueries({ queryKey: ["tasks"] })
-        queryClient.invalidateQueries({ queryKey: ["stats"] })
-      }
-      const taskId = v.taskId ?? v.id
-      if (taskId) {
-        queryClient.invalidateQueries({ queryKey: ["task", taskId] })
-      }
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      queryClient.invalidateQueries({ queryKey: ["stats"] })
+      queryClient.invalidateQueries({ queryKey: ["task"] })
     },
     onSuccess: (data, variables) => {
       if (!variables.silent) {
@@ -458,33 +458,30 @@ export function useReorderSubtasks() {
     mutationFn: ({ taskId, orderedIds }: { taskId: number; orderedIds: number[]; silent?: boolean }) =>
       subtasksApi.reorder(taskId, orderedIds),
     onMutate: async ({ taskId, orderedIds }) => {
-      await queryClient.cancelQueries({ queryKey: ["task", taskId] })
-      const previousTask = queryClient.getQueryData<Task>(["task", taskId])
+      await queryClient.cancelQueries({ queryKey: ["task"] })
+      const previousTaskQueries = queryClient.getQueriesData<Task>({ queryKey: ["task"] })
 
-      if (previousTask?.subtasks) {
-        queryClient.setQueryData<Task>(["task", taskId], {
-          ...previousTask,
-          subtasks: reorderItems(previousTask.subtasks, orderedIds)
-        })
-      }
+      previousTaskQueries.forEach(([queryKey, previousTask]) => {
+        const queryKeyObj = queryKey[1] as { id?: number } | undefined
+        if (queryKeyObj?.id === taskId && previousTask?.subtasks) {
+          queryClient.setQueryData<Task>(queryKey, {
+            ...previousTask,
+            subtasks: reorderItems(previousTask.subtasks, orderedIds)
+          })
+        }
+      })
 
-      return { previousTask }
+      return { previousTaskQueries }
     },
-    onError: (_err, { taskId }, context) => {
-      if (context?.previousTask) {
-        queryClient.setQueryData(["task", taskId], context.previousTask)
-      }
+    onError: (_err, _variables, context) => {
+      context?.previousTaskQueries?.forEach(([queryKey, previousTask]) => {
+        queryClient.setQueryData(queryKey, previousTask)
+      })
     },
-    onSettled: (_data, _error, variables) => {
-      const v = variables as { silent?: boolean; taskId?: number; id?: number }
-      if (!v.silent) {
-        queryClient.invalidateQueries({ queryKey: ["tasks"] })
-        queryClient.invalidateQueries({ queryKey: ["stats"] })
-      }
-      const taskId = v.taskId ?? v.id
-      if (taskId) {
-        queryClient.invalidateQueries({ queryKey: ["task", taskId] })
-      }
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      queryClient.invalidateQueries({ queryKey: ["stats"] })
+      queryClient.invalidateQueries({ queryKey: ["task"] })
     },
     onSuccess: (_data, variables) => {
       if (!variables.silent) {
@@ -507,49 +504,55 @@ export function useAttachTag() {
       tagsApi.attach(taskId, tagId),
     onMutate: async ({ taskId, tagId }) => {
       await queryClient.cancelQueries({ queryKey: ["tasks"] })
-      await queryClient.cancelQueries({ queryKey: ["task", taskId] })
+      await queryClient.cancelQueries({ queryKey: ["task"] })
 
-      const previousTasks = queryClient.getQueryData<Task[]>(["tasks"])
-      const previousTask = queryClient.getQueryData<Task>(["task", taskId])
-      const allTags = queryClient.getQueryData<Tag[]>(["tags"])
-      const tag = allTags?.find(t => t.id === tagId)
-
-      if (!tag) return { previousTasks, previousTask }
-
-      if (previousTasks) {
-        queryClient.setQueryData<Task[]>(["tasks"], addTagToTaskInList(previousTasks, taskId, tag))
-      }
-
-      if (previousTask) {
-        const hasTag = previousTask.tags?.some(t => t.id === tag.id)
-        if (!hasTag) {
-          queryClient.setQueryData<Task>(["task", taskId], {
-            ...previousTask,
-            tags: [...(previousTask.tags || []), tag]
-          })
+      const previousTasksQueries = queryClient.getQueriesData<Task[]>({ queryKey: ["tasks"] })
+      const previousTaskQueries = queryClient.getQueriesData<Task>({ queryKey: ["task"] })
+      const allTagsQueries = queryClient.getQueriesData<Tag[]>({ queryKey: ["tags"] })
+      
+      let tag: Tag | undefined
+      for (const [, tags] of allTagsQueries) {
+        if (tags) {
+          tag = tags.find(t => t.id === tagId)
+          if (tag) break
         }
       }
 
-      return { previousTasks, previousTask }
+      if (!tag) return { previousTasksQueries, previousTaskQueries }
+
+      previousTasksQueries.forEach(([queryKey, previousTasks]) => {
+        if (previousTasks) {
+          queryClient.setQueryData<Task[]>(queryKey, addTagToTaskInList(previousTasks, taskId, tag!))
+        }
+      })
+
+      previousTaskQueries.forEach(([queryKey, previousTask]) => {
+        const queryKeyObj = queryKey[1] as { id?: number } | undefined
+        if (queryKeyObj?.id === taskId && previousTask) {
+          const hasTag = previousTask.tags?.some(t => t.id === tag!.id)
+          if (!hasTag) {
+            queryClient.setQueryData<Task>(queryKey, {
+              ...previousTask,
+              tags: [...(previousTask.tags || []), tag!]
+            })
+          }
+        }
+      })
+
+      return { previousTasksQueries, previousTaskQueries }
     },
-    onError: (_err, { taskId }, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(["tasks"], context.previousTasks)
-      }
-      if (context?.previousTask) {
-        queryClient.setQueryData(["task", taskId], context.previousTask)
-      }
+    onError: (_err, _variables, context) => {
+      context?.previousTasksQueries?.forEach(([queryKey, previousTasks]) => {
+        queryClient.setQueryData(queryKey, previousTasks)
+      })
+      context?.previousTaskQueries?.forEach(([queryKey, previousTask]) => {
+        queryClient.setQueryData(queryKey, previousTask)
+      })
     },
-    onSettled: (_data, _error, variables) => {
-      const v = variables as { silent?: boolean; taskId?: number; id?: number }
-      if (!v.silent) {
-        queryClient.invalidateQueries({ queryKey: ["tasks"] })
-        queryClient.invalidateQueries({ queryKey: ["stats"] })
-      }
-      const taskId = v.taskId ?? v.id
-      if (taskId) {
-        queryClient.invalidateQueries({ queryKey: ["task", taskId] })
-      }
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      queryClient.invalidateQueries({ queryKey: ["stats"] })
+      queryClient.invalidateQueries({ queryKey: ["task"] })
     },
     onSuccess: (_data, variables) => {
       if (!variables.silent) {
@@ -572,42 +575,41 @@ export function useDetachTag() {
       tagsApi.detach(taskId, tagId),
     onMutate: async ({ taskId, tagId }) => {
       await queryClient.cancelQueries({ queryKey: ["tasks"] })
-      await queryClient.cancelQueries({ queryKey: ["task", taskId] })
+      await queryClient.cancelQueries({ queryKey: ["task"] })
 
-      const previousTasks = queryClient.getQueryData<Task[]>(["tasks"])
-      const previousTask = queryClient.getQueryData<Task>(["task", taskId])
+      const previousTasksQueries = queryClient.getQueriesData<Task[]>({ queryKey: ["tasks"] })
+      const previousTaskQueries = queryClient.getQueriesData<Task>({ queryKey: ["task"] })
 
-      if (previousTasks) {
-        queryClient.setQueryData<Task[]>(["tasks"], removeTagFromTaskInList(previousTasks, taskId, tagId))
-      }
+      previousTasksQueries.forEach(([queryKey, previousTasks]) => {
+        if (previousTasks) {
+          queryClient.setQueryData<Task[]>(queryKey, removeTagFromTaskInList(previousTasks, taskId, tagId))
+        }
+      })
 
-      if (previousTask) {
-        queryClient.setQueryData<Task>(["task", taskId], {
-          ...previousTask,
-          tags: previousTask.tags?.filter(t => t.id !== tagId)
-        })
-      }
+      previousTaskQueries.forEach(([queryKey, previousTask]) => {
+        const queryKeyObj = queryKey[1] as { id?: number } | undefined
+        if (queryKeyObj?.id === taskId && previousTask) {
+          queryClient.setQueryData<Task>(queryKey, {
+            ...previousTask,
+            tags: previousTask.tags?.filter(t => t.id !== tagId)
+          })
+        }
+      })
 
-      return { previousTasks, previousTask }
+      return { previousTasksQueries, previousTaskQueries }
     },
-    onError: (_err, { taskId }, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(["tasks"], context.previousTasks)
-      }
-      if (context?.previousTask) {
-        queryClient.setQueryData(["task", taskId], context.previousTask)
-      }
+    onError: (_err, _variables, context) => {
+      context?.previousTasksQueries?.forEach(([queryKey, previousTasks]) => {
+        queryClient.setQueryData(queryKey, previousTasks)
+      })
+      context?.previousTaskQueries?.forEach(([queryKey, previousTask]) => {
+        queryClient.setQueryData(queryKey, previousTask)
+      })
     },
-    onSettled: (_data, _error, variables) => {
-      const v = variables as { silent?: boolean; taskId?: number; id?: number }
-      if (!v.silent) {
-        queryClient.invalidateQueries({ queryKey: ["tasks"] })
-        queryClient.invalidateQueries({ queryKey: ["stats"] })
-      }
-      const taskId = v.taskId ?? v.id
-      if (taskId) {
-        queryClient.invalidateQueries({ queryKey: ["task", taskId] })
-      }
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      queryClient.invalidateQueries({ queryKey: ["stats"] })
+      queryClient.invalidateQueries({ queryKey: ["task"] })
     },
     onSuccess: (_data, variables) => {
       if (!variables.silent) {
