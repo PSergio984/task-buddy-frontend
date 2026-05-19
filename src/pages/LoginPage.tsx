@@ -87,12 +87,12 @@ export function LoginPage() {
             transition={{ delay: 0.5, duration: 0.8 }}
             className="space-y-8 bg-background/30 backdrop-blur-2xl p-12 rounded-[2.5rem] border border-white/20 shadow-2xl max-w-xl"
           >
-            <div className="flex items-center gap-3">
+            <Link to="/" className="flex items-center gap-3 w-fit hover:opacity-80 transition-opacity">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-2xl shadow-primary/40">
                 <CheckCircle2 className="h-7 w-7" />
               </div>
               <span className="text-3xl font-bold tracking-tighter text-foreground">Task Buddy</span>
-            </div>
+            </Link>
             <h2 className="text-6xl font-black tracking-tighter text-foreground leading-[0.9] uppercase">
               ELEVATE YOUR <br />
               <span className="text-accent underline decoration-accent/20 underline-offset-8">DAILY FLOW.</span>
