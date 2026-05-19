@@ -34,7 +34,7 @@ export function useCreateTag() {
       tagsApi.create(newTag),
     onMutate: async (newTag) => {
       await queryClient.cancelQueries({ queryKey: ["tags"] })
-      const previousTags = queryClient.getQueryData<Tag[]>(["tags"])
+      const previousQueries = queryClient.getQueriesData<Tag[]>({ queryKey: ["tags"] })
       
       const temp: Tag = {
         id: Math.random(),
@@ -45,15 +45,18 @@ export function useCreateTag() {
         created_at: new Date().toISOString()
       }
       
-      const updatedTags = previousTags ? [...previousTags, temp] : [temp]
-      queryClient.setQueryData<Tag[]>(["tags"], updatedTags)
+      previousQueries.forEach(([queryKey, previousTags]) => {
+        if (previousTags) {
+          queryClient.setQueryData<Tag[]>(queryKey, [...previousTags, temp])
+        }
+      })
       
-      return { previousTags }
+      return { previousQueries }
     },
     onError: (_err, _newTag, context) => {
-      if (context?.previousTags) {
-        queryClient.setQueryData(["tags"], context.previousTags)
-      }
+      context?.previousQueries?.forEach(([queryKey, previousTags]) => {
+        queryClient.setQueryData(queryKey, previousTags)
+      })
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["tags"] })
@@ -82,17 +85,20 @@ export function useDeleteTag() {
     onMutate: async (variables) => {
       const id = typeof variables === 'number' ? variables : variables.id
       await queryClient.cancelQueries({ queryKey: ["tags"] })
-      const previousTags = queryClient.getQueryData<Tag[]>(["tags"])
+      const previousQueries = queryClient.getQueriesData<Tag[]>({ queryKey: ["tags"] })
       
-      const updatedTags = previousTags ? previousTags.filter(t => t.id !== id) : []
-      queryClient.setQueryData<Tag[]>(["tags"], updatedTags)
+      previousQueries.forEach(([queryKey, previousTags]) => {
+        if (previousTags) {
+          queryClient.setQueryData<Tag[]>(queryKey, previousTags.filter(t => t.id !== id))
+        }
+      })
       
-      return { previousTags }
+      return { previousQueries }
     },
     onError: (_err, _id, context) => {
-      if (context?.previousTags) {
-        queryClient.setQueryData(["tags"], context.previousTags)
-      }
+      context?.previousQueries?.forEach(([queryKey, previousTags]) => {
+        queryClient.setQueryData(queryKey, previousTags)
+      })
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["tags"] })
@@ -121,17 +127,20 @@ export function useUpdateTag() {
       tagsApi.update(id, data),
     onMutate: async ({ id, data }) => {
       await queryClient.cancelQueries({ queryKey: ["tags"] })
-      const previousTags = queryClient.getQueryData<Tag[]>(["tags"])
+      const previousQueries = queryClient.getQueriesData<Tag[]>({ queryKey: ["tags"] })
       
-      const updatedTags = previousTags ? previousTags.map(t => t.id === id ? { ...t, ...data } : t) : []
-      queryClient.setQueryData<Tag[]>(["tags"], updatedTags)
+      previousQueries.forEach(([queryKey, previousTags]) => {
+        if (previousTags) {
+          queryClient.setQueryData<Tag[]>(queryKey, previousTags.map(t => t.id === id ? { ...t, ...data } : t))
+        }
+      })
       
-      return { previousTags }
+      return { previousQueries }
     },
     onError: (_err, _variables, context) => {
-      if (context?.previousTags) {
-        queryClient.setQueryData(["tags"], context.previousTags)
-      }
+      context?.previousQueries?.forEach(([queryKey, previousTags]) => {
+        queryClient.setQueryData(queryKey, previousTags)
+      })
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["tags"] })
@@ -156,17 +165,20 @@ export function useReorderTags() {
     mutationFn: tagsApi.reorder,
     onMutate: async (orderedIds: number[]) => {
       await queryClient.cancelQueries({ queryKey: ["tags"] })
-      const previous = queryClient.getQueryData<Tag[]>(["tags"])
+      const previousQueries = queryClient.getQueriesData<Tag[]>({ queryKey: ["tags"] })
       
-      if (previous) {
-        const updatedTags = reorderItems(previous, orderedIds)
-        queryClient.setQueryData<Tag[]>(["tags"], updatedTags)
-      }
+      previousQueries.forEach(([queryKey, previous]) => {
+        if (previous) {
+          queryClient.setQueryData<Tag[]>(queryKey, reorderItems(previous, orderedIds))
+        }
+      })
       
-      return { previous }
+      return { previousQueries }
     },
     onError: (_err, _ids, ctx) => {
-      if (ctx?.previous) queryClient.setQueryData(["tags"], ctx.previous)
+      ctx?.previousQueries?.forEach(([queryKey, previous]) => {
+        queryClient.setQueryData(queryKey, previous)
+      })
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["tags"] })

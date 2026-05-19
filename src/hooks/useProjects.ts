@@ -48,7 +48,7 @@ export function useCreateProject() {
     mutationFn: projectsApi.create,
     onMutate: async (newProject) => {
       await queryClient.cancelQueries({ queryKey: ["projects"] })
-      const previousProjects = queryClient.getQueryData<Project[]>(["projects"])
+      const previousQueries = queryClient.getQueriesData<Project[]>({ queryKey: ["projects"] })
       
       const temp: Project = {
         id: Math.random(),
@@ -59,15 +59,18 @@ export function useCreateProject() {
         created_at: new Date().toISOString()
       }
       
-      const updatedProjects = previousProjects ? [...previousProjects, temp] : [temp]
-      queryClient.setQueryData<Project[]>(["projects"], updatedProjects)
+      previousQueries.forEach(([queryKey, previousProjects]) => {
+        if (previousProjects) {
+          queryClient.setQueryData<Project[]>(queryKey, [...previousProjects, temp])
+        }
+      })
       
-      return { previousProjects }
+      return { previousQueries }
     },
     onError: (_err, _newProject, context) => {
-      if (context?.previousProjects) {
-        queryClient.setQueryData(["projects"], context.previousProjects)
-      }
+      context?.previousQueries?.forEach(([queryKey, previousProjects]) => {
+        queryClient.setQueryData(queryKey, previousProjects)
+      })
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] })
@@ -91,17 +94,20 @@ export function useUpdateProject() {
       projectsApi.update(id, updates),
     onMutate: async ({ id, updates }) => {
       await queryClient.cancelQueries({ queryKey: ["projects"] })
-      const previousProjects = queryClient.getQueryData<Project[]>(["projects"])
+      const previousQueries = queryClient.getQueriesData<Project[]>({ queryKey: ["projects"] })
       
-      const updatedProjects = updateItem(previousProjects, id, updates)
-      queryClient.setQueryData<Project[]>(["projects"], updatedProjects)
+      previousQueries.forEach(([queryKey, previousProjects]) => {
+        if (previousProjects) {
+          queryClient.setQueryData<Project[]>(queryKey, updateItem(previousProjects, id, updates))
+        }
+      })
       
-      return { previousProjects }
+      return { previousQueries }
     },
     onError: (_err, _variables, context) => {
-      if (context?.previousProjects) {
-        queryClient.setQueryData(["projects"], context.previousProjects)
-      }
+      context?.previousQueries?.forEach(([queryKey, previousProjects]) => {
+        queryClient.setQueryData(queryKey, previousProjects)
+      })
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] })
@@ -125,17 +131,20 @@ export function useDeleteProject() {
       projectsApi.delete(id, deleteTasks),
     onMutate: async ({ id }) => {
       await queryClient.cancelQueries({ queryKey: ["projects"] })
-      const previousProjects = queryClient.getQueryData<Project[]>(["projects"])
+      const previousQueries = queryClient.getQueriesData<Project[]>({ queryKey: ["projects"] })
       
-      const updatedProjects = removeItem(previousProjects, id)
-      queryClient.setQueryData<Project[]>(["projects"], updatedProjects)
+      previousQueries.forEach(([queryKey, previousProjects]) => {
+        if (previousProjects) {
+          queryClient.setQueryData<Project[]>(queryKey, removeItem(previousProjects, id))
+        }
+      })
       
-      return { previousProjects }
+      return { previousQueries }
     },
     onError: (_err, _variables, context) => {
-      if (context?.previousProjects) {
-        queryClient.setQueryData(["projects"], context.previousProjects)
-      }
+      context?.previousQueries?.forEach(([queryKey, previousProjects]) => {
+        queryClient.setQueryData(queryKey, previousProjects)
+      })
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] })
@@ -159,17 +168,20 @@ export function useReorderProjects() {
     mutationFn: projectsApi.reorder,
     onMutate: async (orderedIds: number[]) => {
       await queryClient.cancelQueries({ queryKey: ["projects"] })
-      const previous = queryClient.getQueryData<Project[]>(["projects"])
+      const previousQueries = queryClient.getQueriesData<Project[]>({ queryKey: ["projects"] })
       
-      if (previous) {
-        const updatedProjects = reorderProjects(previous, orderedIds)
-        queryClient.setQueryData<Project[]>(["projects"], updatedProjects)
-      }
+      previousQueries.forEach(([queryKey, previous]) => {
+        if (previous) {
+          queryClient.setQueryData<Project[]>(queryKey, reorderProjects(previous, orderedIds))
+        }
+      })
       
-      return { previous }
+      return { previousQueries }
     },
     onError: (_err, _ids, ctx) => {
-      if (ctx?.previous) queryClient.setQueryData(["projects"], ctx.previous)
+      ctx?.previousQueries?.forEach(([queryKey, previous]) => {
+        queryClient.setQueryData(queryKey, previous)
+      })
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] })

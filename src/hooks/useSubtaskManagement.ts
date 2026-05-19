@@ -31,7 +31,7 @@ export function useSubtaskManagement(isCreate: boolean, taskId: number | undefin
       setPendingSubtasks(prev => [...prev, { id: `pending-${Math.random().toString(36).substring(2, 11)}`, title: newSubtaskTitle.trim() }])
     } else {
       const newSub: Subtask = {
-        id: -Math.floor(Math.random() * 1000000),
+        id: -(Math.floor(Math.random() * 1000000) + 1),
         task_id: taskId || 0,
         title: newSubtaskTitle.trim(),
         completed: false,

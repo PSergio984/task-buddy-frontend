@@ -8,9 +8,18 @@ import { useToast } from "@/hooks/use-toast"
  */
 function reorderItems<T extends { id: number }>(items: T[], orderedIds: number[]): T[] {
   const itemMap = new Map(items.map(item => [item.id, item]))
-  return orderedIds
+  const reordered = orderedIds
     .map(id => itemMap.get(id))
     .filter((item): item is T => !!item)
+  
+  // Keep temp items that were optimistically created (non-integer IDs like Math.random())
+  const tempItems = items.filter(item => !Number.isInteger(item.id))
+  
+  // Avoid duplicating items if somehow they were both temp and in orderedIds
+  const reorderedIds = new Set(reordered.map(i => i.id))
+  const uniqueTempItems = tempItems.filter(item => !reorderedIds.has(item.id))
+
+  return [...reordered, ...uniqueTempItems]
 }
 
 /**
@@ -356,6 +365,7 @@ export function useDeleteSubtask() {
       await queryClient.cancelQueries({ queryKey: ["task"] })
 
       const previousTasksQueries = queryClient.getQueriesData<Task[]>({ queryKey: ["tasks"] })
+      const previousTaskQueries = queryClient.getQueriesData<Task>({ queryKey: ["task"] })
       
       previousTasksQueries.forEach(([queryKey, previousTasks]) => {
         if (previousTasks) {
@@ -363,11 +373,23 @@ export function useDeleteSubtask() {
         }
       })
 
-      return { previousTasksQueries }
+      previousTaskQueries.forEach(([queryKey, previousTask]) => {
+        if (previousTask && previousTask.subtasks?.some(s => s.id === id)) {
+          queryClient.setQueryData<Task>(queryKey, {
+            ...previousTask,
+            subtasks: previousTask.subtasks.filter(s => s.id !== id)
+          })
+        }
+      })
+
+      return { previousTasksQueries, previousTaskQueries }
     },
     onError: (_err, _id, context) => {
       context?.previousTasksQueries?.forEach(([queryKey, previousTasks]) => {
         queryClient.setQueryData(queryKey, previousTasks)
+      })
+      context?.previousTaskQueries?.forEach(([queryKey, previousTask]) => {
+        queryClient.setQueryData(queryKey, previousTask)
       })
     },
     onSettled: () => {

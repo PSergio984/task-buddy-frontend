@@ -35,24 +35,36 @@ export function AuditTrail({
     filteredLogs, groupedLogs, fetchAuditLog
   } = useAuditTrail({ limit })
 
-  if (loading && groupedLogs.length === 0) {
-    return <AuditSkeleton limit={limit} className={className} />
-  }
+  const isInitialLoading = loading && groupedLogs.length === 0
 
   const content = (
     <div className={cn("flex flex-col h-full", !hideCard && "p-8")}>
-      <AuditHeader 
-        search={search} 
-        onSearchChange={setSearch}
-        actionFilter={actionFilter}
-        onActionFilterChange={setActionFilter}
-        dateFilter={dateFilter}
-        onDateFilterChange={setDateFilter}
-        showFilters={showFilters}
-        onRefresh={() => fetchAuditLog()}
-      />
+      {(!isInitialLoading || showFilters) && (
+        <AuditHeader 
+          search={search} 
+          onSearchChange={setSearch}
+          actionFilter={actionFilter}
+          onActionFilterChange={setActionFilter}
+          dateFilter={dateFilter}
+          onDateFilterChange={setDateFilter}
+          showFilters={showFilters}
+          onRefresh={() => fetchAuditLog()}
+        />
+      )}
 
-      {error ? (
+      {isInitialLoading ? (
+        <div className="space-y-8 flex-1 mt-6">
+          {Array.from({ length: Math.min(limit, 5) }).map((_, i) => (
+            <div key={`audit-skeleton-${i}`} className="flex gap-5">
+              <Skeleton className="h-12 w-12 rounded-2xl shrink-0" />
+              <div className="flex-1 space-y-2.5 pt-1">
+                <Skeleton className="h-3 w-1/5" />
+                <Skeleton className="h-4 w-3/4" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : error ? (
         <AuditError error={error} onRetry={() => fetchAuditLog()} />
       ) : (
         <AuditContent 
@@ -355,32 +367,6 @@ function LoadMoreButton({ onClick }: Readonly<{ onClick: () => void }>) {
         Load more
       </Button>
     </motion.div>
-  )
-}
-
-function AuditSkeleton({ limit, className }: Readonly<{ limit: number; className?: string }>) {
-  const skeletonIds = Array.from({ length: Math.min(limit, 5) }, (_, i) => `audit-skeleton-${i}`)
-  return (
-    <Card className={cn("overflow-hidden border bg-background/50 p-8 shadow-2xl shadow-primary/5 backdrop-blur-xl rounded-[2.5rem] h-full flex flex-col", className)}>
-      <div className="flex items-center gap-4 mb-8">
-        <Skeleton className="h-10 w-10 rounded-xl" />
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-28" />
-          <Skeleton className="h-3 w-20" />
-        </div>
-      </div>
-      <div className="space-y-8 flex-1">
-        {skeletonIds.map((id) => (
-          <div key={id} className="flex gap-5">
-            <Skeleton className="h-12 w-12 rounded-2xl shrink-0" />
-            <div className="flex-1 space-y-2.5 pt-1">
-              <Skeleton className="h-3 w-1/5" />
-              <Skeleton className="h-4 w-3/4" />
-            </div>
-          </div>
-        ))}
-      </div>
-    </Card>
   )
 }
 

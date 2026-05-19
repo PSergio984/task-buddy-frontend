@@ -183,7 +183,7 @@ export function TimePicker({ id, value, onChange, className }: TimePickerProps) 
                   value={hour}
                   onKeyDown={handleHourKeyDown}
                   readOnly // We handle input via onKeyDown for the "rolling" effect
-                  className="w-16 h-16 text-center text-3xl font-black rounded-2xl border-none bg-white/5 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-text"
+                  className="w-16 h-16 p-0 text-center text-3xl font-black rounded-2xl border-none bg-white/5 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-text"
                   placeholder="12"
                 />
                 <span className="text-[10px] font-bold uppercase text-muted-foreground/50">Hour</span>
@@ -198,7 +198,7 @@ export function TimePicker({ id, value, onChange, className }: TimePickerProps) 
                   value={min}
                   onKeyDown={handleMinKeyDown}
                   readOnly
-                  className="w-16 h-16 text-center text-3xl font-black rounded-2xl border-none bg-white/5 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-text"
+                  className="w-16 h-16 p-0 text-center text-3xl font-black rounded-2xl border-none bg-white/5 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-text"
                   placeholder="00"
                 />
                 <span className="text-[10px] font-bold uppercase text-muted-foreground/50">Min</span>
