@@ -28,6 +28,16 @@ dist-ssr
 playwright-report/
 test-results/
 
-graphify-out/manifest.json 
-graphify-out/cost.json 
-graphify-out/cache/
+# AI/agent artifacts and generated planning outputs
+.agent/
+.agents/
+.claude/
+.planning/
+docs/superpowers/
+graphify-out/
+.github/agents/
+.github/instructions
+design-system
+docs
+.github/copilot-instructions.md
+quality
