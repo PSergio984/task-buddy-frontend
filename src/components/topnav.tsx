@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { Plus, User, LogOut, ChevronDown } from "lucide-react"
+import { Plus, User, LogOut, ChevronDown, CheckSquare2 } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useNavigate } from "react-router-dom"
@@ -70,7 +70,18 @@ export function TopNav({ onNewTask }: Readonly<TopNavProps>) {
     >
       {/* Left: Branding + Greeting */}
       <div className="flex items-center gap-6">
-        <div className="hidden sm:block">
+        {/* Mobile branding */}
+        <div className="flex items-center gap-3 md:hidden">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg">
+            <CheckSquare2 className="h-5 w-5" />
+          </div>
+          <span className="font-heading text-xl font-black tracking-tighter text-foreground uppercase">
+            Task Buddy
+          </span>
+        </div>
+
+        {/* Desktop greeting */}
+        <div className="hidden md:block">
           <h2 className="text-2xl font-heading font-black tracking-tighter text-foreground">
             Welcome back, <span className="text-primary">{user?.username || user?.email?.split('@')[0] || "Friend"}</span>
           </h2>
@@ -86,7 +97,7 @@ export function TopNav({ onNewTask }: Readonly<TopNavProps>) {
         <div className="h-8 w-px bg-border/50 mx-2" />
 
         <div className="flex items-center gap-4 ml-4">
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="hidden sm:block">
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="hidden md:block">
             {isTaskLimitReached ? (
               <Tooltip delayDuration={0}>
                 <TooltipTrigger asChild>

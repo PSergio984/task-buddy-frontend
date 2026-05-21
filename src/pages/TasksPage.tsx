@@ -388,12 +388,12 @@ export function TasksPage() {
         className="w-full"
       >
         <div className="mb-8 flex items-center justify-between">
-          <TabsList className="h-auto bg-transparent p-0 gap-8">
+          <TabsList className="h-auto bg-transparent p-0 gap-4 sm:gap-8">
             {["all", "pending", "completed"].map((status) => (
               <TabsTrigger
                 key={status}
                 value={status}
-                className="relative bg-transparent p-0 text-xl font-black uppercase tracking-tighter text-foreground/30 transition-all data-[state=active]:text-primary hover:text-foreground/60 focus-visible:outline-none"
+                className="relative bg-transparent p-0 text-lg sm:text-xl font-black uppercase tracking-tighter text-foreground/30 transition-all data-[state=active]:text-primary hover:text-foreground/60 focus-visible:outline-none"
               >
                 {status}
                 {activeStatus === status && (

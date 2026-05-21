@@ -601,7 +601,7 @@ function UsernameCard() {
               type="button"
               variant="ghost"
               disabled={isUpdatingUsername}
-              onClick={() => setNewUsername(user?.username ?? "")}
+              onClick={() => setUsernameDraft(null)}
               className="h-12 rounded-xl px-6 font-bold text-muted-foreground transition-all hover:text-foreground"
             >
               Cancel

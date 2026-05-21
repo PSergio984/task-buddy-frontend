@@ -295,7 +295,7 @@ export function Dashboard({
             onValueChange={setActiveStatus}
             className="w-full"
           >
-            <TabsList className="inline-flex h-14 items-center justify-center rounded-[2rem] border-none bg-white/5 p-1.5 backdrop-blur-2xl shadow-xl mb-10">
+            <TabsList className="inline-flex h-14 items-center justify-start rounded-[2rem] border-none bg-white/5 p-1.5 backdrop-blur-2xl shadow-xl mb-10 w-full overflow-x-auto no-scrollbar flex-nowrap md:justify-center">
               {[
                 { value: "all", label: "All" },
                 { value: "today", label: "Due Today" },
@@ -305,7 +305,7 @@ export function Dashboard({
                 <TabsTrigger
                   key={tab.value}
                   value={tab.value}
-                  className="rounded-3xl px-10 text-[10px] font-black tracking-[0.3em] transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-2xl uppercase"
+                  className="rounded-3xl px-3 sm:px-6 md:px-10 text-[9px] sm:text-[10px] tracking-[0.15em] sm:tracking-[0.3em] font-black transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-2xl uppercase"
                 >
                   {tab.label}
                 </TabsTrigger>
