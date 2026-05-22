@@ -62,7 +62,7 @@ export function Dashboard({
   const { mutateAsync: updateSubtask, isPending: isUpdatingSubtask } = useUpdateSubtask()
   const { mutateAsync: deleteSubtask } = useDeleteSubtask()
   const { mutateAsync: detachTag } = useDetachTag()
-  const { activeStatus, setActiveStatus } = useFilters()
+  const { dashboardTimeframe, setDashboardTimeframe } = useFilters()
   
   const { toast } = useToast()
 
@@ -80,18 +80,18 @@ export function Dashboard({
     const weekEnd = endOfWeek(today)
 
     return tasks.filter((task) => {
-      if (activeStatus === "all") return true
+      if (dashboardTimeframe === "all") return true
       if (!task.due_date) return false
 
       const dueDate = parseISO(task.due_date)
-      if (activeStatus === "today") return isToday(dueDate)
-      if (activeStatus === "tomorrow") return isTomorrow(dueDate)
-      if (activeStatus === "week") {
+      if (dashboardTimeframe === "today") return isToday(dueDate)
+      if (dashboardTimeframe === "tomorrow") return isTomorrow(dueDate)
+      if (dashboardTimeframe === "week") {
         return isWithinInterval(dueDate, { start: today, end: weekEnd })
       }
       return true
     })
-  }, [tasks, activeStatus])
+  }, [tasks, dashboardTimeframe])
 
   const filteredTasks = useMemo(() => {
     return timeframeTasks.filter((task) => !task.completed)
@@ -262,9 +262,9 @@ export function Dashboard({
               loading={!!loadingStats}
               timeframeTasks={timeframeTasks}
               timeframeLabel={(() => {
-                if (activeStatus === "all") return "All Time"
-                if (activeStatus === "today") return "Today"
-                if (activeStatus === "tomorrow") return "Tomorrow"
+                if (dashboardTimeframe === "all") return "All Time"
+                if (dashboardTimeframe === "today") return "Today"
+                if (dashboardTimeframe === "tomorrow") return "Tomorrow"
                 return "This Week"
               })()}
             />
@@ -291,8 +291,8 @@ export function Dashboard({
           </div>
 
           <Tabs
-            value={activeStatus}
-            onValueChange={setActiveStatus}
+            value={dashboardTimeframe}
+            onValueChange={setDashboardTimeframe}
             className="w-full"
           >
             <TabsList className="inline-flex h-14 items-center justify-start rounded-[2rem] border-none bg-white/5 p-1.5 backdrop-blur-2xl shadow-xl mb-10 w-full overflow-x-auto no-scrollbar flex-nowrap md:justify-center">
@@ -312,7 +312,7 @@ export function Dashboard({
               ))}
             </TabsList>
 
-            <TabsContent value={activeStatus} className="mt-0 space-y-6 focus-visible:outline-none">    
+            <TabsContent value={dashboardTimeframe} className="mt-0 space-y-6 focus-visible:outline-none">    
               {(() => {
                 if (loadingTasks) return <TaskListSkeleton />
                 if (filteredTasks.length === 0) {

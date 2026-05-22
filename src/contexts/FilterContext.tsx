@@ -6,6 +6,8 @@ interface FilterContextType {
   setActiveSidebarFilter: (filter: string) => void
   activeStatus: string
   setActiveStatus: (status: string) => void
+  dashboardTimeframe: string
+  setDashboardTimeframe: (timeframe: string) => void
   activeTagId: number | null
   setActiveTagId: (tagId: number | null) => void
   selectedPriorities: string[]
@@ -18,6 +20,7 @@ export const FilterContext = createContext<FilterContextType | undefined>(undefi
 export function FilterProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [activeSidebarFilter, setActiveSidebarFilter] = useState("all")
   const [activeStatus, setActiveStatus] = useState("all")
+  const [dashboardTimeframe, setDashboardTimeframe] = useState("all")
   const [activeTagId, setActiveTagId] = useState<number | null>(null)
   const [selectedPriorities, setSelectedPriorities] = useState<string[]>([])
 
@@ -32,6 +35,8 @@ export function FilterProvider({ children }: Readonly<{ children: ReactNode }>) 
     setActiveSidebarFilter,
     activeStatus,
     setActiveStatus,
+    dashboardTimeframe,
+    setDashboardTimeframe,
     activeTagId,
     setActiveTagId,
     selectedPriorities,
@@ -40,6 +45,7 @@ export function FilterProvider({ children }: Readonly<{ children: ReactNode }>) 
   }), [
     activeSidebarFilter, 
     activeStatus, 
+    dashboardTimeframe,
     activeTagId, 
     selectedPriorities,
     clearHubFilters

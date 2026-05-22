@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from "react"
 import { useFilters } from "@/contexts/FilterContext"
 import type { Task } from "@/lib/api"
+import { parseISO, isToday, startOfToday } from "date-fns"
 
 type SortMode = "priority" | "due_date" | "alpha"
 
@@ -17,9 +18,7 @@ export function useTaskFilters(tasks: Task[]) {
   const [sortBy, setSortBy] = useState<SortMode>("priority")
 
   const today = useMemo(() => {
-    const d = new Date()
-    d.setHours(0, 0, 0, 0)
-    return d
+    return startOfToday()
   }, [])
 
   const next7Days = useMemo(() => {
@@ -36,10 +35,10 @@ export function useTaskFilters(tasks: Task[]) {
 
     let matchesSidebar = true
     if (activeSidebarFilter === "today") {
-      const taskDate = task.due_date ? new Date(task.due_date) : null
-      matchesSidebar = taskDate ? taskDate.getTime() >= today.getTime() && taskDate.getTime() < today.getTime() + 86400000 : false
+      const taskDate = task.due_date ? parseISO(task.due_date) : null
+      matchesSidebar = taskDate ? isToday(taskDate) : false
     } else if (activeSidebarFilter === "upcoming") {
-      const taskDate = task.due_date ? new Date(task.due_date) : null
+      const taskDate = task.due_date ? parseISO(task.due_date) : null
       matchesSidebar = taskDate ? taskDate.getTime() >= today.getTime() && taskDate.getTime() < next7Days.getTime() : false
     } else if (activeSidebarFilter === "inbox") {
       matchesSidebar = !task.project_id
@@ -61,7 +60,7 @@ export function useTaskFilters(tasks: Task[]) {
         if (!a.due_date && !b.due_date) return 0
         if (!a.due_date) return 1
         if (!b.due_date) return -1
-        return new Date(a.due_date).getTime() - new Date(b.due_date).getTime()
+        return parseISO(a.due_date).getTime() - parseISO(b.due_date).getTime()
       }
       return a.title.localeCompare(b.title)
     })

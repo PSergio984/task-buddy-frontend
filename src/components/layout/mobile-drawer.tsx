@@ -8,6 +8,7 @@ import { PwaInstallButton } from "../pwa-install-button"
 import { CreateProjectModal } from "@/components/create-project-modal"
 import { CreateTagModal } from "@/components/create-tag-modal"
 import { useSidebarActions } from "@/hooks/useSidebarActions"
+import { useNavigate, useLocation } from "react-router-dom"
 
 interface MobileDrawerProps {
   readonly open: boolean
@@ -17,7 +18,9 @@ interface MobileDrawerProps {
 export function MobileDrawer({ open, onOpenChange }: Readonly<MobileDrawerProps>) {
   const { data: projects = [] } = useProjects()
   const { data: tags = [] } = useTags()
-  const { activeSidebarFilter, setActiveSidebarFilter, activeTagId, setActiveTagId } = useFilters()
+  const { activeSidebarFilter, activeTagId } = useFilters()
+  const navigate = useNavigate()
+  const location = useLocation()
 
   const {
     isCreateProjectModalOpen,
@@ -28,17 +31,23 @@ export function MobileDrawer({ open, onOpenChange }: Readonly<MobileDrawerProps>
     closeCreateTagModal,
     editingProject,
     editingTag,
+    handleSidebarFilterClick,
+    handleProjectClick: baseHandleProjectClick,
+    handleTagClick: baseHandleTagClick,
   } = useSidebarActions()
 
   const handleProjectClick = (id: number) => {
-    setActiveSidebarFilter(`project:${id}`)
-    setActiveTagId(null)
+    baseHandleProjectClick(id)
     onOpenChange(false)
   }
 
   const handleTagClick = (id: number) => {
-    setActiveTagId(id)
-    setActiveSidebarFilter("all")
+    baseHandleTagClick(id)
+    onOpenChange(false)
+  }
+
+  const handleFilterClick = (filter: string) => {
+    handleSidebarFilterClick(filter)
     onOpenChange(false)
   }
 
@@ -50,6 +59,90 @@ export function MobileDrawer({ open, onOpenChange }: Readonly<MobileDrawerProps>
         </SheetHeader>
 
         <div className="space-y-10 overflow-y-auto no-scrollbar pb-20">
+          {/* Navigation */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between px-2">
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-primary">Navigation</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => {
+                  navigate("/dashboard")
+                  onOpenChange(false)
+                }}
+                className={cn(
+                  "flex items-center gap-3 rounded-2xl p-4 transition-all border",
+                  location.pathname === "/dashboard"
+                    ? "bg-primary/10 border-primary/20 text-primary"
+                    : "bg-white/5 border-transparent text-foreground/70"
+                )}
+              >
+                <LucideIcons.LayoutDashboard className="h-5 w-5 text-primary" />
+                <span className="text-sm font-bold">Overview</span>
+              </button>
+              <button
+                onClick={() => {
+                  navigate("/audit-logs")
+                  onOpenChange(false)
+                }}
+                className={cn(
+                  "flex items-center gap-3 rounded-2xl p-4 transition-all border",
+                  location.pathname === "/audit-logs"
+                    ? "bg-primary/10 border-primary/20 text-primary"
+                    : "bg-white/5 border-transparent text-foreground/70"
+                )}
+              >
+                <LucideIcons.Clock className="h-5 w-5 text-sky-400" />
+                <span className="text-sm font-bold">Activity</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Smart Lists */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between px-2">
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-primary">Smart Lists</h3>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={() => handleFilterClick("inbox")}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-2 rounded-2xl p-3 transition-all border text-center",
+                  location.pathname === "/tasks" && activeSidebarFilter === "inbox"
+                    ? "bg-primary/10 border-primary/20 text-primary"
+                    : "bg-white/5 border-transparent text-foreground/70"
+                )}
+              >
+                <LucideIcons.Inbox className="h-5 w-5 text-indigo-400" />
+                <span className="text-xs font-bold">Inbox</span>
+              </button>
+              <button
+                onClick={() => handleFilterClick("today")}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-2 rounded-2xl p-3 transition-all border text-center",
+                  location.pathname === "/tasks" && activeSidebarFilter === "today"
+                    ? "bg-primary/10 border-primary/20 text-primary"
+                    : "bg-white/5 border-transparent text-foreground/70"
+                )}
+              >
+                <LucideIcons.Calendar className="h-5 w-5 text-emerald-400" />
+                <span className="text-xs font-bold">Today</span>
+              </button>
+              <button
+                onClick={() => handleFilterClick("upcoming")}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-2 rounded-2xl p-3 transition-all border text-center",
+                  location.pathname === "/tasks" && activeSidebarFilter === "upcoming"
+                    ? "bg-primary/10 border-primary/20 text-primary"
+                    : "bg-white/5 border-transparent text-foreground/70"
+                )}
+              >
+                <LucideIcons.CalendarRange className="h-5 w-5 text-amber-400" />
+                <span className="text-xs font-bold">Upcoming</span>
+              </button>
+            </div>
+          </div>
+
           {/* Projects */}
           <div className="space-y-4">
             <div className="flex items-center justify-between px-2">

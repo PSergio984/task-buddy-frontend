@@ -6,6 +6,10 @@ import { TaskDetailDrawer } from "@/components/task-detail-drawer"
 import { MobileNav } from "./mobile-nav"
 import { MobileDrawer } from "./mobile-drawer"
 import type { Task } from "@/lib/api"
+import { useStats } from "@/hooks/useStats"
+import { useToast } from "@/hooks/use-toast"
+import { Plus } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 export function MainLayout() {
   const [isCollapsed, setIsCollapsed] = useState(false)
@@ -16,10 +20,27 @@ export function MainLayout() {
   // Mobile Workspace Drawer state
   const [isMobileWorkspaceOpen, setIsMobileWorkspaceOpen] = useState(false)
 
+  const { data: stats } = useStats()
+  const { toast } = useToast()
+  const taskCount = stats?.task_stats?.total_tasks ?? 0
+  const isTaskLimitReached = taskCount >= 1000
+
   const handleOpenNewTask = () => {
     setActiveTask(null)
     setDrawerMode("create")
     setIsDrawerOpen(true)
+  }
+
+  const handleMobileNewTaskClick = () => {
+    if (isTaskLimitReached) {
+      toast({
+        title: "Task limit reached",
+        description: "You have reached the maximum limit of 1000 tasks.",
+        variant: "destructive",
+      })
+      return
+    }
+    handleOpenNewTask()
   }
 
   const handleEditTask = (task: Task) => {
@@ -50,10 +71,24 @@ export function MainLayout() {
 
         {/* Mobile Navigation */}
         <MobileNav 
-          onNewTask={handleOpenNewTask} 
           onOpenWorkspace={() => setIsMobileWorkspaceOpen(true)} 
+          isWorkspaceOpen={isMobileWorkspaceOpen}
         />
       </div>
+
+      {/* Floating Action Button (FAB) for mobile viewports */}
+      <button
+        id="mobile-new-task-fab"
+        onClick={handleMobileNewTaskClick}
+        className={cn(
+          "fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-6 z-40 flex h-14 w-14 items-center justify-center rounded-2xl shadow-lg transition-all duration-200 active:scale-95 md:hidden border border-white/10 backdrop-blur-md",
+          isTaskLimitReached
+            ? "bg-muted text-foreground/20 cursor-not-allowed grayscale"
+            : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-primary/20 hover:scale-105 active:bg-primary/85"
+        )}
+      >
+        <Plus className="h-6 w-6 stroke-[3px]" />
+      </button>
 
       {/* Mobile Workspace Drawer */}
       <MobileDrawer 

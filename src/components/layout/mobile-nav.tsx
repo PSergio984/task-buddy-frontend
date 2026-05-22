@@ -1,91 +1,108 @@
-import { Calendar, Inbox, Plus, ListChecks, Layers } from "lucide-react"
+import { Calendar, LayoutDashboard, Inbox, ListChecks, Layers } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useFilters } from "@/contexts/FilterContext"
-import { useStats } from "@/hooks/useStats"
-import { useToast } from "@/hooks/use-toast"
+import { useNavigate, useLocation } from "react-router-dom"
 
 interface MobileNavProps {
-  readonly onNewTask: () => void
   readonly onOpenWorkspace: () => void
+  readonly isWorkspaceOpen: boolean
 }
 
-export function MobileNav({ onNewTask, onOpenWorkspace }: Readonly<MobileNavProps>) {
-  const { activeSidebarFilter, setActiveSidebarFilter, setActiveTagId } = useFilters()
-  const { data: stats } = useStats()
-  const { toast } = useToast()
+export function MobileNav({ onOpenWorkspace, isWorkspaceOpen }: Readonly<MobileNavProps>) {
+  const { activeSidebarFilter, setActiveSidebarFilter, activeTagId, setActiveTagId, setActiveStatus } = useFilters()
+  const navigate = useNavigate()
+  const location = useLocation()
 
-  const taskCount = stats?.task_stats?.total_tasks ?? 0
-  const isTaskLimitReached = taskCount >= 1000
-
-  const handleNewTaskClick = () => {
-    if (isTaskLimitReached) {
-      toast({
-        title: "Task Limit Reached",
-        description: "You have reached the maximum of 1000 tasks. Please complete or delete some tasks first.",
-        variant: "destructive"
-      })
-      return
-    }
-    onNewTask()
-  }
-
-  const tabs = [
-    { id: "today", label: "Today", icon: Calendar, filter: "today" },
-    { id: "inbox", label: "Inbox", icon: Inbox, filter: "inbox" },
-    { id: "tasks", label: "Tasks", icon: ListChecks, filter: "all" },
-  ]
-
-  const handleTabClick = (filter: string) => {
-    setActiveSidebarFilter(filter)
-    setActiveTagId(null)
-  }
+  const isDashboardActive = location.pathname === "/dashboard"
+  const isTodayActive = location.pathname === "/tasks" && activeSidebarFilter === "today"
+  const isInboxActive = location.pathname === "/tasks" && activeSidebarFilter === "inbox"
+  const isTasksActive = location.pathname === "/tasks" && activeSidebarFilter === "all" && activeTagId === null
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between border-t border-white/5 bg-background/80 px-6 pb-[calc(1rem+var(--safe-area-bottom))] pt-3 backdrop-blur-2xl md:hidden">
-      {tabs.slice(0, 2).map((tab) => (
-        <button
-          key={tab.id}
-          onClick={() => handleTabClick(tab.filter)}
-          className={cn(
-            "flex flex-col items-center gap-1 transition-all",
-            activeSidebarFilter === tab.filter ? "text-primary" : "text-foreground/40"
-          )}
-        >
-          <tab.icon className="h-6 w-6" />
-          <span className="text-[10px] font-black uppercase tracking-widest">{tab.label}</span>
-        </button>
-      ))}
-
-      {/* Center Create Button */}
+    <nav className="fixed bottom-0 left-0 right-0 z-50 grid grid-cols-5 items-center border-t border-white/5 bg-background/80 px-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3.5 backdrop-blur-2xl md:hidden shadow-[0_-8px_32px_rgba(0,0,0,0.15)]">
+      {/* Overview Button */}
       <button
-        onClick={handleNewTaskClick}
+        onClick={() => {
+          if (location.pathname !== "/dashboard") {
+            navigate("/dashboard")
+          }
+        }}
         className={cn(
-          "relative -top-8 flex h-16 w-16 items-center justify-center rounded-2xl shadow-2xl ring-4 ring-background transition-all active:scale-95",
-          isTaskLimitReached 
-            ? "bg-muted text-foreground/20 cursor-not-allowed grayscale" 
-            : "bg-primary text-primary-foreground shadow-primary/40"
+          "flex flex-col items-center justify-center gap-1.5 transition-all duration-200 active:scale-90",
+          isDashboardActive ? "text-primary scale-105 font-bold" : "text-foreground/40 hover:text-foreground/60"
         )}
       >
-        <Plus className="h-8 w-8" />
+        <LayoutDashboard className="h-5 w-5" />
+        <span className="text-[9px] font-black uppercase tracking-widest text-center truncate w-full">Overview</span>
       </button>
 
+      {/* Today Button */}
       <button
-        onClick={() => handleTabClick("all")}
+        onClick={() => {
+          setActiveSidebarFilter("today")
+          setActiveTagId(null)
+          setActiveStatus("all")
+          if (location.pathname !== "/tasks") {
+            navigate("/tasks")
+          }
+        }}
         className={cn(
-          "flex flex-col items-center gap-1 transition-all",
-          activeSidebarFilter === "all" ? "text-primary" : "text-foreground/40"
+          "flex flex-col items-center justify-center gap-1.5 transition-all duration-200 active:scale-90",
+          isTodayActive ? "text-primary scale-105 font-bold" : "text-foreground/40 hover:text-foreground/60"
         )}
       >
-        <ListChecks className="h-6 w-6" />
-        <span className="text-[10px] font-black uppercase tracking-widest">Tasks</span>
+        <Calendar className="h-5 w-5" />
+        <span className="text-[9px] font-black uppercase tracking-widest text-center truncate w-full">Today</span>
       </button>
 
+      {/* Inbox Button */}
+      <button
+        onClick={() => {
+          setActiveSidebarFilter("inbox")
+          setActiveTagId(null)
+          setActiveStatus("all")
+          if (location.pathname !== "/tasks") {
+            navigate("/tasks")
+          }
+        }}
+        className={cn(
+          "flex flex-col items-center justify-center gap-1.5 transition-all duration-200 active:scale-90",
+          isInboxActive ? "text-primary scale-105 font-bold" : "text-foreground/40 hover:text-foreground/60"
+        )}
+      >
+        <Inbox className="h-5 w-5" />
+        <span className="text-[9px] font-black uppercase tracking-widest text-center truncate w-full">Inbox</span>
+      </button>
+
+      {/* Tasks Button */}
+      <button
+        onClick={() => {
+          setActiveSidebarFilter("all")
+          setActiveTagId(null)
+          setActiveStatus("all")
+          if (location.pathname !== "/tasks") {
+            navigate("/tasks")
+          }
+        }}
+        className={cn(
+          "flex flex-col items-center justify-center gap-1.5 transition-all duration-200 active:scale-90",
+          isTasksActive ? "text-primary scale-105 font-bold" : "text-foreground/40 hover:text-foreground/60"
+        )}
+      >
+        <ListChecks className="h-5 w-5" />
+        <span className="text-[9px] font-black uppercase tracking-widest text-center truncate w-full">Tasks</span>
+      </button>
+
+      {/* More Button */}
       <button
         onClick={onOpenWorkspace}
-        className="flex flex-col items-center gap-1 text-foreground/40"
+        className={cn(
+          "flex flex-col items-center justify-center gap-1.5 transition-all duration-200 active:scale-90",
+          isWorkspaceOpen ? "text-primary scale-105 font-bold" : "text-foreground/40 hover:text-foreground/60"
+        )}
       >
-        <Layers className="h-6 w-6" />
-        <span className="text-[10px] font-black uppercase tracking-widest">More</span>
+        <Layers className="h-5 w-5" />
+        <span className="text-[9px] font-black uppercase tracking-widest text-center truncate w-full">More</span>
       </button>
     </nav>
   )
