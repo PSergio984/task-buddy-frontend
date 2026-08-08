@@ -10,6 +10,7 @@ const FORWARD_HEADERS = [
   "accept",
   "if-match",
   "prefer",
+  "x-forwarded-for",
 ]
 
 const FORWARD_RESPONSE_HEADERS = [
