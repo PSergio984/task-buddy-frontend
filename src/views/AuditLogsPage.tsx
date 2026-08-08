@@ -27,6 +27,7 @@ export function AuditLogsPage() {
             <Button
               variant="ghost"
               size="icon"
+              aria-label="Back to dashboard"
               onClick={() => navigate("/dashboard")}
               className="rounded-full hover:bg-muted shrink-0"
             >

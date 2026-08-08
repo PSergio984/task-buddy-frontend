@@ -80,6 +80,7 @@ export function TasksHeader({
 
           <Button 
             variant="outline" 
+            aria-expanded={isFiltersExpanded}
             onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
             className={cn(
               "h-12 md:h-14 px-6 rounded-2xl border-white/10 backdrop-blur-xl font-bold flex items-center gap-3 transition-all shadow-xl",
@@ -124,6 +125,7 @@ export function TasksHeader({
               {["HIGH", "MEDIUM", "LOW"].map((p) => (
                 <button
                   key={p}
+                  aria-pressed={selectedPriorities.includes(p)}
                   onClick={() => togglePriority(p)}
                   className={cn(
                     "px-6 py-2.5 rounded-xl text-[10px] font-black tracking-widest transition-all uppercase border-2",
