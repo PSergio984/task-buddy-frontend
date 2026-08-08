@@ -1,7 +1,7 @@
 "use client"
 
+import { useEffect, type ReactNode } from "react"
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom"
-import type { ReactNode } from "react"
 
 import { PublicShell } from "@/components/public-shell"
 import { LoadingScreen, PublicRoute } from "@/contexts/ProtectedRoute"
@@ -13,20 +13,38 @@ import { RegisterPage } from "@/views/RegisterPage"
 import { ResetPasswordPage } from "@/views/ResetPasswordPage"
 import { VerifyEmailPage } from "@/views/VerifyEmailPage"
 
+function PublicElement({ children }: Readonly<{ children: ReactNode }>) {
+  return <PublicRoute>{children}</PublicRoute>
+}
+
+const publicRoutes: Record<string, ReactNode> = {
+  "/login": <PublicElement><LoginPage /></PublicElement>,
+  "/register": <PublicElement><RegisterPage /></PublicElement>,
+  "/forgot-password": <PublicElement><ForgotPasswordPage /></PublicElement>,
+  "/reset-password/:token": <PublicElement><ResetPasswordPage /></PublicElement>,
+  "/verify-email": <VerifyEmailPage />,
+}
+
+function HardRedirect() {
+  useEffect(() => {
+    window.location.reload()
+  }, [])
+  return null
+}
+
 function AuthRoute({ path, element }: { readonly path: string; readonly element: ReactNode }) {
   return (
     <PublicShell>
       <BrowserRouter>
         <Routes>
-          <Route path={path} element={element} />
+          {Object.entries(publicRoutes).map(([routePath, routeElement]) => (
+            <Route key={routePath} path={routePath} element={routePath === path ? element : routeElement} />
+          ))}
+          <Route path="*" element={<HardRedirect />} />
         </Routes>
       </BrowserRouter>
     </PublicShell>
   )
-}
-
-function PublicElement({ children }: Readonly<{ children: ReactNode }>) {
-  return <PublicRoute>{children}</PublicRoute>
 }
 
 function LandingElement() {
@@ -45,6 +63,7 @@ export function PublicLanding() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<LandingElement />} />
+          <Route path="*" element={<HardRedirect />} />
         </Routes>
       </BrowserRouter>
     </PublicShell>

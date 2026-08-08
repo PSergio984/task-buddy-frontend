@@ -14,14 +14,7 @@ const withSerwist = withSerwistInit({
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: `${backendUrl || "http://127.0.0.1:8000"}/api/:path*`,
-      },
-    ]
-  },
+  skipTrailingSlashRedirect: true,
 }
 
 export default withSerwist(nextConfig)
