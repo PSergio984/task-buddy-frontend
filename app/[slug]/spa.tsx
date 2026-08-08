@@ -9,13 +9,11 @@ import { SwRegistration } from "@/components/sw-registration"
 
 export default function SPA() {
   return (
-    <>
-      <AppProviders>
-        <App />
-      </AppProviders>
+    <AppProviders>
+      <App />
       <RealtimeWatcher />
       <ReactQueryDevtools initialIsOpen={false} />
       <SwRegistration />
-    </>
+    </AppProviders>
   )
 }

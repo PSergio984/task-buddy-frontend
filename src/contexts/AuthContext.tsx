@@ -9,7 +9,7 @@ import {
 } from "react"
 import { api } from "@/lib/api"
 import axios from "axios"
-import { hasLocalStorage } from "@/lib/is-browser"
+import { safeLocalStorageGet, safeLocalStorageRemove, safeLocalStorageSet } from "@/lib/is-browser"
 import { queryClient } from "@/lib/query-client"
 import {
   getAuthErrorMessage,
@@ -41,13 +41,12 @@ const USER_STORAGE_KEY = "auth_user"
 
 export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [user, setUser] = useState<AuthUser | null>(() => {
-    if (!hasLocalStorage()) return null
-    const s = globalThis.localStorage.getItem(USER_STORAGE_KEY)
+    const s = safeLocalStorageGet(USER_STORAGE_KEY)
     if (!s) return null
     try {
       return JSON.parse(s) as AuthUser
     } catch {
-      globalThis.localStorage.removeItem(USER_STORAGE_KEY)
+      safeLocalStorageRemove(USER_STORAGE_KEY)
       return null
     }
   })
@@ -64,7 +63,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     }
     setUser(null)
     setError(null)
-    globalThis.localStorage.removeItem(USER_STORAGE_KEY)
+    safeLocalStorageRemove(USER_STORAGE_KEY)
     queryClient.clear()
   }, [])
 
@@ -75,7 +74,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       const nextUser = normalizeAuthUser(response.data)
       if (nextUser) {
         setUser(nextUser)
-        globalThis.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextUser))
+        safeLocalStorageSet(USER_STORAGE_KEY, JSON.stringify(nextUser))
       }
       setError(null)
     } catch (err: unknown) {
@@ -83,7 +82,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         if (err.response?.status === 401) {
           // Token is invalid/expired or not present
           setUser(null)
-          globalThis.localStorage.removeItem(USER_STORAGE_KEY)
+          safeLocalStorageRemove(USER_STORAGE_KEY)
         } else {
           setError((err.response?.data as { detail?: string })?.detail || "Failed to refresh user profile")
         }
@@ -149,7 +148,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
           )
         }
         setUser(nextUser)
-        globalThis.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextUser))
+        safeLocalStorageSet(USER_STORAGE_KEY, JSON.stringify(nextUser))
       } catch (err) {
         setError(getAuthErrorMessage(err, "Login failed."))
         throw err
@@ -181,7 +180,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         const nextUser = normalizeAuthUser(response.data)
         if (nextUser) {
           setUser(nextUser)
-          globalThis.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextUser))
+          safeLocalStorageSet(USER_STORAGE_KEY, JSON.stringify(nextUser))
         }
         setError(null)
         } catch (err) {

@@ -1,6 +1,12 @@
 import type { NextConfig } from "next"
 import withSerwistInit from "@serwist/next"
 
+const backendUrl = process.env.BACKEND_URL
+
+if (process.env.NODE_ENV === "production" && !backendUrl) {
+  throw new Error("BACKEND_URL is required in production")
+}
+
 const withSerwist = withSerwistInit({
   swSrc: "app/sw.ts",
   swDest: "public/sw.js",
@@ -12,7 +18,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: `${process.env.BACKEND_URL || "http://127.0.0.1:8000"}/api/:path*`,
+        destination: `${backendUrl || "http://127.0.0.1:8000"}/api/:path*`,
       },
     ]
   },

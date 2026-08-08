@@ -31,12 +31,14 @@ const RETRY_MAX_MS = 60000
 
 export function RealtimeWatcher() {
   const { user } = useAuth()
+  const userId = user?.id
+  const emailConfirmed = user?.email_confirmed !== false
   const channelsRef = useRef<RealtimeChannel[]>([])
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   useEffect(() => {
     const client = getRealtimeClient()
-    if (!client || !user || user.email_confirmed === false) return undefined
+    if (!client || !userId || !emailConfirmed) return undefined
 
     let disposed = false
     let retryMs = RETRY_BASE_MS
@@ -71,6 +73,10 @@ export function RealtimeWatcher() {
 
       if (subscribe) {
         for (const mapping of TABLE_MAPPINGS) {
+          // NOTE: subscribing with event "*" means DELETE events are received
+          // even for rows outside the subscriber's RLS-readable set (PK +
+          // existence only). Accepted by design — see wayfinder F-03/B-03
+          // ("delete leak accepted", single-user app, no REPLICA IDENTITY FULL).
           const channel = client
             .channel(`postgres_changes:${mapping.table}`)
             .on(
@@ -105,7 +111,7 @@ export function RealtimeWatcher() {
       }
       channelsRef.current = []
     }
-  }, [user])
+  }, [userId, emailConfirmed])
 
   return null
 }

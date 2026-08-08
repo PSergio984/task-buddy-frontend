@@ -11,8 +11,6 @@ const PUBLIC_PATHS = new Set([
   "/sw.js",
 ])
 
-const STATIC_ASSET_RE = /\.(png|jpg|jpeg|svg|ico|webp|avif|woff2?|ttf|otf|eot|css|js|json)$/
-
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
@@ -20,7 +18,7 @@ export function proxy(request: NextRequest) {
     PUBLIC_PATHS.has(pathname) ||
     pathname.startsWith("/reset-password/") ||
     pathname.startsWith("/api/") ||
-    STATIC_ASSET_RE.test(pathname)
+    pathname.startsWith("/assets/")
 
   if (!isPublic && !request.cookies.get("access_token")?.value) {
     return NextResponse.redirect(new URL("/login", request.url))

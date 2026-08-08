@@ -45,7 +45,14 @@ self.addEventListener("notificationclick", (event) => {
   event.notification.close()
   const action_url = event.notification.data?.action_url
 
-  if (action_url) {
+  if (typeof action_url === "string") {
+    const target = new URL(action_url, self.location.origin)
+    if (target.origin !== self.location.origin) {
+      console.warn("Ignoring cross-origin notification target:", action_url)
+      return
+    }
+    const path = target.pathname + target.search
+
     event.waitUntil(
       self.clients
         .matchAll({ type: "window", includeUncontrolled: true })
@@ -55,11 +62,11 @@ self.addEventListener("notificationclick", (event) => {
               client.url.includes(self.location.origin) &&
               "focus" in client
             ) {
-              return client.focus().then((c) => c.navigate(action_url))
+              return client.focus().then((c) => c.navigate(path))
             }
           }
           if (self.clients.openWindow) {
-            return self.clients.openWindow(action_url)
+            return self.clients.openWindow(path)
           }
         })
     )

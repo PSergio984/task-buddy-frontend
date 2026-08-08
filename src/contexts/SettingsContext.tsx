@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useMemo, useEffect, type ReactNode } from "react"
-import { hasLocalStorage } from "@/lib/is-browser"
+import { safeLocalStorageGet, safeLocalStorageSet } from "@/lib/is-browser"
 
 export type TimeFormat = "12h" | "24h"
 
@@ -14,14 +14,12 @@ const STORAGE_KEY = "pref_time_format"
 
 export function SettingsProvider({ children }: { readonly children: ReactNode }) {
   const [timeFormat, setTimeFormat] = useState<TimeFormat>(() => {
-    if (!hasLocalStorage()) return "12h"
-    const saved = globalThis.localStorage.getItem(STORAGE_KEY)
+    const saved = safeLocalStorageGet(STORAGE_KEY)
     return (saved as TimeFormat) || "12h"
   })
 
   useEffect(() => {
-    if (!hasLocalStorage()) return
-    globalThis.localStorage.setItem(STORAGE_KEY, timeFormat)
+    safeLocalStorageSet(STORAGE_KEY, timeFormat)
   }, [timeFormat])
 
   const value = useMemo(() => ({ timeFormat, setTimeFormat }), [timeFormat])
@@ -32,8 +30,10 @@ export function SettingsProvider({ children }: { readonly children: ReactNode })
 // eslint-disable-next-line react-refresh/only-export-components
 export function useSettings() {
   const context = useContext(SettingsContext)
+
   if (context === undefined) {
     throw new Error("useSettings must be used within a SettingsProvider")
   }
+
   return context
 }
