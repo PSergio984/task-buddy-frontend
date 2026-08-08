@@ -58,6 +58,7 @@ export function RealtimeWatcher() {
         tokenData = response.data
       } catch (err) {
         console.error("Realtime token fetch failed:", err)
+        if (disposed) return
         retryMs = Math.min(retryMs * 2, RETRY_MAX_MS)
         scheduleTokenRefresh(retryMs)
         return

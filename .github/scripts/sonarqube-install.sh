@@ -38,7 +38,16 @@ detect_platform() {
           ;;
       esac
       ;;
-    macos) echo "macos-arm64" ;;
+    macos)
+      case "$(uname -m)" in
+        aarch64 | arm64) echo "macos-arm64" ;;
+        x86_64 | amd64) echo "macos-x86-64" ;;
+        *)
+          echo "Unsupported macOS architecture: $(uname -m)" >&2
+          exit 1
+          ;;
+      esac
+      ;;
   esac
 }
 
@@ -72,16 +81,26 @@ download() {
 
 # Fetches the CLI from binaries.sonarsource.com (sonar self-update runs this script from GitHub).
 # Tries .bin first, then .exe for legacy CDN builds. Remove .exe fallback once .bin is released.
-# SHA-256 of the linux-x86-64 CLI artifact at version 1.5.0.4158, recorded at vendoring time;
-# verified before the downloaded artifact is executed.
-EXPECTED_SHA256_LINUX_X86_64="DBD4EE20257F73010AD7F8A2C2552373039EE3610AF252416E6F13F7FF915460"
+# SHA-256 values recorded at vendoring time for version 1.5.0.4158 (.bin artifacts).
+# Artifacts without a recorded checksum (e.g. the .exe fallback) are refused.
+ARTIFACT_SHA256_LINUX_X86_64="DBD4EE20257F73010AD7F8A2C2552373039EE3610AF252416E6F13F7FF915460"
+ARTIFACT_SHA256_LINUX_ARM64="596018EC03F6282588E6BDE56904625A4ABD0C65C3E4DC3E05A9ECD28381C644"
+ARTIFACT_SHA256_MACOS_ARM64="181DF66A25B6CAB6A4428F782FE279E01374088C1F3240FD946F7B91D35457E6"
 
 verify_checksum() {
   local dest="$1"
   local platform="$2"
-  if [[ "$platform" == "linux-x86-64" ]]; then
-    printf '%s  %s\n' "$EXPECTED_SHA256_LINUX_X86_64" "$dest" | sha256sum -c - >/dev/null
+  local expected=""
+  case "$platform" in
+    linux-x86-64) expected="$ARTIFACT_SHA256_LINUX_X86_64" ;;
+    linux-arm64) expected="$ARTIFACT_SHA256_LINUX_ARM64" ;;
+    macos-arm64) expected="$ARTIFACT_SHA256_MACOS_ARM64" ;;
+  esac
+  if [[ -z "$expected" ]]; then
+    echo "Error: no recorded checksum for platform $platform; refusing to install an unverified artifact." >&2
+    exit 1
   fi
+  printf '%s  %s\n' "$expected" "$dest" | sha256sum -c - >/dev/null
 }
 
 download_cli_artifact() {

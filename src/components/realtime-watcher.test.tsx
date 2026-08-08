@@ -151,5 +151,30 @@ describe("RealtimeWatcher", () => {
     unmount()
     expect(fake.client.removeChannel).toHaveBeenCalledTimes(5)
   })
+
+  it("does not schedule a retry timer after unmount when minting fails", async () => {
+    vi.useFakeTimers()
+    try {
+      vi.spyOn(apiModule.api, "post").mockRejectedValue(new Error("network down"))
+      vi.spyOn(console, "error").mockImplementation(() => {})
+      const fake = createFakeSupabase()
+      vi.spyOn(realtimeClient, "getRealtimeClient").mockReturnValue(
+        fake.client as unknown as ReturnType<typeof realtimeClient.getRealtimeClient>
+      )
+
+      const { unmount } = render(<RealtimeWatcher />)
+      unmount()
+
+      // Let the rejected mint promise settle after teardown.
+      await vi.advanceTimersByTimeAsync(0)
+      await Promise.resolve()
+
+      // A stale rejection must not leave a retry timer behind.
+      expect(vi.getTimerCount()).toBe(0)
+      expect(apiModule.api.post).toHaveBeenCalledTimes(1)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
 })
 

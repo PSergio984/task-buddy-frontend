@@ -3,8 +3,8 @@ import withSerwistInit from "@serwist/next"
 
 const backendUrl = process.env.BACKEND_URL
 
-if (process.env.NODE_ENV === "production" && !backendUrl) {
-  throw new Error("BACKEND_URL is required in production")
+if (!backendUrl || !/^https?:\/\//.test(backendUrl)) {
+  throw new Error("BACKEND_URL is required and must be an http(s) URL")
 }
 
 const withSerwist = withSerwistInit({

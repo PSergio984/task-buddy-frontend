@@ -17,9 +17,9 @@ const FORWARD_HEADERS = [
 
 const FORWARD_RESPONSE_HEADERS = [
   "content-type",
-  "content-length",
   "cache-control",
   "etag",
+  "location",
   "www-authenticate",
   "x-ratelimit-limit",
   "x-ratelimit-remaining",
@@ -31,8 +31,10 @@ async function handler(
   request: NextRequest,
   ctx: { params: Promise<{ path: string[] }> }
 ) {
-  const { path } = await ctx.params
-  const backendPath = `/api/${path.join("/")}${request.nextUrl.search}`
+  await ctx.params
+  // Preserve the incoming pathname exactly (including trailing slashes) so the
+  // backend matches its registered routes directly, without redirects.
+  const backendPath = `${request.nextUrl.pathname}${request.nextUrl.search}`
 
   const headers = new Headers()
   const cookie = request.headers.get("cookie")
