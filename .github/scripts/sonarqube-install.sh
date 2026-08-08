@@ -11,10 +11,6 @@ cleanup() {
 trap cleanup EXIT
 
 BASE_URL="https://binaries.sonarsource.com/Distribution/sonarqube-cli"
-# Older self-update implementations scrape a literal `version="..."` from this
-# file before executing it. Keep this compatibility marker present, but unused:
-# the real version now comes from stable.version at runtime. Release automation
-# keeps this marker aligned with the latest released CLI version.
 version="1.5.0.4158"
 
 detect_os() {
@@ -44,12 +40,6 @@ detect_platform() {
       ;;
     macos) echo "macos-arm64" ;;
   esac
-}
-
-resolve_latest_version() {
-  # Pinned to the marker version: stable.version is NOT fetched so the
-  # installed artifact is reproducible and checksum-verifiable.
-  printf '%s\n' "$version"
 }
 
 # Optional third argument "quiet": return 1 on failure instead of exiting (stderr suppressed).
@@ -184,9 +174,10 @@ main() {
   local platform
   platform="$(detect_platform)"
 
-  local version
-  version="$(resolve_latest_version)"
-  echo "Latest version: $version"
+  # Pinned for reproducible, checksum-verified installs (stable.version is
+  # deliberately not fetched at runtime).
+  local version="1.5.0.4158"
+  echo "Installing version: $version"
 
   local os
   os="$(detect_os)"
