@@ -227,6 +227,8 @@ function SubtaskItem({ sub, handleToggleSubtask, handleDeleteSubtask, attributes
       <button 
         type="button"
         aria-label={isCompleted ? "Mark subtask as incomplete" : "Mark subtask as complete"}
+        disabled={isPending}
+        aria-disabled={isPending}
         className="shrink-0 cursor-pointer hover:text-primary transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full p-0 border-none bg-transparent"
         onClick={() => !isPending && handleToggleSubtask(sub.id as number, !isCompleted)}
       >

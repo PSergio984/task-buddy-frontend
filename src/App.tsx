@@ -9,17 +9,17 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 import { NotificationWatcher } from "@/components/notification-watcher"
 
 // Lazy-loaded pages
-const LoginPage = lazy(() => import("@/pages/LoginPage").then(m => ({ default: m.LoginPage })))
-const RegisterPage = lazy(() => import("@/pages/RegisterPage").then(m => ({ default: m.RegisterPage })))
-const LandingPage = lazy(() => import("@/pages/LandingPage").then(m => ({ default: m.LandingPage })))
-const ForgotPasswordPage = lazy(() => import("@/pages/ForgotPasswordPage").then(m => ({ default: m.ForgotPasswordPage })))
-const ProfilePage = lazy(() => import("@/pages/ProfilePage").then(m => ({ default: m.ProfilePage })))
-const AuditLogsPage = lazy(() => import("@/pages/AuditLogsPage").then(m => ({ default: m.AuditLogsPage })))
-const TasksPage = lazy(() => import("@/pages/TasksPage").then(m => ({ default: m.TasksPage })))
-const ResetPasswordPage = lazy(() => import("@/pages/ResetPasswordPage").then(m => ({ default: m.ResetPasswordPage })))
-const VerifyEmailPage = lazy(() => import("@/pages/VerifyEmailPage").then(m => ({ default: m.VerifyEmailPage })))
+const LoginPage = lazy(() => import("@/views/LoginPage").then(m => ({ default: m.LoginPage })))
+const RegisterPage = lazy(() => import("@/views/RegisterPage").then(m => ({ default: m.RegisterPage })))
+const LandingPage = lazy(() => import("@/views/LandingPage").then(m => ({ default: m.LandingPage })))
+const ForgotPasswordPage = lazy(() => import("@/views/ForgotPasswordPage").then(m => ({ default: m.ForgotPasswordPage })))
+const ProfilePage = lazy(() => import("@/views/ProfilePage").then(m => ({ default: m.ProfilePage })))
+const AuditLogsPage = lazy(() => import("@/views/AuditLogsPage").then(m => ({ default: m.AuditLogsPage })))
+const TasksPage = lazy(() => import("@/views/TasksPage").then(m => ({ default: m.TasksPage })))
+const ResetPasswordPage = lazy(() => import("@/views/ResetPasswordPage").then(m => ({ default: m.ResetPasswordPage })))
+const VerifyEmailPage = lazy(() => import("@/views/VerifyEmailPage").then(m => ({ default: m.VerifyEmailPage })))
 const MainLayout = lazy(() => import("@/components/layout/main-layout").then(m => ({ default: m.MainLayout })))
-const DashboardDemo = lazy(() => import("@/pages/DashboardDemo").then(m => ({ default: m.DashboardDemo })))
+const DashboardDemo = lazy(() => import("@/views/DashboardDemo").then(m => ({ default: m.DashboardDemo })))
 
 function RootElement() {
   const { user, loading } = useAuth()

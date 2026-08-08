@@ -47,7 +47,7 @@ export function useCreateTag() {
   return useMutation({
     mutationFn: ({
       idempotencyKey,
-      silent,
+      silent: _silent,
       ...newTag
     }: Parameters<typeof tagsApi.create>[0] & {
       silent?: boolean

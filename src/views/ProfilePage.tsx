@@ -2,6 +2,7 @@ import React, { useState } from "react"
 import { motion } from "framer-motion"
 import { useAuth } from "@/contexts/AuthContext"
 import { useSettings } from "@/contexts/SettingsContext"
+import { API_BASE_URL } from "@/lib/config"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
@@ -62,9 +63,6 @@ function getErrorMessage(err: unknown): string {
   return err instanceof Error ? err.message : "An unexpected error occurred"
 }
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000"
-
 const PASSWORD_RULES = [
   { label: "At least 8 characters", test: (pw: string) => pw.length >= 8 },
   { label: "One uppercase letter", test: (pw: string) => /[A-Z]/.test(pw) },
@@ -105,6 +103,7 @@ export function ProfilePage() {
             <Button
               variant="ghost"
               size="icon"
+              aria-label="Back to dashboard"
               onClick={() => navigate("/dashboard")}
               className="rounded-full hover:bg-muted"
             >

@@ -1,15 +1,19 @@
-import { defineConfig, mergeConfig } from 'vitest/config'
-import viteConfig from './vite.config'
+import path from "node:path"
+import react from "@vitejs/plugin-react"
+import { defineConfig } from "vitest/config"
 
-export default mergeConfig(
-  viteConfig,
-  defineConfig({
-    test: {
-      globals: true,
-      environment: 'jsdom',
-      setupFiles: './src/test/setup.ts',
-      css: true,
-      exclude: ['**/node_modules/**', '**/.worktrees/**', 'tests/**'],
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
     },
-  })
-)
+  },
+  test: {
+    globals: true,
+    environment: "jsdom",
+    setupFiles: "./src/test/setup.ts",
+    css: true,
+    exclude: ["**/node_modules/**", "**/.worktrees/**", "tests/**"],
+  },
+})
