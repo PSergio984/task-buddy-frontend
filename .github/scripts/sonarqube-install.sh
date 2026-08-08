@@ -47,23 +47,9 @@ detect_platform() {
 }
 
 resolve_latest_version() {
-  local version
-  if command -v curl &>/dev/null; then
-    version="$(curl -fsSL "$BASE_URL/stable.version")"
-  elif command -v wget &>/dev/null; then
-    version="$(wget -qO- "$BASE_URL/stable.version")"
-  else
-    echo "Error: neither curl nor wget is available. Please install one and retry." >&2
-    exit 1
-  fi
-
-  version="$(printf '%s' "$version" | tr -d '[:space:]')"
-  if [[ -z "$version" ]]; then
-    echo "Error: could not determine the latest version." >&2
-    exit 1
-  fi
-
-  echo "$version"
+  # Pinned to the marker version: stable.version is NOT fetched so the
+  # installed artifact is reproducible and checksum-verifiable.
+  printf '%s\n' "$version"
 }
 
 # Optional third argument "quiet": return 1 on failure instead of exiting (stderr suppressed).
@@ -73,9 +59,9 @@ download() {
   local quiet="${3:-}"
   if command -v curl &>/dev/null; then
     if [[ -n "$quiet" ]]; then
-      curl -fsSL "$url" -o "$dest" 2>/dev/null
+      curl -fsSL --proto '=https' "$url" -o "$dest" 2>/dev/null
     else
-      curl -fsSL "$url" -o "$dest"
+      curl -fsSL --proto '=https' "$url" -o "$dest"
     fi
     return
   fi
@@ -96,6 +82,18 @@ download() {
 
 # Fetches the CLI from binaries.sonarsource.com (sonar self-update runs this script from GitHub).
 # Tries .bin first, then .exe for legacy CDN builds. Remove .exe fallback once .bin is released.
+# SHA-256 of the linux-x86-64 CLI artifact at version 1.5.0.4158, recorded at vendoring time;
+# verified before the downloaded artifact is executed.
+EXPECTED_SHA256_LINUX_X86_64="DBD4EE20257F73010AD7F8A2C2552373039EE3610AF252416E6F13F7FF915460"
+
+verify_checksum() {
+  local dest="$1"
+  local platform="$2"
+  if [[ "$platform" == "linux-x86-64" ]]; then
+    printf '%s  %s\n' "$EXPECTED_SHA256_LINUX_X86_64" "$dest" | sha256sum -c - >/dev/null
+  fi
+}
+
 download_cli_artifact() {
   local version="$1"
   local platform="$2"
@@ -107,6 +105,7 @@ download_cli_artifact() {
 
   if download "$url_bin" "$dest" quiet; then
     echo "  $url_bin"
+    verify_checksum "$dest" "$platform"
     return 0
   fi
   if download "$url_exe" "$dest" quiet; then
