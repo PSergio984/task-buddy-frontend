@@ -119,6 +119,7 @@ download_cli_artifact() {
   fi
   if download "$url_exe" "$dest" quiet; then
     echo "  $url_exe"
+    verify_checksum "$dest" "$platform"
     return 0
   fi
 
