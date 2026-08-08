@@ -56,27 +56,13 @@ download() {
   local url="$1"
   local dest="$2"
   local quiet="${3:-}"
-  if command -v curl &>/dev/null; then
-    if [[ -n "$quiet" ]]; then
-      curl -fsSL --proto '=https' "$url" -o "$dest" 2>/dev/null
-    else
-      curl -fsSL --proto '=https' "$url" -o "$dest"
-    fi
-    return
-  fi
-  if command -v wget &>/dev/null; then
-    if [[ -n "$quiet" ]]; then
-      wget -qO "$dest" "$url" 2>/dev/null
-    else
-      wget -qO "$dest" "$url"
-    fi
-    return
-  fi
+  # curl is guaranteed on GitHub runners; HTTPS is enforced with --proto.
   if [[ -n "$quiet" ]]; then
-    return 1
+    curl -fsSL --proto '=https' "$url" -o "$dest" 2>/dev/null
+  else
+    curl -fsSL --proto '=https' "$url" -o "$dest"
   fi
-  echo "Error: neither curl nor wget is available. Please install one and retry." >&2
-  exit 1
+  return
 }
 
 # Fetches the CLI from binaries.sonarsource.com (sonar self-update runs this script from GitHub).

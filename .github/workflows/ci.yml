@@ -1,4 +1,4 @@
-name: CI
+﻿name: CI
 
 on:
   push:
@@ -34,7 +34,7 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - name: Install Dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
       - name: Run Linter
         run: npm run lint
 
@@ -51,7 +51,7 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - name: Install Dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
       - name: Run Typecheck
         run: npm run typecheck
 
@@ -68,7 +68,7 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - name: Install Dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
       - name: Run Tests
         run: npm run test:ci
 
@@ -86,7 +86,7 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - name: Install Dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
       - name: Cache Next.js Build
         uses: actions/cache@v4
         with:
