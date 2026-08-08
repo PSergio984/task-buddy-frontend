@@ -10,6 +10,8 @@ const FORWARD_HEADERS = [
   "accept",
   "if-match",
   "prefer",
+  // Trusted proxy chain: Vercel (prod) overwrites x-forwarded-for with the
+  // real client IP before this handler runs; local dev is single-user.
   "x-forwarded-for",
 ]
 
