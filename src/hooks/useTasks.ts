@@ -172,7 +172,7 @@ export function useCreateTask() {
   return useMutation({
     mutationFn: ({
       idempotencyKey,
-      silent,
+      silent: _silent,
       ...newTaskData
     }: Parameters<typeof tasksApi.create>[0] & {
       silent?: boolean

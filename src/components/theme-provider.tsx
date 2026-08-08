@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import * as React from "react"
+import { hasLocalStorage } from "@/lib/is-browser"
 
 type Theme = "dark" | "light" | "system"
 type ResolvedTheme = "dark" | "light"
@@ -66,9 +67,11 @@ export function ThemeProvider({
   ...props
 }: Readonly<ThemeProviderProps>) {
   const [theme, setThemeState] = React.useState<Theme>(() => {
-    const storedTheme = globalThis.localStorage.getItem(storageKey)
-    if (isTheme(storedTheme)) {
-      return storedTheme
+    if (hasLocalStorage()) {
+      const storedTheme = globalThis.localStorage.getItem(storageKey)
+      if (isTheme(storedTheme)) {
+        return storedTheme
+      }
     }
 
     return defaultTheme
@@ -76,7 +79,9 @@ export function ThemeProvider({
 
   const setTheme = React.useCallback(
     (nextTheme: Theme) => {
-      globalThis.localStorage.setItem(storageKey, nextTheme)
+      if (hasLocalStorage()) {
+        globalThis.localStorage.setItem(storageKey, nextTheme)
+      }
       setThemeState(nextTheme)
     },
     [storageKey]

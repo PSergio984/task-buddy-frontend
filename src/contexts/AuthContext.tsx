@@ -9,6 +9,7 @@ import {
 } from "react"
 import { api } from "@/lib/api"
 import axios from "axios"
+import { hasLocalStorage } from "@/lib/is-browser"
 import { queryClient } from "@/lib/query-client"
 import {
   getAuthErrorMessage,
@@ -40,6 +41,7 @@ const USER_STORAGE_KEY = "auth_user"
 
 export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [user, setUser] = useState<AuthUser | null>(() => {
+    if (!hasLocalStorage()) return null
     const s = globalThis.localStorage.getItem(USER_STORAGE_KEY)
     if (!s) return null
     try {
