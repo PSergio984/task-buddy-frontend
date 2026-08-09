@@ -28,7 +28,13 @@ export function TaskList({
 }: TaskListProps) {
   if (loading) {
     return (
-      <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 gap-6" : "flex flex-col gap-4"}>
+      <div
+        className={
+          viewMode === "grid"
+            ? "grid grid-cols-1 gap-6 md:grid-cols-2"
+            : "flex flex-col gap-4"
+        }
+      >
         {["t1", "t2", "t3", "t4"].map((id) => (
           <Skeleton key={id} className="h-[200px] rounded-[2.5rem]" />
         ))}
@@ -46,14 +52,24 @@ export function TaskList({
         <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[2rem] bg-muted/50">
           <ListChecks className="h-10 w-10 text-muted-foreground/20" />
         </div>
-        <h3 className="text-2xl font-bold text-foreground mb-2">No tasks found</h3>
-        <p className="text-muted-foreground font-medium">Clear as a summer sky. Ready for new ideas?</p>
+        <h3 className="mb-2 text-2xl font-bold text-foreground">
+          No tasks found
+        </h3>
+        <p className="font-medium text-muted-foreground">
+          Clear as a summer sky. Ready for new ideas?
+        </p>
       </motion.div>
     )
   }
 
   return (
-    <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 gap-6" : "flex flex-col gap-4"}>
+    <div
+      className={
+        viewMode === "grid"
+          ? "grid grid-cols-1 gap-6 md:grid-cols-2"
+          : "flex flex-col gap-4"
+      }
+    >
       <AnimatePresence mode="popLayout">
         {tasks.map((task, index) => (
           <motion.div

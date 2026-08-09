@@ -2,11 +2,7 @@ import { motion } from "framer-motion"
 import { useLocation, useNavigate } from "react-router-dom"
 import { useProjects } from "@/hooks/useProjects"
 import { useTags } from "@/hooks/useTags"
-import {
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core"
+import { PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { ConfirmationModal } from "@/components/confirmation-modal"
 import { useSidebarActions } from "@/hooks/useSidebarActions"
 import {
@@ -34,13 +30,10 @@ export interface SidebarProps {
   readonly onToggle: () => void
 }
 
-export function Sidebar({
-  isCollapsed,
-  onToggle,
-}: Readonly<SidebarProps>) {
+export function Sidebar({ isCollapsed, onToggle }: Readonly<SidebarProps>) {
   const location = useLocation()
   const navigate = useNavigate()
-  
+
   const { data: projects = [] } = useProjects()
   const { data: tags = [] } = useTags()
 
@@ -73,7 +66,7 @@ export function Sidebar({
 
   // Fetch task count for the project being deleted
   const { data: projectTasks = [], isLoading: isLoadingTasks } = useTasks(
-    undefined, 
+    undefined,
     deletingItem?.type === "project" ? deletingItem.id : undefined
   )
 
@@ -88,43 +81,59 @@ export function Sidebar({
     })
   )
 
-  const navLinks = useMemo(() => [
-    { id: "dashboard", path: "/dashboard", label: "Overview", icon: LayoutDashboard },
-    { id: "tasks", path: "/tasks", label: "Tasks", icon: ListChecks },
-    { id: "history", path: "/audit-logs", label: "Activity", icon: Clock },
-  ], [])
+  const navLinks = useMemo(
+    () => [
+      {
+        id: "dashboard",
+        path: "/dashboard",
+        label: "Overview",
+        icon: LayoutDashboard,
+      },
+      { id: "tasks", path: "/tasks", label: "Tasks", icon: ListChecks },
+      { id: "history", path: "/audit-logs", label: "Activity", icon: Clock },
+    ],
+    []
+  )
 
-  const smartLinks = useMemo(() => [
-    { id: "inbox", label: "Inbox", icon: Inbox, filter: "inbox" },
-    { id: "today", label: "Today", icon: Calendar, filter: "today" },
-    { id: "upcoming", label: "Next 7 Days", icon: CalendarRange, filter: "upcoming" },
-  ], [])
+  const smartLinks = useMemo(
+    () => [
+      { id: "inbox", label: "Inbox", icon: Inbox, filter: "inbox" },
+      { id: "today", label: "Today", icon: Calendar, filter: "today" },
+      {
+        id: "upcoming",
+        label: "Next 7 Days",
+        icon: CalendarRange,
+        filter: "upcoming",
+      },
+    ],
+    []
+  )
 
   return (
     <motion.aside
       initial={false}
       animate={{ width: isCollapsed ? 96 : 320 }}
       transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-      className="relative hidden min-h-svh flex-col border-r border-sidebar-border bg-sidebar/40 px-4 py-8 backdrop-blur-3xl md:flex shadow-[20px_0_50px_-20px_rgba(0,0,0,0.8)] group/sidebar z-50"
+      className="group/sidebar relative z-50 hidden min-h-svh flex-col border-r border-sidebar-border bg-sidebar/40 px-4 py-8 shadow-[20px_0_50px_-20px_rgba(0,0,0,0.8)] backdrop-blur-3xl md:flex"
     >
       <SidebarBranding isCollapsed={isCollapsed} onToggle={onToggle} />
 
-      <div className="flex flex-1 flex-col gap-10 overflow-y-auto no-scrollbar pr-1">
-        <SmartListsSection 
-          isCollapsed={isCollapsed} 
-          activeSidebarFilter={activeSidebarFilter} 
+      <div className="no-scrollbar flex flex-1 flex-col gap-10 overflow-y-auto pr-1">
+        <SmartListsSection
+          isCollapsed={isCollapsed}
+          activeSidebarFilter={activeSidebarFilter}
           onFilterClick={handleSidebarFilterClick}
           smartLinks={smartLinks}
         />
 
-        <WorkspacesSection 
-          isCollapsed={isCollapsed} 
-          currentPath={location.pathname} 
+        <WorkspacesSection
+          isCollapsed={isCollapsed}
+          currentPath={location.pathname}
           onNavigate={navigate}
           navLinks={navLinks}
         />
 
-        <ProjectsSection 
+        <ProjectsSection
           isCollapsed={isCollapsed}
           isProjectsCollapsed={isProjectsCollapsed}
           onToggleCollapse={() => setIsProjectsCollapsed(!isProjectsCollapsed)}
@@ -139,7 +148,7 @@ export function Sidebar({
           onDeleteProject={openDeleteProjectModal}
         />
 
-        <TagsSection 
+        <TagsSection
           isCollapsed={isCollapsed}
           isTagsCollapsed={isTagsCollapsed}
           onToggleCollapse={() => setIsTagsCollapsed(!isTagsCollapsed)}
@@ -154,14 +163,22 @@ export function Sidebar({
         />
       </div>
 
-      <CreateProjectModal 
-        key={isCreateProjectModalOpen ? `project-modal-${editingProject?.id ?? "new"}` : "project-modal-closed"}
-        open={isCreateProjectModalOpen} 
+      <CreateProjectModal
+        key={
+          isCreateProjectModalOpen
+            ? `project-modal-${editingProject?.id ?? "new"}`
+            : "project-modal-closed"
+        }
+        open={isCreateProjectModalOpen}
         onOpenChange={(open) => !open && closeCreateProjectModal()}
         project={editingProject}
       />
       <CreateTagModal
-        key={isCreateTagModalOpen ? `tag-modal-${editingTag?.id ?? "new"}` : "tag-modal-closed"}
+        key={
+          isCreateTagModalOpen
+            ? `tag-modal-${editingTag?.id ?? "new"}`
+            : "tag-modal-closed"
+        }
         open={isCreateTagModalOpen}
         onOpenChange={(open) => !open && closeCreateTagModal()}
         tag={editingTag}

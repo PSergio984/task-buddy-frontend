@@ -1,6 +1,13 @@
 import { useParams, useNavigate } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { tasksApi, api, type Task, type TaskPriority, type Subtask, type Tag } from "@/lib/api"
+import {
+  tasksApi,
+  api,
+  type Task,
+  type TaskPriority,
+  type Subtask,
+  type Tag,
+} from "@/lib/api"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   ArrowLeft,
@@ -18,12 +25,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
 import { format } from "date-fns"
@@ -36,7 +38,6 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
-
 
 export function TaskDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -96,7 +97,7 @@ export function TaskDetailPage() {
                 <Skeleton className="h-5 w-20 rounded-full" />
                 <Skeleton className="h-5 w-24 rounded-full" />
               </div>
-              <Skeleton className="h-10 w-64 md:w-96 rounded-2xl" />
+              <Skeleton className="h-10 w-64 rounded-2xl md:w-96" />
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -162,8 +163,7 @@ export function TaskDetailPage() {
     HIGH: "bg-destructive/10 text-destructive border-destructive/20",
   }
   const priorityColor =
-    priorityColors[task.priority] ||
-    "bg-muted text-muted-foreground"
+    priorityColors[task.priority] || "bg-muted text-muted-foreground"
 
   return (
     <div className="mx-auto max-w-5xl space-y-10 px-4 py-8 sm:px-6 lg:px-8">
@@ -268,7 +268,7 @@ export function TaskDetailPage() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.1 }}
           >
-            <Card className="overflow-hidden rounded-[2.5rem] border-none bg-white dark:bg-zinc-900 shadow-sm">
+            <Card className="overflow-hidden rounded-[2.5rem] border-none bg-white shadow-sm dark:bg-zinc-900">
               <CardHeader className="p-10 pb-4">
                 <CardTitle className="text-xl font-bold tracking-[0.2em] text-foreground/40 uppercase">
                   Description
@@ -391,7 +391,7 @@ export function TaskDetailPage() {
               </CardContent>
             </Card>
 
-            <Card className="rounded-[2.5rem] border-none bg-white dark:bg-zinc-900 shadow-sm">
+            <Card className="rounded-[2.5rem] border-none bg-white shadow-sm dark:bg-zinc-900">
               <CardHeader className="p-8 pb-4">
                 <CardTitle className="text-sm font-bold tracking-[0.3em] text-foreground/40 uppercase">
                   Tags
@@ -472,4 +472,3 @@ export function TaskDetailPage() {
     </div>
   )
 }
-

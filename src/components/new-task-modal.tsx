@@ -38,9 +38,7 @@ import { CharacterCounter } from "./ui/character-counter"
 export interface NewTaskModalProps {
   readonly open: boolean
   readonly onOpenChange: (open: boolean) => void
-  readonly onSubmit: (
-    taskData: Record<string, unknown>
-  ) => Promise<void>
+  readonly onSubmit: (taskData: Record<string, unknown>) => Promise<void>
   readonly isLoading: boolean
 }
 
@@ -57,7 +55,7 @@ export function NewTaskModal({
   const [projectId, setProjectId] = useState<string>("none")
   const [priority, setPriority] = useState<TaskPriority>("MEDIUM")
   const [tags, setTags] = useState<string>("")
-  
+
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined)
 
   const [lastOpen, setLastOpen] = useState(open)
@@ -76,12 +74,13 @@ export function NewTaskModal({
   }
 
   const isEditMode = false
-  const isDirty = title.trim() !== "" || 
-                  description.trim() !== "" || 
-                  projectId !== "none" || 
-                  dueDate !== undefined ||
-                  tags.trim() !== "" ||
-                  priority !== "MEDIUM"
+  const isDirty =
+    title.trim() !== "" ||
+    description.trim() !== "" ||
+    projectId !== "none" ||
+    dueDate !== undefined ||
+    tags.trim() !== "" ||
+    priority !== "MEDIUM"
 
   const canSubmit = title.trim() !== "" && !isLoading
 
@@ -90,12 +89,15 @@ export function NewTaskModal({
 
     if (!title.trim()) return
 
-    const tagList = tags.split(",").map(t => t.trim()).filter(t => t !== "")
+    const tagList = tags
+      .split(",")
+      .map((t) => t.trim())
+      .filter((t) => t !== "")
     if (tagList.length > 10) {
       toast({
         title: "Too Many Tags",
         description: "A task can have a maximum of 10 tags.",
-        variant: "destructive"
+        variant: "destructive",
       })
       return
     }
@@ -103,7 +105,8 @@ export function NewTaskModal({
     const taskData = {
       title: title.trim(),
       description: description.trim() || undefined,
-      project_id: projectId === "none" ? undefined : Number.parseInt(projectId, 10),
+      project_id:
+        projectId === "none" ? undefined : Number.parseInt(projectId, 10),
       due_date: dueDate ? dueDate.toISOString() : undefined,
       completed: false,
       priority,
@@ -127,17 +130,17 @@ export function NewTaskModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl overflow-hidden border-none bg-transparent p-0 shadow-none pointer-events-none">
+      <DialogContent className="pointer-events-none overflow-hidden border-none bg-transparent p-0 shadow-none sm:max-w-2xl">
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
           transition={animations.spring.snappy}
-          className="pointer-events-auto overflow-hidden border-none bg-white dark:bg-zinc-900 p-0 shadow-sm rounded-[2.5rem]"
+          className="pointer-events-auto overflow-hidden rounded-[2.5rem] border-none bg-white p-0 shadow-sm dark:bg-zinc-900"
         >
           <div className="p-8 sm:p-10">
             <DialogHeader className="mb-10 text-left">
-              <div className="flex items-center gap-3 mb-2">
+              <div className="mb-2 flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
                   <Sparkles className="h-5 w-5" />
                 </div>
@@ -145,7 +148,7 @@ export function NewTaskModal({
                   New Task
                 </DialogTitle>
               </div>
-              <DialogDescription className="text-sm font-medium text-muted-foreground tracking-wide ml-13">
+              <DialogDescription className="ml-13 text-sm font-medium tracking-wide text-muted-foreground">
                 Articulate a new objective for your trajectory.
               </DialogDescription>
             </DialogHeader>
@@ -154,12 +157,17 @@ export function NewTaskModal({
               {/* Title Section */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="title" className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
+                  <Label
+                    htmlFor="title"
+                    className="ml-1 text-[10px] font-bold tracking-[0.2em] text-muted-foreground uppercase"
+                  >
                     Objective Title
                   </Label>
                   <div className="flex items-center gap-3">
                     <CharacterCounter current={title.length} limit={100} />
-                    {isDirty && <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse mr-1" />}
+                    {isDirty && (
+                      <div className="mr-1 h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
+                    )}
                   </div>
                 </div>
                 <Input
@@ -169,7 +177,7 @@ export function NewTaskModal({
                   onChange={(e) => setTitle(e.target.value)}
                   maxLength={100}
                   required
-                  className="h-16 rounded-[1.25rem] border-2 border-border/50 bg-muted/30 dark:bg-zinc-800/80 px-6 text-xl font-bold focus-visible:ring-primary/10 focus-visible:border-primary placeholder:text-muted-foreground/30 shadow-inner transition-all hover:border-border"
+                  className="h-16 rounded-[1.25rem] border-2 border-border/50 bg-muted/30 px-6 text-xl font-bold shadow-inner transition-all placeholder:text-muted-foreground/30 hover:border-border focus-visible:border-primary focus-visible:ring-primary/10 dark:bg-zinc-800/80"
                 />
               </div>
 
@@ -177,7 +185,10 @@ export function NewTaskModal({
               <div className="grid grid-cols-2 gap-4">
                 {/* Project */}
                 <div className="space-y-2">
-                  <Label htmlFor="projectId" className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
+                  <Label
+                    htmlFor="projectId"
+                    className="ml-1 flex items-center gap-2 text-[10px] font-bold tracking-[0.2em] text-muted-foreground uppercase"
+                  >
                     <Layers className="h-3 w-3" />
                     Project
                   </Label>
@@ -185,17 +196,31 @@ export function NewTaskModal({
                     value={projectId}
                     onValueChange={(v: string) => setProjectId(v)}
                   >
-                    <SelectTrigger id="projectId" className="h-12 rounded-2xl border-border bg-muted/50 dark:bg-zinc-800/50 px-4 font-semibold">
+                    <SelectTrigger
+                      id="projectId"
+                      className="h-12 rounded-2xl border-border bg-muted/50 px-4 font-semibold dark:bg-zinc-800/50"
+                    >
                       <SelectValue placeholder="Select Project" />
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl border-border bg-background shadow-2xl">
-                      <SelectItem value="none" className="rounded-xl focus:bg-primary/10 focus:text-primary dark:focus:bg-primary/20 font-medium">No Project</SelectItem>
+                      <SelectItem
+                        value="none"
+                        className="rounded-xl font-medium focus:bg-primary/10 focus:text-primary dark:focus:bg-primary/20"
+                      >
+                        No Project
+                      </SelectItem>
                       {projects.map((project) => (
-                        <SelectItem key={project.id} value={project.id.toString()} className="rounded-xl focus:bg-primary/10 focus:text-primary dark:focus:bg-primary/20 font-medium">
+                        <SelectItem
+                          key={project.id}
+                          value={project.id.toString()}
+                          className="rounded-xl font-medium focus:bg-primary/10 focus:text-primary dark:focus:bg-primary/20"
+                        >
                           <div className="flex items-center gap-2">
-                            <div 
-                              className="h-2 w-2 rounded-full" 
-                              style={{ backgroundColor: project.color || "gray" }} 
+                            <div
+                              className="h-2 w-2 rounded-full"
+                              style={{
+                                backgroundColor: project.color || "gray",
+                              }}
                             />
                             {project.name}
                           </div>
@@ -207,7 +232,10 @@ export function NewTaskModal({
 
                 {/* Priority */}
                 <div className="space-y-2">
-                  <Label htmlFor="priority" className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
+                  <Label
+                    htmlFor="priority"
+                    className="ml-1 flex items-center gap-2 text-[10px] font-bold tracking-[0.2em] text-muted-foreground uppercase"
+                  >
                     <Flag className="h-3 w-3" />
                     Priority
                   </Label>
@@ -215,23 +243,35 @@ export function NewTaskModal({
                     value={priority}
                     onValueChange={(v: TaskPriority) => setPriority(v)}
                   >
-                    <SelectTrigger id="priority" className="h-12 rounded-2xl border-border bg-muted/50 dark:bg-zinc-800/50 px-4 font-semibold">
+                    <SelectTrigger
+                      id="priority"
+                      className="h-12 rounded-2xl border-border bg-muted/50 px-4 font-semibold dark:bg-zinc-800/50"
+                    >
                       <SelectValue placeholder="Select Priority" />
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl border-border bg-background shadow-2xl">
-                      <SelectItem value="LOW" className="rounded-xl focus:bg-primary/10 focus:text-primary dark:focus:bg-primary/20 font-medium">
+                      <SelectItem
+                        value="LOW"
+                        className="rounded-xl font-medium focus:bg-primary/10 focus:text-primary dark:focus:bg-primary/20"
+                      >
                         <div className="flex items-center gap-2">
                           <div className="h-2 w-2 rounded-full bg-blue-500" />
                           Low
                         </div>
                       </SelectItem>
-                      <SelectItem value="MEDIUM" className="rounded-xl focus:bg-primary/10 focus:text-primary dark:focus:bg-primary/20 font-medium">
+                      <SelectItem
+                        value="MEDIUM"
+                        className="rounded-xl font-medium focus:bg-primary/10 focus:text-primary dark:focus:bg-primary/20"
+                      >
                         <div className="flex items-center gap-2">
                           <div className="h-2 w-2 rounded-full bg-amber-500" />
                           Medium
                         </div>
                       </SelectItem>
-                      <SelectItem value="HIGH" className="rounded-xl focus:bg-primary/10 focus:text-primary dark:focus:bg-primary/20 font-medium">
+                      <SelectItem
+                        value="HIGH"
+                        className="rounded-xl font-medium focus:bg-primary/10 focus:text-primary dark:focus:bg-primary/20"
+                      >
                         <div className="flex items-center gap-2">
                           <div className="h-2 w-2 rounded-full bg-red-500" />
                           High
@@ -245,7 +285,7 @@ export function NewTaskModal({
               {/* Timing Section (Date & Time) */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
+                  <Label className="ml-1 flex items-center gap-2 text-[10px] font-bold tracking-[0.2em] text-muted-foreground uppercase">
                     <CalendarIcon className="h-3 w-3" />
                     Deadline Date
                   </Label>
@@ -254,14 +294,21 @@ export function NewTaskModal({
                       <Button
                         variant={"outline"}
                         className={cn(
-                          "w-full h-12 justify-start text-left font-semibold rounded-2xl border-border bg-muted/50 dark:bg-zinc-800/50 px-6 focus-visible:ring-primary/20 hover:bg-background/80 transition-colors",
+                          "h-12 w-full justify-start rounded-2xl border-border bg-muted/50 px-6 text-left font-semibold transition-colors hover:bg-background/80 focus-visible:ring-primary/20 dark:bg-zinc-800/50",
                           !dueDate && "text-muted-foreground"
                         )}
                       >
-                        {dueDate ? format(dueDate, "PPP") : <span>Pick a date</span>}
+                        {dueDate ? (
+                          format(dueDate, "PPP")
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 rounded-2xl border-border bg-background/95 backdrop-blur-xl" align="start">
+                    <PopoverContent
+                      className="w-auto rounded-2xl border-border bg-background/95 p-0 backdrop-blur-xl"
+                      align="start"
+                    >
                       <Calendar
                         mode="single"
                         selected={dueDate}
@@ -274,7 +321,10 @@ export function NewTaskModal({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="time" className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
+                  <Label
+                    htmlFor="time"
+                    className="ml-1 flex items-center gap-2 text-[10px] font-bold tracking-[0.2em] text-muted-foreground uppercase"
+                  >
                     <Clock className="h-3 w-3" />
                     Deadline Time
                   </Label>
@@ -282,10 +332,10 @@ export function NewTaskModal({
                     id="time"
                     value={dueDate ? format(dueDate, "HH:mm") : "09:00"}
                     onChange={(timeStr) => {
-                      const [hours, minutes] = timeStr.split(":").map(Number);
-                      const newDate = dueDate ? new Date(dueDate) : new Date();
-                      newDate.setHours(hours, minutes);
-                      setDueDate(newDate);
+                      const [hours, minutes] = timeStr.split(":").map(Number)
+                      const newDate = dueDate ? new Date(dueDate) : new Date()
+                      newDate.setHours(hours, minutes)
+                      setDueDate(newDate)
                     }}
                   />
                 </div>
@@ -293,7 +343,10 @@ export function NewTaskModal({
 
               {/* Tags Section */}
               <div className="space-y-2">
-                <Label htmlFor="tags" className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">
+                <Label
+                  htmlFor="tags"
+                  className="ml-1 flex items-center gap-2 text-[10px] font-bold tracking-[0.2em] text-muted-foreground uppercase"
+                >
                   <Tag className="h-3 w-3" />
                   Tags
                 </Label>
@@ -302,14 +355,17 @@ export function NewTaskModal({
                   placeholder="e.g., work, research, critical"
                   value={tags}
                   onChange={(e) => setTags(e.target.value)}
-                  className="h-12 rounded-2xl border-border bg-muted/50 dark:bg-zinc-800/50 px-4 font-medium focus-visible:ring-primary/20 placeholder:text-muted-foreground/30"
+                  className="h-12 rounded-2xl border-border bg-muted/50 px-4 font-medium placeholder:text-muted-foreground/30 focus-visible:ring-primary/20 dark:bg-zinc-800/50"
                 />
               </div>
 
               {/* Description Section */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between ml-1">
-                  <Label htmlFor="description" className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
+                <div className="ml-1 flex items-center justify-between">
+                  <Label
+                    htmlFor="description"
+                    className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground uppercase"
+                  >
                     Description
                   </Label>
                   <CharacterCounter current={description.length} limit={2000} />
@@ -318,27 +374,32 @@ export function NewTaskModal({
                   id="description"
                   placeholder="Define scope and dependencies..."
                   value={description}
-                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                    setDescription(e.target.value)
+                  }
                   maxLength={2000}
-                  className="flex min-h-[100px] w-full rounded-2xl border border-border bg-muted/50 dark:bg-zinc-800/50 px-6 py-4 text-sm font-medium text-foreground placeholder:text-muted-foreground/30 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all outline-none resize-none"
+                  className="flex min-h-[100px] w-full resize-none rounded-2xl border border-border bg-muted/50 px-6 py-4 text-sm font-medium text-foreground transition-all outline-none placeholder:text-muted-foreground/30 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 dark:bg-zinc-800/50"
                 />
               </div>
 
-              <DialogFooter className="pt-6 border-t border-border/50 gap-4 flex sm:justify-end">
+              <DialogFooter className="flex gap-4 border-t border-border/50 pt-6 sm:justify-end">
                 <Button
                   type="button"
                   variant="ghost"
                   onClick={() => onOpenChange(false)}
-                  className="h-12 px-6 rounded-2xl text-muted-foreground hover:text-foreground hover:bg-muted transition-all font-bold"
+                  className="h-12 rounded-2xl px-6 font-bold text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
                 >
                   Discard
                 </Button>
-                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
                   <Button
                     type="submit"
                     loading={isLoading}
                     disabled={!canSubmit}
-                    className="h-12 px-10 rounded-2xl bg-primary text-primary-foreground shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all font-bold tracking-tight disabled:opacity-50 disabled:grayscale-[0.5]"
+                    className="h-12 rounded-2xl bg-primary px-10 font-bold tracking-tight text-primary-foreground shadow-xl shadow-primary/20 transition-all hover:bg-primary/90 disabled:opacity-50 disabled:grayscale-[0.5]"
                   >
                     <span>{isEditMode ? "Update Task" : "Create Task"}</span>
                   </Button>

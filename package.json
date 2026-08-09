@@ -12,6 +12,7 @@
     "start": "next start",
     "lint": "eslint .",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx}\"",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest",
     "test:ci": "vitest run",

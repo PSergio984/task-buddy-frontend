@@ -1,15 +1,19 @@
 import { useMemo } from "react"
 import { type Task, type TaskPriority, type Tag, type Subtask } from "@/lib/api"
 
-const areTagsDirty = (local: Tag[], original: Tag[]) => 
-  local.length !== original.length || 
-  local.some(lt => !original.some(ot => ot.id === lt.id))
+const areTagsDirty = (local: Tag[], original: Tag[]) =>
+  local.length !== original.length ||
+  local.some((lt) => !original.some((ot) => ot.id === lt.id))
 
 const areSubtasksDirty = (local: Subtask[], original: Subtask[]) => {
   if (local.length !== original.length) return true
   return local.some((ls, i) => {
     const os = original[i]
-    return ls.id !== os?.id || ls.title !== os?.title || ls.completed !== os?.completed
+    return (
+      ls.id !== os?.id ||
+      ls.title !== os?.title ||
+      ls.completed !== os?.completed
+    )
   })
 }
 
@@ -25,8 +29,6 @@ interface UseTaskDirtyStateProps {
   localTags: Tag[]
   localSubtasks: Subtask[]
 }
-
-
 
 export function useTaskDirtyState({
   task,
@@ -62,11 +64,21 @@ export function useTaskDirtyState({
         dueDate: isDueDateDirty,
         tags: isTagsDirty,
         subtasks: isSubtasksDirty,
-        hasChanges: isTitleDirty || isDescriptionDirty || isPriorityDirty || isStatusDirty || isProjectDirty || isDueDateDirty || isTagsDirty || isSubtasksDirty
+        hasChanges:
+          isTitleDirty ||
+          isDescriptionDirty ||
+          isPriorityDirty ||
+          isStatusDirty ||
+          isProjectDirty ||
+          isDueDateDirty ||
+          isTagsDirty ||
+          isSubtasksDirty,
       }
     }
 
-    const originalTime = task?.due_date ? new Date(task.due_date).getTime() : undefined
+    const originalTime = task?.due_date
+      ? new Date(task.due_date).getTime()
+      : undefined
     const isDueDateDirty = dueDate?.getTime() !== originalTime
 
     const checks = {
@@ -82,7 +94,18 @@ export function useTaskDirtyState({
 
     return {
       ...checks,
-      hasChanges: Object.values(checks).some(Boolean)
+      hasChanges: Object.values(checks).some(Boolean),
     }
-  }, [isCreate, task, title, description, priority, completed, projectId, dueDate, localTags, localSubtasks])
+  }, [
+    isCreate,
+    task,
+    title,
+    description,
+    priority,
+    completed,
+    projectId,
+    dueDate,
+    localTags,
+    localSubtasks,
+  ])
 }

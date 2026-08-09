@@ -46,7 +46,10 @@ export function RealtimeWatcher() {
     const scheduleTokenRefresh = (delayMs: number) => {
       if (timerRef.current) clearTimeout(timerRef.current)
       const needSubscribe = channelsRef.current.length === 0
-      timerRef.current = setTimeout(() => void mintToken(needSubscribe), delayMs)
+      timerRef.current = setTimeout(
+        () => void mintToken(needSubscribe),
+        delayMs
+      )
     }
 
     const mintToken = async (subscribe: boolean) => {

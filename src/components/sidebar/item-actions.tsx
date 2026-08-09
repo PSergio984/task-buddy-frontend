@@ -1,4 +1,3 @@
-
 import { MoreVertical, Edit2, Trash2 } from "lucide-react"
 import {
   DropdownMenu,
@@ -29,16 +28,16 @@ export function SidebarItemActions({
             e.stopPropagation()
           }}
           className={cn(
-            "flex h-7 w-7 items-center justify-center rounded-lg text-foreground/40 hover:bg-white/10 hover:text-foreground transition-all duration-300 focus-visible:ring-1 focus-visible:ring-primary outline-none",
+            "flex h-7 w-7 items-center justify-center rounded-lg text-foreground/40 transition-all duration-300 outline-none hover:bg-white/10 hover:text-foreground focus-visible:ring-1 focus-visible:ring-primary",
             className
           )}
         >
           <MoreVertical className="h-4 w-4" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent 
-        align="end" 
-        className="w-40 bg-background/95 backdrop-blur-xl border-white/10 rounded-xl p-1 shadow-2xl"
+      <DropdownMenuContent
+        align="end"
+        className="w-40 rounded-xl border-white/10 bg-background/95 p-1 shadow-2xl backdrop-blur-xl"
         onClick={(e) => {
           e.stopPropagation()
         }}
@@ -48,7 +47,7 @@ export function SidebarItemActions({
             e.stopPropagation()
             onEdit()
           }}
-          className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer"
+          className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors"
         >
           <Edit2 className="h-4 w-4" />
           <span>Edit</span>
@@ -59,7 +58,7 @@ export function SidebarItemActions({
             e.stopPropagation()
             onDelete()
           }}
-          className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer"
+          className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors"
         >
           <Trash2 className="h-4 w-4" />
           <span>Delete</span>

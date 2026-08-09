@@ -13,7 +13,7 @@ export function ResetPasswordPage() {
   const { token } = useParams<{ token: string }>()
   const navigate = useNavigate()
   const { toast } = useToast()
-  
+
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -27,7 +27,7 @@ export function ResetPasswordPage() {
 
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
-    
+
     if (newPassword !== confirmPassword) {
       toast({
         variant: "destructive",
@@ -59,13 +59,16 @@ export function ResetPasswordPage() {
         description: "You can now log in with your new password.",
         variant: "success",
       })
-      
+
       navigate("/login")
     } catch (error: unknown) {
       toast({
         variant: "destructive",
         title: "Reset Failed",
-        description: getAuthErrorMessage(error, "Something went wrong. Please try again."),
+        description: getAuthErrorMessage(
+          error,
+          "Something went wrong. Please try again."
+        ),
       })
     } finally {
       setIsLoading(false)
@@ -73,9 +76,9 @@ export function ResetPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-svh items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8 relative overflow-hidden">
-       {/* Background Decorative Elements */}
-       <div className="absolute top-0 -z-10 left-1/2 -translate-x-1/2 blur-3xl opacity-10">
+    <div className="relative flex min-h-svh items-center justify-center overflow-hidden bg-background px-4 py-12 sm:px-6 lg:px-8">
+      {/* Background Decorative Elements */}
+      <div className="absolute top-0 left-1/2 -z-10 -translate-x-1/2 opacity-10 blur-3xl">
         <div className="h-[500px] w-[500px] rounded-full bg-gradient-to-tr from-accent to-purple-400" />
       </div>
 
@@ -84,29 +87,37 @@ export function ResetPasswordPage() {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
-        <div className="flex flex-col items-center mb-8">
-          <Link to="/" className="flex items-center gap-2 mb-8 group">
+        <div className="mb-8 flex flex-col items-center">
+          <Link to="/" className="group mb-8 flex items-center gap-2">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg transition-transform group-hover:scale-110">
               <CheckCircle2 className="h-7 w-7" />
             </div>
             <span className="font-heading text-3xl font-bold">Task Buddy</span>
           </Link>
-          
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold tracking-tight mb-2">Set new password</h1>
+
+          <div className="mb-8 text-center">
+            <h1 className="mb-2 text-3xl font-bold tracking-tight">
+              Set new password
+            </h1>
             <p className="text-muted-foreground">
               Please enter your new password below.
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="w-full space-y-6 bg-background p-8 rounded-[2rem] border shadow-xl shadow-primary/5">
+          <form
+            onSubmit={handleSubmit}
+            className="w-full space-y-6 rounded-[2rem] border bg-background p-8 shadow-xl shadow-primary/5"
+          >
             <div className="space-y-4">
               <div className="space-y-2">
-                <label htmlFor="newPassword" className="text-sm font-medium leading-none">
+                <label
+                  htmlFor="newPassword"
+                  className="text-sm leading-none font-medium"
+                >
                   New Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Lock className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="newPassword"
                     type={showPassword ? "text" : "password"}
@@ -114,25 +125,32 @@ export function ResetPasswordPage() {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     required
-                    className="pl-10 pr-10 h-12 rounded-xl"
+                    className="h-12 rounded-xl pr-10 pl-10"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
                   </button>
                 </div>
                 <PasswordStrengthMeter password={newPassword} />
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="confirmPassword" className="text-sm font-medium leading-none">
+                <label
+                  htmlFor="confirmPassword"
+                  className="text-sm leading-none font-medium"
+                >
                   Confirm Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Lock className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="confirmPassword"
                     type={showPassword ? "text" : "password"}
@@ -140,7 +158,7 @@ export function ResetPasswordPage() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    className="pl-10 h-12 rounded-xl"
+                    className="h-12 rounded-xl pl-10"
                   />
                 </div>
               </div>
@@ -148,7 +166,7 @@ export function ResetPasswordPage() {
 
             <Button
               type="submit"
-              className="w-full h-12 rounded-xl text-lg font-semibold shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="h-12 w-full rounded-xl text-lg font-semibold shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
               disabled={isLoading || isPasswordWeak || hasPasswordMismatch}
             >
               {isLoading ? (
@@ -158,7 +176,9 @@ export function ResetPasswordPage() {
               ) : hasPasswordMismatch ? (
                 "Passwords mismatch"
               ) : (
-                <span className="flex items-center gap-2">Reset Password <Save className="h-4 w-4" /></span>
+                <span className="flex items-center gap-2">
+                  Reset Password <Save className="h-4 w-4" />
+                </span>
               )}
             </Button>
           </form>

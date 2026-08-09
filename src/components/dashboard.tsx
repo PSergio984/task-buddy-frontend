@@ -42,7 +42,10 @@ function TaskListSkeleton() {
   return (
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
       {[1, 2, 3, 4].map((i) => (
-        <Skeleton key={i} className="h-48 rounded-[2rem] border border-white/5" />
+        <Skeleton
+          key={i}
+          className="h-48 rounded-[2rem] border border-white/5"
+        />
       ))}
     </div>
   )
@@ -57,13 +60,18 @@ export function Dashboard({
   loadingStats,
 }: Readonly<DashboardProps>) {
   const { user, logout } = useAuth()
-  const { skipTaskCompletionConfirm, skipSubtaskCompletionConfirm, setPreference } = useUserPreferences(user?.id ?? "default")
+  const {
+    skipTaskCompletionConfirm,
+    skipSubtaskCompletionConfirm,
+    setPreference,
+  } = useUserPreferences(user?.id ?? "default")
   const { mutateAsync: updateTask, isPending: isUpdatingTask } = useUpdateTask()
-  const { mutateAsync: updateSubtask, isPending: isUpdatingSubtask } = useUpdateSubtask()
+  const { mutateAsync: updateSubtask, isPending: isUpdatingSubtask } =
+    useUpdateSubtask()
   const { mutateAsync: deleteSubtask } = useDeleteSubtask()
   const { mutateAsync: detachTag } = useDetachTag()
   const { dashboardTimeframe, setDashboardTimeframe } = useFilters()
-  
+
   const { toast } = useToast()
 
   const [confirmData, setConfirmData] = useState<{
@@ -101,7 +109,7 @@ export function Dashboard({
     async (id: number) => {
       const skipConfirm = skipTaskCompletionConfirm
       const task = tasks.find((t) => t.id === id)
-      
+
       if (task && !skipConfirm) {
         setConfirmData({ id, title: task.title, type: "task" })
       } else if (task) {
@@ -119,8 +127,10 @@ export function Dashboard({
 
   const handleConfirmAction = async (dontShowAgain?: boolean) => {
     if (dontShowAgain) {
-      if (confirmData?.type === "task") setPreference('skipTaskCompletionConfirm', true)
-      else if (confirmData?.type === "subtask") setPreference('skipSubtaskCompletionConfirm', true)
+      if (confirmData?.type === "task")
+        setPreference("skipTaskCompletionConfirm", true)
+      else if (confirmData?.type === "subtask")
+        setPreference("skipSubtaskCompletionConfirm", true)
     }
     if (!confirmData) return
     try {
@@ -133,7 +143,10 @@ export function Dashboard({
           variant: "success",
         })
       } else if (confirmData.type === "subtask") {
-        await updateSubtask({ id: confirmData.id, updates: { completed: true } })
+        await updateSubtask({
+          id: confirmData.id,
+          updates: { completed: true },
+        })
         onRefresh()
         toast({
           title: "Subtask Finished",
@@ -161,15 +174,19 @@ export function Dashboard({
     async (subtaskId: number, completed: boolean) => {
       if (completed) {
         const skipConfirm = skipSubtaskCompletionConfirm
-        const allSubtasks = tasks.flatMap(t => t.subtasks || [])
-        const subtask = allSubtasks.find(s => s.id === subtaskId)
-        
+        const allSubtasks = tasks.flatMap((t) => t.subtasks || [])
+        const subtask = allSubtasks.find((s) => s.id === subtaskId)
+
         if (subtask && !skipConfirm) {
-          setConfirmData({ id: subtaskId, title: subtask.title, type: "subtask" })
+          setConfirmData({
+            id: subtaskId,
+            title: subtask.title,
+            type: "subtask",
+          })
           return
         }
       }
-      
+
       try {
         await updateSubtask({ id: subtaskId, updates: { completed } })
         onRefresh()
@@ -202,14 +219,14 @@ export function Dashboard({
 
   const handleDetachTag = useCallback(
     async (taskId: number, tagId: number) => {
-      const task = tasks.find(t => t.id === taskId)
-      const tag = task?.tags?.find(t => t.id === tagId)
+      const task = tasks.find((t) => t.id === taskId)
+      const tag = task?.tags?.find((t) => t.id === tagId)
       if (task && tag) {
         setConfirmData({
           type: "detach_tag",
           id: tagId,
           taskId,
-          title: tag.name
+          title: tag.name,
         })
       }
     },
@@ -223,17 +240,21 @@ export function Dashboard({
         onOpenChange={(open) => !open && setConfirmData(null)}
         onConfirm={handleConfirmAction}
         title={
-          confirmData?.type === "task" ? "Mission Accomplished?" : 
-          confirmData?.type === "detach_tag" ? "Remove Tag?" :
-          "Sub-objective Complete?"
+          confirmData?.type === "task"
+            ? "Mission Accomplished?"
+            : confirmData?.type === "detach_tag"
+              ? "Remove Tag?"
+              : "Sub-objective Complete?"
         }
         description={
-          confirmData?.type === "detach_tag" 
+          confirmData?.type === "detach_tag"
             ? `Are you sure you want to remove the tag "${confirmData?.title}"?`
             : `Confirm completion of: "${confirmData?.title}"`
         }
         variant={confirmData?.type === "detach_tag" ? "destructive" : "success"}
-        confirmText={confirmData?.type === "detach_tag" ? "Remove Tag" : "Mark as Complete"}
+        confirmText={
+          confirmData?.type === "detach_tag" ? "Remove Tag" : "Mark as Complete"
+        }
         isLoading={isUpdatingTask || isUpdatingSubtask}
         showDontShowAgain={confirmData?.type !== "detach_tag"}
       />
@@ -241,7 +262,7 @@ export function Dashboard({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
-        className="flex flex-1 flex-col gap-10 bg-background/20 p-4 md:p-8 lg:p-12 backdrop-blur-3xl"
+        className="flex flex-1 flex-col gap-10 bg-background/20 p-4 backdrop-blur-3xl md:p-8 lg:p-12"
       >
         {/* Header Section */}
         <header className="flex flex-col gap-3">
@@ -249,9 +270,13 @@ export function Dashboard({
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 shadow-inner">
               <LayoutDashboard className="h-6 w-6" />
             </div>
-            <h1 className="font-heading text-4xl font-black tracking-tighter uppercase">Dashboard</h1>
+            <h1 className="font-heading text-4xl font-black tracking-tighter uppercase">
+              Dashboard
+            </h1>
           </div>
-          <p className="text-lg font-medium text-foreground/60 ml-16">Manage your daily goals and track your progress.</p>
+          <p className="ml-16 text-lg font-medium text-foreground/60">
+            Manage your daily goals and track your progress.
+          </p>
         </header>
 
         {/* Primary: Stats & Audit */}
@@ -269,7 +294,7 @@ export function Dashboard({
               })()}
             />
           </div>
-          <div className="lg:col-span-2 h-[500px]">
+          <div className="h-[500px] lg:col-span-2">
             <AuditTrail limit={5} />
           </div>
         </div>
@@ -286,7 +311,9 @@ export function Dashboard({
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10">
                 <Calendar className="h-5 w-5 text-accent" />
               </div>
-              <h2 className="text-2xl font-black tracking-tight uppercase">Strategic Agenda</h2>
+              <h2 className="text-2xl font-black tracking-tight uppercase">
+                Strategic Agenda
+              </h2>
             </div>
           </div>
 
@@ -295,7 +322,7 @@ export function Dashboard({
             onValueChange={setDashboardTimeframe}
             className="w-full"
           >
-            <TabsList className="inline-flex h-14 items-center justify-start rounded-[2rem] border-none bg-white/5 p-1.5 backdrop-blur-2xl shadow-xl mb-10 w-full overflow-x-auto no-scrollbar flex-nowrap md:justify-center">
+            <TabsList className="mb-10 no-scrollbar inline-flex h-14 w-full flex-nowrap items-center justify-start overflow-x-auto rounded-[2rem] border-none bg-white/5 p-1.5 shadow-xl backdrop-blur-2xl md:justify-center">
               {[
                 { value: "all", label: "All" },
                 { value: "today", label: "Due Today" },
@@ -305,24 +332,29 @@ export function Dashboard({
                 <TabsTrigger
                   key={tab.value}
                   value={tab.value}
-                  className="rounded-3xl px-3 sm:px-6 md:px-10 text-[9px] sm:text-[10px] tracking-[0.15em] sm:tracking-[0.3em] font-black transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-2xl uppercase"
+                  className="rounded-3xl px-3 text-[9px] font-black tracking-[0.15em] uppercase transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-2xl sm:px-6 sm:text-[10px] sm:tracking-[0.3em] md:px-10"
                 >
                   {tab.label}
                 </TabsTrigger>
               ))}
             </TabsList>
 
-            <TabsContent value={dashboardTimeframe} className="mt-0 space-y-6 focus-visible:outline-none">    
+            <TabsContent
+              value={dashboardTimeframe}
+              className="mt-0 space-y-6 focus-visible:outline-none"
+            >
               {(() => {
                 if (loadingTasks) return <TaskListSkeleton />
                 if (filteredTasks.length === 0) {
                   return (
-                    <div className="flex h-80 flex-col items-center justify-center rounded-[3rem] border-2 border-dashed border-border/30 bg-black/5 dark:bg-white/5 text-center animate-in fade-in zoom-in-95 duration-500">
-                      <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[2rem] bg-muted/20">    
+                    <div className="flex h-80 animate-in flex-col items-center justify-center rounded-[3rem] border-2 border-dashed border-border/30 bg-black/5 text-center duration-500 zoom-in-95 fade-in dark:bg-white/5">
+                      <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[2rem] bg-muted/20">
                         <ListChecks className="h-10 w-10 text-muted-foreground/20" />
                       </div>
-                      <h3 className="text-xl font-bold text-foreground mb-2 uppercase tracking-tight">Agenda Clear</h3>
-                      <p className="text-muted-foreground font-medium italic">
+                      <h3 className="mb-2 text-xl font-bold tracking-tight text-foreground uppercase">
+                        Agenda Clear
+                      </h3>
+                      <p className="font-medium text-muted-foreground italic">
                         No critical objectives found in this view.
                       </p>
                     </div>
@@ -337,7 +369,10 @@ export function Dashboard({
                           initial={{ opacity: 0, scale: 0.9, y: 20 }}
                           animate={{ opacity: 1, scale: 1, y: 0 }}
                           exit={{ opacity: 0, scale: 0.9, y: -20 }}
-                          transition={{ ...animations.spring.snappy, delay: index * 0.05 }}
+                          transition={{
+                            ...animations.spring.snappy,
+                            delay: index * 0.05,
+                          }}
                         >
                           <TaskCard
                             task={task}

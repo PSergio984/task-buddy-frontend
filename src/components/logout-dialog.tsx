@@ -14,30 +14,35 @@ interface LogoutDialogProps {
   readonly onConfirm: () => void
 }
 
-export function LogoutDialog({ open, onOpenChange, onConfirm }: Readonly<LogoutDialogProps>) {
+export function LogoutDialog({
+  open,
+  onOpenChange,
+  onConfirm,
+}: Readonly<LogoutDialogProps>) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] border-border bg-card p-0 overflow-hidden shadow-2xl">
+      <DialogContent className="overflow-hidden border-border bg-card p-0 shadow-2xl sm:max-w-[425px]">
         <div className="p-6">
           <DialogHeader className="mb-6">
             <DialogTitle className="text-2xl font-bold text-foreground">
               Confirm Logout
             </DialogTitle>
-            <DialogDescription className="text-muted-foreground font-medium">
-              Are you sure you want to log out? You will need to sign in again to access your tasks.
+            <DialogDescription className="font-medium text-muted-foreground">
+              Are you sure you want to log out? You will need to sign in again
+              to access your tasks.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="pt-4 mt-6 border-t border-border flex gap-2">
+          <DialogFooter className="mt-6 flex gap-2 border-t border-border pt-4">
             <Button
               variant="ghost"
               onClick={() => onOpenChange(false)}
-              className="text-muted-foreground hover:text-foreground hover:bg-muted"
+              className="text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               Cancel
             </Button>
             <Button
               onClick={onConfirm}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 px-8 font-semibold tracking-wide"
+              className="bg-destructive px-8 font-semibold tracking-wide text-destructive-foreground hover:bg-destructive/90"
             >
               LOGOUT
             </Button>

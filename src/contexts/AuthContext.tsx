@@ -9,7 +9,11 @@ import {
 } from "react"
 import { api } from "@/lib/api"
 import axios from "axios"
-import { safeLocalStorageGet, safeLocalStorageRemove, safeLocalStorageSet } from "@/lib/is-browser"
+import {
+  safeLocalStorageGet,
+  safeLocalStorageRemove,
+  safeLocalStorageSet,
+} from "@/lib/is-browser"
 import { queryClient } from "@/lib/query-client"
 import {
   getAuthErrorMessage,
@@ -59,7 +63,10 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     try {
       await api.post("/api/v1/users/logout", {})
     } catch (err) {
-      console.error("Logout request failed, cleaning up local session anyway.", err)
+      console.error(
+        "Logout request failed, cleaning up local session anyway.",
+        err
+      )
     }
     setUser(null)
     setError(null)
@@ -84,7 +91,10 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
           setUser(null)
           safeLocalStorageRemove(USER_STORAGE_KEY)
         } else {
-          setError((err.response?.data as { detail?: string })?.detail || "Failed to refresh user profile")
+          setError(
+            (err.response?.data as { detail?: string })?.detail ||
+              "Failed to refresh user profile"
+          )
         }
       } else {
         setError("Failed to refresh user profile")
@@ -97,7 +107,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   // On mount, attempt to refresh the user and listen for unauthorized events
   useEffect(() => {
     let mounted = true
-    
+
     // Initial refresh
     const init = async () => {
       // Small delay to ensure mount is stable
@@ -106,7 +116,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         await refreshUser()
       }
     }
-    
+
     void init()
 
     const handleUnauthorized = () => {
@@ -129,16 +139,12 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         body.set("username", sanitizeUsername(credentials.username))
         body.set("password", sanitizePassword(credentials.password))
 
-        const response = await api.post(
-          "/api/v1/users/token",
-          body,
-          {
-            headers: {
-              "Content-Type": "application/x-www-form-urlencoded",
-            },
-          }
-        )
-        
+        const response = await api.post("/api/v1/users/token", body, {
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        })
+
         // Backend now sets the HttpOnly cookie automatically.
         // We just need to normalize the user data from the response.
         const nextUser = normalizeAuthUser(response.data)
@@ -168,14 +174,11 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       setLoading(true)
       setError(null)
       try {
-        const response = await api.post(
-          "/api/v1/users/register",
-          {
-            username: sanitizeUsername(credentials.username),
-            email: sanitizeEmail(credentials.email),
-            password: sanitizePassword(credentials.password),
-          }
-        )
+        const response = await api.post("/api/v1/users/register", {
+          username: sanitizeUsername(credentials.username),
+          email: sanitizeEmail(credentials.email),
+          password: sanitizePassword(credentials.password),
+        })
 
         const nextUser = normalizeAuthUser(response.data)
         if (nextUser) {
@@ -183,30 +186,29 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
           safeLocalStorageSet(USER_STORAGE_KEY, JSON.stringify(nextUser))
         }
         setError(null)
-        } catch (err) {
+      } catch (err) {
         setError(getAuthErrorMessage(err, "Registration failed."))
         throw err
-        } finally {
+      } finally {
         setLoading(false)
-        }
-        },
-        []
-        )
-  const value = useMemo(() => ({
-    user,
-    loading,
-    error,
-    login,
-    register,
-    logout,
-    refreshUser,
-  }), [user, loading, error, login, register, logout, refreshUser])
-
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
+      }
+    },
+    []
   )
+  const value = useMemo(
+    () => ({
+      user,
+      loading,
+      error,
+      login,
+      register,
+      logout,
+      refreshUser,
+    }),
+    [user, loading, error, login, register, logout, refreshUser]
+  )
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 // eslint-disable-next-line react-refresh/only-export-components

@@ -29,15 +29,17 @@ export function DeleteConfirmationModal({
 }: Readonly<DeleteConfirmationModalProps>) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="bg-background/95 backdrop-blur-xl border-white/10 rounded-2xl">
+      <AlertDialogContent className="rounded-2xl border-white/10 bg-background/95 backdrop-blur-xl">
         <AlertDialogHeader>
-          <AlertDialogTitle className="text-xl font-bold tracking-tight">{title}</AlertDialogTitle>
+          <AlertDialogTitle className="text-xl font-bold tracking-tight">
+            {title}
+          </AlertDialogTitle>
           <AlertDialogDescription className="text-foreground/60">
             {description}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="gap-3">
-          <AlertDialogCancel className="rounded-xl bg-white/5 hover:bg-white/10 border-white/10">
+          <AlertDialogCancel className="rounded-xl border-white/10 bg-white/5 hover:bg-white/10">
             Cancel
           </AlertDialogCancel>
           <AlertDialogAction
@@ -46,7 +48,7 @@ export function DeleteConfirmationModal({
               onConfirm()
             }}
             disabled={isLoading}
-            className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-lg shadow-destructive/20"
+            className="rounded-xl bg-destructive text-destructive-foreground shadow-lg shadow-destructive/20 hover:bg-destructive/90"
           >
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />

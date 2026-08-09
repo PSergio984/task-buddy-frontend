@@ -126,7 +126,7 @@ export const TaskCard = memo(function TaskCard({
                     onClick={() => !disabled && onEdit(task)}
                     disabled={disabled}
                     className={cn(
-                      "group/title text-left transition-all focus:outline-none w-full sm:w-auto",
+                      "group/title w-full text-left transition-all focus:outline-none sm:w-auto",
                       disabled && "cursor-not-allowed"
                     )}
                   >
@@ -141,7 +141,7 @@ export const TaskCard = memo(function TaskCard({
                     </h3>
                   </button>
 
-                  <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  <div className="flex shrink-0 flex-wrap items-center gap-2">
                     <div className="flex items-center gap-1.5 rounded-full bg-muted/50 px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                       {(() => {
                         const ProjectIcon =

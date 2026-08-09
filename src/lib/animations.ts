@@ -17,14 +17,14 @@ export const animations = {
       damping: 15,
     },
   },
-  
+
   // Transition durations
   duration: {
     fast: 0.1,
     normal: 0.2,
     slow: 0.4,
   },
-  
+
   // Easing functions
   ease: {
     snappy: [0.22, 1, 0.36, 1],

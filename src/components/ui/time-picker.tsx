@@ -17,7 +17,12 @@ export interface TimePickerProps {
   readonly className?: string
 }
 
-export function TimePicker({ id, value, onChange, className }: TimePickerProps) {
+export function TimePicker({
+  id,
+  value,
+  onChange,
+  className,
+}: TimePickerProps) {
   const { timeFormat } = useSettings()
   const is12h = timeFormat === "12h"
 
@@ -32,12 +37,12 @@ export function TimePicker({ id, value, onChange, className }: TimePickerProps) 
     }
     return h24.toString().padStart(2, "0")
   })
-  
+
   const [min, setMin] = React.useState(() => {
     if (!value) return "00"
     return value.split(":")[1].padStart(2, "0")
   })
-  
+
   const [period, setPeriod] = React.useState<"AM" | "PM">(() => {
     if (!value) return "AM"
     const h24 = Number(value.split(":")[0])
@@ -55,7 +60,7 @@ export function TimePicker({ id, value, onChange, className }: TimePickerProps) 
     if (value) {
       const [h24, m] = value.split(":").map(Number)
       const mm = m.toString().padStart(2, "0")
-      
+
       if (is12h) {
         let h12 = h24 % 12
         if (h12 === 0) h12 = 12
@@ -98,12 +103,12 @@ export function TimePicker({ id, value, onChange, className }: TimePickerProps) 
     const digit = e.key
     setHour((prevHour) => {
       let newVal = (prevHour.slice(-1) + digit).padStart(2, "0")
-      
+
       // Validate for 12h/24h
       const num = Number.parseInt(newVal, 10)
       if (is12h) {
         if (num > 12) newVal = "0" + digit // Start over if invalid
-        if (num === 0) newVal = "12" 
+        if (num === 0) newVal = "12"
       } else {
         if (num > 23) newVal = "0" + digit
       }
@@ -128,7 +133,7 @@ export function TimePicker({ id, value, onChange, className }: TimePickerProps) 
     const digit = e.key
     setMin((prevMin) => {
       let newVal = (prevMin.slice(-1) + digit).padStart(2, "0")
-      
+
       const num = Number.parseInt(newVal, 10)
       if (num > 59) newVal = "0" + digit
 
@@ -163,7 +168,7 @@ export function TimePicker({ id, value, onChange, className }: TimePickerProps) 
             id={id}
             variant="ghost"
             className={cn(
-              "h-14 w-full justify-start rounded-2xl bg-muted/50 border-2 border-transparent px-6 font-black text-lg hover:bg-muted focus:bg-background focus:border-primary/30 focus:outline-none transition-all shadow-xl",
+              "h-14 w-full justify-start rounded-2xl border-2 border-transparent bg-muted/50 px-6 text-lg font-black shadow-xl transition-all hover:bg-muted focus:border-primary/30 focus:bg-background focus:outline-none",
               !value && "text-muted-foreground/30"
             )}
           >
@@ -171,10 +176,15 @@ export function TimePicker({ id, value, onChange, className }: TimePickerProps) 
             {displayTime}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-6 rounded-[2rem] border-border bg-background/95 backdrop-blur-2xl shadow-2xl" align="start">
-          <div className="flex flex-col gap-6 items-center">
-            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground self-start px-2">Set Time</span>
-            
+        <PopoverContent
+          className="w-auto rounded-[2rem] border-border bg-background/95 p-6 shadow-2xl backdrop-blur-2xl"
+          align="start"
+        >
+          <div className="flex flex-col items-center gap-6">
+            <span className="self-start px-2 text-[10px] font-black tracking-widest text-muted-foreground uppercase">
+              Set Time
+            </span>
+
             <div className="flex items-center gap-3">
               {/* Hour Segment */}
               <div className="flex flex-col items-center gap-2">
@@ -183,13 +193,17 @@ export function TimePicker({ id, value, onChange, className }: TimePickerProps) 
                   value={hour}
                   onKeyDown={handleHourKeyDown}
                   readOnly // We handle input via onKeyDown for the "rolling" effect
-                  className="w-16 h-16 p-0 text-center text-3xl font-black rounded-2xl border-none bg-white/5 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-text"
+                  className="h-16 w-16 cursor-text rounded-2xl border-none bg-white/5 p-0 text-center text-3xl font-black transition-all focus-visible:ring-2 focus-visible:ring-primary/20"
                   placeholder="12"
                 />
-                <span className="text-[10px] font-bold uppercase text-muted-foreground/50">Hour</span>
+                <span className="text-[10px] font-bold text-muted-foreground/50 uppercase">
+                  Hour
+                </span>
               </div>
 
-              <span className="text-3xl font-black text-muted-foreground/20 -mt-6">:</span>
+              <span className="-mt-6 text-3xl font-black text-muted-foreground/20">
+                :
+              </span>
 
               {/* Minute Segment */}
               <div className="flex flex-col items-center gap-2">
@@ -198,10 +212,12 @@ export function TimePicker({ id, value, onChange, className }: TimePickerProps) 
                   value={min}
                   onKeyDown={handleMinKeyDown}
                   readOnly
-                  className="w-16 h-16 p-0 text-center text-3xl font-black rounded-2xl border-none bg-white/5 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-text"
+                  className="h-16 w-16 cursor-text rounded-2xl border-none bg-white/5 p-0 text-center text-3xl font-black transition-all focus-visible:ring-2 focus-visible:ring-primary/20"
                   placeholder="00"
                 />
-                <span className="text-[10px] font-bold uppercase text-muted-foreground/50">Min</span>
+                <span className="text-[10px] font-bold text-muted-foreground/50 uppercase">
+                  Min
+                </span>
               </div>
 
               {is12h && (
@@ -209,28 +225,30 @@ export function TimePicker({ id, value, onChange, className }: TimePickerProps) 
                   <Button
                     variant="ghost"
                     onClick={togglePeriod}
-                    className="w-16 h-16 rounded-2xl bg-primary/5 text-primary text-xl font-black hover:bg-primary/10 transition-all"
+                    className="h-16 w-16 rounded-2xl bg-primary/5 text-xl font-black text-primary transition-all hover:bg-primary/10"
                   >
                     {period}
                   </Button>
-                  <span className="text-[10px] font-bold uppercase text-muted-foreground/50">AM/PM</span>
+                  <span className="text-[10px] font-bold text-muted-foreground/50 uppercase">
+                    AM/PM
+                  </span>
                 </div>
               )}
             </div>
 
-            <div className="flex gap-2 w-full">
+            <div className="flex w-full gap-2">
               {[
                 { label: "Morning", time: "09:00" },
                 { label: "Noon", time: "12:00" },
                 { label: "Evening", time: "18:00" },
-                { label: "Night", time: "21:00" }
+                { label: "Night", time: "21:00" },
               ].map((preset) => (
                 <Button
                   key={preset.label}
                   variant="ghost"
                   size="sm"
                   onClick={() => onChange(preset.time)}
-                  className="flex-1 text-[10px] font-bold uppercase tracking-tighter rounded-lg bg-white/5 hover:bg-primary/10 hover:text-primary transition-all"
+                  className="flex-1 rounded-lg bg-white/5 text-[10px] font-bold tracking-tighter uppercase transition-all hover:bg-primary/10 hover:text-primary"
                 >
                   {preset.label}
                 </Button>

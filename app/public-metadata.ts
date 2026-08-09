@@ -1,6 +1,9 @@
 import type { Metadata } from "next"
 
-export function publicPageMetadata(title: string, description: string): Metadata {
+export function publicPageMetadata(
+  title: string,
+  description: string
+): Metadata {
   return {
     title,
     description,

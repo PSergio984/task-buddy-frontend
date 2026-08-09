@@ -52,7 +52,11 @@ export function RegisterForm() {
   )
 
   const isFormValid =
-    !usernameError && !emailError && !passwordError && !confirmPasswordError && isPasswordStrong
+    !usernameError &&
+    !emailError &&
+    !passwordError &&
+    !confirmPasswordError &&
+    isPasswordStrong
 
   const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault()
@@ -68,12 +72,14 @@ export function RegisterForm() {
       })
       toast({
         title: "Account created!",
-        description: "Welcome to Task Buddy. Please log in to start your journey.",
+        description:
+          "Welcome to Task Buddy. Please log in to start your journey.",
         variant: "success",
       })
       navigate("/verify-email")
     } catch (err: unknown) {
-      let detail = "Something went wrong. Please check your details and try again."
+      let detail =
+        "Something went wrong. Please check your details and try again."
       if (axios.isAxiosError(err)) {
         detail = err.response?.data?.detail || err.message || detail
       } else if (err instanceof Error) {
@@ -93,7 +99,7 @@ export function RegisterForm() {
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ repeat: Infinity, duration: 1 }}
-          className="h-6 w-6 border-2 border-primary-foreground border-t-transparent rounded-full"
+          className="h-6 w-6 rounded-full border-2 border-primary-foreground border-t-transparent"
         />
       )
     }
@@ -113,14 +119,17 @@ export function RegisterForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2">
-        <div className="flex items-center justify-between ml-1">
-          <Label htmlFor="username" className="text-sm font-black uppercase tracking-widest text-foreground">
+        <div className="ml-1 flex items-center justify-between">
+          <Label
+            htmlFor="username"
+            className="text-sm font-black tracking-widest text-foreground uppercase"
+          >
             Username
           </Label>
           <CharacterCounter current={username.length} limit={50} />
         </div>
-        <div className="relative group">
-          <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-foreground transition-colors group-focus-within:text-accent" />
+        <div className="group relative">
+          <User className="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-foreground transition-colors group-focus-within:text-accent" />
           <Input
             id="username"
             type="text"
@@ -129,23 +138,28 @@ export function RegisterForm() {
             onChange={(e) => setUsername(sanitizeUsername(e.target.value))}
             maxLength={50}
             required
-            className="h-14 rounded-2xl border-border bg-background/50 pl-12 text-lg focus-visible:ring-accent/30 text-foreground"
+            className="h-14 rounded-2xl border-border bg-background/50 pl-12 text-lg text-foreground focus-visible:ring-accent/30"
           />
         </div>
         {(submitAttempted || username.length > 0) && usernameError && (
-          <p className="mt-1.5 text-xs text-destructive ml-1 font-bold">{usernameError}</p>
+          <p className="mt-1.5 ml-1 text-xs font-bold text-destructive">
+            {usernameError}
+          </p>
         )}
       </div>
 
       <div className="space-y-2">
-        <div className="flex items-center justify-between ml-1">
-          <Label htmlFor="email" className="text-sm font-black uppercase tracking-widest text-foreground">
+        <div className="ml-1 flex items-center justify-between">
+          <Label
+            htmlFor="email"
+            className="text-sm font-black tracking-widest text-foreground uppercase"
+          >
             Email Address
           </Label>
           <CharacterCounter current={email.length} limit={254} />
         </div>
-        <div className="relative group">
-          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-foreground transition-colors group-focus-within:text-accent" />
+        <div className="group relative">
+          <Mail className="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-foreground transition-colors group-focus-within:text-accent" />
           <Input
             id="email"
             type="email"
@@ -154,23 +168,29 @@ export function RegisterForm() {
             onChange={(e) => setEmail(sanitizeEmail(e.target.value))}
             maxLength={254}
             required
-            className="h-14 rounded-2xl border-border bg-background/50 pl-12 text-lg focus-visible:ring-accent/30 text-foreground"
+            className="h-14 rounded-2xl border-border bg-background/50 pl-12 text-lg text-foreground focus-visible:ring-accent/30"
           />
         </div>
         {(submitAttempted || email.length > 0) && emailError && (
-          <p className="mt-1.5 text-xs text-destructive ml-1 font-bold">{emailError}</p>
+          <p className="mt-1.5 ml-1 text-xs font-bold text-destructive">
+            {emailError}
+          </p>
         )}
       </div>
 
       <div className="space-y-2">
-        <div className="flex items-center justify-between ml-1">
-          <Label htmlFor="password" title="At least 8 characters" className="text-sm font-black uppercase tracking-widest text-foreground">
+        <div className="ml-1 flex items-center justify-between">
+          <Label
+            htmlFor="password"
+            title="At least 8 characters"
+            className="text-sm font-black tracking-widest text-foreground uppercase"
+          >
             Password
           </Label>
           <CharacterCounter current={password.length} limit={128} />
         </div>
-        <div className="relative group">
-          <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-foreground transition-colors group-focus-within:text-accent" />
+        <div className="group relative">
+          <KeyRound className="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-foreground transition-colors group-focus-within:text-accent" />
           <Input
             id="password"
             type={showPassword ? "text" : "password"}
@@ -179,54 +199,65 @@ export function RegisterForm() {
             onChange={(e) => setPassword(sanitizePassword(e.target.value))}
             maxLength={128}
             required
-            className="h-14 rounded-2xl border-border bg-background/50 pl-12 pr-12 text-lg focus-visible:ring-accent/30 text-foreground"
+            className="h-14 rounded-2xl border-border bg-background/50 pr-12 pl-12 text-lg text-foreground focus-visible:ring-accent/30"
           />
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/60 hover:text-foreground transition-colors"
+            className="absolute top-1/2 right-4 -translate-y-1/2 text-foreground/60 transition-colors hover:text-foreground"
           >
             <PasswordEyeIcon className="h-5 w-5" />
           </button>
         </div>
         <PasswordStrengthMeter password={password} />
         {(submitAttempted || password.length > 0) && passwordError && (
-          <p className="mt-1.5 text-xs text-destructive ml-1 font-bold">{passwordError}</p>
+          <p className="mt-1.5 ml-1 text-xs font-bold text-destructive">
+            {passwordError}
+          </p>
         )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="confirmPassword" title="Passwords must match" className="text-sm font-black uppercase tracking-widest ml-1 text-foreground">
+        <Label
+          htmlFor="confirmPassword"
+          title="Passwords must match"
+          className="ml-1 text-sm font-black tracking-widest text-foreground uppercase"
+        >
           Confirm Password
         </Label>
-        <div className="relative group">
-          <BadgeCheck className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-foreground transition-colors group-focus-within:text-accent" />
+        <div className="group relative">
+          <BadgeCheck className="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-foreground transition-colors group-focus-within:text-accent" />
           <Input
             id="confirmPassword"
             type={showConfirmPassword ? "text" : "password"}
             placeholder="••••••••"
             value={confirmPassword}
-            onChange={(e) => setConfirmPassword(sanitizePassword(e.target.value))}
+            onChange={(e) =>
+              setConfirmPassword(sanitizePassword(e.target.value))
+            }
             required
-            className="h-14 rounded-2xl border-border bg-background/50 pl-12 pr-12 text-lg focus-visible:ring-accent/30 text-foreground"
+            className="h-14 rounded-2xl border-border bg-background/50 pr-12 pl-12 text-lg text-foreground focus-visible:ring-accent/30"
           />
           <button
             type="button"
             onClick={() => setShowConfirmPassword((v) => !v)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/60 hover:text-foreground transition-colors"
+            className="absolute top-1/2 right-4 -translate-y-1/2 text-foreground/60 transition-colors hover:text-foreground"
           >
             <ConfirmPasswordEyeIcon className="h-5 w-5" />
           </button>
         </div>
-        {(submitAttempted || confirmPassword.length > 0) && confirmPasswordError && (
-          <p className="mt-1.5 text-xs text-destructive ml-1 font-bold">{confirmPasswordError}</p>
-        )}
+        {(submitAttempted || confirmPassword.length > 0) &&
+          confirmPasswordError && (
+            <p className="mt-1.5 ml-1 text-xs font-bold text-destructive">
+              {confirmPasswordError}
+            </p>
+          )}
       </div>
 
       <Button
         type="submit"
         disabled={loading || !isFormValid}
-        className="w-full h-14 rounded-2xl text-lg font-bold shadow-xl shadow-primary/10 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
+        className="h-14 w-full rounded-2xl text-lg font-bold shadow-xl shadow-primary/10 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
       >
         {getSubmitButtonContent()}
       </Button>

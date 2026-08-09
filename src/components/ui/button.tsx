@@ -19,7 +19,7 @@ const buttonVariants = cva(
         ghost:
           "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90 focus-visible:ring-destructive/50 shadow-lg shadow-destructive/20",
+          "bg-destructive text-destructive-foreground shadow-lg shadow-destructive/20 hover:bg-destructive/90 focus-visible:ring-destructive/50",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
@@ -59,7 +59,8 @@ function Button({
   }) {
   const Comp = asChild ? Slot.Root : "button"
 
-  const isDisabled = loading || Boolean((props as unknown as { disabled: boolean }).disabled)
+  const isDisabled =
+    loading || Boolean((props as unknown as { disabled: boolean }).disabled)
 
   // If rendering as a non-button element (via asChild) ensure disabled state
   // remains inaccessible: set aria-disabled, remove from tab order and

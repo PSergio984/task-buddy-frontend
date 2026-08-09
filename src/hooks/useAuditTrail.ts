@@ -2,8 +2,10 @@ import { useState, useEffect, useMemo, useCallback } from "react"
 import axios from "axios"
 import { api } from "@/lib/api"
 import { useAuth } from "@/contexts/AuthContext"
-import { 
-  type AuditEntry, groupByDate, isExcluded 
+import {
+  type AuditEntry,
+  groupByDate,
+  isExcluded,
 } from "@/lib/audit-trail-helpers"
 
 interface UseAuditTrailOptions {
@@ -17,12 +19,17 @@ function isInDateRange(dateStr: string, filter: DateFilter): boolean {
   if (filter === "all") return true
   const date = new Date(dateStr)
   const now = new Date()
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const startOfToday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  )
   const startOfYesterday = new Date(startOfToday)
   startOfYesterday.setDate(startOfYesterday.getDate() - 1)
 
   if (filter === "today") return date >= startOfToday
-  if (filter === "yesterday") return date >= startOfYesterday && date < startOfToday
+  if (filter === "yesterday")
+    return date >= startOfYesterday && date < startOfToday
   if (filter === "7d") {
     const cutoff = new Date(now)
     cutoff.setDate(cutoff.getDate() - 7)
@@ -45,27 +52,30 @@ export function useAuditTrail({ limit }: UseAuditTrailOptions) {
   const [actionFilter, setActionFilter] = useState<ActionFilter>("all")
   const [dateFilter, setDateFilter] = useState<DateFilter>("all")
   const { user } = useAuth()
-  
-  const fetchAuditLog = useCallback(async (signal?: AbortSignal) => {
-    if (!user) {
-      setLoading(false)
-      return
-    }
-    try {
-      const response = await api.get("/api/v1/audit/logs", {
-        params: { limit: Math.min(Math.max(currentLimit * 2, 50), 500) },
-        signal,
-      })
-      setLogs(Array.isArray(response.data) ? response.data : [])
-      setError(null)
-    } catch (err: unknown) {
-      if (axios.isCancel(err)) return
-      setError("Failed to load audit trail.")
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }, [user, currentLimit])
+
+  const fetchAuditLog = useCallback(
+    async (signal?: AbortSignal) => {
+      if (!user) {
+        setLoading(false)
+        return
+      }
+      try {
+        const response = await api.get("/api/v1/audit/logs", {
+          params: { limit: Math.min(Math.max(currentLimit * 2, 50), 500) },
+          signal,
+        })
+        setLogs(Array.isArray(response.data) ? response.data : [])
+        setError(null)
+      } catch (err: unknown) {
+        if (axios.isCancel(err)) return
+        setError("Failed to load audit trail.")
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    },
+    [user, currentLimit]
+  )
 
   useEffect(() => {
     const controller = new AbortController()
@@ -87,8 +97,10 @@ export function useAuditTrail({ limit }: UseAuditTrailOptions) {
       .filter((log) => {
         const searchLower = search.toLowerCase()
         if (!searchLower) return true
-        return log.action?.toLowerCase().includes(searchLower) || 
-               log.details?.toLowerCase().includes(searchLower)
+        return (
+          log.action?.toLowerCase().includes(searchLower) ||
+          log.details?.toLowerCase().includes(searchLower)
+        )
       })
       .slice(0, currentLimit)
   }, [logs, search, actionFilter, dateFilter, currentLimit])
@@ -109,6 +121,6 @@ export function useAuditTrail({ limit }: UseAuditTrailOptions) {
     setCurrentLimit,
     filteredLogs,
     groupedLogs,
-    fetchAuditLog
+    fetchAuditLog,
   }
 }

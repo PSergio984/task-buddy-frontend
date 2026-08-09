@@ -29,7 +29,9 @@ export function AppProviders({
         dehydrateOptions: {
           shouldDehydrateQuery: (query) => {
             const queryKey = query.queryKey as string[]
-            return !queryKey.includes("audit-trail") && !queryKey.includes("stats")
+            return (
+              !queryKey.includes("audit-trail") && !queryKey.includes("stats")
+            )
           },
         },
       }}

@@ -46,13 +46,15 @@ export const SortableSidebarItem = ({
         </div>
       )}
       {!handle && (
-        <div className="absolute -left-6 opacity-0 transition-opacity group-hover:opacity-100" {...attributes} {...listeners}>
+        <div
+          className="absolute -left-6 opacity-0 transition-opacity group-hover:opacity-100"
+          {...attributes}
+          {...listeners}
+        >
           {/* Default invisible handle if none provided, but typically we want a visible one */}
         </div>
       )}
-      <div className="flex-1">
-        {children}
-      </div>
+      <div className="flex-1">{children}</div>
     </div>
   )
 }

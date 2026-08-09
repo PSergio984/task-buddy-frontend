@@ -11,10 +11,12 @@ type ChannelHandler = (payload: unknown) => void
 function createFakeSupabase() {
   const handlers = new Map<string, ChannelHandler>()
   const fakeChannel = {
-    on: vi.fn((_type: string, opts: { table: string }, handler: ChannelHandler) => {
-      handlers.set(opts.table, handler)
-      return fakeChannel
-    }),
+    on: vi.fn(
+      (_type: string, opts: { table: string }, handler: ChannelHandler) => {
+        handlers.set(opts.table, handler)
+        return fakeChannel
+      }
+    ),
     subscribe: vi.fn(() => fakeChannel),
   }
 
@@ -39,13 +41,18 @@ vi.mock("@/contexts/AuthContext", () => ({
 describe("RealtimeWatcher", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.spyOn(queryClientModule.queryClient, "invalidateQueries").mockResolvedValue(undefined)
+    vi.spyOn(
+      queryClientModule.queryClient,
+      "invalidateQueries"
+    ).mockResolvedValue(undefined)
   })
 
   function mockSupabase() {
     const fake = createFakeSupabase()
     vi.spyOn(realtimeClient, "getRealtimeClient").mockReturnValue(
-      fake.client as unknown as ReturnType<typeof realtimeClient.getRealtimeClient>
+      fake.client as unknown as ReturnType<
+        typeof realtimeClient.getRealtimeClient
+      >
     )
     vi.spyOn(apiModule.api, "post").mockResolvedValue({
       data: { token: "test-token", expires_in: 300 },
@@ -68,8 +75,8 @@ describe("RealtimeWatcher", () => {
       expect(fake.client.channel).toHaveBeenCalledTimes(5)
     })
 
-    const tables = fake.client.channel.mock.calls.map(([topic]) =>
-      String(topic).split(":")[1]
+    const tables = fake.client.channel.mock.calls.map(
+      ([topic]) => String(topic).split(":")[1]
     )
     expect(tables).toEqual(
       expect.arrayContaining([
@@ -93,10 +100,14 @@ describe("RealtimeWatcher", () => {
 
     fake.handlers.get("tbl_tasks")!({ type: "INSERT", table: "tbl_tasks" })
 
-    expect(queryClientModule.queryClient.invalidateQueries).toHaveBeenCalledWith({
+    expect(
+      queryClientModule.queryClient.invalidateQueries
+    ).toHaveBeenCalledWith({
       queryKey: ["tasks"],
     })
-    expect(queryClientModule.queryClient.invalidateQueries).toHaveBeenCalledWith({
+    expect(
+      queryClientModule.queryClient.invalidateQueries
+    ).toHaveBeenCalledWith({
       queryKey: ["stats"],
     })
   })
@@ -110,9 +121,14 @@ describe("RealtimeWatcher", () => {
       expect(fake.handlers.has("tbl_notifications")).toBe(true)
     })
 
-    fake.handlers.get("tbl_notifications")!({ type: "UPDATE", table: "tbl_notifications" })
+    fake.handlers.get("tbl_notifications")!({
+      type: "UPDATE",
+      table: "tbl_notifications",
+    })
 
-    expect(queryClientModule.queryClient.invalidateQueries).toHaveBeenCalledWith({
+    expect(
+      queryClientModule.queryClient.invalidateQueries
+    ).toHaveBeenCalledWith({
       queryKey: ["notifications"],
     })
   })
@@ -155,11 +171,15 @@ describe("RealtimeWatcher", () => {
   it("does not schedule a retry timer after unmount when minting fails", async () => {
     vi.useFakeTimers()
     try {
-      vi.spyOn(apiModule.api, "post").mockRejectedValue(new Error("network down"))
+      vi.spyOn(apiModule.api, "post").mockRejectedValue(
+        new Error("network down")
+      )
       vi.spyOn(console, "error").mockImplementation(() => {})
       const fake = createFakeSupabase()
       vi.spyOn(realtimeClient, "getRealtimeClient").mockReturnValue(
-        fake.client as unknown as ReturnType<typeof realtimeClient.getRealtimeClient>
+        fake.client as unknown as ReturnType<
+          typeof realtimeClient.getRealtimeClient
+        >
       )
 
       const { unmount } = render(<RealtimeWatcher />)
@@ -177,4 +197,3 @@ describe("RealtimeWatcher", () => {
     }
   })
 })
-

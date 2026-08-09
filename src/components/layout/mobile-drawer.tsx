@@ -1,4 +1,9 @@
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
 import { useProjects } from "@/hooks/useProjects"
 import { useTags } from "@/hooks/useTags"
 import { useFilters } from "@/contexts/FilterContext"
@@ -15,7 +20,10 @@ interface MobileDrawerProps {
   readonly onOpenChange: (open: boolean) => void
 }
 
-export function MobileDrawer({ open, onOpenChange }: Readonly<MobileDrawerProps>) {
+export function MobileDrawer({
+  open,
+  onOpenChange,
+}: Readonly<MobileDrawerProps>) {
   const { data: projects = [] } = useProjects()
   const { data: tags = [] } = useTags()
   const { activeSidebarFilter, activeTagId } = useFilters()
@@ -53,16 +61,23 @@ export function MobileDrawer({ open, onOpenChange }: Readonly<MobileDrawerProps>
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[80vh] rounded-t-[3rem] border-t border-white/10 bg-background/95 backdrop-blur-2xl px-6 pb-12">
+      <SheetContent
+        side="bottom"
+        className="h-[80vh] rounded-t-[3rem] border-t border-white/10 bg-background/95 px-6 pb-12 backdrop-blur-2xl"
+      >
         <SheetHeader className="mb-8">
-          <SheetTitle className="text-center text-xs font-black uppercase tracking-[0.3em] text-muted-foreground">Workspace</SheetTitle>
+          <SheetTitle className="text-center text-xs font-black tracking-[0.3em] text-muted-foreground uppercase">
+            Workspace
+          </SheetTitle>
         </SheetHeader>
 
-        <div className="space-y-10 overflow-y-auto no-scrollbar pb-20">
+        <div className="no-scrollbar space-y-10 overflow-y-auto pb-20">
           {/* Navigation */}
           <div className="space-y-4">
             <div className="flex items-center justify-between px-2">
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-primary">Navigation</h3>
+              <h3 className="text-[10px] font-black tracking-widest text-primary uppercase">
+                Navigation
+              </h3>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <button
@@ -71,10 +86,10 @@ export function MobileDrawer({ open, onOpenChange }: Readonly<MobileDrawerProps>
                   onOpenChange(false)
                 }}
                 className={cn(
-                  "flex items-center gap-3 rounded-2xl p-4 transition-all border",
+                  "flex items-center gap-3 rounded-2xl border p-4 transition-all",
                   location.pathname === "/dashboard"
-                    ? "bg-primary/10 border-primary/20 text-primary"
-                    : "bg-white/5 border-transparent text-foreground/70"
+                    ? "border-primary/20 bg-primary/10 text-primary"
+                    : "border-transparent bg-white/5 text-foreground/70"
                 )}
               >
                 <LucideIcons.LayoutDashboard className="h-5 w-5 text-primary" />
@@ -86,10 +101,10 @@ export function MobileDrawer({ open, onOpenChange }: Readonly<MobileDrawerProps>
                   onOpenChange(false)
                 }}
                 className={cn(
-                  "flex items-center gap-3 rounded-2xl p-4 transition-all border",
+                  "flex items-center gap-3 rounded-2xl border p-4 transition-all",
                   location.pathname === "/audit-logs"
-                    ? "bg-primary/10 border-primary/20 text-primary"
-                    : "bg-white/5 border-transparent text-foreground/70"
+                    ? "border-primary/20 bg-primary/10 text-primary"
+                    : "border-transparent bg-white/5 text-foreground/70"
                 )}
               >
                 <LucideIcons.Clock className="h-5 w-5 text-sky-400" />
@@ -101,16 +116,19 @@ export function MobileDrawer({ open, onOpenChange }: Readonly<MobileDrawerProps>
           {/* Smart Lists */}
           <div className="space-y-4">
             <div className="flex items-center justify-between px-2">
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-primary">Smart Lists</h3>
+              <h3 className="text-[10px] font-black tracking-widest text-primary uppercase">
+                Smart Lists
+              </h3>
             </div>
             <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={() => handleFilterClick("inbox")}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-2 rounded-2xl p-3 transition-all border text-center",
-                  location.pathname === "/tasks" && activeSidebarFilter === "inbox"
-                    ? "bg-primary/10 border-primary/20 text-primary"
-                    : "bg-white/5 border-transparent text-foreground/70"
+                  "flex flex-col items-center justify-center gap-2 rounded-2xl border p-3 text-center transition-all",
+                  location.pathname === "/tasks" &&
+                    activeSidebarFilter === "inbox"
+                    ? "border-primary/20 bg-primary/10 text-primary"
+                    : "border-transparent bg-white/5 text-foreground/70"
                 )}
               >
                 <LucideIcons.Inbox className="h-5 w-5 text-indigo-400" />
@@ -119,10 +137,11 @@ export function MobileDrawer({ open, onOpenChange }: Readonly<MobileDrawerProps>
               <button
                 onClick={() => handleFilterClick("today")}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-2 rounded-2xl p-3 transition-all border text-center",
-                  location.pathname === "/tasks" && activeSidebarFilter === "today"
-                    ? "bg-primary/10 border-primary/20 text-primary"
-                    : "bg-white/5 border-transparent text-foreground/70"
+                  "flex flex-col items-center justify-center gap-2 rounded-2xl border p-3 text-center transition-all",
+                  location.pathname === "/tasks" &&
+                    activeSidebarFilter === "today"
+                    ? "border-primary/20 bg-primary/10 text-primary"
+                    : "border-transparent bg-white/5 text-foreground/70"
                 )}
               >
                 <LucideIcons.Calendar className="h-5 w-5 text-emerald-400" />
@@ -131,10 +150,11 @@ export function MobileDrawer({ open, onOpenChange }: Readonly<MobileDrawerProps>
               <button
                 onClick={() => handleFilterClick("upcoming")}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-2 rounded-2xl p-3 transition-all border text-center",
-                  location.pathname === "/tasks" && activeSidebarFilter === "upcoming"
-                    ? "bg-primary/10 border-primary/20 text-primary"
-                    : "bg-white/5 border-transparent text-foreground/70"
+                  "flex flex-col items-center justify-center gap-2 rounded-2xl border p-3 text-center transition-all",
+                  location.pathname === "/tasks" &&
+                    activeSidebarFilter === "upcoming"
+                    ? "border-primary/20 bg-primary/10 text-primary"
+                    : "border-transparent bg-white/5 text-foreground/70"
                 )}
               >
                 <LucideIcons.CalendarRange className="h-5 w-5 text-amber-400" />
@@ -146,10 +166,12 @@ export function MobileDrawer({ open, onOpenChange }: Readonly<MobileDrawerProps>
           {/* Projects */}
           <div className="space-y-4">
             <div className="flex items-center justify-between px-2">
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-primary">Projects</h3>
+              <h3 className="text-[10px] font-black tracking-widest text-primary uppercase">
+                Projects
+              </h3>
               <button
                 onClick={openCreateProjectModal}
-                className="rounded-lg p-1 hover:bg-white/10 text-primary transition-all"
+                className="rounded-lg p-1 text-primary transition-all hover:bg-white/10"
                 aria-label="Add Project"
               >
                 <LucideIcons.Plus className="h-4 w-4" />
@@ -157,19 +179,27 @@ export function MobileDrawer({ open, onOpenChange }: Readonly<MobileDrawerProps>
             </div>
             <div className="grid grid-cols-2 gap-3">
               {projects.map((p) => {
-                const Icon = (LucideIcons as unknown as Record<string, LucideIcons.LucideIcon>)[p.icon || "Layers"] || LucideIcons.Layers
+                const Icon =
+                  (
+                    LucideIcons as unknown as Record<
+                      string,
+                      LucideIcons.LucideIcon
+                    >
+                  )[p.icon || "Layers"] || LucideIcons.Layers
                 const isActive = activeSidebarFilter === `project:${p.id}`
                 return (
                   <button
                     key={p.id}
                     onClick={() => handleProjectClick(p.id)}
                     className={cn(
-                      "flex items-center gap-3 rounded-2xl p-4 transition-all border",
-                      isActive ? "bg-primary/10 border-primary/20 text-primary" : "bg-white/5 border-transparent text-foreground/70"
+                      "flex items-center gap-3 rounded-2xl border p-4 transition-all",
+                      isActive
+                        ? "border-primary/20 bg-primary/10 text-primary"
+                        : "border-transparent bg-white/5 text-foreground/70"
                     )}
                   >
                     <Icon className="h-5 w-5" style={{ color: p.color }} />
-                    <span className="text-sm font-bold truncate">{p.name}</span>
+                    <span className="truncate text-sm font-bold">{p.name}</span>
                   </button>
                 )
               })}
@@ -179,10 +209,12 @@ export function MobileDrawer({ open, onOpenChange }: Readonly<MobileDrawerProps>
           {/* Tags */}
           <div className="space-y-4">
             <div className="flex items-center justify-between px-2">
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-primary">Tags</h3>
+              <h3 className="text-[10px] font-black tracking-widest text-primary uppercase">
+                Tags
+              </h3>
               <button
                 onClick={openCreateTagModal}
-                className="rounded-lg p-1 hover:bg-white/10 text-primary transition-all"
+                className="rounded-lg p-1 text-primary transition-all hover:bg-white/10"
                 aria-label="Add Tag"
               >
                 <LucideIcons.Plus className="h-4 w-4" />
@@ -194,8 +226,10 @@ export function MobileDrawer({ open, onOpenChange }: Readonly<MobileDrawerProps>
                   key={t.id}
                   onClick={() => handleTagClick(t.id)}
                   className={cn(
-                    "rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-widest border transition-all",
-                    activeTagId === t.id ? "bg-primary text-primary-foreground border-primary" : "bg-white/5 border-white/5 text-foreground/60"
+                    "rounded-full border px-4 py-2 text-[10px] font-black tracking-widest uppercase transition-all",
+                    activeTagId === t.id
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-white/5 bg-white/5 text-foreground/60"
                   )}
                   style={{ color: activeTagId === t.id ? undefined : t.color }}
                 >
@@ -206,21 +240,29 @@ export function MobileDrawer({ open, onOpenChange }: Readonly<MobileDrawerProps>
           </div>
 
           {/* PWA Install */}
-          <div className="pt-4 border-t border-white/5">
+          <div className="border-t border-white/5 pt-4">
             <PwaInstallButton isCollapsed={false} />
           </div>
         </div>
       </SheetContent>
 
-      <CreateProjectModal 
-        key={isCreateProjectModalOpen ? `project-modal-${editingProject?.id ?? "new"}` : "project-modal-closed"}
-        open={isCreateProjectModalOpen} 
+      <CreateProjectModal
+        key={
+          isCreateProjectModalOpen
+            ? `project-modal-${editingProject?.id ?? "new"}`
+            : "project-modal-closed"
+        }
+        open={isCreateProjectModalOpen}
         onOpenChange={(open) => !open && closeCreateProjectModal()}
         project={editingProject}
       />
-      <CreateTagModal 
-        key={isCreateTagModalOpen ? `tag-modal-${editingTag?.id ?? "new"}` : "tag-modal-closed"}
-        open={isCreateTagModalOpen} 
+      <CreateTagModal
+        key={
+          isCreateTagModalOpen
+            ? `tag-modal-${editingTag?.id ?? "new"}`
+            : "tag-modal-closed"
+        }
+        open={isCreateTagModalOpen}
         onOpenChange={(open) => !open && closeCreateTagModal()}
         tag={editingTag}
       />

@@ -16,9 +16,9 @@ export function useSidebarActions() {
   const navigate = useNavigate()
   const location = useLocation()
   const { toast } = useToast()
-  
-  const { 
-    activeSidebarFilter, 
+
+  const {
+    activeSidebarFilter,
     setActiveSidebarFilter,
     activeTagId,
     setActiveTagId,
@@ -30,105 +30,169 @@ export function useSidebarActions() {
   const deleteProject = useDeleteProject()
   const reorderProjects = useReorderProjects()
   const reorderTags = useReorderTags()
-  const { skipTagDeletionConfirm, setPreference } = useUserPreferences(user?.id ?? "default")
+  const { skipTagDeletionConfirm, setPreference } = useUserPreferences(
+    user?.id ?? "default"
+  )
 
   const [editingTag, setEditingTag] = useState<TagType | undefined>()
-  const [editingProject, setEditingProject] = useState<ProjectType | undefined>()
-  const [deletingItem, setDeletingItem] = useState<{ type: "project" | "tag"; id: number; name: string } | null>(null)
-  const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = useState(false)
+  const [editingProject, setEditingProject] = useState<
+    ProjectType | undefined
+  >()
+  const [deletingItem, setDeletingItem] = useState<{
+    type: "project" | "tag"
+    id: number
+    name: string
+  } | null>(null)
+  const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] =
+    useState(false)
   const [isCreateTagModalOpen, setIsCreateTagModalOpen] = useState(false)
 
   const clearHubFilters = useCallback(() => {
     setSelectedPriorities([])
   }, [setSelectedPriorities])
 
-  const handleSidebarFilterClick = useCallback((filter: string) => {
-    if (activeSidebarFilter === filter) {
-      setActiveSidebarFilter("all")
-    } else {
-      setActiveSidebarFilter(filter)
-      clearHubFilters()
-    }
-    setActiveStatus("all")
-    if (location.pathname !== "/tasks") navigate("/tasks")
-  }, [activeSidebarFilter, setActiveSidebarFilter, setActiveStatus, clearHubFilters, location.pathname, navigate])
-
-  const handleProjectClick = useCallback((projectId: number) => {
-    const filterId = `project:${projectId}`
-    if (activeSidebarFilter === filterId && activeTagId === null) {
-      setActiveSidebarFilter("all")
-    } else {
-      setActiveSidebarFilter(filterId)
-      setActiveTagId(null)
-      clearHubFilters()
-    }
-    setActiveStatus("all")
-    if (location.pathname !== "/tasks") navigate("/tasks")
-  }, [activeSidebarFilter, activeTagId, setActiveSidebarFilter, setActiveTagId, setActiveStatus, clearHubFilters, location.pathname, navigate])
-
-  const handleTagClick = useCallback((tagId: number) => {
-    if (activeTagId === tagId) {
-      setActiveTagId(null)
-    } else {
-      setActiveTagId(tagId)
-      setActiveSidebarFilter("all")
-      clearHubFilters()
-    }
-    setActiveStatus("all")
-    if (location.pathname !== "/tasks") navigate("/tasks")
-  }, [activeTagId, setActiveTagId, setActiveSidebarFilter, setActiveStatus, clearHubFilters, location.pathname, navigate])
-
-  const handleProjectDragEnd = useCallback((event: DragEndEvent, projects: ProjectType[]) => {
-    const { active, over } = event
-    if (over && active.id !== over.id) {
-      const oldIndex = projects.findIndex((p) => p.id === active.id)
-      const newIndex = projects.findIndex((p) => p.id === over.id)
-      const newOrder = arrayMove(projects, oldIndex, newIndex)
-      reorderProjects.mutate(newOrder.map((p) => p.id))
-    }
-  }, [reorderProjects])
-
-  const handleTagDragEnd = useCallback((event: DragEndEvent, tags: TagType[]) => {
-    const { active, over } = event
-    if (over && active.id !== over.id) {
-      const oldIndex = tags.findIndex((t) => t.id === active.id)
-      const newIndex = tags.findIndex((t) => t.id === over.id)
-      const newOrder = arrayMove(tags, oldIndex, newIndex)
-      reorderTags.mutate(newOrder.map((t) => t.id))
-    }
-  }, [reorderTags])
-
-  const handleConfirmDelete = useCallback(async (option?: boolean) => {
-    if (!deletingItem) return
-    
-    try {
-      if (deletingItem.type === "project") {
-        await deleteProject.mutateAsync({ id: deletingItem.id, deleteTasks: option })
-        if (activeSidebarFilter === `project:${deletingItem.id}`) {
-          setActiveSidebarFilter("all")
-        }
+  const handleSidebarFilterClick = useCallback(
+    (filter: string) => {
+      if (activeSidebarFilter === filter) {
+        setActiveSidebarFilter("all")
       } else {
-        if (option) setPreference('skipTagDeletionConfirm', true)
-        await deleteTag.mutateAsync(deletingItem.id)
-        if (activeTagId === deletingItem.id) {
-          setActiveTagId(null)
-          setActiveSidebarFilter("all")
-        }
+        setActiveSidebarFilter(filter)
+        clearHubFilters()
       }
-      toast({
-        title: "Deleted",
-        description: `${deletingItem.type === "project" ? "Project" : "Tag"} deleted successfully`,
-      })
-    } catch {
-      toast({
-        title: "Error",
-        description: "Failed to delete item",
-        variant: "destructive",
-      })
-    } finally {
-      setDeletingItem(null)
-    }
-  }, [deletingItem, deleteProject, deleteTag, activeSidebarFilter, activeTagId, setActiveSidebarFilter, setActiveTagId, toast, setPreference])
+      setActiveStatus("all")
+      if (location.pathname !== "/tasks") navigate("/tasks")
+    },
+    [
+      activeSidebarFilter,
+      setActiveSidebarFilter,
+      setActiveStatus,
+      clearHubFilters,
+      location.pathname,
+      navigate,
+    ]
+  )
+
+  const handleProjectClick = useCallback(
+    (projectId: number) => {
+      const filterId = `project:${projectId}`
+      if (activeSidebarFilter === filterId && activeTagId === null) {
+        setActiveSidebarFilter("all")
+      } else {
+        setActiveSidebarFilter(filterId)
+        setActiveTagId(null)
+        clearHubFilters()
+      }
+      setActiveStatus("all")
+      if (location.pathname !== "/tasks") navigate("/tasks")
+    },
+    [
+      activeSidebarFilter,
+      activeTagId,
+      setActiveSidebarFilter,
+      setActiveTagId,
+      setActiveStatus,
+      clearHubFilters,
+      location.pathname,
+      navigate,
+    ]
+  )
+
+  const handleTagClick = useCallback(
+    (tagId: number) => {
+      if (activeTagId === tagId) {
+        setActiveTagId(null)
+      } else {
+        setActiveTagId(tagId)
+        setActiveSidebarFilter("all")
+        clearHubFilters()
+      }
+      setActiveStatus("all")
+      if (location.pathname !== "/tasks") navigate("/tasks")
+    },
+    [
+      activeTagId,
+      setActiveTagId,
+      setActiveSidebarFilter,
+      setActiveStatus,
+      clearHubFilters,
+      location.pathname,
+      navigate,
+    ]
+  )
+
+  const handleProjectDragEnd = useCallback(
+    (event: DragEndEvent, projects: ProjectType[]) => {
+      const { active, over } = event
+      if (over && active.id !== over.id) {
+        const oldIndex = projects.findIndex((p) => p.id === active.id)
+        const newIndex = projects.findIndex((p) => p.id === over.id)
+        const newOrder = arrayMove(projects, oldIndex, newIndex)
+        reorderProjects.mutate(newOrder.map((p) => p.id))
+      }
+    },
+    [reorderProjects]
+  )
+
+  const handleTagDragEnd = useCallback(
+    (event: DragEndEvent, tags: TagType[]) => {
+      const { active, over } = event
+      if (over && active.id !== over.id) {
+        const oldIndex = tags.findIndex((t) => t.id === active.id)
+        const newIndex = tags.findIndex((t) => t.id === over.id)
+        const newOrder = arrayMove(tags, oldIndex, newIndex)
+        reorderTags.mutate(newOrder.map((t) => t.id))
+      }
+    },
+    [reorderTags]
+  )
+
+  const handleConfirmDelete = useCallback(
+    async (option?: boolean) => {
+      if (!deletingItem) return
+
+      try {
+        if (deletingItem.type === "project") {
+          await deleteProject.mutateAsync({
+            id: deletingItem.id,
+            deleteTasks: option,
+          })
+          if (activeSidebarFilter === `project:${deletingItem.id}`) {
+            setActiveSidebarFilter("all")
+          }
+        } else {
+          if (option) setPreference("skipTagDeletionConfirm", true)
+          await deleteTag.mutateAsync(deletingItem.id)
+          if (activeTagId === deletingItem.id) {
+            setActiveTagId(null)
+            setActiveSidebarFilter("all")
+          }
+        }
+        toast({
+          title: "Deleted",
+          description: `${deletingItem.type === "project" ? "Project" : "Tag"} deleted successfully`,
+        })
+      } catch {
+        toast({
+          title: "Error",
+          description: "Failed to delete item",
+          variant: "destructive",
+        })
+      } finally {
+        setDeletingItem(null)
+      }
+    },
+    [
+      deletingItem,
+      deleteProject,
+      deleteTag,
+      activeSidebarFilter,
+      activeTagId,
+      setActiveSidebarFilter,
+      setActiveTagId,
+      toast,
+      setPreference,
+    ]
+  )
 
   const openCreateProjectModal = useCallback(() => {
     setEditingProject(undefined)
@@ -154,28 +218,41 @@ export function useSidebarActions() {
     setDeletingItem({ type: "project", id: project.id, name: project.name })
   }, [])
 
-  const openDeleteTagModal = useCallback((tag: TagType) => {
-    if (skipTagDeletionConfirm) {
-      deleteTag.mutateAsync(tag.id).then(() => {
-        if (activeTagId === tag.id) {
-          setActiveTagId(null)
-          setActiveSidebarFilter("all")
-        }
-        toast({
-          title: "Deleted",
-          description: "Tag deleted successfully",
-        })
-      }).catch(() => {
-        toast({
-          title: "Error",
-          description: "Failed to delete tag",
-          variant: "destructive",
-        })
-      })
-      return
-    }
-    setDeletingItem({ type: "tag", id: tag.id, name: tag.name })
-  }, [skipTagDeletionConfirm, deleteTag, activeTagId, setActiveTagId, setActiveSidebarFilter, toast])
+  const openDeleteTagModal = useCallback(
+    (tag: TagType) => {
+      if (skipTagDeletionConfirm) {
+        deleteTag
+          .mutateAsync(tag.id)
+          .then(() => {
+            if (activeTagId === tag.id) {
+              setActiveTagId(null)
+              setActiveSidebarFilter("all")
+            }
+            toast({
+              title: "Deleted",
+              description: "Tag deleted successfully",
+            })
+          })
+          .catch(() => {
+            toast({
+              title: "Error",
+              description: "Failed to delete tag",
+              variant: "destructive",
+            })
+          })
+        return
+      }
+      setDeletingItem({ type: "tag", id: tag.id, name: tag.name })
+    },
+    [
+      skipTagDeletionConfirm,
+      deleteTag,
+      activeTagId,
+      setActiveTagId,
+      setActiveSidebarFilter,
+      toast,
+    ]
+  )
 
   const closeCreateProjectModal = useCallback(() => {
     setIsCreateProjectModalOpen(false)
@@ -192,11 +269,16 @@ export function useSidebarActions() {
   }, [])
 
   return {
-    editingTag, setEditingTag,
-    editingProject, setEditingProject,
-    deletingItem, setDeletingItem,
-    isCreateProjectModalOpen, setIsCreateProjectModalOpen,
-    isCreateTagModalOpen, setIsCreateTagModalOpen,
+    editingTag,
+    setEditingTag,
+    editingProject,
+    setEditingProject,
+    deletingItem,
+    setDeletingItem,
+    isCreateProjectModalOpen,
+    setIsCreateProjectModalOpen,
+    isCreateTagModalOpen,
+    setIsCreateTagModalOpen,
     handleSidebarFilterClick,
     handleProjectClick,
     handleTagClick,

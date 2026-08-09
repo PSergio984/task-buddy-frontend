@@ -121,7 +121,6 @@ export function ThemeProvider({
     }
   }, [theme, applyTheme])
 
-
   React.useEffect(() => {
     const handleStorageChange = (event: StorageEvent) => {
       if (event.storageArea !== globalThis.localStorage) {

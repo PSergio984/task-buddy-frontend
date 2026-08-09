@@ -10,12 +10,16 @@ test.describe("Landing Page", () => {
     await expect(page.getByText("Stay Productive")).toBeVisible()
   })
 
-  test("should navigate to login page when clicking sign in", async ({ page }) => {
+  test("should navigate to login page when clicking sign in", async ({
+    page,
+  }) => {
     await page.getByRole("link", { name: "Sign In" }).click()
     await expect(page).toHaveURL("/login")
   })
 
-  test("should navigate to register page when clicking get started", async ({ page }) => {
+  test("should navigate to register page when clicking get started", async ({
+    page,
+  }) => {
     await page.getByRole("link", { name: "Get Started Free" }).first().click()
     await expect(page).toHaveURL("/register")
   })

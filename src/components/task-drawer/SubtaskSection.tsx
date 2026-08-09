@@ -1,6 +1,14 @@
 import React from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { CheckCircle2, Circle, Plus, Trash2, Check, X, GripVertical } from "lucide-react"
+import {
+  CheckCircle2,
+  Circle,
+  Plus,
+  Trash2,
+  Check,
+  X,
+  GripVertical,
+} from "lucide-react"
 import { type Subtask, type Task } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -13,7 +21,11 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core"
-import type { DragEndEvent, DraggableAttributes, DraggableSyntheticListeners } from "@dnd-kit/core"
+import type {
+  DragEndEvent,
+  DraggableAttributes,
+  DraggableSyntheticListeners,
+} from "@dnd-kit/core"
 import {
   arrayMove,
   SortableContext,
@@ -41,19 +53,37 @@ interface SubtaskSectionProps {
   readonly subtasksLimit: number
   readonly setSubtasksLimit: (v: number) => void
   readonly pendingSubtasks: readonly { id: string; title: string }[]
-  readonly setPendingSubtasks: React.Dispatch<React.SetStateAction<{ id: string; title: string }[]>>
+  readonly setPendingSubtasks: React.Dispatch<
+    React.SetStateAction<{ id: string; title: string }[]>
+  >
   readonly task: Task | null
   readonly isDirty?: boolean
-  readonly handleReorderSubtasks: (newSubtasks: (Subtask | { id: string; title: string })[]) => void
+  readonly handleReorderSubtasks: (
+    newSubtasks: (Subtask | { id: string; title: string })[]
+  ) => void
   readonly onDeleteSubtaskClick: (id: number | string) => void
 }
 
 export function SubtaskSection({
-  isCreate, isAddingSubtask, setIsAddingSubtask,
-  newSubtaskTitle, setNewSubtaskTitle, handleAddSubtask,
-  visibleSubtasks, allSubtasks, handleToggleSubtask, handleDeleteSubtask,
-  subtaskInputRef, subtasksLimit, setSubtasksLimit, pendingSubtasks, setPendingSubtasks,
-  task, isDirty, handleReorderSubtasks, onDeleteSubtaskClick
+  isCreate,
+  isAddingSubtask,
+  setIsAddingSubtask,
+  newSubtaskTitle,
+  setNewSubtaskTitle,
+  handleAddSubtask,
+  visibleSubtasks,
+  allSubtasks,
+  handleToggleSubtask,
+  handleDeleteSubtask,
+  subtaskInputRef,
+  subtasksLimit,
+  setSubtasksLimit,
+  pendingSubtasks,
+  setPendingSubtasks,
+  task,
+  isDirty,
+  handleReorderSubtasks,
+  onDeleteSubtaskClick,
 }: Readonly<SubtaskSectionProps>) {
   const { user } = useAuth()
   const preferences = useUserPreferences(user?.id ?? "default")
@@ -72,8 +102,12 @@ export function SubtaskSection({
     const { active, over } = event
 
     if (over && active.id !== over.id) {
-      const oldIndex = allSubtasks.findIndex((sub) => sub.id.toString() === active.id.toString())
-      const newIndex = allSubtasks.findIndex((sub) => sub.id.toString() === over.id.toString())
+      const oldIndex = allSubtasks.findIndex(
+        (sub) => sub.id.toString() === active.id.toString()
+      )
+      const newIndex = allSubtasks.findIndex(
+        (sub) => sub.id.toString() === over.id.toString()
+      )
 
       if (oldIndex !== -1 && newIndex !== -1) {
         const newOrder = arrayMove([...allSubtasks], oldIndex, newIndex)
@@ -87,15 +121,20 @@ export function SubtaskSection({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40">
+        <label className="text-[10px] font-black tracking-widest text-foreground/40 uppercase">
           Sub-Tasks
-          {(isCreate ? pendingSubtasks.length : (task?.subtasks?.length ?? 0)) > 0 && (
+          {(isCreate ? pendingSubtasks.length : (task?.subtasks?.length ?? 0)) >
+            0 && (
             <span className="ml-2 text-primary">
-              {isCreate ? `0/${pendingSubtasks.length}` : `${task?.subtasks?.filter(s => s.completed).length}/${task?.subtasks?.length}`}
+              {isCreate
+                ? `0/${pendingSubtasks.length}`
+                : `${task?.subtasks?.filter((s) => s.completed).length}/${task?.subtasks?.length}`}
             </span>
           )}
         </label>
-        {isDirty && <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
+        {isDirty && (
+          <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
+        )}
       </div>
 
       <div className="space-y-2">
@@ -110,7 +149,7 @@ export function SubtaskSection({
           >
             <AnimatePresence>
               {visibleSubtasks.map((sub) => (
-                <SortableSubtaskItem 
+                <SortableSubtaskItem
                   key={sub.id.toString()}
                   id={sub.id.toString()}
                   sub={sub}
@@ -133,7 +172,7 @@ export function SubtaskSection({
         {allSubtasks.length > subtasksLimit && (
           <Button
             variant="ghost"
-            className="w-full h-10 rounded-xl text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all"
+            className="h-10 w-full rounded-xl text-[10px] font-black tracking-widest text-muted-foreground uppercase transition-all hover:bg-primary/5 hover:text-primary"
             onClick={() => setSubtasksLimit(subtasksLimit + 5)}
           >
             Load More Subtasks ({allSubtasks.length - subtasksLimit} remaining)
@@ -143,7 +182,7 @@ export function SubtaskSection({
         {subtasksLimit > 5 && (
           <Button
             variant="ghost"
-            className="w-full h-10 rounded-xl text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all"
+            className="h-10 w-full rounded-xl text-[10px] font-black tracking-widest text-muted-foreground uppercase transition-all hover:bg-primary/5 hover:text-primary"
             onClick={() => setSubtasksLimit(5)}
           >
             Show Less
@@ -151,7 +190,7 @@ export function SubtaskSection({
         )}
 
         {isAddingSubtask ? (
-          <SubtaskInput 
+          <SubtaskInput
             subtaskInputRef={subtaskInputRef}
             newSubtaskTitle={newSubtaskTitle}
             setNewSubtaskTitle={setNewSubtaskTitle}
@@ -161,7 +200,7 @@ export function SubtaskSection({
         ) : allSubtasks.length < 50 ? (
           <AddSubtaskButton onClick={() => setIsAddingSubtask(true)} />
         ) : (
-          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-destructive/40 px-3 py-2 italic select-none">
+          <div className="flex items-center gap-2 px-3 py-2 text-[10px] font-black tracking-widest text-destructive/40 uppercase italic select-none">
             Maximum sub-tasks reached (50)
           </div>
         )}
@@ -170,14 +209,17 @@ export function SubtaskSection({
   )
 }
 
-function SortableSubtaskItem({ id, ...props }: Readonly<SubtaskItemProps & { id: string | number }>) {
+function SortableSubtaskItem({
+  id,
+  ...props
+}: Readonly<SubtaskItemProps & { id: string | number }>) {
   const {
     attributes,
     listeners,
     setNodeRef,
     transform,
     transition,
-    isDragging
+    isDragging,
   } = useSortable({ id })
 
   const style = {
@@ -199,12 +241,20 @@ interface SubtaskItemProps {
   readonly handleToggleSubtask: (id: number, completed: boolean) => void
   readonly handleDeleteSubtask: (id: number | string) => void
   readonly pendingSubtasks?: readonly { id: string; title: string }[]
-  readonly setPendingSubtasks?: React.Dispatch<React.SetStateAction<{ id: string; title: string }[]>>
+  readonly setPendingSubtasks?: React.Dispatch<
+    React.SetStateAction<{ id: string; title: string }[]>
+  >
   readonly attributes?: DraggableAttributes
   readonly listeners?: DraggableSyntheticListeners
 }
 
-function SubtaskItem({ sub, handleToggleSubtask, handleDeleteSubtask, attributes, listeners }: Readonly<Omit<SubtaskItemProps, "pendingSubtasks" | "setPendingSubtasks">>) {
+function SubtaskItem({
+  sub,
+  handleToggleSubtask,
+  handleDeleteSubtask,
+  attributes,
+  listeners,
+}: Readonly<Omit<SubtaskItemProps, "pendingSubtasks" | "setPendingSubtasks">>) {
   const isPending = typeof sub.id === "string"
   const subTitle = sub.title
   const isCompleted = "completed" in sub && sub.completed
@@ -214,40 +264,49 @@ function SubtaskItem({ sub, handleToggleSubtask, handleDeleteSubtask, attributes
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -20 }}
-      className="flex items-center gap-3 p-3 rounded-xl bg-white/5 group/sub"
+      className="group/sub flex items-center gap-3 rounded-xl bg-white/5 p-3"
     >
-      <div 
+      <div
         {...attributes}
         {...listeners}
-        className="shrink-0 cursor-grab active:cursor-grabbing text-foreground/20 hover:text-primary transition-colors opacity-0 group-hover/sub:opacity-100"
+        className="shrink-0 cursor-grab text-foreground/20 opacity-0 transition-colors group-hover/sub:opacity-100 hover:text-primary active:cursor-grabbing"
       >
         <GripVertical className="h-3.5 w-3.5" />
       </div>
 
-      <button 
+      <button
         type="button"
-        aria-label={isCompleted ? "Mark subtask as incomplete" : "Mark subtask as complete"}
+        aria-label={
+          isCompleted
+            ? "Mark subtask as incomplete"
+            : "Mark subtask as complete"
+        }
         disabled={isPending}
         aria-disabled={isPending}
-        className="shrink-0 cursor-pointer hover:text-primary transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full p-0 border-none bg-transparent"
-        onClick={() => !isPending && handleToggleSubtask(sub.id as number, !isCompleted)}
-      >
-        {!isPending && isCompleted
-          ? <CheckCircle2 className="h-4 w-4 text-primary" />
-          : <Circle className="h-4 w-4 text-foreground/30" />
+        className="shrink-0 cursor-pointer rounded-full border-none bg-transparent p-0 transition-colors outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-primary"
+        onClick={() =>
+          !isPending && handleToggleSubtask(sub.id as number, !isCompleted)
         }
+      >
+        {!isPending && isCompleted ? (
+          <CheckCircle2 className="h-4 w-4 text-primary" />
+        ) : (
+          <Circle className="h-4 w-4 text-foreground/30" />
+        )}
       </button>
-      <span className={cn(
-        "text-sm flex-1 transition-all",
-        isCompleted && "line-through text-foreground/30"
-      )}>
+      <span
+        className={cn(
+          "flex-1 text-sm transition-all",
+          isCompleted && "text-foreground/30 line-through"
+        )}
+      >
         {subTitle}
       </span>
-      
+
       <button
         onClick={() => handleDeleteSubtask(sub.id)}
         aria-label={`Delete subtask: ${subTitle}`}
-        className="opacity-0 group-hover/sub:opacity-100 transition-opacity text-foreground/20 hover:text-red-500 focus-visible:opacity-100 outline-none"
+        className="text-foreground/20 opacity-0 transition-opacity outline-none group-hover/sub:opacity-100 hover:text-red-500 focus-visible:opacity-100"
       >
         <Trash2 className="h-3.5 w-3.5" />
       </button>
@@ -263,7 +322,13 @@ interface SubtaskInputProps {
   readonly setIsAddingSubtask: (v: boolean) => void
 }
 
-function SubtaskInput({ subtaskInputRef, newSubtaskTitle, setNewSubtaskTitle, handleAddSubtask, setIsAddingSubtask }: Readonly<SubtaskInputProps>) {
+function SubtaskInput({
+  subtaskInputRef,
+  newSubtaskTitle,
+  setNewSubtaskTitle,
+  handleAddSubtask,
+  setIsAddingSubtask,
+}: Readonly<SubtaskInputProps>) {
   return (
     <motion.div
       initial={{ opacity: 0, y: -8 }}
@@ -286,12 +351,23 @@ function SubtaskInput({ subtaskInputRef, newSubtaskTitle, setNewSubtaskTitle, ha
           }}
           placeholder="Sub-task title... (Enter to add)"
           aria-label="New sub-task title"
-          className="flex-1 bg-white/10 border-2 border-primary/20 rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/60 hover:border-primary/40 transition-all shadow-inner"
+          className="flex-1 rounded-xl border-2 border-primary/20 bg-white/10 px-4 py-2.5 text-sm text-foreground shadow-inner transition-all placeholder:text-foreground/30 hover:border-primary/40 focus:border-primary/60 focus:outline-none"
         />
-        <button onClick={handleAddSubtask} className="text-primary hover:text-primary/80" aria-label="Confirm add subtask">
+        <button
+          onClick={handleAddSubtask}
+          className="text-primary hover:text-primary/80"
+          aria-label="Confirm add subtask"
+        >
           <Check className="h-4 w-4" />
         </button>
-        <button onClick={() => { setIsAddingSubtask(false); setNewSubtaskTitle("") }} className="text-foreground/30 hover:text-foreground" aria-label="Cancel add subtask">
+        <button
+          onClick={() => {
+            setIsAddingSubtask(false)
+            setNewSubtaskTitle("")
+          }}
+          className="text-foreground/30 hover:text-foreground"
+          aria-label="Cancel add subtask"
+        >
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -307,7 +383,7 @@ function AddSubtaskButton({ onClick }: Readonly<{ onClick: () => void }>) {
     <div className="flex items-center gap-2">
       <button
         onClick={onClick}
-        className="flex items-center gap-2 text-xs text-primary font-bold px-3 py-2 hover:bg-primary/10 rounded-xl transition-all"
+        className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-primary transition-all hover:bg-primary/10"
       >
         <Plus className="h-3.5 w-3.5" />
         Add sub-task

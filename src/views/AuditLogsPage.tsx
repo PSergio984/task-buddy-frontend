@@ -8,11 +8,11 @@ export function AuditLogsPage() {
   const navigate = useNavigate()
 
   return (
-    <div className="min-h-screen py-10 px-4 md:px-8 relative overflow-hidden">
+    <div className="relative min-h-screen overflow-hidden px-4 py-10 md:px-8">
       {/* Ambient background glows */}
       <div className="pointer-events-none fixed inset-0 -z-10">
-        <div className="absolute top-[-10%] left-[20%] w-[600px] h-[600px] rounded-full bg-primary/5 blur-[120px]" />
-        <div className="absolute bottom-[10%] right-[10%] w-[400px] h-[400px] rounded-full bg-violet-500/5 blur-[100px]" />
+        <div className="absolute top-[-10%] left-[20%] h-[600px] w-[600px] rounded-full bg-primary/5 blur-[120px]" />
+        <div className="absolute right-[10%] bottom-[10%] h-[400px] w-[400px] rounded-full bg-violet-500/5 blur-[100px]" />
       </div>
 
       <motion.div
@@ -29,7 +29,7 @@ export function AuditLogsPage() {
               size="icon"
               aria-label="Back to dashboard"
               onClick={() => navigate("/dashboard")}
-              className="rounded-full hover:bg-muted shrink-0"
+              className="shrink-0 rounded-full hover:bg-muted"
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
@@ -38,8 +38,13 @@ export function AuditLogsPage() {
               <motion.div
                 initial={{ scale: 0.7, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.1, type: "spring", stiffness: 220, damping: 16 }}
-                className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-violet-500/20 text-primary shadow-lg shadow-primary/10 ring-1 ring-primary/20"
+                transition={{
+                  delay: 0.1,
+                  type: "spring",
+                  stiffness: 220,
+                  damping: 16,
+                }}
+                className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-violet-500/20 text-primary shadow-lg ring-1 shadow-primary/10 ring-primary/20"
               >
                 <History className="h-5 w-5" />
               </motion.div>
@@ -49,7 +54,7 @@ export function AuditLogsPage() {
                   initial={{ opacity: 0, x: -12 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.15, duration: 0.4 }}
-                  className="font-heading text-4xl font-black tracking-tight bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent"
+                  className="bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text font-heading text-4xl font-black tracking-tight text-transparent"
                 >
                   Activity History
                 </motion.h1>
@@ -71,7 +76,7 @@ export function AuditLogsPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.25, duration: 0.4 }}
-            className="text-sm text-muted-foreground ml-[3.75rem]"
+            className="ml-[3.75rem] text-sm text-muted-foreground"
           >
             Monitor and review all recent events across your workspace.
           </motion.p>
@@ -85,7 +90,7 @@ export function AuditLogsPage() {
           className="relative overflow-hidden rounded-[2rem] border border-border/60 bg-background/60 shadow-2xl shadow-primary/5 backdrop-blur-xl"
         >
           {/* Subtle gradient border top accent */}
-          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+          <div className="absolute top-0 right-0 left-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
 
           <div className="p-6 md:p-8" style={{ minHeight: 680 }}>
             <AuditTrail hideCard showFilters limit={50} />

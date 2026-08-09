@@ -18,10 +18,26 @@ function PublicElement({ children }: Readonly<{ children: ReactNode }>) {
 }
 
 const publicRoutes: Record<string, ReactNode> = {
-  "/login": <PublicElement><LoginPage /></PublicElement>,
-  "/register": <PublicElement><RegisterPage /></PublicElement>,
-  "/forgot-password": <PublicElement><ForgotPasswordPage /></PublicElement>,
-  "/reset-password/:token": <PublicElement><ResetPasswordPage /></PublicElement>,
+  "/login": (
+    <PublicElement>
+      <LoginPage />
+    </PublicElement>
+  ),
+  "/register": (
+    <PublicElement>
+      <RegisterPage />
+    </PublicElement>
+  ),
+  "/forgot-password": (
+    <PublicElement>
+      <ForgotPasswordPage />
+    </PublicElement>
+  ),
+  "/reset-password/:token": (
+    <PublicElement>
+      <ResetPasswordPage />
+    </PublicElement>
+  ),
   "/verify-email": <VerifyEmailPage />,
 }
 
@@ -32,13 +48,23 @@ function HardRedirect() {
   return null
 }
 
-function AuthRoute({ path, element }: { readonly path: string; readonly element: ReactNode }) {
+function AuthRoute({
+  path,
+  element,
+}: {
+  readonly path: string
+  readonly element: ReactNode
+}) {
   return (
     <PublicShell>
       <BrowserRouter>
         <Routes>
           {Object.entries(publicRoutes).map(([routePath, routeElement]) => (
-            <Route key={routePath} path={routePath} element={routePath === path ? element : routeElement} />
+            <Route
+              key={routePath}
+              path={routePath}
+              element={routePath === path ? element : routeElement}
+            />
           ))}
           <Route path="*" element={<HardRedirect />} />
         </Routes>
@@ -52,7 +78,8 @@ function LandingElement() {
 
   if (loading) return <LoadingScreen />
   if (!user) return <LandingPage />
-  if (user.email_confirmed === false) return <Navigate to="/verify-email" replace />
+  if (user.email_confirmed === false)
+    return <Navigate to="/verify-email" replace />
 
   return <Navigate to="/dashboard" replace />
 }
@@ -71,19 +98,47 @@ export function PublicLanding() {
 }
 
 export const PublicLogin = () => (
-  <AuthRoute path="/login" element={<PublicElement><LoginPage /></PublicElement>} />
+  <AuthRoute
+    path="/login"
+    element={
+      <PublicElement>
+        <LoginPage />
+      </PublicElement>
+    }
+  />
 )
 
 export const PublicRegister = () => (
-  <AuthRoute path="/register" element={<PublicElement><RegisterPage /></PublicElement>} />
+  <AuthRoute
+    path="/register"
+    element={
+      <PublicElement>
+        <RegisterPage />
+      </PublicElement>
+    }
+  />
 )
 
 export const PublicForgotPassword = () => (
-  <AuthRoute path="/forgot-password" element={<PublicElement><ForgotPasswordPage /></PublicElement>} />
+  <AuthRoute
+    path="/forgot-password"
+    element={
+      <PublicElement>
+        <ForgotPasswordPage />
+      </PublicElement>
+    }
+  />
 )
 
 export const PublicResetPassword = () => (
-  <AuthRoute path="/reset-password/:token" element={<PublicElement><ResetPasswordPage /></PublicElement>} />
+  <AuthRoute
+    path="/reset-password/:token"
+    element={
+      <PublicElement>
+        <ResetPasswordPage />
+      </PublicElement>
+    }
+  />
 )
 
 export const PublicVerifyEmail = () => (

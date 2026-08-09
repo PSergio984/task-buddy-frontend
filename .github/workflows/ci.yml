@@ -37,6 +37,8 @@ jobs:
         run: npm ci --ignore-scripts
       - name: Run Linter
         run: npm run lint
+      - name: Check Formatting
+        run: npm run format:check
 
   typecheck:
     name: Typecheck

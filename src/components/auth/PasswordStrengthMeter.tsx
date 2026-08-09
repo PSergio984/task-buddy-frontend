@@ -17,7 +17,9 @@ const PASSWORD_RULES = [
   },
 ]
 
-export function PasswordStrengthMeter({ password }: Readonly<PasswordStrengthMeterProps>) {
+export function PasswordStrengthMeter({
+  password,
+}: Readonly<PasswordStrengthMeterProps>) {
   const { score, label } = getPasswordStrength(password)
 
   const getStrengthColor = (score: number) => {
@@ -56,7 +58,7 @@ export function PasswordStrengthMeter({ password }: Readonly<PasswordStrengthMet
     <div className="mt-6 space-y-4">
       <div className="space-y-2.5">
         <div className="flex items-center justify-between px-1">
-          <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+          <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
             Security Level
           </span>
           <span className={`text-xs font-bold ${getLabelColor(score)}`}>
@@ -67,7 +69,7 @@ export function PasswordStrengthMeter({ password }: Readonly<PasswordStrengthMet
           {[0, 1, 2, 3].map((index) => (
             <div
               key={`strength-bar-${index}`}
-              className="relative h-full flex-1 rounded-full bg-muted/50 overflow-hidden"
+              className="relative h-full flex-1 overflow-hidden rounded-full bg-muted/50"
             >
               <motion.div
                 initial={{ width: 0 }}
@@ -86,10 +88,7 @@ export function PasswordStrengthMeter({ password }: Readonly<PasswordStrengthMet
         {PASSWORD_RULES.map((rule) => {
           const met = rule.test(password)
           return (
-            <div
-              key={rule.label}
-              className="flex items-center gap-2"
-            >
+            <div key={rule.label} className="flex items-center gap-2">
               {met ? (
                 <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-green-500" />
               ) : (

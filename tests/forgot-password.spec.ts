@@ -6,9 +6,13 @@ test.describe("Forgot Password Page", () => {
   })
 
   test("should display the forgot password form", async ({ page }) => {
-    await expect(page.getByRole("heading", { name: "Reset Your Password" })).toBeVisible()
+    await expect(
+      page.getByRole("heading", { name: "Reset Your Password" })
+    ).toBeVisible()
     await expect(page.getByLabel("Email Address")).toBeVisible()
-    await expect(page.getByRole("button", { name: "Send Reset Link" })).toBeVisible()
+    await expect(
+      page.getByRole("button", { name: "Send Reset Link" })
+    ).toBeVisible()
   })
 
   test("should show error for invalid email", async ({ page }) => {

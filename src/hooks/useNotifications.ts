@@ -4,10 +4,14 @@ import { useToast } from "@/hooks/use-toast"
 import { useEffect, useRef } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 
-export function useNotifications(params?: { limit?: number; offset?: number; read?: boolean }) {
+export function useNotifications(params?: {
+  limit?: number
+  offset?: number
+  read?: boolean
+}) {
   const { toast } = useToast()
   const { user } = useAuth()
-  
+
   const query = useQuery({
     queryKey: ["notifications", { userId: user?.id, ...params }],
     queryFn: () => notificationsApi.list(params),
@@ -28,7 +32,7 @@ export function useNotifications(params?: { limit?: number; offset?: number; rea
       )
 
       if (newHighPriority.length > 0) {
-        newHighPriority.forEach(n => {
+        newHighPriority.forEach((n) => {
           toast({
             title: n.title,
             description: n.message,
@@ -41,7 +45,7 @@ export function useNotifications(params?: { limit?: number; offset?: number; rea
 
   // Derived state for unread count
   // Note: This only counts unread notifications in the current page/result set
-  const unreadCount = query.data?.items?.filter(n => !n.is_read).length || 0
+  const unreadCount = query.data?.items?.filter((n) => !n.is_read).length || 0
 
   return {
     ...query,
@@ -53,7 +57,7 @@ export function useNotifications(params?: { limit?: number; offset?: number; rea
 
 export function useMarkRead() {
   const queryClient = useQueryClient()
-  
+
   return useMutation({
     mutationFn: (id: number) => notificationsApi.markRead(id),
     onSuccess: () => {
@@ -64,7 +68,7 @@ export function useMarkRead() {
 
 export function useMarkAllRead() {
   const queryClient = useQueryClient()
-  
+
   return useMutation({
     mutationFn: () => notificationsApi.markAllRead(),
     onSuccess: () => {
@@ -75,7 +79,7 @@ export function useMarkAllRead() {
 
 export function useDeleteNotification() {
   const queryClient = useQueryClient()
-  
+
   return useMutation({
     mutationFn: (id: number) => notificationsApi.delete(id),
     onSuccess: () => {
@@ -86,7 +90,11 @@ export function useDeleteNotification() {
 
 export function useRegisterPush() {
   return useMutation({
-    mutationFn: (subscription: Parameters<typeof notificationsApi.registerPushSubscription>[0]) => notificationsApi.registerPushSubscription(subscription),
+    mutationFn: (
+      subscription: Parameters<
+        typeof notificationsApi.registerPushSubscription
+      >[0]
+    ) => notificationsApi.registerPushSubscription(subscription),
   })
 }
 

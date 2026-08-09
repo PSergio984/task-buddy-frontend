@@ -48,7 +48,8 @@ export function ConfirmationModal({
   const [confirmationInput, setConfirmationInput] = useState("")
   const [shake, setShake] = useState(false)
 
-  const isMatch = !requiredConfirmationText || confirmationInput === requiredConfirmationText
+  const isMatch =
+    !requiredConfirmationText || confirmationInput === requiredConfirmationText
 
   const getVariantStyles = (): "default" | "destructive" => {
     if (variant === "destructive") {
@@ -59,10 +60,10 @@ export function ConfirmationModal({
 
   const getIcon = () => {
     if (variant === "destructive") {
-      return <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+      return <AlertCircle className="mb-4 h-12 w-12 text-destructive" />
     }
     if (variant === "success") {
-      return <CheckCircle2 className="h-12 w-12 text-primary mb-4" />
+      return <CheckCircle2 className="mb-4 h-12 w-12 text-primary" />
     }
     return null
   }
@@ -71,7 +72,7 @@ export function ConfirmationModal({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="bg-background/95 backdrop-blur-3xl border-white/10 rounded-[2.5rem] p-8 max-w-[400px] shadow-2xl overflow-hidden">
+      <AlertDialogContent className="max-w-[400px] overflow-hidden rounded-[2.5rem] border-white/10 bg-background/95 p-8 shadow-2xl backdrop-blur-3xl">
         <AlertDialogHeader className="items-center text-center">
           <motion.div
             initial={{ scale: 0.5, opacity: 0 }}
@@ -80,18 +81,22 @@ export function ConfirmationModal({
           >
             {getIcon()}
           </motion.div>
-          <AlertDialogTitle className="text-2xl font-black tracking-tight uppercase mb-2">
+          <AlertDialogTitle className="mb-2 text-2xl font-black tracking-tight uppercase">
             {title}
           </AlertDialogTitle>
-          <AlertDialogDescription className="text-foreground/60 font-medium italic">
+          <AlertDialogDescription className="font-medium text-foreground/60 italic">
             {description}
           </AlertDialogDescription>
         </AlertDialogHeader>
 
         {requiredConfirmationText && (
           <div className="mt-6 space-y-3">
-            <p className="text-[10px] font-black uppercase tracking-widest text-foreground/40 text-center">
-              Type <span className="text-destructive">"{requiredConfirmationText}"</span> to confirm
+            <p className="text-center text-[10px] font-black tracking-widest text-foreground/40 uppercase">
+              Type{" "}
+              <span className="text-destructive">
+                "{requiredConfirmationText}"
+              </span>{" "}
+              to confirm
             </p>
             <motion.div
               animate={shake ? { x: [-4, 4, -4, 4, 0] } : {}}
@@ -102,12 +107,12 @@ export function ConfirmationModal({
                 value={confirmationInput}
                 onChange={(e) => setConfirmationInput(e.target.value)}
                 placeholder={requiredConfirmationText}
-                className={`w-full h-12 bg-white/5 border rounded-2xl px-4 text-center font-bold focus:outline-none focus:ring-2 transition-all ${
-                  confirmationInput && !isMatch 
-                    ? "border-destructive/50 text-destructive focus:ring-destructive/20" 
-                    : isMatch && confirmationInput 
-                    ? "border-primary/50 text-primary focus:ring-primary/20" 
-                    : "border-white/10 text-foreground focus:ring-white/20"
+                className={`h-12 w-full rounded-2xl border bg-white/5 px-4 text-center font-bold transition-all focus:ring-2 focus:outline-none ${
+                  confirmationInput && !isMatch
+                    ? "border-destructive/50 text-destructive focus:ring-destructive/20"
+                    : isMatch && confirmationInput
+                      ? "border-primary/50 text-primary focus:ring-primary/20"
+                      : "border-white/10 text-foreground focus:ring-white/20"
                 }`}
               />
             </motion.div>
@@ -115,23 +120,23 @@ export function ConfirmationModal({
         )}
 
         {showDontShowAgain && (
-          <div className="mt-6 flex items-center justify-center gap-3 py-2 px-4 rounded-xl bg-white/5 border border-white/5 transition-all hover:bg-white/10">
-            <Checkbox 
-              id="dont-show-again" 
-              checked={dontShowAgain} 
+          <div className="mt-6 flex items-center justify-center gap-3 rounded-xl border border-white/5 bg-white/5 px-4 py-2 transition-all hover:bg-white/10">
+            <Checkbox
+              id="dont-show-again"
+              checked={dontShowAgain}
               onCheckedChange={(checked) => setDontShowAgain(!!checked)}
-              className="border-primary/40 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+              className="border-primary/40 data-[state=checked]:border-primary data-[state=checked]:bg-primary"
             />
-            <label 
-              htmlFor="dont-show-again" 
-              className="text-[10px] font-black uppercase tracking-widest text-foreground/40 cursor-pointer select-none hover:text-foreground/60 transition-colors"
+            <label
+              htmlFor="dont-show-again"
+              className="cursor-pointer text-[10px] font-black tracking-widest text-foreground/40 uppercase transition-colors select-none hover:text-foreground/60"
             >
               {dontShowAgainLabel}
             </label>
           </div>
         )}
 
-        <AlertDialogFooter className="flex-col sm:flex-col gap-3 mt-8">
+        <AlertDialogFooter className="mt-8 flex-col gap-3 sm:flex-col">
           <AlertDialogAction asChild>
             <Button
               onClick={async (e) => {
@@ -146,19 +151,19 @@ export function ConfirmationModal({
               disabled={isConfirmDisabled}
               loading={isLoading}
               variant={getVariantStyles()}
-              className={`w-full h-12 rounded-2xl font-bold tracking-tight shadow-xl transition-all ${!isMatch ? "opacity-50 cursor-not-allowed hover:bg-destructive/80" : ""}`}
+              className={`h-12 w-full rounded-2xl font-bold tracking-tight shadow-xl transition-all ${!isMatch ? "cursor-not-allowed opacity-50 hover:bg-destructive/80" : ""}`}
             >
               {confirmText}
             </Button>
           </AlertDialogAction>
           <AlertDialogCancel asChild>
-            <Button 
+            <Button
               variant="ghost"
               onClick={() => {
                 setConfirmationInput("")
                 setDontShowAgain(false)
               }}
-              className="w-full h-12 rounded-2xl bg-white/5 hover:bg-white/10 border-white/10 font-bold text-foreground/80 transition-all"
+              className="h-12 w-full rounded-2xl border-white/10 bg-white/5 font-bold text-foreground/80 transition-all hover:bg-white/10"
             >
               {cancelText}
             </Button>
@@ -168,4 +173,3 @@ export function ConfirmationModal({
     </AlertDialog>
   )
 }
-

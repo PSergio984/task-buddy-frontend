@@ -48,25 +48,30 @@ export function TopNav({ onNewTask }: Readonly<TopNavProps>) {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        dropdownRef.current && 
-        event.target instanceof Node && 
+        dropdownRef.current &&
+        event.target instanceof Node &&
         !dropdownRef.current.contains(event.target)
       ) {
         setIsDropdownOpen(false)
       }
     }
     globalThis.document.addEventListener("mousedown", handleClickOutside)
-    return () => globalThis.document.removeEventListener("mousedown", handleClickOutside)
+    return () =>
+      globalThis.document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
-  const userInitial = (user?.username?.[0] || user?.email?.[0] || "U").toUpperCase()
+  const userInitial = (
+    user?.username?.[0] ||
+    user?.email?.[0] ||
+    "U"
+  ).toUpperCase()
 
   return (
     <motion.header
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="flex items-center justify-between border-b bg-background/30 backdrop-blur-3xl px-8 py-6 relative z-50"
+      className="relative z-50 flex items-center justify-between border-b bg-background/30 px-8 py-6 backdrop-blur-3xl"
     >
       {/* Left: Branding + Greeting */}
       <div className="flex items-center gap-6">
@@ -82,31 +87,38 @@ export function TopNav({ onNewTask }: Readonly<TopNavProps>) {
 
         {/* Desktop greeting */}
         <div className="hidden md:block">
-          <h2 className="text-2xl font-heading font-black tracking-tighter text-foreground">
-            Welcome back, <span className="text-primary">{user?.username || user?.email?.split('@')[0] || "Friend"}</span>
+          <h2 className="font-heading text-2xl font-black tracking-tighter text-foreground">
+            Welcome back,{" "}
+            <span className="text-primary">
+              {user?.username || user?.email?.split("@")[0] || "Friend"}
+            </span>
           </h2>
         </div>
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-3 mr-4">
+        <div className="mr-4 flex items-center gap-3">
           <ThemeToggle />
           <NotificationBell />
         </div>
 
-        <div className="h-8 w-px bg-border/50 mx-2" />
+        <div className="mx-2 h-8 w-px bg-border/50" />
 
-        <div className="flex items-center gap-4 ml-4">
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="hidden md:block">
+        <div className="ml-4 flex items-center gap-4">
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="hidden md:block"
+          >
             {isTaskLimitReached ? (
               <Tooltip delayDuration={0}>
                 <TooltipTrigger asChild>
-                  <div className="h-12 px-6 gap-2 rounded-2xl bg-primary/10 text-primary/40 border border-primary/10 flex items-center justify-center font-bold tracking-tight cursor-not-allowed grayscale">
+                  <div className="flex h-12 cursor-not-allowed items-center justify-center gap-2 rounded-2xl border border-primary/10 bg-primary/10 px-6 font-bold tracking-tight text-primary/40 grayscale">
                     <Plus className="h-5 w-5" />
                     <span>Create Task</span>
                   </div>
                 </TooltipTrigger>
-                <TooltipContent className="bg-destructive text-destructive-foreground border-none font-bold">
+                <TooltipContent className="border-none bg-destructive font-bold text-destructive-foreground">
                   Task limit reached (1000)
                 </TooltipContent>
               </Tooltip>
@@ -114,7 +126,7 @@ export function TopNav({ onNewTask }: Readonly<TopNavProps>) {
               <Button
                 id="new-task-btn"
                 onClick={onNewTask}
-                className="h-12 px-6 gap-2 rounded-2xl bg-primary text-primary-foreground shadow-xl shadow-primary/20 hover:bg-primary/90 hover:shadow-primary/30 transition-all font-bold tracking-tight"
+                className="h-12 gap-2 rounded-2xl bg-primary px-6 font-bold tracking-tight text-primary-foreground shadow-xl shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-primary/30"
               >
                 <Plus className="h-5 w-5" />
                 <span>Create Task</span>
@@ -128,12 +140,17 @@ export function TopNav({ onNewTask }: Readonly<TopNavProps>) {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center gap-2 p-1 pr-2 rounded-2xl bg-muted/30 hover:bg-muted/50 transition-all border border-transparent hover:border-primary/10 group"
+              className="group flex items-center gap-2 rounded-2xl border border-transparent bg-muted/30 p-1 pr-2 transition-all hover:border-primary/10 hover:bg-muted/50"
             >
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-primary to-accent flex items-center justify-center text-primary-foreground font-black shadow-lg group-hover:shadow-primary/20 transition-all overflow-hidden border border-white/10">
+              <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-gradient-to-tr from-primary to-accent font-black text-primary-foreground shadow-lg transition-all group-hover:shadow-primary/20">
                 {userInitial}
               </div>
-              <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform duration-300", isDropdownOpen && "rotate-180")} />
+              <ChevronDown
+                className={cn(
+                  "h-4 w-4 text-muted-foreground transition-transform duration-300",
+                  isDropdownOpen && "rotate-180"
+                )}
+              />
             </motion.button>
 
             <AnimatePresence>
@@ -142,28 +159,35 @@ export function TopNav({ onNewTask }: Readonly<TopNavProps>) {
                   initial={{ opacity: 0, y: 10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  className="absolute right-0 mt-3 w-64 rounded-[2rem] border bg-background/98 backdrop-blur-3xl p-3 shadow-2xl z-[100] border-primary/10"
+                  className="absolute right-0 z-[100] mt-3 w-64 rounded-[2rem] border border-primary/10 bg-background/98 p-3 shadow-2xl backdrop-blur-3xl"
                 >
-                  <div className="p-4 border-b border-border/50 mb-2 bg-primary/5 rounded-t-[1.5rem]">
-                    <p className="text-[10px] font-bold text-primary uppercase tracking-[0.2em] mb-1">Signed In As</p>
-                    <p className="text-sm font-black text-foreground truncate">{user?.username || user?.email || "Guest User"}</p>
+                  <div className="mb-2 rounded-t-[1.5rem] border-b border-border/50 bg-primary/5 p-4">
+                    <p className="mb-1 text-[10px] font-bold tracking-[0.2em] text-primary uppercase">
+                      Signed In As
+                    </p>
+                    <p className="truncate text-sm font-black text-foreground">
+                      {user?.username || user?.email || "Guest User"}
+                    </p>
                   </div>
-                  
+
                   <div className="space-y-1 p-1">
                     <button
-                      onClick={() => { navigate("/profile"); setIsDropdownOpen(false); }}
-                      className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all group/item"
+                      onClick={() => {
+                        navigate("/profile")
+                        setIsDropdownOpen(false)
+                      }}
+                      className="group/item flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold text-muted-foreground transition-all hover:bg-primary/10 hover:text-primary"
                     >
-                      <User className="h-4 w-4 text-muted-foreground/40 group-hover/item:text-primary transition-colors" />
+                      <User className="h-4 w-4 text-muted-foreground/40 transition-colors group-hover/item:text-primary" />
                       Profile Settings
                     </button>
                     <div className="px-1 py-1">
                       <PwaInstallButton isCollapsed={false} />
                     </div>
-                    <div className="h-px bg-border/50 my-2 mx-4" />
+                    <div className="mx-4 my-2 h-px bg-border/50" />
                     <button
                       onClick={() => setIsLogoutDialogOpen(true)}
-                      className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold text-destructive/60 hover:bg-destructive/10 hover:text-destructive transition-all"
+                      className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold text-destructive/60 transition-all hover:bg-destructive/10 hover:text-destructive"
                     >
                       <LogOut className="h-4 w-4" />
                       Logout
@@ -176,10 +200,10 @@ export function TopNav({ onNewTask }: Readonly<TopNavProps>) {
         </div>
       </div>
 
-      <LogoutDialog 
-        open={isLogoutDialogOpen} 
-        onOpenChange={setIsLogoutDialogOpen} 
-        onConfirm={handleLogout} 
+      <LogoutDialog
+        open={isLogoutDialogOpen}
+        onOpenChange={setIsLogoutDialogOpen}
+        onConfirm={handleLogout}
       />
     </motion.header>
   )

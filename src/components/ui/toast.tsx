@@ -23,19 +23,18 @@ const ToastViewport = React.forwardRef<
 ToastViewport.displayName = ToastPrimitives.Viewport.displayName
 
 const toastVariants = cva(
-  "group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-[1.25rem] border p-4 pr-10 shadow-2xl transition-all data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full backdrop-blur-xl",
+  "group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-[1.25rem] border p-4 pr-10 shadow-2xl backdrop-blur-xl transition-all data-[state=closed]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:animate-in data-[state=open]:slide-in-from-top-full data-[swipe=end]:animate-out",
   {
     variants: {
       variant: {
         default: "border-border bg-card/80 text-foreground",
         destructive:
           "destructive group border-toast-destructive-border bg-toast-destructive-bg/90 text-toast-destructive-text",
-        success: 
+        success:
           "success group border-toast-success-border bg-toast-success-bg/90 text-toast-success-text",
         warning:
           "warning group border-toast-warning-border bg-toast-warning-bg/90 text-toast-warning-text",
-        info:
-          "info group border-toast-info-border bg-toast-info-bg/90 text-toast-info-text",
+        info: "info group border-toast-info-border bg-toast-info-bg/90 text-toast-info-text",
       },
     },
     defaultVariants: {
@@ -55,24 +54,31 @@ const Toast = React.forwardRef<
       className={cn(toastVariants({ variant }), className)}
       {...props}
     >
-      <div className="flex w-full gap-4 items-start">
-        <div className={cn(
-          "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-inner transition-transform group-hover:scale-110",
-          variant === "success" && "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/30",
-          variant === "destructive" && "bg-rose-500/20 text-rose-600 dark:text-rose-400 ring-1 ring-rose-500/30",
-          variant === "warning" && "bg-amber-500/20 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/30",
-          variant === "info" && "bg-blue-500/20 text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/30",
-          (!variant || variant === "default") && "bg-muted text-muted-foreground ring-1 ring-border"
-        )}>
+      <div className="flex w-full items-start gap-4">
+        <div
+          className={cn(
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-inner transition-transform group-hover:scale-110",
+            variant === "success" &&
+              "bg-emerald-500/20 text-emerald-600 ring-1 ring-emerald-500/30 dark:text-emerald-400",
+            variant === "destructive" &&
+              "bg-rose-500/20 text-rose-600 ring-1 ring-rose-500/30 dark:text-rose-400",
+            variant === "warning" &&
+              "bg-amber-500/20 text-amber-600 ring-1 ring-amber-500/30 dark:text-amber-400",
+            variant === "info" &&
+              "bg-blue-500/20 text-blue-600 ring-1 ring-blue-500/30 dark:text-blue-400",
+            (!variant || variant === "default") &&
+              "bg-muted text-muted-foreground ring-1 ring-border"
+          )}
+        >
           {variant === "destructive" && <AlertCircle className="h-5 w-5" />}
           {variant === "success" && <CheckCircle2 className="h-5 w-5" />}
           {variant === "warning" && <AlertCircle className="h-5 w-5" />}
           {variant === "info" && <AlertCircle className="h-5 w-5" />}
-          {(!variant || variant === "default") && <CheckCircle2 className="h-5 w-5" />}
+          {(!variant || variant === "default") && (
+            <CheckCircle2 className="h-5 w-5" />
+          )}
         </div>
-        <div className="grid gap-1.5 py-1">
-          {children}
-        </div>
+        <div className="grid gap-1.5 py-1">{children}</div>
       </div>
     </ToastPrimitives.Root>
   )
@@ -86,7 +92,7 @@ const ToastAction = React.forwardRef<
   <ToastPrimitives.Action
     ref={ref}
     className={cn(
-      "inline-flex h-9 shrink-0 items-center justify-center rounded-xl border bg-transparent px-4 text-xs font-bold uppercase tracking-widest ring-offset-background transition-all hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 group-[.destructive]:border-muted/40 group-[.destructive]:hover:border-destructive/30 group-[.destructive]:hover:bg-destructive group-[.destructive]:hover:text-destructive-foreground group-[.destructive]:focus:ring-destructive",
+      "inline-flex h-9 shrink-0 items-center justify-center rounded-xl border bg-transparent px-4 text-xs font-bold tracking-widest uppercase ring-offset-background transition-all group-[.destructive]:border-muted/40 hover:bg-secondary group-[.destructive]:hover:border-destructive/30 group-[.destructive]:hover:bg-destructive group-[.destructive]:hover:text-destructive-foreground focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none group-[.destructive]:focus:ring-destructive disabled:pointer-events-none disabled:opacity-50",
       className
     )}
     {...props}
@@ -98,18 +104,18 @@ const ToastClose = React.forwardRef<
   React.ElementRef<typeof ToastPrimitives.Close>,
   React.ComponentPropsWithoutRef<typeof ToastPrimitives.Close>
 >(({ className, ...props }, ref) => (
-    <ToastPrimitives.Close
-      ref={ref}
-      className={cn(
-        "absolute right-3 top-3 rounded-lg p-1.5 text-foreground/30 opacity-0 transition-all hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5 focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100 group-[.destructive]:text-toast-destructive-text group-[.destructive]:hover:text-toast-destructive-text group-[.success]:text-toast-success-text group-[.success]:hover:text-toast-success-text",
-        className
-      )}
-      toast-close=""
-      aria-label="Close"
-      {...props}
-    >
-      <X className="h-4 w-4" />
-    </ToastPrimitives.Close>
+  <ToastPrimitives.Close
+    ref={ref}
+    className={cn(
+      "absolute top-3 right-3 rounded-lg p-1.5 text-foreground/30 opacity-0 transition-all group-hover:opacity-100 group-[.destructive]:text-toast-destructive-text group-[.success]:text-toast-success-text hover:bg-black/5 hover:text-foreground group-[.destructive]:hover:text-toast-destructive-text group-[.success]:hover:text-toast-success-text focus:opacity-100 focus:ring-2 focus:outline-none dark:hover:bg-white/5",
+      className
+    )}
+    toast-close=""
+    aria-label="Close"
+    {...props}
+  >
+    <X className="h-4 w-4" />
+  </ToastPrimitives.Close>
 ))
 ToastClose.displayName = ToastPrimitives.Close.displayName
 

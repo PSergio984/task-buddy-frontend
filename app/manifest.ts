@@ -9,13 +9,13 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: "#0F172A",
     display: "standalone",
     start_url: "/",
-      icons: [
-        {
-          src: "/task-buddy-icon.svg",
-          sizes: "any",
-          type: "image/svg+xml",
-          purpose: "any",
-        },
-      ],
+    icons: [
+      {
+        src: "/task-buddy-icon.svg",
+        sizes: "any",
+        type: "image/svg+xml",
+        purpose: "any",
+      },
+    ],
   }
 }

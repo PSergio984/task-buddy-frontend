@@ -62,17 +62,20 @@ export function DeleteProjectModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md overflow-hidden border-none bg-transparent p-0 shadow-none pointer-events-none">
+      <DialogContent className="pointer-events-none overflow-hidden border-none bg-transparent p-0 shadow-none sm:max-w-md">
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
           transition={animations.spring.snappy}
-          className="pointer-events-auto overflow-hidden border-none bg-white dark:bg-zinc-950 p-0 shadow-2xl rounded-[2.5rem]"
+          className="pointer-events-auto overflow-hidden rounded-[2.5rem] border-none bg-white p-0 shadow-2xl dark:bg-zinc-950"
         >
-          <form onSubmit={handleConfirm} className="p-8 sm:p-10 flex flex-col gap-6">
+          <form
+            onSubmit={handleConfirm}
+            className="flex flex-col gap-6 p-8 sm:p-10"
+          >
             <DialogHeader className="text-left">
-              <div className="flex items-center gap-3 mb-2">
+              <div className="mb-2 flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
                   <AlertTriangle className="h-5 w-5" />
                 </div>
@@ -80,7 +83,7 @@ export function DeleteProjectModal({
                   Delete Project
                 </DialogTitle>
               </div>
-              <DialogDescription className="text-sm font-medium text-muted-foreground ml-13">
+              <DialogDescription className="ml-13 text-sm font-medium text-muted-foreground">
                 This action is destructive and cannot be undone.
               </DialogDescription>
             </DialogHeader>
@@ -94,10 +97,10 @@ export function DeleteProjectModal({
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="flex flex-col items-center justify-center py-8 rounded-3xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-150 dark:border-zinc-800"
+                    className="border-zinc-150 flex flex-col items-center justify-center rounded-3xl border bg-zinc-50 py-8 dark:border-zinc-800 dark:bg-zinc-900"
                   >
-                    <Loader2 className="h-8 w-8 text-primary animate-spin mb-3" />
-                    <p className="text-[10px] font-black uppercase tracking-widest text-foreground/40">
+                    <Loader2 className="mb-3 h-8 w-8 animate-spin text-primary" />
+                    <p className="text-[10px] font-black tracking-widest text-foreground/40 uppercase">
                       Analyzing associated tasks...
                     </p>
                   </motion.div>
@@ -108,35 +111,39 @@ export function DeleteProjectModal({
                     animate={{ opacity: 1, y: 0 }}
                     className="space-y-3"
                   >
-                    <p className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">
-                      Choose how to handle the {taskCount} associated task{taskCount === 1 ? "" : "s"}:
+                    <p className="ml-1 text-[10px] font-black tracking-widest text-foreground/40 uppercase">
+                      Choose how to handle the {taskCount} associated task
+                      {taskCount === 1 ? "" : "s"}:
                     </p>
 
                     {/* Option B: Keep Tasks (Safe default) */}
                     <div
                       onClick={() => setDeleteTasks(false)}
-                      className={`relative overflow-hidden cursor-pointer rounded-3xl border p-5 transition-all duration-300 flex items-start gap-4 ${
+                      className={`relative flex cursor-pointer items-start gap-4 overflow-hidden rounded-3xl border p-5 transition-all duration-300 ${
                         !deleteTasks
                           ? "border-primary/50 bg-primary/5 shadow-lg shadow-primary/5 dark:bg-primary/10"
-                          : "border-zinc-200 dark:border-zinc-800 bg-transparent hover:border-zinc-300 dark:hover:border-zinc-700"
+                          : "border-zinc-200 bg-transparent hover:border-zinc-300 dark:border-zinc-800 dark:hover:border-zinc-700"
                       }`}
                     >
-                      <div className={`mt-1 p-2 rounded-xl transition-colors ${!deleteTasks ? "bg-primary/20 text-primary" : "bg-zinc-100 dark:bg-zinc-900 text-zinc-400"}`}>
+                      <div
+                        className={`mt-1 rounded-xl p-2 transition-colors ${!deleteTasks ? "bg-primary/20 text-primary" : "bg-zinc-100 text-zinc-400 dark:bg-zinc-900"}`}
+                      >
                         <Inbox className="h-5 w-5" />
                       </div>
                       <div className="flex-1 space-y-1">
                         <div className="flex items-center gap-2">
-                          <h4 className="font-bold text-sm text-foreground">
+                          <h4 className="text-sm font-bold text-foreground">
                             Keep tasks and move to Inbox
                           </h4>
                           {!deleteTasks && (
-                            <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-primary/20 text-primary">
+                            <span className="rounded-full bg-primary/20 px-2 py-0.5 text-[9px] font-black tracking-widest text-primary uppercase">
                               Recommended
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          Tasks will become unassigned and remain safe in your personal space.
+                        <p className="text-xs leading-relaxed text-muted-foreground">
+                          Tasks will become unassigned and remain safe in your
+                          personal space.
                         </p>
                       </div>
                     </div>
@@ -144,21 +151,25 @@ export function DeleteProjectModal({
                     {/* Option A: Delete Tasks */}
                     <div
                       onClick={() => setDeleteTasks(true)}
-                      className={`relative overflow-hidden cursor-pointer rounded-3xl border p-5 transition-all duration-300 flex items-start gap-4 ${
+                      className={`relative flex cursor-pointer items-start gap-4 overflow-hidden rounded-3xl border p-5 transition-all duration-300 ${
                         deleteTasks
                           ? "border-destructive/50 bg-destructive/5 shadow-lg shadow-destructive/5 dark:bg-destructive/10"
-                          : "border-zinc-200 dark:border-zinc-800 bg-transparent hover:border-zinc-300 dark:hover:border-zinc-700"
+                          : "border-zinc-200 bg-transparent hover:border-zinc-300 dark:border-zinc-800 dark:hover:border-zinc-700"
                       }`}
                     >
-                      <div className={`mt-1 p-2 rounded-xl transition-colors ${deleteTasks ? "bg-destructive/20 text-destructive" : "bg-zinc-100 dark:bg-zinc-900 text-zinc-400"}`}>
+                      <div
+                        className={`mt-1 rounded-xl p-2 transition-colors ${deleteTasks ? "bg-destructive/20 text-destructive" : "bg-zinc-100 text-zinc-400 dark:bg-zinc-900"}`}
+                      >
                         <Trash2 className="h-5 w-5" />
                       </div>
                       <div className="flex-1 space-y-1">
-                        <h4 className="font-bold text-sm text-foreground">
-                          Delete all {taskCount} task{taskCount === 1 ? "" : "s"}
+                        <h4 className="text-sm font-bold text-foreground">
+                          Delete all {taskCount} task
+                          {taskCount === 1 ? "" : "s"}
                         </h4>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          All tasks will be permanently removed. There is no way to recover them.
+                        <p className="text-xs leading-relaxed text-muted-foreground">
+                          All tasks will be permanently removed. There is no way
+                          to recover them.
                         </p>
                       </div>
                     </div>
@@ -168,17 +179,18 @@ export function DeleteProjectModal({
                     key="empty"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex items-start gap-4 p-5 rounded-3xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800"
+                    className="flex items-start gap-4 rounded-3xl border border-zinc-100 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-900"
                   >
-                    <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500">
+                    <div className="rounded-xl bg-emerald-500/10 p-2 text-emerald-500">
                       <Sparkles className="h-5 w-5 animate-pulse" />
                     </div>
                     <div className="flex-1 space-y-1">
-                      <h4 className="font-bold text-sm text-foreground">
+                      <h4 className="text-sm font-bold text-foreground">
                         No tasks associated
                       </h4>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        This project is empty. Deleting it will have no impact on your other tasks.
+                      <p className="text-xs leading-relaxed text-muted-foreground">
+                        This project is empty. Deleting it will have no impact
+                        on your other tasks.
                       </p>
                     </div>
                   </motion.div>
@@ -189,8 +201,12 @@ export function DeleteProjectModal({
             {/* Confirmation input name typing */}
             <div className="space-y-4">
               <div className="flex flex-col gap-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">
-                  Type <span className="text-destructive font-black">"{projectName}"</span> to confirm deletion
+                <label className="ml-1 text-[10px] font-black tracking-widest text-foreground/40 uppercase">
+                  Type{" "}
+                  <span className="font-black text-destructive">
+                    "{projectName}"
+                  </span>{" "}
+                  to confirm deletion
                 </label>
                 <motion.div
                   animate={shake ? { x: [-4, 4, -4, 4, 0] } : {}}
@@ -201,26 +217,28 @@ export function DeleteProjectModal({
                     value={confirmationInput}
                     onChange={(e) => setConfirmationInput(e.target.value)}
                     placeholder={`Type "${projectName}" here...`}
-                    className={`w-full h-14 bg-zinc-50 dark:bg-zinc-900 border-2 rounded-2xl px-6 text-center font-bold text-lg focus:outline-none transition-all ${
+                    className={`h-14 w-full rounded-2xl border-2 bg-zinc-50 px-6 text-center text-lg font-bold transition-all focus:outline-none dark:bg-zinc-900 ${
                       confirmationInput && !isMatch
-                        ? "border-destructive/30 text-destructive bg-destructive/5"
+                        ? "border-destructive/30 bg-destructive/5 text-destructive"
                         : isMatch
-                        ? "border-primary/30 text-primary bg-primary/5"
-                        : "border-zinc-200 dark:border-zinc-800 text-foreground hover:border-zinc-300 dark:hover:border-zinc-700"
+                          ? "border-primary/30 bg-primary/5 text-primary"
+                          : "border-zinc-200 text-foreground hover:border-zinc-300 dark:border-zinc-800 dark:hover:border-zinc-700"
                     } shadow-inner`}
                   />
                 </motion.div>
               </div>
             </div>
 
-            <DialogFooter className="flex-col sm:flex-col gap-3 mt-4">
+            <DialogFooter className="mt-4 flex-col gap-3 sm:flex-col">
               <Button
                 type="submit"
                 disabled={isConfirmDisabled || !isMatch}
                 loading={isLoadingDelete}
                 variant="destructive"
-                className={`w-full h-12 rounded-2xl font-bold tracking-tight shadow-xl transition-all ${
-                  !isMatch ? "opacity-50 cursor-not-allowed hover:bg-destructive" : ""
+                className={`h-12 w-full rounded-2xl font-bold tracking-tight shadow-xl transition-all ${
+                  !isMatch
+                    ? "cursor-not-allowed opacity-50 hover:bg-destructive"
+                    : ""
                 }`}
               >
                 Delete Project
@@ -229,7 +247,7 @@ export function DeleteProjectModal({
                 type="button"
                 variant="ghost"
                 onClick={() => onOpenChange(false)}
-                className="w-full h-12 rounded-2xl bg-zinc-50 dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border-zinc-200 dark:border-zinc-800 font-bold text-foreground/80 transition-all"
+                className="h-12 w-full rounded-2xl border-zinc-200 bg-zinc-50 font-bold text-foreground/80 transition-all hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"
               >
                 Cancel
               </Button>

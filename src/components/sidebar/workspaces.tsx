@@ -20,11 +20,11 @@ interface WorkspacesSectionProps {
   readonly navLinks: NavLink[]
 }
 
-export function WorkspacesSection({ 
-  isCollapsed, 
-  currentPath, 
+export function WorkspacesSection({
+  isCollapsed,
+  currentPath,
   onNavigate,
-  navLinks 
+  navLinks,
 }: WorkspacesSectionProps) {
   return (
     <div className="space-y-4">
@@ -45,11 +45,20 @@ export function WorkspacesSection({
               onClick={() => onNavigate(path)}
               className={cn(
                 "group relative flex items-center rounded-xl px-4 py-2.5 text-sm font-bold transition-all duration-300",
-                isCollapsed ? "mx-auto w-12 justify-center" : "w-full justify-start gap-4",
-                isActive ? "bg-primary text-primary-foreground shadow-[0_10px_25px_-5px_rgba(var(--primary-rgb),0.4)]" : "text-foreground/70 hover:bg-white/5 hover:text-foreground"
+                isCollapsed
+                  ? "mx-auto w-12 justify-center"
+                  : "w-full justify-start gap-4",
+                isActive
+                  ? "bg-primary text-primary-foreground shadow-[0_10px_25px_-5px_rgba(var(--primary-rgb),0.4)]"
+                  : "text-foreground/70 hover:bg-white/5 hover:text-foreground"
               )}
             >
-              <Icon className={cn("h-4 w-4 transition-transform duration-300 group-hover:scale-110", isActive ? "text-primary-foreground" : "text-foreground/50")} />
+              <Icon
+                className={cn(
+                  "h-4 w-4 transition-transform duration-300 group-hover:scale-110",
+                  isActive ? "text-primary-foreground" : "text-foreground/50"
+                )}
+              />
               {!isCollapsed && <span>{label}</span>}
             </button>
           )
@@ -58,7 +67,10 @@ export function WorkspacesSection({
             return (
               <Tooltip key={id} delayDuration={0}>
                 <TooltipTrigger asChild>{content}</TooltipTrigger>
-                <TooltipContent side="right" className="font-bold border-none bg-primary text-primary-foreground px-4 py-2 rounded-xl">
+                <TooltipContent
+                  side="right"
+                  className="rounded-xl border-none bg-primary px-4 py-2 font-bold text-primary-foreground"
+                >
                   {label}
                 </TooltipContent>
               </Tooltip>

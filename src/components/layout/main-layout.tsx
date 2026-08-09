@@ -52,13 +52,13 @@ export function MainLayout() {
   return (
     <div className="flex h-svh overflow-hidden bg-background">
       {/* Persistent Sidebar */}
-      <Sidebar 
-        isCollapsed={isCollapsed} 
+      <Sidebar
+        isCollapsed={isCollapsed}
         onToggle={() => setIsCollapsed(!isCollapsed)}
       />
 
       {/* Main Content Wrapper */}
-      <div className="flex flex-1 flex-col min-w-0 overflow-hidden pb-24 md:pb-0">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden pb-24 md:pb-0">
         {/* Persistent Top Navigation */}
         <TopNav onNewTask={handleOpenNewTask} />
 
@@ -70,8 +70,8 @@ export function MainLayout() {
         </main>
 
         {/* Mobile Navigation */}
-        <MobileNav 
-          onOpenWorkspace={() => setIsMobileWorkspaceOpen(true)} 
+        <MobileNav
+          onOpenWorkspace={() => setIsMobileWorkspaceOpen(true)}
           isWorkspaceOpen={isMobileWorkspaceOpen}
         />
       </div>
@@ -81,19 +81,19 @@ export function MainLayout() {
         id="mobile-new-task-fab"
         onClick={handleMobileNewTaskClick}
         className={cn(
-          "fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-6 z-40 flex h-14 w-14 items-center justify-center rounded-2xl shadow-lg transition-all duration-200 active:scale-95 md:hidden border border-white/10 backdrop-blur-md",
+          "fixed right-6 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 shadow-lg backdrop-blur-md transition-all duration-200 active:scale-95 md:hidden",
           isTaskLimitReached
-            ? "bg-muted text-foreground/20 cursor-not-allowed grayscale"
-            : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-primary/20 hover:scale-105 active:bg-primary/85"
+            ? "cursor-not-allowed bg-muted text-foreground/20 grayscale"
+            : "bg-primary text-primary-foreground shadow-primary/20 hover:scale-105 hover:bg-primary/90 active:bg-primary/85"
         )}
       >
         <Plus className="h-6 w-6 stroke-[3px]" />
       </button>
 
       {/* Mobile Workspace Drawer */}
-      <MobileDrawer 
-        open={isMobileWorkspaceOpen} 
-        onOpenChange={setIsMobileWorkspaceOpen} 
+      <MobileDrawer
+        open={isMobileWorkspaceOpen}
+        onOpenChange={setIsMobileWorkspaceOpen}
       />
 
       {/* Global Task Drawer — handles both Create and View/Edit */}

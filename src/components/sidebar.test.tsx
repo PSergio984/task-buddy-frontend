@@ -7,16 +7,22 @@ import React from "react"
 
 // Mock dnd-kit BEFORE importing Sidebar
 vi.mock("@dnd-kit/core", () => ({
-  DndContext: ({ children }: { children: React.ReactNode }) => <div data-testid="dnd-context">{children}</div>,
+  DndContext: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="dnd-context">{children}</div>
+  ),
   closestCenter: vi.fn(),
   PointerSensor: vi.fn(),
   useSensor: vi.fn(),
   useSensors: vi.fn(() => []),
-  DragOverlay: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DragOverlay: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
 }))
 
 vi.mock("@dnd-kit/sortable", () => ({
-  SortableContext: ({ children }: { children: React.ReactNode }) => <div data-testid="sortable-context">{children}</div>,
+  SortableContext: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="sortable-context">{children}</div>
+  ),
   verticalListSortingStrategy: vi.fn(),
   rectSortingStrategy: vi.fn(),
   arrayMove: (array: unknown[]) => array,
@@ -32,7 +38,9 @@ vi.mock("@dnd-kit/sortable", () => ({
 
 // Mock hooks
 vi.mock("@/hooks/useProjects", () => ({
-  useProjects: vi.fn(() => ({ data: [{ id: 1, name: "Project A", color: "red", icon: "Layers" }] })),
+  useProjects: vi.fn(() => ({
+    data: [{ id: 1, name: "Project A", color: "red", icon: "Layers" }],
+  })),
   useReorderProjects: vi.fn(() => ({ mutate: vi.fn() })),
   useDeleteProject: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
   useCreateProject: vi.fn(() => ({ mutate: vi.fn() })),
@@ -40,7 +48,9 @@ vi.mock("@/hooks/useProjects", () => ({
 }))
 
 vi.mock("@/hooks/useTags", () => ({
-  useTags: vi.fn(() => ({ data: [{ id: 1, name: "Tag A", color: "blue", icon: "Tag" }] })),
+  useTags: vi.fn(() => ({
+    data: [{ id: 1, name: "Tag A", color: "blue", icon: "Tag" }],
+  })),
   useReorderTags: vi.fn(() => ({ mutate: vi.fn() })),
   useDeleteTag: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
   useCreateTag: vi.fn(() => ({ mutate: vi.fn() })),
@@ -57,7 +67,9 @@ vi.mock("@/contexts/AuthContext", () => ({
     loading: false,
     logout: vi.fn(),
   })),
-  AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  AuthProvider: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
 }))
 
 vi.mock("@/hooks/useTasks", () => ({
@@ -81,7 +93,9 @@ vi.mock("@/contexts/FilterContext", () => ({
     setSelectedProjects: vi.fn(),
     setSelectedTags: vi.fn(),
   })),
-  FilterProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  FilterProvider: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
 }))
 
 // Import Sidebar after mocks
@@ -103,7 +117,7 @@ const renderSidebar = () => {
           <Sidebar isCollapsed={false} onToggle={vi.fn()} />
         </BrowserRouter>
       </QueryClientProvider>
-    )
+    ),
   }
 }
 
@@ -114,34 +128,51 @@ describe("Sidebar CRUD Integration", () => {
 
   it("opens deletion modal when delete is clicked for a project", async () => {
     const { user } = renderSidebar()
-    
-    const projectItem = screen.getByText("Project A").closest("div[role='button']")!
-    const actionsTrigger = within(projectItem as HTMLElement).getByRole("button", { name: /more actions/i })
-    
+
+    const projectItem = screen
+      .getByText("Project A")
+      .closest("div[role='button']")!
+    const actionsTrigger = within(projectItem as HTMLElement).getByRole(
+      "button",
+      { name: /more actions/i }
+    )
+
     await user.click(actionsTrigger)
-    
+
     const deleteBtn = await screen.findByRole("menuitem", { name: /delete/i })
     await user.click(deleteBtn)
-    
-    expect(screen.getByRole("heading", { name: /delete project/i })).toBeInTheDocument()
-    expect(screen.getByText((_content, element) => {
-      const hasText = (node: Element) => node.textContent === 'Type "Project A" to confirm deletion'
-      return hasText(element!) && Array.from(element?.children || []).every(child => !hasText(child))
-    })).toBeInTheDocument()
+
+    expect(
+      screen.getByRole("heading", { name: /delete project/i })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText((_content, element) => {
+        const hasText = (node: Element) =>
+          node.textContent === 'Type "Project A" to confirm deletion'
+        return (
+          hasText(element!) &&
+          Array.from(element?.children || []).every((child) => !hasText(child))
+        )
+      })
+    ).toBeInTheDocument()
   })
 
   it("opens deletion modal when delete is clicked for a tag", async () => {
     const { user } = renderSidebar()
-    
+
     const tagItem = screen.getByText("Tag A").closest("div")!
-    const actionsTrigger = within(tagItem as HTMLElement).getByRole("button", { name: /more actions/i })
-    
+    const actionsTrigger = within(tagItem as HTMLElement).getByRole("button", {
+      name: /more actions/i,
+    })
+
     await user.click(actionsTrigger)
-    
+
     const deleteBtn = await screen.findByRole("menuitem", { name: /delete/i })
     await user.click(deleteBtn)
-    
+
     expect(screen.getByText(/delete tag/i)).toBeInTheDocument()
-    expect(screen.getByText(/are you sure you want to delete the tag "tag a"/i)).toBeInTheDocument()
+    expect(
+      screen.getByText(/are you sure you want to delete the tag "tag a"/i)
+    ).toBeInTheDocument()
   })
 })

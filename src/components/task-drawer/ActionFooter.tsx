@@ -17,23 +17,31 @@ interface ActionFooterProps {
 }
 
 export function ActionFooter({
-  isCreate, isDirty, onClose, handleCreate, handleUpdate,
+  isCreate,
+  isDirty,
+  onClose,
+  handleCreate,
+  handleUpdate,
   setShowDeleteConfirm,
-  showSaveConfirm, setShowSaveConfirm,
-  isCreating = false, isSaving = false, isDeleting = false, isValid = true
+  showSaveConfirm,
+  setShowSaveConfirm,
+  isCreating = false,
+  isSaving = false,
+  isDeleting = false,
+  isValid = true,
 }: ActionFooterProps) {
   return (
-    <div className="px-8 py-6 border-t border-white/5 bg-white/[0.02] flex items-center justify-between shrink-0">
+    <div className="flex shrink-0 items-center justify-between border-t border-white/5 bg-white/[0.02] px-8 py-6">
       {isCreate ? (
-        <CreateModeFooter 
-          onCancel={onClose} 
-          onCreate={handleCreate} 
-          isDirty={isDirty} 
+        <CreateModeFooter
+          onCancel={onClose}
+          onCreate={handleCreate}
+          isDirty={isDirty}
           isValid={isValid}
           loading={isCreating}
         />
       ) : (
-        <EditModeFooter 
+        <EditModeFooter
           isDirty={isDirty}
           onClose={onClose}
           setShowDeleteConfirm={setShowDeleteConfirm}
@@ -56,17 +64,27 @@ interface CreateModeFooterProps {
   readonly loading?: boolean
 }
 
-function CreateModeFooter({ onCancel, onCreate, isDirty, isValid = true, loading }: CreateModeFooterProps) {
+function CreateModeFooter({
+  onCancel,
+  onCreate,
+  isDirty,
+  isValid = true,
+  loading,
+}: CreateModeFooterProps) {
   return (
     <>
-      <Button variant="ghost" onClick={onCancel} className="text-xs font-bold hover:bg-white/5">
+      <Button
+        variant="ghost"
+        onClick={onCancel}
+        className="text-xs font-bold hover:bg-white/5"
+      >
         Cancel
       </Button>
       <Button
         onClick={onCreate}
         disabled={!isDirty || !isValid || loading}
         loading={loading}
-        className="px-8 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 h-11 rounded-xl text-xs font-black uppercase tracking-widest gap-2"
+        className="h-11 gap-2 rounded-xl bg-primary px-8 text-xs font-black tracking-widest text-primary-foreground uppercase shadow-lg shadow-primary/20 hover:bg-primary/90"
       >
         Create Task <Sparkles className="h-4 w-4" />
       </Button>
@@ -85,43 +103,51 @@ interface EditModeFooterProps {
   readonly isDeleting?: boolean
 }
 
-function EditModeFooter({ 
-  isDirty, onClose, setShowDeleteConfirm,
-  showSaveConfirm, setShowSaveConfirm, handleUpdate,
-  isSaving = false, isDeleting = false
+function EditModeFooter({
+  isDirty,
+  onClose,
+  setShowDeleteConfirm,
+  showSaveConfirm,
+  setShowSaveConfirm,
+  handleUpdate,
+  isSaving = false,
+  isDeleting = false,
 }: EditModeFooterProps) {
   if (showSaveConfirm) {
     return (
-      <div className="flex items-center justify-end w-full">
-        <SaveConfirmView onConfirm={handleUpdate} onCancel={() => setShowSaveConfirm(false)} loading={isSaving} />
+      <div className="flex w-full items-center justify-end">
+        <SaveConfirmView
+          onConfirm={handleUpdate}
+          onCancel={() => setShowSaveConfirm(false)}
+          loading={isSaving}
+        />
       </div>
     )
   }
 
-
   return (
-    <div className="flex items-center justify-between w-full">
+    <div className="flex w-full items-center justify-between">
       <Button
         variant="ghost"
         onClick={() => setShowDeleteConfirm(true)}
-        className="text-xs font-bold text-destructive/40 hover:text-destructive hover:bg-destructive/10 h-11 px-6 rounded-xl transition-all"
+        className="h-11 rounded-xl px-6 text-xs font-bold text-destructive/40 transition-all hover:bg-destructive/10 hover:text-destructive"
         loading={isDeleting}
       >
-        <Trash2 className="h-4 w-4 mr-2" /> Delete Task
+        <Trash2 className="mr-2 h-4 w-4" /> Delete Task
       </Button>
 
       <div className="flex items-center gap-2">
         <Button
           variant="ghost"
           onClick={onClose}
-          className="text-xs font-bold text-foreground/40 hover:text-foreground hover:bg-white/5 h-11 px-6 rounded-xl transition-all"
+          className="h-11 rounded-xl px-6 text-xs font-bold text-foreground/40 transition-all hover:bg-white/5 hover:text-foreground"
         >
           {isDirty ? "Cancel" : "Close"}
         </Button>
         <Button
           onClick={() => setShowSaveConfirm(true)}
           disabled={!isDirty || isSaving}
-          className="text-xs font-black uppercase tracking-widest bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:bg-primary/20 disabled:text-primary-foreground/50 h-11 px-8 rounded-xl shadow-lg shadow-primary/20 transition-all flex items-center gap-2"
+          className="flex h-11 items-center gap-2 rounded-xl bg-primary px-8 text-xs font-black tracking-widest text-primary-foreground uppercase shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 disabled:bg-primary/20 disabled:text-primary-foreground/50 disabled:opacity-50"
         >
           Update Task <Check className="h-4 w-4" />
         </Button>
@@ -130,25 +156,31 @@ function EditModeFooter({
   )
 }
 
-
-function SaveConfirmView({ onConfirm, onCancel, loading }: Readonly<{ onConfirm: () => void; onCancel: () => void; loading?: boolean }>) {
+function SaveConfirmView({
+  onConfirm,
+  onCancel,
+  loading,
+}: Readonly<{
+  onConfirm: () => void
+  onCancel: () => void
+  loading?: boolean
+}>) {
   return (
-    <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-2 duration-300">
+    <div className="flex animate-in items-center gap-2 duration-300 fade-in slide-in-from-right-2">
       <Button
         variant="ghost"
         onClick={onCancel}
-        className="text-xs font-bold hover:bg-white/10 h-11 px-6 rounded-xl bg-white/5 transition-all"
+        className="h-11 rounded-xl bg-white/5 px-6 text-xs font-bold transition-all hover:bg-white/10"
       >
         Cancel
       </Button>
       <Button
         onClick={onConfirm}
         loading={loading}
-        className="text-xs font-black uppercase tracking-widest bg-primary text-primary-foreground h-11 px-8 rounded-xl shadow-lg shadow-primary/20 gap-2"
+        className="h-11 gap-2 rounded-xl bg-primary px-8 text-xs font-black tracking-widest text-primary-foreground uppercase shadow-lg shadow-primary/20"
       >
         <Check className="h-4 w-4" /> Confirm Update
       </Button>
     </div>
   )
 }
-

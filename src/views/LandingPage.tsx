@@ -43,7 +43,10 @@ export function LandingPage() {
       {/* Navigation */}
       <header className="fixed top-0 z-50 w-full border-b bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+          <Link
+            to="/"
+            className="flex items-center gap-2 transition-opacity hover:opacity-80"
+          >
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
               <CheckCircle2 className="h-6 w-6" />
             </div>

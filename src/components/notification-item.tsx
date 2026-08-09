@@ -1,6 +1,13 @@
 import type { Notification, NotificationType } from "@/lib/api"
 import { formatDistanceToNow } from "date-fns"
-import { Clock, AlertCircle, AlertTriangle, Info, Check, Trash2 } from "lucide-react"
+import {
+  Clock,
+  AlertCircle,
+  AlertTriangle,
+  Info,
+  Check,
+  Trash2,
+} from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useMarkRead, useDeleteNotification } from "@/hooks/useNotifications"
@@ -27,16 +34,21 @@ export function NotificationItem({ notification }: NotificationItemProps) {
   return (
     <div
       className={cn(
-        "flex w-full text-left gap-3 p-4 border-b border-border/50 last:border-0 group",
+        "group flex w-full gap-3 border-b border-border/50 p-4 text-left last:border-0",
         !notification.is_read && "bg-primary/5"
       )}
     >
       <div className={cn("mt-1 flex-shrink-0", color)}>
         <Icon className="h-5 w-5" />
       </div>
-      <div className="flex-1 space-y-1 min-w-0">
+      <div className="min-w-0 flex-1 space-y-1">
         <div className="flex items-center justify-between gap-2">
-          <p className={cn("text-sm font-semibold truncate", !notification.is_read && "text-foreground")}>
+          <p
+            className={cn(
+              "truncate text-sm font-semibold",
+              !notification.is_read && "text-foreground"
+            )}
+          >
             {notification.title}
           </p>
           <div className="flex items-center gap-1">
@@ -44,7 +56,7 @@ export function NotificationItem({ notification }: NotificationItemProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
                 onClick={() => markRead.mutate(notification.id)}
                 title="Mark as read"
               >
@@ -54,22 +66,24 @@ export function NotificationItem({ notification }: NotificationItemProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
+              className="h-6 w-6 text-destructive opacity-0 transition-opacity group-hover:opacity-100"
               onClick={() => deleteNotification.mutate(notification.id)}
               title="Delete notification"
             >
               <Trash2 className="h-3 w-3" />
             </Button>
             {!notification.is_read && (
-              <div className="h-2 w-2 rounded-full bg-primary flex-shrink-0" />
+              <div className="h-2 w-2 flex-shrink-0 rounded-full bg-primary" />
             )}
           </div>
         </div>
-        <p className="text-xs text-muted-foreground line-clamp-2">
+        <p className="line-clamp-2 text-xs text-muted-foreground">
           {notification.message}
         </p>
         <p className="text-[10px] text-muted-foreground/60">
-          {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+          {formatDistanceToNow(new Date(notification.created_at), {
+            addSuffix: true,
+          })}
         </p>
       </div>
     </div>

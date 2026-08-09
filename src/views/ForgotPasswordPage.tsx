@@ -29,7 +29,8 @@ export function ForgotPasswordPage() {
       setIsSubmitted(true)
       toast({
         title: "Reset link sent",
-        description: "Check your email for instructions to reset your password.",
+        description:
+          "Check your email for instructions to reset your password.",
         variant: "success",
       })
     } catch (error: unknown) {
@@ -38,7 +39,10 @@ export function ForgotPasswordPage() {
         title: "Error",
         description: (() => {
           if (axios.isAxiosError(error)) {
-            return (error.response?.data as { detail?: string })?.detail || error.message
+            return (
+              (error.response?.data as { detail?: string })?.detail ||
+              error.message
+            )
           }
           if (error instanceof Error) return error.message
           return "Something went wrong. Please try again."
@@ -50,9 +54,9 @@ export function ForgotPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-svh items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8 relative overflow-hidden">
-       {/* Background Decorative Elements */}
-       <div className="absolute top-0 -z-10 left-1/2 -translate-x-1/2 blur-3xl opacity-10">
+    <div className="relative flex min-h-svh items-center justify-center overflow-hidden bg-background px-4 py-12 sm:px-6 lg:px-8">
+      {/* Background Decorative Elements */}
+      <div className="absolute top-0 left-1/2 -z-10 -translate-x-1/2 opacity-10 blur-3xl">
         <div className="h-[500px] w-[500px] rounded-full bg-gradient-to-tr from-accent to-purple-400" />
       </div>
 
@@ -61,32 +65,32 @@ export function ForgotPasswordPage() {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
-        <div className="flex flex-col items-center mb-8">
-          <Link to="/" className="flex items-center gap-2 mb-8 group">
+        <div className="mb-8 flex flex-col items-center">
+          <Link to="/" className="group mb-8 flex items-center gap-2">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg transition-transform group-hover:scale-110">
               <CheckCircle2 className="h-7 w-7" />
             </div>
             <span className="font-heading text-3xl font-bold">Task Buddy</span>
           </Link>
-          
+
           <AnimatePresence mode="wait">
             {isSubmitted ? (
               <motion.div
                 key="success"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="text-center bg-background p-10 rounded-[2rem] border shadow-xl shadow-primary/5"
+                className="rounded-[2rem] border bg-background p-10 text-center shadow-xl shadow-primary/5"
               >
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-success/10 text-success mb-6">
+                <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-success/10 text-success">
                   <Send className="h-8 w-8" />
                 </div>
-                <h2 className="text-2xl font-bold mb-4">Check your email</h2>
-                <p className="text-muted-foreground mb-8">
+                <h2 className="mb-4 text-2xl font-bold">Check your email</h2>
+                <p className="mb-8 text-muted-foreground">
                   We've sent a password reset link to <br />
                   <span className="font-semibold text-primary">{email}</span>
                 </p>
                 <Link to="/login" className="w-full">
-                  <Button variant="outline" className="w-full h-12 rounded-xl">
+                  <Button variant="outline" className="h-12 w-full rounded-xl">
                     Back to login
                   </Button>
                 </Link>
@@ -108,20 +112,28 @@ export function ForgotPasswordPage() {
                 exit={{ opacity: 0, x: 20 }}
                 className="w-full"
               >
-                <div className="text-center mb-8">
-                  <h1 className="text-3xl font-bold tracking-tight mb-2">Forgot password?</h1>
+                <div className="mb-8 text-center">
+                  <h1 className="mb-2 text-3xl font-bold tracking-tight">
+                    Forgot password?
+                  </h1>
                   <p className="text-muted-foreground">
                     No worries, we'll send you reset instructions.
                   </p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6 bg-background p-8 rounded-[2rem] border shadow-xl shadow-primary/5">
+                <form
+                  onSubmit={handleSubmit}
+                  className="space-y-6 rounded-[2rem] border bg-background p-8 shadow-xl shadow-primary/5"
+                >
                   <div className="space-y-2">
-                    <label htmlFor="email" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    <label
+                      htmlFor="email"
+                      className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
                       Email address
                     </label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                      <Mail className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         id="email"
                         type="email"
@@ -129,20 +141,22 @@ export function ForgotPasswordPage() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
-                        className="pl-10 h-12 rounded-xl"
+                        className="h-12 rounded-xl pl-10"
                       />
                     </div>
                   </div>
 
                   <Button
                     type="submit"
-                    className="w-full h-12 rounded-xl text-lg font-semibold shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                    className="h-12 w-full rounded-xl text-lg font-semibold shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
                     disabled={isButtonDisabled}
                   >
                     {isLoading ? (
                       <Loader2 className="h-5 w-5 animate-spin" />
                     ) : (
-                      <span className="flex items-center gap-2">Reset password <Send className="h-4 w-4" /></span>
+                      <span className="flex items-center gap-2">
+                        Reset password <Send className="h-4 w-4" />
+                      </span>
                     )}
                   </Button>
                 </form>
@@ -153,7 +167,7 @@ export function ForgotPasswordPage() {
           {!isSubmitted && (
             <Link
               to="/login"
-              className="mt-8 flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+              className="mt-8 flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
             >
               <ArrowLeft className="h-4 w-4" /> Back to login
             </Link>

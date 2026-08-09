@@ -12,21 +12,31 @@ interface LayoutContext {
 export function DashboardDemo() {
   const { handleEditTask } = useOutletContext<LayoutContext>()
   const { activeSidebarFilter, activeTagId } = useFilters()
-  
+
   const isProjectFilter = activeSidebarFilter.startsWith("project:")
-  const projectIdParam = isProjectFilter ? Number.parseInt(activeSidebarFilter.split(":")[1], 10) : undefined
+  const projectIdParam = isProjectFilter
+    ? Number.parseInt(activeSidebarFilter.split(":")[1], 10)
+    : undefined
 
   // For Dashboard, we want to fetch all tasks and filter them by time locally
-  const { data: tasks = [], isLoading: loadingTasks, refetch: refreshTasks } = useTasks(undefined, projectIdParam, activeTagId || undefined)
-  const { data: stats = undefined, isLoading: loadingStats, refetch: refreshStats } = useStats()
+  const {
+    data: tasks = [],
+    isLoading: loadingTasks,
+    refetch: refreshTasks,
+  } = useTasks(undefined, projectIdParam, activeTagId || undefined)
+  const {
+    data: stats = undefined,
+    isLoading: loadingStats,
+    refetch: refreshStats,
+  } = useStats()
 
   const handleRefresh = async () => {
     await Promise.all([refreshTasks(), refreshStats()])
   }
 
   return (
-    <Dashboard 
-      tasks={tasks} 
+    <Dashboard
+      tasks={tasks}
       loadingTasks={loadingTasks}
       onRefresh={handleRefresh}
       onEdit={handleEditTask}

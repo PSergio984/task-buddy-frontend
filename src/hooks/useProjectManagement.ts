@@ -15,7 +15,12 @@ export interface UseProjectManagementReturn {
   newProjectIcon: string
   setNewProjectIcon: (icon: string) => void
   handleCreateProject: () => void
-  localUnsavedProjects: { name: string; color: string; icon: string; tempId: number }[]
+  localUnsavedProjects: {
+    name: string
+    color: string
+    icon: string
+    tempId: number
+  }[]
   resetProjects: (task: { project_id?: number } | null) => void
 }
 
@@ -28,7 +33,9 @@ export function useProjectManagement(
   const [isProjectPickerOpen, setIsProjectPickerOpen] = useState(false)
   const [newProjectColor, setNewProjectColor] = useState(PRESET_COLORS[0])
   const [newProjectIcon, setNewProjectIcon] = useState("Layers")
-  const [localUnsavedProjects, setLocalUnsavedProjects] = useState<{ name: string; color: string; icon: string; tempId: number }[]>([])
+  const [localUnsavedProjects, setLocalUnsavedProjects] = useState<
+    { name: string; color: string; icon: string; tempId: number }[]
+  >([])
 
   const unsavedIdCounter = React.useRef(0)
 
@@ -36,8 +43,10 @@ export function useProjectManagement(
     if (!projectSearch.trim()) return
 
     const nameLower = projectSearch.trim().toLowerCase()
-    const existsInAll = projects.some(p => p.name.toLowerCase() === nameLower)
-    const existsInUnsaved = localUnsavedProjects.some(p => p.name.toLowerCase() === nameLower)
+    const existsInAll = projects.some((p) => p.name.toLowerCase() === nameLower)
+    const existsInUnsaved = localUnsavedProjects.some(
+      (p) => p.name.toLowerCase() === nameLower
+    )
 
     if (existsInAll || existsInUnsaved) {
       toast({ title: "Project already exists", variant: "warning" })
@@ -46,20 +55,30 @@ export function useProjectManagement(
 
     unsavedIdCounter.current += 1
     const tempId = -unsavedIdCounter.current
-    
-    setLocalUnsavedProjects(prev => [...prev, {
-      name: projectSearch.trim(),
-      color: newProjectColor,
-      icon: newProjectIcon,
-      tempId
-    }])
+
+    setLocalUnsavedProjects((prev) => [
+      ...prev,
+      {
+        name: projectSearch.trim(),
+        color: newProjectColor,
+        icon: newProjectIcon,
+        tempId,
+      },
+    ])
 
     setProjectId(tempId.toString())
     setProjectSearch("")
     setIsProjectPickerOpen(false)
     setNewProjectColor(PRESET_COLORS[0])
     setNewProjectIcon("Layers")
-  }, [projectSearch, projects, localUnsavedProjects, newProjectColor, newProjectIcon, toast])
+  }, [
+    projectSearch,
+    projects,
+    localUnsavedProjects,
+    newProjectColor,
+    newProjectIcon,
+    toast,
+  ])
 
   const resetProjects = useCallback((task: { project_id?: number } | null) => {
     setProjectId(task?.project_id?.toString() ?? "none")
@@ -83,6 +102,6 @@ export function useProjectManagement(
     setNewProjectIcon,
     handleCreateProject,
     localUnsavedProjects,
-    resetProjects
+    resetProjects,
   }
 }

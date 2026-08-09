@@ -19,12 +19,12 @@ export function CharacterCounter({
   return (
     <div
       className={cn(
-        "text-[10px] font-bold uppercase tracking-wider transition-colors",
+        "text-[10px] font-bold tracking-wider uppercase transition-colors",
         isOverLimit
           ? "text-destructive"
           : isNearLimit
-          ? "text-amber-500"
-          : "text-muted-foreground/40",
+            ? "text-amber-500"
+            : "text-muted-foreground/40",
         className
       )}
     >

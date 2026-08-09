@@ -1,5 +1,5 @@
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { create } from "zustand"
+import { persist } from "zustand/middleware"
 
 interface UserPreferences {
   skipTaskCompletionConfirm: boolean
@@ -8,12 +8,18 @@ interface UserPreferences {
   skipTagDetachmentConfirm: boolean
   skipSubtaskDeletionConfirm: boolean
   skipTaskDeletionConfirm: boolean
-  setPreference: (key: keyof Omit<UserPreferences, 'setPreference'>, value: boolean) => void
+  setPreference: (
+    key: keyof Omit<UserPreferences, "setPreference">,
+    value: boolean
+  ) => void
 }
 
-import { type UseBoundStore, type StoreApi } from 'zustand'
+import { type UseBoundStore, type StoreApi } from "zustand"
 
-const stores = new Map<number | string, UseBoundStore<StoreApi<UserPreferences>>>()
+const stores = new Map<
+  number | string,
+  UseBoundStore<StoreApi<UserPreferences>>
+>()
 
 export const useUserPreferences = (userId: number | string = "default") => {
   if (!stores.has(userId)) {

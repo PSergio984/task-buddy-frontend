@@ -1,5 +1,12 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState, useMemo, useCallback, type ReactNode } from "react"
+import {
+  createContext,
+  useContext,
+  useState,
+  useMemo,
+  useCallback,
+  type ReactNode,
+} from "react"
 
 interface FilterContextType {
   activeSidebarFilter: string
@@ -11,13 +18,19 @@ interface FilterContextType {
   activeTagId: number | null
   setActiveTagId: (tagId: number | null) => void
   selectedPriorities: string[]
-  setSelectedPriorities: (priorities: string[] | ((prev: string[]) => string[])) => void
+  setSelectedPriorities: (
+    priorities: string[] | ((prev: string[]) => string[])
+  ) => void
   clearHubFilters: () => void
 }
 
-export const FilterContext = createContext<FilterContextType | undefined>(undefined)
+export const FilterContext = createContext<FilterContextType | undefined>(
+  undefined
+)
 
-export function FilterProvider({ children }: Readonly<{ children: ReactNode }>) {
+export function FilterProvider({
+  children,
+}: Readonly<{ children: ReactNode }>) {
   const [activeSidebarFilter, setActiveSidebarFilter] = useState("all")
   const [activeStatus, setActiveStatus] = useState("all")
   const [dashboardTimeframe, setDashboardTimeframe] = useState("all")
@@ -30,31 +43,32 @@ export function FilterProvider({ children }: Readonly<{ children: ReactNode }>) 
     setSelectedPriorities([])
   }, [])
 
-  const value = useMemo(() => ({
-    activeSidebarFilter,
-    setActiveSidebarFilter,
-    activeStatus,
-    setActiveStatus,
-    dashboardTimeframe,
-    setDashboardTimeframe,
-    activeTagId,
-    setActiveTagId,
-    selectedPriorities,
-    setSelectedPriorities,
-    clearHubFilters
-  }), [
-    activeSidebarFilter, 
-    activeStatus, 
-    dashboardTimeframe,
-    activeTagId, 
-    selectedPriorities,
-    clearHubFilters
-  ])
+  const value = useMemo(
+    () => ({
+      activeSidebarFilter,
+      setActiveSidebarFilter,
+      activeStatus,
+      setActiveStatus,
+      dashboardTimeframe,
+      setDashboardTimeframe,
+      activeTagId,
+      setActiveTagId,
+      selectedPriorities,
+      setSelectedPriorities,
+      clearHubFilters,
+    }),
+    [
+      activeSidebarFilter,
+      activeStatus,
+      dashboardTimeframe,
+      activeTagId,
+      selectedPriorities,
+      clearHubFilters,
+    ]
+  )
 
   return (
-    <FilterContext.Provider value={value}>
-      {children}
-    </FilterContext.Provider>
+    <FilterContext.Provider value={value}>{children}</FilterContext.Provider>
   )
 }
 
