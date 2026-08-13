@@ -181,6 +181,39 @@ export interface StatsOverview {
   tag_distribution: TagDistribution[]
 }
 
+export interface KnowledgeNote {
+  id: number
+  user_id: number
+  task_id: number
+  source_type: "note"
+  title?: string | null
+  content: string
+  metadata?: Record<string, unknown> | null
+  created_at: string
+  updated_at: string | null
+}
+
+export interface KnowledgeCitation {
+  knowledge_id: number
+  chunk_text: string
+  rrf_score: number
+}
+
+export interface KnowledgeAskResponse {
+  task_id: number
+  answer: string
+  citations: KnowledgeCitation[]
+  model: string
+  prompt_tokens: number
+  completion_tokens: number
+  total_tokens: number
+  cost_usd: number
+  response_time_ms: number
+  judge_verdict: string | null
+  judge_explanation: string | null
+  answer_id: number
+}
+
 export interface TaskCreateData {
   title: string
   description?: string
@@ -245,6 +278,29 @@ export const tasksApi = {
 export const statsApi = {
   getOverview: async () => {
     const response = await api.get<StatsOverview>("/api/v1/stats/overview")
+    return response.data
+  },
+}
+
+export const knowledgeApi = {
+  list: async (taskId: number) => {
+    const response = await api.get<KnowledgeNote[]>(
+      `/api/v1/tasks/${taskId}/knowledge`
+    )
+    return response.data
+  },
+  create: async (taskId: number, content: string) => {
+    const response = await api.post<KnowledgeNote>(
+      `/api/v1/tasks/${taskId}/knowledge`,
+      { content }
+    )
+    return response.data
+  },
+  ask: async (taskId: number, query?: string) => {
+    const response = await api.post<KnowledgeAskResponse>(
+      `/api/v1/tasks/${taskId}/knowledge/ask`,
+      query ? { query } : {}
+    )
     return response.data
   },
 }

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useTaskDrawerState } from "@/hooks/useTaskDrawerState"
 import { SubtaskSection } from "./task-drawer/SubtaskSection"
+import { KnowledgeSection } from "./task-drawer/KnowledgeSection"
 import { MetaSidebar } from "./task-drawer/MetaSidebar"
 import { ActionFooter } from "./task-drawer/ActionFooter"
 import { CharacterCounter } from "./ui/character-counter"
@@ -126,6 +127,10 @@ export function TaskDetailDrawer({
                 handleReorderSubtasks={state.handleReorderSubtasks}
                 onDeleteSubtaskClick={state.setDeletingSubtask}
               />
+
+              {!state.isCreate && state.task && (
+                <KnowledgeSection taskId={state.task.id} toast={state.toast} />
+              )}
             </div>
 
             <MetaSidebar
