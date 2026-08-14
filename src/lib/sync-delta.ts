@@ -4,9 +4,43 @@ export interface SyncDelta {
   projects: Record<string, unknown>[]
 }
 
+export interface SyncConflict {
+  entity: "task" | "subtask" | "project"
+  id: number
+  op: "update" | "delete"
+  server_state?: Record<string, unknown>
+}
+
 export interface CacheShape {
   tasks: Record<string, unknown>[]
   projects: Record<string, unknown>[]
+}
+
+export function mergeConflictsIntoDelta(
+  delta: SyncDelta,
+  conflicts: SyncConflict[]
+): SyncDelta {
+  const merged = {
+    tasks: [...delta.tasks],
+    subtasks: [...delta.subtasks],
+    projects: [...delta.projects],
+  }
+  for (const conflict of conflicts) {
+    if (!conflict.server_state) continue
+    const section =
+      conflict.entity === "task"
+        ? merged.tasks
+        : conflict.entity === "subtask"
+          ? merged.subtasks
+          : merged.projects
+    const index = section.findIndex((row) => Number(row.id) === conflict.id)
+    if (index >= 0) {
+      section[index] = { ...section[index], ...conflict.server_state }
+    } else {
+      section.push(conflict.server_state)
+    }
+  }
+  return merged
 }
 
 function mergeById(

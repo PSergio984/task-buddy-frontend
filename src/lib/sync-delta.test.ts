@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest"
-import { applyDeltaToCache, type SyncDelta } from "./sync-delta"
+import {
+  applyDeltaToCache,
+  mergeConflictsIntoDelta,
+  type SyncDelta,
+} from "./sync-delta"
 
 describe("applyDeltaToCache", () => {
   const delta: SyncDelta = {
@@ -66,6 +70,57 @@ describe("applyDeltaToCache", () => {
     const result = applyDeltaToCache({ tasks: [], projects }, delta)
     expect(result.projects).toHaveLength(1)
     expect(result.projects[0]).toMatchObject({ id: 3, name: "Project three" })
+  })
+
+  describe("mergeConflictsIntoDelta", () => {
+    it("merges server_state over an existing delta row", () => {
+      const delta: SyncDelta = {
+        tasks: [{ id: 1, title: "Old" }],
+        subtasks: [],
+        projects: [],
+      }
+      const merged = mergeConflictsIntoDelta(delta, [
+        {
+          entity: "task",
+          id: 1,
+          op: "update",
+          server_state: { id: 1, title: "Server won" },
+        },
+      ])
+      expect(merged.tasks).toHaveLength(1)
+      expect(merged.tasks[0]).toMatchObject({ id: 1, title: "Server won" })
+    })
+
+    it("appends a conflict row missing from the delta", () => {
+      const delta: SyncDelta = { tasks: [], subtasks: [], projects: [] }
+      const merged = mergeConflictsIntoDelta(delta, [
+        {
+          entity: "project",
+          id: 3,
+          op: "update",
+          server_state: { id: 3, name: "New" },
+        },
+      ])
+      expect(merged.projects).toHaveLength(1)
+      expect(merged.projects[0]).toMatchObject({ id: 3, name: "New" })
+    })
+
+    it("skips conflicts without server_state", () => {
+      const delta: SyncDelta = { tasks: [], subtasks: [], projects: [] }
+      const merged = mergeConflictsIntoDelta(delta, [
+        { entity: "task", id: 9, op: "delete" },
+      ])
+      expect(merged.tasks).toHaveLength(0)
+    })
+
+    it("returns the input delta untouched when there are no conflicts", () => {
+      const delta: SyncDelta = {
+        tasks: [{ id: 1 }],
+        subtasks: [],
+        projects: [],
+      }
+      expect(mergeConflictsIntoDelta(delta, [])).toEqual(delta)
+    })
   })
 
   it("returns the input lists untouched when delta sections are empty", () => {

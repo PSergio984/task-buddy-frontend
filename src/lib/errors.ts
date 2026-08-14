@@ -1,5 +1,18 @@
 import axios from "axios"
 
+export function getHttpErrorStatus(error: unknown): number | null {
+  const status = (error as { response?: { status?: number } })?.response?.status
+  return typeof status === "number" ? status : null
+}
+
+export function getRetryAfterSec(error: unknown): number | null {
+  const retryAfter = (
+    error as { response?: { headers?: Record<string, string> } }
+  )?.response?.headers?.["retry-after"]
+  const parsed = retryAfter ? Number(retryAfter) : NaN
+  return Number.isFinite(parsed) ? parsed : null
+}
+
 export function getErrorMessage(err: unknown): string {
   if (axios.isAxiosError(err)) {
     const data = err.response?.data

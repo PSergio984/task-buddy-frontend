@@ -1,4 +1,5 @@
 import { get, set } from "idb-keyval"
+import { createUuid } from "@/lib/utils"
 
 export type SyncEntity = "task" | "subtask" | "project"
 export type SyncOp = "update" | "delete"
@@ -14,16 +15,6 @@ export interface PendingMutation {
 
 const QUEUE_KEY = "sync-pending-mutations"
 
-function createQueueId(): string {
-  if (
-    typeof crypto !== "undefined" &&
-    typeof crypto.randomUUID === "function"
-  ) {
-    return crypto.randomUUID()
-  }
-  return `${Date.now()}-${Math.random().toString(16).slice(2)}`
-}
-
 export async function listMutations(): Promise<PendingMutation[]> {
   const stored = await get<PendingMutation[]>(QUEUE_KEY)
   return Array.isArray(stored) ? stored : []
@@ -33,7 +24,7 @@ export async function enqueueMutation(
   mutation: Omit<PendingMutation, "queueId">
 ): Promise<void> {
   const current = await listMutations()
-  current.push({ ...mutation, queueId: createQueueId() })
+  current.push({ ...mutation, queueId: createUuid() })
   await set(QUEUE_KEY, current)
 }
 

@@ -12,6 +12,7 @@ interface EnqueueOrCallOptions<T> {
 export interface EnqueueOrCallResult<T> {
   queued: boolean
   data: T | null
+  error: unknown
 }
 
 export async function enqueueOrCall<T>({
@@ -22,13 +23,13 @@ export async function enqueueOrCall<T>({
 }: EnqueueOrCallOptions<T>): Promise<EnqueueOrCallResult<T>> {
   if (!isOnline()) {
     await enqueue(mutation)
-    return { queued: true, data: null }
+    return { queued: true, data: null, error: null }
   }
   try {
     const data = await call(mutation)
-    return { queued: false, data }
-  } catch {
+    return { queued: false, data, error: null }
+  } catch (error) {
     await enqueue(mutation)
-    return { queued: true, data: null }
+    return { queued: true, data: null, error }
   }
 }

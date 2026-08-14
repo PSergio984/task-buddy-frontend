@@ -2,21 +2,14 @@ import axios from "axios"
 import type { InternalAxiosRequestConfig } from "axios"
 import { toast } from "@/hooks/use-toast"
 import { API_BASE_URL } from "@/lib/config"
+import { createUuid } from "@/lib/utils"
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
 })
 
-export const createIdempotencyKey = () => {
-  if (
-    typeof crypto !== "undefined" &&
-    typeof crypto.randomUUID === "function"
-  ) {
-    return crypto.randomUUID()
-  }
-  return `${Date.now()}-${Math.random().toString(16).slice(2)}`
-}
+export const createIdempotencyKey = () => createUuid()
 
 // Helper to generate an idempotency key (unique per request)
 async function generateIdempotencyKey(

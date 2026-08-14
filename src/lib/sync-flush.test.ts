@@ -63,6 +63,7 @@ describe("flushSync", () => {
     const result = await flushSync({ sendSync, isOnline: () => true })
 
     expect(sendSync).toHaveBeenCalledWith({
+      since: undefined,
       changes: [
         {
           entity: "task",
@@ -76,8 +77,24 @@ describe("flushSync", () => {
     expect(result).toMatchObject({
       conflictCount: 0,
       delta: okResponse.delta,
+      since: "2026-08-14T10:00:00Z",
     })
     expect(await listMutations()).toHaveLength(0)
+  })
+
+  it("forwards the incremental sync cursor (since) to the server", async () => {
+    await enqueueMutation(task(1))
+    const sendSync = vi.fn().mockResolvedValue(okResponse)
+
+    await flushSync({
+      sendSync,
+      isOnline: () => true,
+      since: "2026-08-14T09:00:00Z",
+    })
+
+    expect(sendSync).toHaveBeenCalledWith(
+      expect.objectContaining({ since: "2026-08-14T09:00:00Z" })
+    )
   })
 
   it("counts conflicts, drops the losing change, and keeps the delta", async () => {

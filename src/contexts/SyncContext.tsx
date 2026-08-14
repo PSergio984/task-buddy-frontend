@@ -12,17 +12,15 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { api } from "@/lib/api"
 import { queryClient } from "@/lib/query-client"
-import { applyDeltaToCache } from "@/lib/sync-delta"
+import { applyDeltaToCache, mergeConflictsIntoDelta } from "@/lib/sync-delta"
 import {
   enqueueOrCall as enqueueOrCallPure,
   type EnqueueOrCallResult,
+  type PendingMutationInput,
 } from "@/lib/sync-enqueue"
 import { flushSync, type SyncResponse } from "@/lib/sync-flush"
-import {
-  enqueueMutation,
-  pendingMutationCount,
-  type PendingMutation,
-} from "@/lib/sync-queue"
+import { enqueueMutation, pendingMutationCount } from "@/lib/sync-queue"
+import { getHttpErrorStatus, getRetryAfterSec } from "@/lib/errors"
 
 interface SyncContextValue {
   isOnline: boolean
@@ -30,8 +28,8 @@ interface SyncContextValue {
   pendingCount: number
   conflictCount: number
   enqueueOrCall: <T>(
-    mutation: Omit<PendingMutation, "queueId">,
-    call: (mutation: Omit<PendingMutation, "queueId">) => Promise<T>
+    mutation: PendingMutationInput,
+    call: (mutation: PendingMutationInput) => Promise<T>
   ) => Promise<EnqueueOrCallResult<T>>
   triggerFlush: () => Promise<void>
 }
@@ -40,31 +38,18 @@ const SyncContext = createContext<SyncContextValue | null>(null)
 
 const CONFLICT_COUNT_CLEAR_MS = 10_000
 
-function mergeConflictsIntoDelta(
-  delta: SyncResponse["delta"],
-  conflicts: SyncResponse["conflicts"]
-): SyncResponse["delta"] {
-  const merged = {
-    tasks: [...delta.tasks],
-    subtasks: [...delta.subtasks],
-    projects: [...delta.projects],
+function invalidateEntityQueries(
+  entity: SyncResponse["conflicts"][number]["entity"]
+) {
+  const key =
+    entity === "task" || entity === "subtask"
+      ? "tasks"
+      : entity === "project"
+        ? "projects"
+        : null
+  if (key) {
+    void queryClient.invalidateQueries({ queryKey: [key] })
   }
-  for (const conflict of conflicts) {
-    if (!conflict.server_state) continue
-    const section =
-      conflict.entity === "task"
-        ? merged.tasks
-        : conflict.entity === "subtask"
-          ? merged.subtasks
-          : merged.projects
-    const index = section.findIndex((row) => Number(row.id) === conflict.id)
-    if (index >= 0) {
-      section[index] = { ...section[index], ...conflict.server_state }
-    } else {
-      section.push(conflict.server_state)
-    }
-  }
-  return merged
 }
 
 function applyDeltaToQueries(delta: SyncResponse["delta"]) {
@@ -122,23 +107,37 @@ export function SyncProvider({
     ReturnType<typeof setTimeout> | undefined
   >(undefined)
   const triggerFlushRef = useRef<() => Promise<void>>(async () => {})
+  const sinceRef = useRef<string | null>(null)
 
   const refreshPendingCount = useCallback(async () => {
     setPendingCount(await pendingMutationCount())
   }, [])
 
+  const scheduleRetry = useCallback((retryAfterSec: number) => {
+    if (retryTimerRef.current) clearTimeout(retryTimerRef.current)
+    retryTimerRef.current = setTimeout(() => {
+      void triggerFlushRef.current()
+    }, retryAfterSec * 1000)
+  }, [])
+
   const triggerFlush = useCallback(async () => {
     if (flushingRef.current) return
+    const count = await pendingMutationCount()
+    if (count === 0 || !navigator.onLine) return
     flushingRef.current = true
     setIsSyncing(true)
     try {
       const result = await flushSync({
         isOnline: () => navigator.onLine,
+        since: sinceRef.current,
         sendSync: async (request) => {
           const response = await api.post<SyncResponse>("/api/v1/sync", request)
           return response.data
         },
       })
+      if (result.since) {
+        sinceRef.current = result.since
+      }
       if (result.conflictCount > 0) {
         setConflictCount(result.conflictCount)
         toast({
@@ -152,6 +151,13 @@ export function SyncProvider({
           setConflictCount(0)
         }, CONFLICT_COUNT_CLEAR_MS)
       }
+      for (const conflict of result.conflicts) {
+        if (conflict.op === "delete" && !conflict.server_state) {
+          // A rejected delete without server state cannot be reconstructed from
+          // the delta; refetch so the surviving row converges back into view.
+          invalidateEntityQueries(conflict.entity)
+        }
+      }
       const delta = mergeConflictsIntoDelta(result.delta, result.conflicts)
       if (
         delta.tasks.length > 0 ||
@@ -161,10 +167,7 @@ export function SyncProvider({
         applyDeltaToQueries(delta)
       }
       if (result.retryAfterSec !== null && result.retryAfterSec > 0) {
-        if (retryTimerRef.current) clearTimeout(retryTimerRef.current)
-        retryTimerRef.current = setTimeout(() => {
-          void triggerFlushRef.current()
-        }, result.retryAfterSec * 1000)
+        scheduleRetry(result.retryAfterSec)
       }
     } catch (error) {
       console.error("Sync flush failed; queue retained.", error)
@@ -173,7 +176,7 @@ export function SyncProvider({
       setIsSyncing(false)
       await refreshPendingCount()
     }
-  }, [refreshPendingCount, toast])
+  }, [refreshPendingCount, scheduleRetry, toast])
 
   useEffect(() => {
     triggerFlushRef.current = triggerFlush
@@ -204,8 +207,8 @@ export function SyncProvider({
 
   const enqueueOrCall = useCallback(
     async <T,>(
-      mutation: Omit<PendingMutation, "queueId">,
-      call: (mutation: Omit<PendingMutation, "queueId">) => Promise<T>
+      mutation: PendingMutationInput,
+      call: (mutation: PendingMutationInput) => Promise<T>
     ) => {
       const result = await enqueueOrCallPure<T>({
         isOnline: () => navigator.onLine,
@@ -217,11 +220,17 @@ export function SyncProvider({
       })
       await refreshPendingCount()
       if (result.queued && navigator.onLine) {
-        void triggerFlush()
+        if (getHttpErrorStatus(result.error) === 429) {
+          // The mutation was already rate limited; retry from this first 429
+          // instead of immediately re-hitting the API.
+          scheduleRetry(getRetryAfterSec(result.error) ?? 60)
+        } else {
+          void triggerFlush()
+        }
       }
       return result
     },
-    [refreshPendingCount, triggerFlush]
+    [refreshPendingCount, scheduleRetry, triggerFlush]
   )
 
   const value = useMemo(

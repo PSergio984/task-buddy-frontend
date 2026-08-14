@@ -23,7 +23,7 @@ describe("enqueueOrCall", () => {
 
     expect(call).not.toHaveBeenCalled()
     expect(enqueue).toHaveBeenCalledWith(mutation)
-    expect(result).toEqual({ queued: true, data: null })
+    expect(result).toEqual({ queued: true, data: null, error: null })
   })
 
   it("calls the network and enqueues nothing on success when online", async () => {
@@ -39,12 +39,13 @@ describe("enqueueOrCall", () => {
 
     expect(call).toHaveBeenCalledWith(mutation)
     expect(enqueue).not.toHaveBeenCalled()
-    expect(result).toEqual({ queued: false, data: { id: 5 } })
+    expect(result).toEqual({ queued: false, data: { id: 5 }, error: null })
   })
 
   it("calls the network and enqueues the mutation when the call fails", async () => {
     const enqueue = vi.fn().mockResolvedValue(undefined)
-    const call = vi.fn().mockRejectedValue(new Error("network down"))
+    const failure = new Error("network down")
+    const call = vi.fn().mockRejectedValue(failure)
 
     const result = await enqueueOrCall({
       isOnline: () => true,
@@ -55,7 +56,7 @@ describe("enqueueOrCall", () => {
 
     expect(call).toHaveBeenCalledWith(mutation)
     expect(enqueue).toHaveBeenCalledWith(mutation)
-    expect(result).toEqual({ queued: true, data: null })
+    expect(result).toEqual({ queued: true, data: null, error: failure })
   })
 
   it("propagates enqueue failures to the caller", async () => {

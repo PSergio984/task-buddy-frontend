@@ -7,6 +7,7 @@ import {
 } from "./sync-queue"
 import type { SyncDelta } from "./sync-delta"
 import type { PendingMutationInput } from "./sync-enqueue"
+import { getHttpErrorStatus, getRetryAfterSec } from "@/lib/errors"
 
 export interface SyncAppliedItem {
   entity: SyncEntity
@@ -38,15 +39,18 @@ export interface SyncResponse {
 
 export interface FlushOptions {
   sendSync: (request: {
+    since?: string
     changes: PendingMutationInput[]
   }) => Promise<SyncResponse>
   isOnline: () => boolean
+  since?: string | null
 }
 
 export interface FlushResult {
   conflictCount: number
   conflicts: SyncConflictItem[]
   delta: SyncDelta
+  since: string | null
   retryAfterSec: number | null
 }
 
@@ -57,23 +61,19 @@ function isRateLimited(error: unknown): {
   rateLimited: boolean
   retryAfterSec: number | null
 } {
-  const status = (error as { response?: { status?: number } })?.response?.status
-  if (status !== 429) return { rateLimited: false, retryAfterSec: null }
-  const headers = (error as { response?: { headers?: Record<string, string> } })
-    ?.response?.headers
-  const retryAfter = headers?.["retry-after"]
-  const retryAfterSec = retryAfter ? Number(retryAfter) : NaN
+  if (getHttpErrorStatus(error) !== 429) {
+    return { rateLimited: false, retryAfterSec: null }
+  }
   return {
     rateLimited: true,
-    retryAfterSec: Number.isFinite(retryAfterSec)
-      ? retryAfterSec
-      : DEFAULT_RETRY_AFTER_SEC,
+    retryAfterSec: getRetryAfterSec(error) ?? DEFAULT_RETRY_AFTER_SEC,
   }
 }
 
 export async function flushSync({
   sendSync,
   isOnline,
+  since,
 }: FlushOptions): Promise<FlushResult> {
   const emptyDelta: SyncDelta = { tasks: [], subtasks: [], projects: [] }
   if (!isOnline()) {
@@ -81,6 +81,7 @@ export async function flushSync({
       conflictCount: 0,
       conflicts: [],
       delta: emptyDelta,
+      since: null,
       retryAfterSec: null,
     }
   }
@@ -91,6 +92,7 @@ export async function flushSync({
       conflictCount: 0,
       conflicts: [],
       delta: emptyDelta,
+      since: null,
       retryAfterSec: null,
     }
   }
@@ -106,7 +108,7 @@ export async function flushSync({
 
   let response: SyncResponse
   try {
-    response = await sendSync({ changes })
+    response = await sendSync({ since: since ?? undefined, changes })
   } catch (error) {
     const { rateLimited, retryAfterSec } = isRateLimited(error)
     if (rateLimited) {
@@ -114,6 +116,7 @@ export async function flushSync({
         conflictCount: 0,
         conflicts: [],
         delta: emptyDelta,
+        since: null,
         retryAfterSec,
       }
     }
@@ -134,6 +137,7 @@ export async function flushSync({
     conflictCount: response.conflicts.length,
     conflicts: response.conflicts,
     delta: response.delta,
+    since: response.since,
     retryAfterSec: null,
   }
 }

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { useKnowledgeNotes } from "@/hooks/useKnowledgeNotes"
 import { knowledgeApi } from "@/lib/api"
-import { getErrorMessage } from "@/lib/errors"
+import { getErrorMessage, getHttpErrorStatus } from "@/lib/errors"
 import { cn } from "@/lib/utils"
 
 interface KnowledgeSectionProps {
@@ -88,9 +88,7 @@ export function KnowledgeSection({
       await knowledgeApi.feedback(answer.task_id, answer.answer_id, rating)
       setSentRating(rating)
     } catch (error) {
-      const status = (error as { response?: { status?: number } })?.response
-        ?.status
-      if (status === 429) {
+      if (getHttpErrorStatus(error) === 429) {
         toast({
           variant: "destructive",
           description: "Feedback rate limit reached, try again in a moment.",
