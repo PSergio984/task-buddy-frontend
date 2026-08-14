@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react"
-import { BookOpen, Loader2, Sparkles } from "lucide-react"
+import { BookOpen, Loader2, Sparkles, ThumbsDown, ThumbsUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { useKnowledgeNotes } from "@/hooks/useKnowledgeNotes"
+import { knowledgeApi } from "@/lib/api"
 import { getErrorMessage } from "@/lib/errors"
+import { cn } from "@/lib/utils"
 
 interface KnowledgeSectionProps {
   readonly taskId: number
@@ -69,7 +71,39 @@ export function KnowledgeSection({
     if (isAsking) {
       return
     }
+    setFeedbackPending(false)
+    setSentRating(null)
     ask(undefined)
+  }
+
+  const [feedbackPending, setFeedbackPending] = useState(false)
+  const [sentRating, setSentRating] = useState<1 | -1 | null>(null)
+
+  const handleFeedback = async (rating: 1 | -1) => {
+    if (!answer || feedbackPending) {
+      return
+    }
+    setFeedbackPending(true)
+    try {
+      await knowledgeApi.feedback(answer.task_id, answer.answer_id, rating)
+      setSentRating(rating)
+    } catch (error) {
+      const status = (error as { response?: { status?: number } })?.response
+        ?.status
+      if (status === 429) {
+        toast({
+          variant: "destructive",
+          description: "Feedback rate limit reached, try again in a moment.",
+        })
+      } else {
+        toast({
+          variant: "destructive",
+          description: getErrorMessage(error),
+        })
+      }
+    } finally {
+      setFeedbackPending(false)
+    }
   }
 
   return (
@@ -107,6 +141,41 @@ export function KnowledgeSection({
           <p className="text-sm leading-relaxed text-foreground/90">
             {answer.answer}
           </p>
+          <div className="flex items-center gap-1.5 border-t border-primary/10 pt-2.5">
+            <span className="mr-1 text-[10px] font-black tracking-widest text-foreground/40 uppercase">
+              Was this helpful?
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-pressed={sentRating === 1}
+              disabled={feedbackPending || sentRating !== null}
+              onClick={() => handleFeedback(1)}
+              aria-label="Helpful"
+              className={cn(
+                "h-7 w-7 rounded-lg",
+                sentRating === 1 && "bg-primary/20 text-primary"
+              )}
+            >
+              <ThumbsUp className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-pressed={sentRating === -1}
+              disabled={feedbackPending || sentRating !== null}
+              onClick={() => handleFeedback(-1)}
+              aria-label="Not helpful"
+              className={cn(
+                "h-7 w-7 rounded-lg",
+                sentRating === -1 && "bg-destructive/20 text-destructive"
+              )}
+            >
+              <ThumbsDown className="h-3.5 w-3.5" />
+            </Button>
+          </div>
           {answer.citations.length > 0 && (
             <div className="space-y-1.5 border-t border-primary/10 pt-3">
               {answer.citations.map((citation, index) => (

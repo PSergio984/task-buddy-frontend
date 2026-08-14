@@ -84,14 +84,18 @@ api.interceptors.response.use(
     }
 
     if (error.response?.status === 429) {
-      const detail =
-        error.response.data?.detail ||
-        "Too many attempts. Please try again later."
-      toast({
-        title: "Slow down",
-        description: detail,
-        variant: "warning",
-      })
+      const url = error.config?.url ?? ""
+      // /sync and /feedback handle their own 429 UX (retry-after / thumbs toast).
+      if (!url.includes("/api/v1/sync") && !url.includes("/feedback")) {
+        const detail =
+          error.response.data?.detail ||
+          "Too many attempts. Please try again later."
+        toast({
+          title: "Slow down",
+          description: detail,
+          variant: "warning",
+        })
+      }
     }
 
     return Promise.reject(error)
@@ -300,6 +304,13 @@ export const knowledgeApi = {
     const response = await api.post<KnowledgeAskResponse>(
       `/api/v1/tasks/${taskId}/knowledge/ask`,
       query ? { query } : {}
+    )
+    return response.data
+  },
+  feedback: async (taskId: number, answerId: number, rating: 1 | -1) => {
+    const response = await api.post(
+      `/api/v1/tasks/${taskId}/knowledge/answers/${answerId}/feedback`,
+      { rating }
     )
     return response.data
   },
