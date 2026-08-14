@@ -29,24 +29,26 @@ const base = {
   client_updated_at: "2026-08-14T10:00:00Z",
 }
 
+const USER = 42
+
 describe("sync-queue", () => {
   beforeEach(() => {
     storage.clear()
   })
 
   it("enqueues a mutation and lists it in insertion order", async () => {
-    await enqueueMutation({
+    await enqueueMutation(USER, {
       ...base,
       id: 1,
       client_updated_at: "2026-08-14T10:00:00Z",
     })
-    await enqueueMutation({
+    await enqueueMutation(USER, {
       ...base,
       id: 2,
       client_updated_at: "2026-08-14T10:00:01Z",
     })
 
-    const all = await listMutations()
+    const all = await listMutations(USER)
     expect(all).toHaveLength(2)
     expect(all[0].id).toBe(1)
     expect(all[1].id).toBe(2)
@@ -54,35 +56,48 @@ describe("sync-queue", () => {
   })
 
   it("removes only the named mutations", async () => {
-    await enqueueMutation({ ...base, id: 1 })
-    await enqueueMutation({ ...base, id: 2 })
-    const all = await listMutations()
+    await enqueueMutation(USER, { ...base, id: 1 })
+    await enqueueMutation(USER, { ...base, id: 2 })
+    const all = await listMutations(USER)
 
-    await removeMutations([all[0].queueId])
-    const remaining = await listMutations()
+    await removeMutations(USER, [all[0].queueId])
+    const remaining = await listMutations(USER)
     expect(remaining).toHaveLength(1)
     expect(remaining[0].id).toBe(2)
   })
 
   it("clears the whole queue", async () => {
-    await enqueueMutation({ ...base, id: 1 })
-    await enqueueMutation({ ...base, id: 2 })
+    await enqueueMutation(USER, { ...base, id: 1 })
+    await enqueueMutation(USER, { ...base, id: 2 })
 
-    await removeMutations((await listMutations()).map((m) => m.queueId))
-    expect(await listMutations()).toHaveLength(0)
+    await removeMutations(
+      USER,
+      (await listMutations(USER)).map((m) => m.queueId)
+    )
+    expect(await listMutations(USER)).toHaveLength(0)
   })
 
   it("counts pending mutations", async () => {
-    expect(await pendingMutationCount()).toBe(0)
-    await enqueueMutation({ ...base, id: 1 })
-    await enqueueMutation({ ...base, id: 2 })
-    expect(await pendingMutationCount()).toBe(2)
+    expect(await pendingMutationCount(USER)).toBe(0)
+    await enqueueMutation(USER, { ...base, id: 1 })
+    await enqueueMutation(USER, { ...base, id: 2 })
+    expect(await pendingMutationCount(USER)).toBe(2)
   })
 
   it("survives a reload by persisting to storage", async () => {
-    await enqueueMutation({ ...base, id: 7 })
-    const reloaded = await listMutations()
+    await enqueueMutation(USER, { ...base, id: 7 })
+    const reloaded = await listMutations(USER)
     expect(reloaded).toHaveLength(1)
     expect(reloaded[0].id).toBe(7)
+  })
+
+  it("keeps queues of different users isolated", async () => {
+    await enqueueMutation(USER, { ...base, id: 1 })
+    await enqueueMutation(99, { ...base, id: 2 })
+
+    expect(await pendingMutationCount(USER)).toBe(1)
+    expect(await pendingMutationCount(99)).toBe(1)
+    expect((await listMutations(USER))[0].id).toBe(1)
+    expect((await listMutations(99))[0].id).toBe(2)
   })
 })

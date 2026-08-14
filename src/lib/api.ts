@@ -4,6 +4,13 @@ import { toast } from "@/hooks/use-toast"
 import { API_BASE_URL } from "@/lib/config"
 import { createUuid } from "@/lib/utils"
 
+declare module "axios" {
+  export interface AxiosRequestConfig {
+    /** Suppress the global 429 toast for requests that handle their own rate-limit UX. */
+    skipRateLimitToast?: boolean
+  }
+}
+
 export const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
@@ -76,19 +83,15 @@ api.interceptors.response.use(
       globalThis.dispatchEvent(new CustomEvent("auth:unauthorized"))
     }
 
-    if (error.response?.status === 429) {
-      const url = error.config?.url ?? ""
-      // /sync and /feedback handle their own 429 UX (retry-after / thumbs toast).
-      if (!url.includes("/api/v1/sync") && !url.includes("/feedback")) {
-        const detail =
-          error.response.data?.detail ||
-          "Too many attempts. Please try again later."
-        toast({
-          title: "Slow down",
-          description: detail,
-          variant: "warning",
-        })
-      }
+    if (error.response?.status === 429 && !error.config?.skipRateLimitToast) {
+      const detail =
+        error.response.data?.detail ||
+        "Too many attempts. Please try again later."
+      toast({
+        title: "Slow down",
+        description: detail,
+        variant: "warning",
+      })
     }
 
     return Promise.reject(error)
@@ -303,7 +306,8 @@ export const knowledgeApi = {
   feedback: async (taskId: number, answerId: number, rating: 1 | -1) => {
     const response = await api.post(
       `/api/v1/tasks/${taskId}/knowledge/answers/${answerId}/feedback`,
-      { rating }
+      { rating },
+      { skipRateLimitToast: true }
     )
     return response.data
   },

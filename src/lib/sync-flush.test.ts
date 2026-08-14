@@ -51,16 +51,22 @@ const okResponse = {
 }
 
 describe("flushSync", () => {
+  const USER = 42
+
   beforeEach(() => {
     storage.clear()
     vi.clearAllMocks()
   })
 
   it("drains the queue and returns the server response on success", async () => {
-    await enqueueMutation(task(1))
+    await enqueueMutation(USER, task(1))
     const sendSync = vi.fn().mockResolvedValue(okResponse)
 
-    const result = await flushSync({ sendSync, isOnline: () => true })
+    const result = await flushSync({
+      sendSync,
+      isOnline: () => true,
+      userId: USER,
+    })
 
     expect(sendSync).toHaveBeenCalledWith({
       since: undefined,
@@ -79,17 +85,18 @@ describe("flushSync", () => {
       delta: okResponse.delta,
       since: "2026-08-14T10:00:00Z",
     })
-    expect(await listMutations()).toHaveLength(0)
+    expect(await listMutations(USER)).toHaveLength(0)
   })
 
   it("forwards the incremental sync cursor (since) to the server", async () => {
-    await enqueueMutation(task(1))
+    await enqueueMutation(USER, task(1))
     const sendSync = vi.fn().mockResolvedValue(okResponse)
 
     await flushSync({
       sendSync,
       isOnline: () => true,
       since: "2026-08-14T09:00:00Z",
+      userId: USER,
     })
 
     expect(sendSync).toHaveBeenCalledWith(
@@ -98,7 +105,7 @@ describe("flushSync", () => {
   })
 
   it("counts conflicts, drops the losing change, and keeps the delta", async () => {
-    await enqueueMutation(task(1))
+    await enqueueMutation(USER, task(1))
     const sendSync = vi.fn().mockResolvedValue({
       ...okResponse,
       applied: [],
@@ -112,28 +119,32 @@ describe("flushSync", () => {
       ],
     })
 
-    const result = await flushSync({ sendSync, isOnline: () => true })
+    const result = await flushSync({
+      sendSync,
+      isOnline: () => true,
+      userId: USER,
+    })
 
     expect(result.conflictCount).toBe(1)
-    expect(await listMutations()).toHaveLength(0)
+    expect(await listMutations(USER)).toHaveLength(0)
   })
 
   it("drops not_found items from the queue", async () => {
-    await enqueueMutation(task(1))
+    await enqueueMutation(USER, task(1))
     const sendSync = vi.fn().mockResolvedValue({
       ...okResponse,
       applied: [],
       not_found: [{ entity: "task", id: 1, op: "update" }],
     })
 
-    await flushSync({ sendSync, isOnline: () => true })
+    await flushSync({ sendSync, isOnline: () => true, userId: USER })
 
-    expect(await listMutations()).toHaveLength(0)
+    expect(await listMutations(USER)).toHaveLength(0)
   })
 
   it("settles by entity+id+op so same-numbered rows across entities are both kept", async () => {
-    await enqueueMutation(task(1, { entity: "task", id: 5 }))
-    await enqueueMutation(task(1, { entity: "project", id: 5 }))
+    await enqueueMutation(USER, task(1, { entity: "task", id: 5 }))
+    await enqueueMutation(USER, task(1, { entity: "project", id: 5 }))
     const sendSync = vi.fn().mockResolvedValue({
       ...okResponse,
       applied: [
@@ -142,75 +153,83 @@ describe("flushSync", () => {
       ],
     })
 
-    await flushSync({ sendSync, isOnline: () => true })
+    await flushSync({ sendSync, isOnline: () => true, userId: USER })
 
-    expect(await listMutations()).toHaveLength(0)
+    expect(await listMutations(USER)).toHaveLength(0)
   })
 
   it("keeps unsynced same-id mutations of a different entity", async () => {
-    await enqueueMutation(task(1, { entity: "task", id: 5 }))
-    await enqueueMutation(task(1, { entity: "project", id: 5 }))
+    await enqueueMutation(USER, task(1, { entity: "task", id: 5 }))
+    await enqueueMutation(USER, task(1, { entity: "project", id: 5 }))
     const sendSync = vi.fn().mockResolvedValue({
       ...okResponse,
       applied: [{ entity: "task", id: 5, op: "update" }],
     })
 
-    await flushSync({ sendSync, isOnline: () => true })
+    await flushSync({ sendSync, isOnline: () => true, userId: USER })
 
-    const remaining = await listMutations()
+    const remaining = await listMutations(USER)
     expect(remaining).toHaveLength(1)
     expect(remaining[0].entity).toBe("project")
   })
 
   it("keeps the whole queue when rate limited (429) and reports retry-after", async () => {
-    await enqueueMutation(task(1))
+    await enqueueMutation(USER, task(1))
     const rateLimited = Object.assign(new Error("rate limited"), {
       response: { status: 429, headers: { "retry-after": "30" } },
     })
     const sendSync = vi.fn().mockRejectedValue(rateLimited)
 
-    const result = await flushSync({ sendSync, isOnline: () => true })
+    const result = await flushSync({
+      sendSync,
+      isOnline: () => true,
+      userId: USER,
+    })
 
     expect(result).toMatchObject({ conflictCount: 0, retryAfterSec: 30 })
-    expect(await listMutations()).toHaveLength(1)
+    expect(await listMutations(USER)).toHaveLength(1)
   })
 
   it("falls back to a default retry delay when the 429 has no Retry-After header", async () => {
-    await enqueueMutation(task(1))
+    await enqueueMutation(USER, task(1))
     const rateLimited = Object.assign(new Error("rate limited"), {
       response: { status: 429, headers: {} },
     })
     const sendSync = vi.fn().mockRejectedValue(rateLimited)
 
-    const result = await flushSync({ sendSync, isOnline: () => true })
+    const result = await flushSync({
+      sendSync,
+      isOnline: () => true,
+      userId: USER,
+    })
 
     expect(result.retryAfterSec).toBe(60)
-    expect(await listMutations()).toHaveLength(1)
+    expect(await listMutations(USER)).toHaveLength(1)
   })
 
   it("keeps the queue on unexpected errors and propagates them", async () => {
-    await enqueueMutation(task(1))
+    await enqueueMutation(USER, task(1))
     const sendSync = vi.fn().mockRejectedValue(new Error("server down"))
 
-    await expect(flushSync({ sendSync, isOnline: () => true })).rejects.toThrow(
-      "server down"
-    )
-    expect(await listMutations()).toHaveLength(1)
+    await expect(
+      flushSync({ sendSync, isOnline: () => true, userId: USER })
+    ).rejects.toThrow("server down")
+    expect(await listMutations(USER)).toHaveLength(1)
   })
 
   it("does not call the server when offline", async () => {
-    await enqueueMutation(task(1))
+    await enqueueMutation(USER, task(1))
     const sendSync = vi.fn()
 
-    await flushSync({ sendSync, isOnline: () => false })
+    await flushSync({ sendSync, isOnline: () => false, userId: USER })
 
     expect(sendSync).not.toHaveBeenCalled()
-    expect(await listMutations()).toHaveLength(1)
+    expect(await listMutations(USER)).toHaveLength(1)
   })
 
   it("sends at most 500 changes per request (backend limit)", async () => {
     for (let i = 1; i <= 550; i++) {
-      await enqueueMutation(task(i))
+      await enqueueMutation(USER, task(i))
     }
     const sendSync = vi.fn().mockResolvedValue({
       applied: [],
@@ -220,7 +239,11 @@ describe("flushSync", () => {
       since: "2026-08-14T10:00:00Z",
     })
 
-    const result = await flushSync({ sendSync, isOnline: () => true })
+    const result = await flushSync({
+      sendSync,
+      isOnline: () => true,
+      userId: USER,
+    })
 
     const sent = sendSync.mock.calls[0][0]
     expect(sent.changes).toHaveLength(500)

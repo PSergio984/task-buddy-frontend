@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest"
 import {
   applyDeltaToCache,
   mergeConflictsIntoDelta,
+  removeFromCache,
   type SyncDelta,
 } from "./sync-delta"
 
@@ -134,5 +135,53 @@ describe("applyDeltaToCache", () => {
       projects: [],
     })
     expect(result).toEqual(input)
+  })
+
+  describe("removeFromCache", () => {
+    it("removes a task row from the list", () => {
+      const cache = {
+        tasks: [
+          { id: 1, title: "Keep" },
+          { id: 2, title: "Gone" },
+        ],
+        projects: [],
+      }
+      const result = removeFromCache(cache, "task", 2)
+      expect(result.tasks).toHaveLength(1)
+      expect(result.tasks[0]).toMatchObject({ id: 1 })
+    })
+
+    it("removes a project row from the list", () => {
+      const cache = {
+        tasks: [],
+        projects: [
+          { id: 1, name: "Keep" },
+          { id: 2, name: "Gone" },
+        ],
+      }
+      const result = removeFromCache(cache, "project", 2)
+      expect(result.projects).toHaveLength(1)
+      expect(result.projects[0]).toMatchObject({ id: 1 })
+    })
+
+    it("removes a subtask from inside every task's subtasks array", () => {
+      const cache = {
+        tasks: [
+          {
+            id: 1,
+            title: "Parent",
+            subtasks: [
+              { id: 9, task_id: 1, title: "Keep" },
+              { id: 10, task_id: 1, title: "Gone" },
+            ],
+          },
+        ],
+        projects: [],
+      }
+      const result = removeFromCache(cache, "subtask", 10)
+      const subtasks = result.tasks[0].subtasks as Record<string, unknown>[]
+      expect(subtasks).toHaveLength(1)
+      expect(subtasks[0]).toMatchObject({ id: 9 })
+    })
   })
 })

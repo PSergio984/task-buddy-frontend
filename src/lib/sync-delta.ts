@@ -94,3 +94,33 @@ export function applyDeltaToCache(
   const projects = mergeById(cache.projects, delta.projects)
   return { tasks, projects }
 }
+
+export function removeFromCache(
+  cache: CacheShape,
+  entity: SyncConflict["entity"],
+  id: number
+): CacheShape {
+  if (entity === "task") {
+    return {
+      tasks: cache.tasks.filter((row) => Number(row.id) !== id),
+      projects: cache.projects,
+    }
+  }
+  if (entity === "project") {
+    return {
+      tasks: cache.tasks,
+      projects: cache.projects.filter((row) => Number(row.id) !== id),
+    }
+  }
+  return {
+    tasks: cache.tasks.map((task) => {
+      const subtasks = Array.isArray(task.subtasks)
+        ? (task.subtasks as Record<string, unknown>[]).filter(
+            (sub) => Number(sub.id) !== id
+          )
+        : undefined
+      return subtasks ? { ...task, subtasks } : task
+    }),
+    projects: cache.projects,
+  }
+}

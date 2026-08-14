@@ -9,17 +9,26 @@ import {
   useRef,
   useState,
 } from "react"
+import { useAuth } from "@/contexts/AuthContext"
 import { useToast } from "@/hooks/use-toast"
 import { api } from "@/lib/api"
 import { queryClient } from "@/lib/query-client"
-import { applyDeltaToCache, mergeConflictsIntoDelta } from "@/lib/sync-delta"
+import {
+  applyDeltaToCache,
+  mergeConflictsIntoDelta,
+  removeFromCache,
+} from "@/lib/sync-delta"
 import {
   enqueueOrCall as enqueueOrCallPure,
   type EnqueueOrCallResult,
   type PendingMutationInput,
 } from "@/lib/sync-enqueue"
 import { flushSync, type SyncResponse } from "@/lib/sync-flush"
-import { enqueueMutation, pendingMutationCount } from "@/lib/sync-queue"
+import {
+  enqueueMutation,
+  pendingMutationCount,
+  type UserId,
+} from "@/lib/sync-queue"
 import { getHttpErrorStatus, getRetryAfterSec } from "@/lib/errors"
 
 interface SyncContextValue {
@@ -49,6 +58,9 @@ function invalidateEntityQueries(
         : null
   if (key) {
     void queryClient.invalidateQueries({ queryKey: [key] })
+    if (key === "tasks") {
+      void queryClient.invalidateQueries({ queryKey: ["task"] })
+    }
   }
 }
 
@@ -89,10 +101,44 @@ function applyDeltaToQueries(delta: SyncResponse["delta"]) {
   })
 }
 
+function removeFromQueries(
+  entity: SyncResponse["not_found"][number]["entity"],
+  id: number
+) {
+  const tasksQueries = queryClient.getQueriesData<Record<string, unknown>[]>({
+    queryKey: ["tasks"],
+  })
+  tasksQueries.forEach(([queryKey, tasks]) => {
+    if (!tasks) return
+    const merged = removeFromCache({ tasks, projects: [] }, entity, id)
+    queryClient.setQueryData(queryKey, merged.tasks)
+  })
+
+  const taskQueries = queryClient.getQueriesData<Record<string, unknown>>({
+    queryKey: ["task"],
+  })
+  taskQueries.forEach(([queryKey, task]) => {
+    if (!task) return
+    const merged = removeFromCache({ tasks: [task], projects: [] }, entity, id)
+    queryClient.setQueryData(queryKey, merged.tasks[0])
+  })
+
+  const projectQueries = queryClient.getQueriesData<Record<string, unknown>[]>({
+    queryKey: ["projects"],
+  })
+  projectQueries.forEach(([queryKey, projects]) => {
+    if (!projects) return
+    const merged = removeFromCache({ tasks: [], projects }, entity, id)
+    queryClient.setQueryData(queryKey, merged.projects)
+  })
+}
+
 export function SyncProvider({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const { toast } = useToast()
+  const { user } = useAuth()
+  const userId: UserId | null = user?.id ?? null
   const [isOnline, setIsOnline] = useState(() =>
     typeof navigator !== "undefined" ? navigator.onLine : true
   )
@@ -109,9 +155,28 @@ export function SyncProvider({
   const triggerFlushRef = useRef<() => Promise<void>>(async () => {})
   const sinceRef = useRef<string | null>(null)
 
+  useEffect(() => {
+    sinceRef.current = null
+    if (userId === null) {
+      void Promise.resolve().then(() => {
+        setPendingCount(0)
+        setConflictCount(0)
+      })
+      return
+    }
+    void pendingMutationCount(userId).then((count) => {
+      setPendingCount(count)
+      setConflictCount(0)
+    })
+  }, [userId])
+
   const refreshPendingCount = useCallback(async () => {
-    setPendingCount(await pendingMutationCount())
-  }, [])
+    if (userId === null) {
+      setPendingCount(0)
+      return
+    }
+    setPendingCount(await pendingMutationCount(userId))
+  }, [userId])
 
   const scheduleRetry = useCallback((retryAfterSec: number) => {
     if (retryTimerRef.current) clearTimeout(retryTimerRef.current)
@@ -122,7 +187,8 @@ export function SyncProvider({
 
   const triggerFlush = useCallback(async () => {
     if (flushingRef.current) return
-    const count = await pendingMutationCount()
+    if (userId === null) return
+    const count = await pendingMutationCount(userId)
     if (count === 0 || !navigator.onLine) return
     flushingRef.current = true
     setIsSyncing(true)
@@ -130,8 +196,15 @@ export function SyncProvider({
       const result = await flushSync({
         isOnline: () => navigator.onLine,
         since: sinceRef.current,
+        userId,
         sendSync: async (request) => {
-          const response = await api.post<SyncResponse>("/api/v1/sync", request)
+          const response = await api.post<SyncResponse>(
+            "/api/v1/sync",
+            request,
+            {
+              skipRateLimitToast: true,
+            }
+          )
           return response.data
         },
       })
@@ -158,6 +231,11 @@ export function SyncProvider({
           invalidateEntityQueries(conflict.entity)
         }
       }
+      for (const missing of result.notFound) {
+        // The row no longer exists server-side; drop it from the cache so it
+        // does not linger as a ghost.
+        removeFromQueries(missing.entity, missing.id)
+      }
       const delta = mergeConflictsIntoDelta(result.delta, result.conflicts)
       if (
         delta.tasks.length > 0 ||
@@ -176,14 +254,13 @@ export function SyncProvider({
       setIsSyncing(false)
       await refreshPendingCount()
     }
-  }, [refreshPendingCount, scheduleRetry, toast])
+  }, [refreshPendingCount, scheduleRetry, toast, userId])
 
   useEffect(() => {
     triggerFlushRef.current = triggerFlush
   }, [triggerFlush])
 
   useEffect(() => {
-    void pendingMutationCount().then((count) => setPendingCount(count))
     const handleOnline = () => {
       setIsOnline(true)
       void triggerFlush()
@@ -203,18 +280,27 @@ export function SyncProvider({
       if (conflictClearTimerRef.current)
         clearTimeout(conflictClearTimerRef.current)
     }
-  }, [refreshPendingCount, triggerFlush])
+  }, [triggerFlush])
 
   const enqueueOrCall = useCallback(
     async <T,>(
       mutation: PendingMutationInput,
       call: (mutation: PendingMutationInput) => Promise<T>
     ) => {
+      if (userId === null) {
+        // Not signed in: fall back to a plain call (no queue to write to).
+        return enqueueOrCallPure<T>({
+          isOnline: () => true,
+          call,
+          enqueue: async () => {},
+          mutation,
+        })
+      }
       const result = await enqueueOrCallPure<T>({
         isOnline: () => navigator.onLine,
         call,
         enqueue: async (m) => {
-          await enqueueMutation(m)
+          await enqueueMutation(userId, m)
         },
         mutation,
       })
@@ -230,7 +316,7 @@ export function SyncProvider({
       }
       return result
     },
-    [refreshPendingCount, scheduleRetry, triggerFlush]
+    [refreshPendingCount, scheduleRetry, triggerFlush, userId]
   )
 
   const value = useMemo(

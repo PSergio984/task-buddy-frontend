@@ -13,30 +13,40 @@ export interface PendingMutation {
   client_updated_at: string
 }
 
-const QUEUE_KEY = "sync-pending-mutations"
+export type UserId = number | string
 
-export async function listMutations(): Promise<PendingMutation[]> {
-  const stored = await get<PendingMutation[]>(QUEUE_KEY)
+function queueKey(userId: UserId): string {
+  return `sync-pending-mutations:${userId}`
+}
+
+export async function listMutations(
+  userId: UserId
+): Promise<PendingMutation[]> {
+  const stored = await get<PendingMutation[]>(queueKey(userId))
   return Array.isArray(stored) ? stored : []
 }
 
 export async function enqueueMutation(
+  userId: UserId,
   mutation: Omit<PendingMutation, "queueId">
 ): Promise<void> {
-  const current = await listMutations()
+  const current = await listMutations(userId)
   current.push({ ...mutation, queueId: createUuid() })
-  await set(QUEUE_KEY, current)
+  await set(queueKey(userId), current)
 }
 
-export async function removeMutations(queueIds: string[]): Promise<void> {
+export async function removeMutations(
+  userId: UserId,
+  queueIds: string[]
+): Promise<void> {
   const toRemove = new Set(queueIds)
-  const current = await listMutations()
+  const current = await listMutations(userId)
   await set(
-    QUEUE_KEY,
+    queueKey(userId),
     current.filter((m) => !toRemove.has(m.queueId))
   )
 }
 
-export async function pendingMutationCount(): Promise<number> {
-  return (await listMutations()).length
+export async function pendingMutationCount(userId: UserId): Promise<number> {
+  return (await listMutations(userId)).length
 }
