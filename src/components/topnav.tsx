@@ -10,6 +10,8 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { PwaInstallButton } from "./pwa-install-button"
 import { cn } from "@/lib/utils"
 import { NotificationBell } from "@/components/notification-bell"
+import { SyncStatusPill } from "@/components/sync-status-pill"
+import { useSync } from "@/contexts/SyncContext"
 import { useStats } from "@/hooks/useStats"
 import {
   Tooltip,
@@ -25,6 +27,7 @@ export function TopNav({ onNewTask }: Readonly<TopNavProps>) {
   const { user, logout } = useAuth()
   const { toast } = useToast()
   const { data: stats } = useStats()
+  const { isOnline, isSyncing, pendingCount, conflictCount } = useSync()
   const navigate = useNavigate()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
@@ -98,6 +101,12 @@ export function TopNav({ onNewTask }: Readonly<TopNavProps>) {
 
       <div className="flex items-center gap-4">
         <div className="mr-4 flex items-center gap-3">
+          <SyncStatusPill
+            isOnline={isOnline}
+            isSyncing={isSyncing}
+            pendingCount={pendingCount}
+            conflictCount={conflictCount}
+          />
           <ThemeToggle />
           <NotificationBell />
         </div>

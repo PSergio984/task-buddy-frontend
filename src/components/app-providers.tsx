@@ -6,6 +6,7 @@ import { get, set, del } from "idb-keyval"
 
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/contexts/AuthContext"
+import { SyncProvider } from "@/contexts/SyncContext"
 import { queryClient } from "@/lib/query-client"
 
 const persister = createAsyncStoragePersister({
@@ -37,7 +38,9 @@ export function AppProviders({
       }}
     >
       <AuthProvider>
-        <ThemeProvider>{children}</ThemeProvider>
+        <SyncProvider>
+          <ThemeProvider>{children}</ThemeProvider>
+        </SyncProvider>
       </AuthProvider>
     </PersistQueryClientProvider>
   )

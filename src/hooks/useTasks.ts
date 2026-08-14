@@ -9,6 +9,7 @@ import {
 } from "@/lib/api"
 import { useAuth } from "@/contexts/AuthContext"
 import { useToast } from "@/hooks/use-toast"
+import { useSync } from "@/contexts/SyncContext"
 
 /**
  * Reorders an array of items based on a list of IDs.
@@ -231,6 +232,7 @@ export function useCreateTask() {
 export function useUpdateTask() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const { enqueueOrCall } = useSync()
 
   return useMutation({
     mutationFn: ({
@@ -240,7 +242,17 @@ export function useUpdateTask() {
       id: number
       updates: Partial<Task>
       silent?: boolean
-    }) => tasksApi.update(id, updates),
+    }) =>
+      enqueueOrCall(
+        {
+          entity: "task",
+          id,
+          op: "update",
+          payload: updates,
+          client_updated_at: new Date().toISOString(),
+        },
+        () => tasksApi.update(id, updates)
+      ),
     // Optimistic Update
     onMutate: async ({ id, updates }) => {
       // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
@@ -293,13 +305,24 @@ export function useUpdateTask() {
       queryClient.invalidateQueries({ queryKey: ["stats"] })
       queryClient.invalidateQueries({ queryKey: ["task"] })
     },
-    onSuccess: (data, variables) => {
+    onSuccess: (result, variables) => {
       if (!variables.silent) {
-        toast({
-          title: "Task updated",
-          description: `Task "${data.title}" has been updated.`,
-          variant: "success",
-        })
+        if (result.queued) {
+          toast({
+            title: "Task updated offline",
+            description: `Task update saved locally and will sync automatically.`,
+            variant: "info",
+          })
+          return
+        }
+        const data = result.data
+        if (data) {
+          toast({
+            title: "Task updated",
+            description: `Task "${data.title}" has been updated.`,
+            variant: "success",
+          })
+        }
       }
     },
   })
@@ -308,11 +331,21 @@ export function useUpdateTask() {
 export function useDeleteTask() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const { enqueueOrCall } = useSync()
 
   return useMutation({
     mutationFn: (variables: number | { id: number; silent?: boolean }) => {
       const id = typeof variables === "number" ? variables : variables.id
-      return tasksApi.delete(id)
+      return enqueueOrCall(
+        {
+          entity: "task",
+          id,
+          op: "delete",
+          payload: {},
+          client_updated_at: new Date().toISOString(),
+        },
+        () => tasksApi.delete(id)
+      )
     },
     // Optimistic Update
     onMutate: async (variables) => {
@@ -344,13 +377,22 @@ export function useDeleteTask() {
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
       queryClient.invalidateQueries({ queryKey: ["stats"] })
     },
-    onSuccess: (_data, variables) => {
+    onSuccess: (result, variables) => {
       const silent =
         typeof variables === "object" &&
         variables !== null &&
         "silent" in variables &&
         (variables as { silent?: boolean }).silent
       if (!silent) {
+        if (result.queued) {
+          toast({
+            title: "Task deleted offline",
+            description:
+              "Task deletion saved locally and will sync automatically.",
+            variant: "info",
+          })
+          return
+        }
         toast({
           title: "Task deleted",
           description: "Task has been removed successfully.",
@@ -364,6 +406,7 @@ export function useDeleteTask() {
 export function useUpdateSubtask() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const { enqueueOrCall } = useSync()
 
   return useMutation({
     mutationFn: ({
@@ -373,7 +416,17 @@ export function useUpdateSubtask() {
       id: number
       updates: Partial<Subtask>
       silent?: boolean
-    }) => subtasksApi.update(id, updates),
+    }) =>
+      enqueueOrCall(
+        {
+          entity: "subtask",
+          id,
+          op: "update",
+          payload: updates,
+          client_updated_at: new Date().toISOString(),
+        },
+        () => subtasksApi.update(id, updates)
+      ),
     onMutate: async ({ id, updates }) => {
       await queryClient.cancelQueries({ queryKey: ["tasks"] })
       await queryClient.cancelQueries({ queryKey: ["task"] })
@@ -430,15 +483,24 @@ export function useUpdateSubtask() {
       queryClient.invalidateQueries({ queryKey: ["stats"] })
       queryClient.invalidateQueries({ queryKey: ["task"] })
     },
-    onSuccess: (data, variables) => {
+    onSuccess: (result, variables) => {
       if (!variables.silent) {
-        toast({
-          title: "Subtask updated",
-          description: data?.title
-            ? `Subtask "${data.title}" has been updated.`
-            : "Subtask has been updated.",
-          variant: "success",
-        })
+        if (result.queued) {
+          toast({
+            title: "Subtask updated offline",
+            description: `Subtask update saved locally and will sync automatically.`,
+            variant: "info",
+          })
+          return
+        }
+        const data = result.data
+        if (data?.title) {
+          toast({
+            title: "Subtask updated",
+            description: `Subtask "${data.title}" has been updated.`,
+            variant: "success",
+          })
+        }
       }
     },
   })
@@ -447,12 +509,22 @@ export function useUpdateSubtask() {
 export function useDeleteSubtask() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const { enqueueOrCall } = useSync()
 
   return useMutation({
-    mutationFn: (id: number | { id: number; silent?: boolean }) =>
-      typeof id === "number"
-        ? subtasksApi.delete(id)
-        : subtasksApi.delete(id.id),
+    mutationFn: (id: number | { id: number; silent?: boolean }) => {
+      const subtaskId = typeof id === "number" ? id : id.id
+      return enqueueOrCall(
+        {
+          entity: "subtask",
+          id: subtaskId,
+          op: "delete",
+          payload: {},
+          client_updated_at: new Date().toISOString(),
+        },
+        () => subtasksApi.delete(subtaskId)
+      )
+    },
     onMutate: async (variables) => {
       const id = typeof variables === "number" ? variables : variables.id
       await queryClient.cancelQueries({ queryKey: ["tasks"] })
@@ -498,9 +570,18 @@ export function useDeleteSubtask() {
       queryClient.invalidateQueries({ queryKey: ["stats"] })
       queryClient.invalidateQueries({ queryKey: ["task"] })
     },
-    onSuccess: (_data, variables) => {
+    onSuccess: (result, variables) => {
       const silent = typeof variables === "object" && variables.silent
       if (!silent) {
+        if (result.queued) {
+          toast({
+            title: "Subtask deleted offline",
+            description:
+              "Subtask deletion saved locally and will sync automatically.",
+            variant: "info",
+          })
+          return
+        }
         toast({
           title: "Subtask deleted",
           description: "Subtask has been removed.",

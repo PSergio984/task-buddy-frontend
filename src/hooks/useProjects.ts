@@ -3,6 +3,7 @@ import { projectsApi, type Project } from "@/lib/api"
 export type { Project }
 import { useAuth } from "@/contexts/AuthContext"
 import { useToast } from "@/hooks/use-toast"
+import { useSync } from "@/contexts/SyncContext"
 
 /**
  * Reorders an array of projects based on a list of IDs.
@@ -119,6 +120,7 @@ export function useCreateProject() {
 export function useUpdateProject() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const { enqueueOrCall } = useSync()
 
   return useMutation({
     mutationFn: ({
@@ -127,7 +129,17 @@ export function useUpdateProject() {
     }: {
       id: number
       updates: { name?: string; color?: string; icon?: string }
-    }) => projectsApi.update(id, updates),
+    }) =>
+      enqueueOrCall(
+        {
+          entity: "project",
+          id,
+          op: "update",
+          payload: updates,
+          client_updated_at: new Date().toISOString(),
+        },
+        () => projectsApi.update(id, updates)
+      ),
     onMutate: async ({ id, updates }) => {
       await queryClient.cancelQueries({ queryKey: ["projects"] })
       const previousQueries = queryClient.getQueriesData<Project[]>({
@@ -154,12 +166,24 @@ export function useUpdateProject() {
       // Invalidation removed to prevent race conditions where
       // stale backend data overwrites optimistic updates.
     },
-    onSuccess: (data) => {
-      toast({
-        title: "Project updated",
-        description: `Project "${data.name}" has been updated.`,
-        variant: "success",
-      })
+    onSuccess: (result) => {
+      if (result.queued) {
+        toast({
+          title: "Project updated offline",
+          description:
+            "Project update saved locally and will sync automatically.",
+          variant: "info",
+        })
+        return
+      }
+      const data = result.data
+      if (data) {
+        toast({
+          title: "Project updated",
+          description: `Project "${data.name}" has been updated.`,
+          variant: "success",
+        })
+      }
     },
   })
 }
@@ -167,10 +191,20 @@ export function useUpdateProject() {
 export function useDeleteProject() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const { enqueueOrCall } = useSync()
 
   return useMutation({
     mutationFn: ({ id, deleteTasks }: { id: number; deleteTasks?: boolean }) =>
-      projectsApi.delete(id, deleteTasks),
+      enqueueOrCall(
+        {
+          entity: "project",
+          id,
+          op: "delete",
+          payload: {},
+          client_updated_at: new Date().toISOString(),
+        },
+        () => projectsApi.delete(id, deleteTasks)
+      ),
     onMutate: async ({ id }) => {
       await queryClient.cancelQueries({ queryKey: ["projects"] })
       const previousQueries = queryClient.getQueriesData<Project[]>({
@@ -198,7 +232,16 @@ export function useDeleteProject() {
       // Also invalidate tasks because they might belong to this project
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      if (result.queued) {
+        toast({
+          title: "Project deleted offline",
+          description:
+            "Project deletion saved locally and will sync automatically.",
+          variant: "info",
+        })
+        return
+      }
       toast({
         title: "Project deleted",
         description: "Project has been removed successfully.",
