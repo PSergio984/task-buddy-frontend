@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { BookOpen, Loader2, Sparkles, ThumbsDown, ThumbsUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 
 interface KnowledgeSectionProps {
   readonly taskId: number
+  readonly userId: number
   readonly toast: (props: {
     title?: string
     description?: string
@@ -18,6 +19,7 @@ interface KnowledgeSectionProps {
 
 export function KnowledgeSection({
   taskId,
+  userId,
   toast,
 }: Readonly<KnowledgeSectionProps>) {
   const [draft, setDraft] = useState("")
@@ -31,7 +33,7 @@ export function KnowledgeSection({
     isAsking,
     askError,
     answer,
-  } = useKnowledgeNotes(taskId)
+  } = useKnowledgeNotes(taskId, userId)
 
   useEffect(() => {
     if (loadError) {
@@ -67,22 +69,27 @@ export function KnowledgeSection({
     })
   }
 
+  const [feedbackPending, setFeedbackPending] = useState(false)
+  const [sentRating, setSentRating] = useState<1 | -1 | null>(null)
+  // Synchronous in-flight guard: two clicks within the same render frame
+  // both pass the state-based check (stale closure) and would POST twice.
+  const feedbackInFlightRef = useRef(false)
+
   const handleAsk = () => {
     if (isAsking) {
       return
     }
     setFeedbackPending(false)
     setSentRating(null)
+    feedbackInFlightRef.current = false
     ask(undefined)
   }
 
-  const [feedbackPending, setFeedbackPending] = useState(false)
-  const [sentRating, setSentRating] = useState<1 | -1 | null>(null)
-
   const handleFeedback = async (rating: 1 | -1) => {
-    if (!answer || feedbackPending) {
+    if (!answer || feedbackPending || feedbackInFlightRef.current) {
       return
     }
+    feedbackInFlightRef.current = true
     setFeedbackPending(true)
     try {
       await knowledgeApi.feedback(answer.task_id, answer.answer_id, rating)
@@ -100,6 +107,7 @@ export function KnowledgeSection({
         })
       }
     } finally {
+      feedbackInFlightRef.current = false
       setFeedbackPending(false)
     }
   }

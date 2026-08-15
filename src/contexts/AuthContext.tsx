@@ -15,6 +15,7 @@ import {
   safeLocalStorageSet,
 } from "@/lib/is-browser"
 import { queryClient } from "@/lib/query-client"
+import { clearMutations } from "@/lib/sync-queue"
 import {
   getAuthErrorMessage,
   normalizeAuthUser,
@@ -59,6 +60,10 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [error, setError] = useState<string | null>(null)
 
   const logout = useCallback(async () => {
+    // Capture before clearing state: the queued offline mutations are
+    // per-account, and re-logging into the same account must not resurrect
+    // stale edits the user thought were discarded.
+    const userId = user?.id ?? null
     await Promise.resolve()
     try {
       await api.post("/api/v1/users/logout", {})
@@ -72,7 +77,10 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     setError(null)
     safeLocalStorageRemove(USER_STORAGE_KEY)
     queryClient.clear()
-  }, [])
+    if (userId !== null) {
+      void clearMutations(userId)
+    }
+  }, [user])
 
   const refreshUser = useCallback(async () => {
     await Promise.resolve()

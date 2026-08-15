@@ -1,4 +1,4 @@
-import { get, set } from "idb-keyval"
+import { del, get, set } from "idb-keyval"
 import { createUuid } from "@/lib/utils"
 
 export type SyncEntity = "task" | "subtask" | "project"
@@ -49,4 +49,8 @@ export async function removeMutations(
 
 export async function pendingMutationCount(userId: UserId): Promise<number> {
   return (await listMutations(userId)).length
+}
+
+export async function clearMutations(userId: UserId): Promise<void> {
+  await del(queueKey(userId))
 }

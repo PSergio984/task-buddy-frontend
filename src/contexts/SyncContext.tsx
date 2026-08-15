@@ -261,6 +261,11 @@ export function SyncProvider({
   }, [triggerFlush])
 
   useEffect(() => {
+    // Flush on mount: a reload (e.g. in a background tab) must not leave the
+    // queue idle indefinitely — the focus event may never fire for it.
+    void Promise.resolve().then(() => {
+      if (navigator.onLine) void triggerFlush()
+    })
     const handleOnline = () => {
       setIsOnline(true)
       void triggerFlush()
@@ -269,13 +274,20 @@ export function SyncProvider({
     const handleFocus = () => {
       if (navigator.onLine) void triggerFlush()
     }
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible" && navigator.onLine) {
+        void triggerFlush()
+      }
+    }
     window.addEventListener("online", handleOnline)
     window.addEventListener("offline", handleOffline)
     window.addEventListener("focus", handleFocus)
+    document.addEventListener("visibilitychange", handleVisibility)
     return () => {
       window.removeEventListener("online", handleOnline)
       window.removeEventListener("offline", handleOffline)
       window.removeEventListener("focus", handleFocus)
+      document.removeEventListener("visibilitychange", handleVisibility)
       if (retryTimerRef.current) clearTimeout(retryTimerRef.current)
       if (conflictClearTimerRef.current)
         clearTimeout(conflictClearTimerRef.current)

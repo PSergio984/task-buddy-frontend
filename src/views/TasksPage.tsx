@@ -172,6 +172,7 @@ export function TasksPage() {
         await updateSubtask({
           id: confirmData.id,
           updates: { completed: confirmData.completed ?? false },
+          silent: true,
         })
         refreshTasks()
         toast({
@@ -180,7 +181,11 @@ export function TasksPage() {
         })
       } else if (confirmData.type === "detach_tag" && confirmData.taskId) {
         if (dontShowAgain) setPreference("skipTagDetachmentConfirm", true)
-        await detachTag({ taskId: confirmData.taskId, tagId: confirmData.id })
+        await detachTag({
+          taskId: confirmData.taskId,
+          tagId: confirmData.id,
+          silent: true,
+        })
         refreshTasks()
         toast({
           title: "Tag removed",
@@ -188,7 +193,7 @@ export function TasksPage() {
         })
       } else if (confirmData.type === "delete_subtask") {
         if (dontShowAgain) setPreference("skipSubtaskDeletionConfirm", true)
-        await deleteSubtask(confirmData.id)
+        await deleteSubtask({ id: confirmData.id, silent: true })
         refreshTasks()
         toast({
           title: "Subtask deleted",
@@ -215,7 +220,10 @@ export function TasksPage() {
   const performToggle = async (id: number, completed: boolean) => {
     setIsCompleting(true)
     try {
-      await updateTask({ id, updates: { completed } })
+      // silent: the page-level toast below is the single success signal
+      // (the mutation would otherwise toast "Task updated" on top of it,
+      // and an offline-queued toggle would claim success prematurely).
+      await updateTask({ id, updates: { completed }, silent: true })
       toast({
         title: completed ? "Task completed!" : "Task restored",
         description: completed ? "Great job!" : "Task moved to pending.",
@@ -241,7 +249,11 @@ export function TasksPage() {
     if (completed) {
       if (skipSubtaskCompletionConfirm) {
         try {
-          await updateSubtask({ id: subtaskId, updates: { completed: true } })
+          await updateSubtask({
+            id: subtaskId,
+            updates: { completed: true },
+            silent: true,
+          })
           refreshTasks()
           return
         } catch (err) {
@@ -263,7 +275,11 @@ export function TasksPage() {
     }
 
     try {
-      await updateSubtask({ id: subtaskId, updates: { completed } })
+      await updateSubtask({
+        id: subtaskId,
+        updates: { completed },
+        silent: true,
+      })
       refreshTasks()
     } catch (err) {
       console.error("Failed to update subtask:", err)

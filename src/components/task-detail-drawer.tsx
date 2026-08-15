@@ -5,6 +5,7 @@ import * as Icons from "lucide-react"
 import { type Task } from "@/lib/api"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { useAuth } from "@/contexts/AuthContext"
 import { useTaskDrawerState } from "@/hooks/useTaskDrawerState"
 import { SubtaskSection } from "./task-drawer/SubtaskSection"
 import { KnowledgeSection } from "./task-drawer/KnowledgeSection"
@@ -46,6 +47,7 @@ export function TaskDetailDrawer({
     onOpen,
     onClose,
   })
+  const { user } = useAuth()
   const [subtasksLimit, setSubtasksLimit] = useState(5)
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false)
 
@@ -129,7 +131,12 @@ export function TaskDetailDrawer({
               />
 
               {!state.isCreate && state.task && (
-                <KnowledgeSection taskId={state.task.id} toast={state.toast} />
+                <KnowledgeSection
+                  key={state.task.id}
+                  taskId={state.task.id}
+                  userId={Number(user?.id ?? 0)}
+                  toast={state.toast}
+                />
               )}
             </div>
 

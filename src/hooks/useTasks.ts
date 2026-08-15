@@ -213,7 +213,12 @@ export function useCreateTask() {
         queryClient.setQueryData(queryKey, previousTasks)
       })
     },
-    onSettled: () => {
+    onSettled: (result) => {
+      if ((result as { queued?: boolean } | null | undefined)?.queued) {
+        // Offline: a refetch would overwrite the optimistic value with
+        // pre-change server state; the flush's delta merge reconciles later.
+        return
+      }
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
       queryClient.invalidateQueries({ queryKey: ["stats"] })
     },
@@ -300,7 +305,12 @@ export function useUpdateTask() {
         queryClient.setQueryData(queryKey, previousTask)
       })
     },
-    onSettled: () => {
+    onSettled: (result) => {
+      if ((result as { queued?: boolean } | null | undefined)?.queued) {
+        // Offline: a refetch would overwrite the optimistic value with
+        // pre-change server state; the flush's delta merge reconciles later.
+        return
+      }
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
       queryClient.invalidateQueries({ queryKey: ["stats"] })
       queryClient.invalidateQueries({ queryKey: ["task"] })
@@ -373,7 +383,12 @@ export function useDeleteTask() {
         queryClient.setQueryData(queryKey, previousTasks)
       })
     },
-    onSettled: () => {
+    onSettled: (result) => {
+      if ((result as { queued?: boolean } | null | undefined)?.queued) {
+        // Offline: a refetch would overwrite the optimistic value with
+        // pre-change server state; the flush's delta merge reconciles later.
+        return
+      }
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
       queryClient.invalidateQueries({ queryKey: ["stats"] })
     },
@@ -478,7 +493,12 @@ export function useUpdateSubtask() {
         queryClient.setQueryData(queryKey, previousTask)
       })
     },
-    onSettled: () => {
+    onSettled: (result) => {
+      if ((result as { queued?: boolean } | null | undefined)?.queued) {
+        // Offline: a refetch would overwrite the optimistic value with
+        // pre-change server state; the flush's delta merge reconciles later.
+        return
+      }
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
       queryClient.invalidateQueries({ queryKey: ["stats"] })
       queryClient.invalidateQueries({ queryKey: ["task"] })
@@ -565,7 +585,12 @@ export function useDeleteSubtask() {
         queryClient.setQueryData(queryKey, previousTask)
       })
     },
-    onSettled: () => {
+    onSettled: (result) => {
+      if ((result as { queued?: boolean } | null | undefined)?.queued) {
+        // Offline: a refetch would overwrite the optimistic value with
+        // pre-change server state; the flush's delta merge reconciles later.
+        return
+      }
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
       queryClient.invalidateQueries({ queryKey: ["stats"] })
       queryClient.invalidateQueries({ queryKey: ["task"] })
@@ -656,7 +681,12 @@ export function useCreateSubtask() {
         queryClient.setQueryData(queryKey, previousTask)
       })
     },
-    onSettled: () => {
+    onSettled: (result) => {
+      if ((result as { queued?: boolean } | null | undefined)?.queued) {
+        // Offline: a refetch would overwrite the optimistic value with
+        // pre-change server state; the flush's delta merge reconciles later.
+        return
+      }
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
       queryClient.invalidateQueries({ queryKey: ["stats"] })
       queryClient.invalidateQueries({ queryKey: ["task"] })
@@ -709,7 +739,12 @@ export function useReorderSubtasks() {
         queryClient.setQueryData(queryKey, previousTask)
       })
     },
-    onSettled: () => {
+    onSettled: (result) => {
+      if ((result as { queued?: boolean } | null | undefined)?.queued) {
+        // Offline: a refetch would overwrite the optimistic value with
+        // pre-change server state; the flush's delta merge reconciles later.
+        return
+      }
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
       queryClient.invalidateQueries({ queryKey: ["stats"] })
       queryClient.invalidateQueries({ queryKey: ["task"] })
@@ -795,7 +830,12 @@ export function useAttachTag() {
         queryClient.setQueryData(queryKey, previousTask)
       })
     },
-    onSettled: () => {
+    onSettled: (result) => {
+      if ((result as { queued?: boolean } | null | undefined)?.queued) {
+        // Offline: a refetch would overwrite the optimistic value with
+        // pre-change server state; the flush's delta merge reconciles later.
+        return
+      }
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
       queryClient.invalidateQueries({ queryKey: ["stats"] })
       queryClient.invalidateQueries({ queryKey: ["task"] })
@@ -865,7 +905,12 @@ export function useDetachTag() {
         queryClient.setQueryData(queryKey, previousTask)
       })
     },
-    onSettled: () => {
+    onSettled: (result) => {
+      if ((result as { queued?: boolean } | null | undefined)?.queued) {
+        // Offline: a refetch would overwrite the optimistic value with
+        // pre-change server state; the flush's delta merge reconciles later.
+        return
+      }
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
       queryClient.invalidateQueries({ queryKey: ["stats"] })
       queryClient.invalidateQueries({ queryKey: ["task"] })

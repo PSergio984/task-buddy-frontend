@@ -29,7 +29,7 @@ function renderSection() {
   })
   return render(
     <QueryClientProvider client={queryClient}>
-      <KnowledgeSection taskId={42} toast={toastMock} />
+      <KnowledgeSection taskId={42} userId={1} toast={toastMock} />
     </QueryClientProvider>
   )
 }

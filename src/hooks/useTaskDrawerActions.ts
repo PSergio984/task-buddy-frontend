@@ -70,7 +70,7 @@ export function useTaskDrawerActions({
   const { syncTags, syncSubtasks, isSyncing } = useTaskDrawerSync()
 
   const resolveProjectId = useCallback(async () => {
-    if (projectId === "none") return undefined
+    if (projectId === "none") return null
     const numericId = Number.parseInt(projectId, 10)
     if (Number.isNaN(numericId)) return undefined
     if (numericId > 0) return numericId
@@ -101,6 +101,9 @@ export function useTaskDrawerActions({
     }
 
     try {
+      // null means "clear": project_id -> no project, due_date -> no deadline.
+      // The wire Task type omits null, but the backend REST schema and the
+      // sync payload both accept it — cast at the boundary, not in the logic.
       const updates: Partial<Task> = {}
 
       if (title.trim() !== task.title) updates.title = title.trim()
@@ -118,7 +121,7 @@ export function useTaskDrawerActions({
 
       const currentProjId = task.project_id?.toString() ?? "none"
       if (projectId !== currentProjId) {
-        updates.project_id = await resolveProjectId()
+        updates.project_id = (await resolveProjectId()) as number | undefined
       }
 
       const originalTime = task.due_date
@@ -126,7 +129,11 @@ export function useTaskDrawerActions({
         : undefined
       const newTime = dueDate?.getTime()
       if (newTime !== originalTime) {
-        updates.due_date = dueDate?.toISOString()
+        // Explicit null clears the field — the backend accepts null, and
+        // cleanUpdates keeps null (only undefined is filtered).
+        updates.due_date = (dueDate ? dueDate.toISOString() : null) as
+          | string
+          | undefined
       }
 
       // Filter out undefined values to prevent empty object if only undefined keys were added
@@ -177,7 +184,7 @@ export function useTaskDrawerActions({
         title: title.trim(),
         description: description.trim() || undefined,
         priority,
-        project_id: resolvedProjectId,
+        project_id: resolvedProjectId as number | undefined,
         due_date: dueDate?.toISOString(),
         completed: false,
         tags: pendingTags.map((t) => t.name),
@@ -194,7 +201,6 @@ export function useTaskDrawerActions({
     title,
     description,
     priority,
-    projectId,
     resolveProjectId,
     dueDate,
     pendingTags,

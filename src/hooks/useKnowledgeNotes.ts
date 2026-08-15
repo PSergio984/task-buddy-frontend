@@ -1,11 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { knowledgeApi, type KnowledgeNote } from "@/lib/api"
 
-export function useKnowledgeNotes(taskId: number) {
+export function useKnowledgeNotes(taskId: number, userId: number) {
   const queryClient = useQueryClient()
 
   const notesQuery = useQuery({
-    queryKey: ["knowledge", "notes", taskId],
+    // User-scoped: the query is persisted to IndexedDB (24h), and without
+    // the userId two accounts on a shared browser would see each other's
+    // notes/answers before the refetch lands.
+    queryKey: ["knowledge", "notes", userId, taskId],
     queryFn: () => knowledgeApi.list(taskId),
     enabled: taskId > 0,
   })
@@ -14,7 +17,7 @@ export function useKnowledgeNotes(taskId: number) {
     mutationFn: (content: string) => knowledgeApi.create(taskId, content),
     onSuccess: (saved: KnowledgeNote) => {
       queryClient.setQueryData<KnowledgeNote[]>(
-        ["knowledge", "notes", taskId],
+        ["knowledge", "notes", userId, taskId],
         (prev) => [saved, ...(prev ?? [])]
       )
     },
