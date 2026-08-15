@@ -59,11 +59,12 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const userId = user?.id ?? null
+
   const logout = useCallback(async () => {
     // Capture before clearing state: the queued offline mutations are
     // per-account, and re-logging into the same account must not resurrect
     // stale edits the user thought were discarded.
-    const userId = user?.id ?? null
     await Promise.resolve()
     try {
       await api.post("/api/v1/users/logout", {})
@@ -80,7 +81,10 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     if (userId !== null) {
       void clearMutations(userId)
     }
-  }, [user])
+    // Deps MUST be the primitive id, not the user object: AuthContext's mount
+    // effect re-runs on logout identity changes, and a new user object per
+    // refreshUser would loop refreshUser -> setUser -> re-render forever.
+  }, [userId])
 
   const refreshUser = useCallback(async () => {
     await Promise.resolve()
