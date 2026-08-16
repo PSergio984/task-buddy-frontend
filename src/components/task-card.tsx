@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils"
 import * as LucideIcons from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { useSettings } from "@/contexts/SettingsContext"
+import { useProjects } from "@/hooks/useProjects"
 
 export interface TaskCardProps {
   readonly task: Task
@@ -40,6 +41,14 @@ export const TaskCard = memo(function TaskCard({
   const { timeFormat } = useSettings()
   const is12h = timeFormat === "12h"
   const [showAllSubtasks, setShowAllSubtasks] = useState(false)
+  const { data: projects = [] } = useProjects()
+  // The task list API returns project_id but no nested project object; join
+  // the name/icon/color from the projects cache so cards never mislabel a
+  // task as Inbox.
+  const taskProject =
+    task.project ??
+    projects.find((project) => project.id === task.project_id) ??
+    null
 
   const handleToggleTask = () => {
     onToggleComplete(task.id)
@@ -150,15 +159,15 @@ export const TaskCard = memo(function TaskCard({
                               string,
                               LucideIcons.LucideIcon
                             >
-                          )[task.project?.icon || "Layers"] || Layers
+                          )[taskProject?.icon || "Layers"] || Layers
                         return (
                           <ProjectIcon
                             className="h-2.5 w-2.5"
-                            style={{ color: task.project?.color || "gray" }}
+                            style={{ color: taskProject?.color || "gray" }}
                           />
                         )
                       })()}
-                      {task.project?.name || "Inbox"}
+                      {taskProject?.name || "Inbox"}
                     </div>
 
                     {(() => {
