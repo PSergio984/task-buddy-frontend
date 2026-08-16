@@ -31,20 +31,28 @@ export function SyncStatusPill({
     )
   }
 
-  if (pendingCount > 0) {
+  if (pendingCount > 0 || conflictCount > 0) {
+    // Combined badge: conflicts must stay visible while mutations are still
+    // pending instead of being shadowed by the pending count (audit #5).
+    const parts: string[] = []
+    if (pendingCount > 0) parts.push(`${pendingCount} pending`)
+    if (conflictCount > 0)
+      parts.push(`${conflictCount} ${conflictCount === 1 ? "conflict" : "conflicts"}`)
+    const hasConflicts = conflictCount > 0
     return (
-      <span className="flex h-8 items-center gap-1.5 rounded-xl border border-primary/20 bg-primary/10 px-3 text-xs font-bold text-primary">
-        <Cloud className="h-3.5 w-3.5" />
-        {pendingCount} pending
-      </span>
-    )
-  }
-
-  if (conflictCount > 0) {
-    return (
-      <span className="flex h-8 items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 text-xs font-bold text-amber-600">
-        <AlertTriangle className="h-3.5 w-3.5" />
-        {conflictCount} {conflictCount === 1 ? "conflict" : "conflicts"}
+      <span
+        className={
+          hasConflicts
+            ? "flex h-8 items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 text-xs font-bold text-amber-600"
+            : "flex h-8 items-center gap-1.5 rounded-xl border border-primary/20 bg-primary/10 px-3 text-xs font-bold text-primary"
+        }
+      >
+        {hasConflicts ? (
+          <AlertTriangle className="h-3.5 w-3.5" />
+        ) : (
+          <Cloud className="h-3.5 w-3.5" />
+        )}
+        {parts.join(" · ")}
       </span>
     )
   }

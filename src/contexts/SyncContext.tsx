@@ -146,6 +146,10 @@ export function SyncProvider({
   const [pendingCount, setPendingCount] = useState(0)
   const [conflictCount, setConflictCount] = useState(0)
   const flushingRef = useRef(false)
+  // Set when a flush trigger arrives while a flush is in flight: the trigger
+  // must not be dropped (audit #2) — a trailing flush runs once the current
+  // one finishes, so late mutations and refreshPendingCount still land.
+  const pendingFlushRef = useRef(false)
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined
   )
@@ -154,18 +158,23 @@ export function SyncProvider({
   >(undefined)
   const triggerFlushRef = useRef<() => Promise<void>>(async () => {})
   const sinceRef = useRef<string | null>(null)
+  // Mirror of pendingCount for the conflict-clear timer: the badge must keep
+  // showing "N pending · M conflicts" until the queue drains (audit #5).
+  const pendingCountRef = useRef(0)
 
   useEffect(() => {
     sinceRef.current = null
     if (userId === null) {
       void Promise.resolve().then(() => {
         setPendingCount(0)
+        pendingCountRef.current = 0
         setConflictCount(0)
       })
       return
     }
     void pendingMutationCount(userId).then((count) => {
       setPendingCount(count)
+      pendingCountRef.current = count
       setConflictCount(0)
     })
   }, [userId])
@@ -173,9 +182,12 @@ export function SyncProvider({
   const refreshPendingCount = useCallback(async () => {
     if (userId === null) {
       setPendingCount(0)
+      pendingCountRef.current = 0
       return
     }
-    setPendingCount(await pendingMutationCount(userId))
+    const count = await pendingMutationCount(userId)
+    setPendingCount(count)
+    pendingCountRef.current = count
   }, [userId])
 
   const scheduleRetry = useCallback((retryAfterSec: number) => {
@@ -186,8 +198,14 @@ export function SyncProvider({
   }, [])
 
   const triggerFlush = useCallback(async () => {
-    if (flushingRef.current) return
     if (userId === null) return
+    if (flushingRef.current) {
+      // A trigger during an in-flight flush: remember it instead of dropping
+      // it — the flush's finally re-runs us once the queue is inspectable
+      // again (audit #2).
+      pendingFlushRef.current = true
+      return
+    }
     const count = await pendingMutationCount(userId)
     if (count === 0 || !navigator.onLine) return
     flushingRef.current = true
@@ -220,9 +238,19 @@ export function SyncProvider({
         })
         if (conflictClearTimerRef.current)
           clearTimeout(conflictClearTimerRef.current)
-        conflictClearTimerRef.current = setTimeout(() => {
-          setConflictCount(0)
-        }, CONFLICT_COUNT_CLEAR_MS)
+        // Auto-clear only once the queue has drained: while mutations are
+        // still pending, the pill keeps showing "N pending · M conflicts"
+        // (audit #5 — conflicts used to vanish behind the pending count).
+        const armConflictClear = () => {
+          conflictClearTimerRef.current = setTimeout(() => {
+            if (pendingCountRef.current > 0) {
+              armConflictClear()
+            } else {
+              setConflictCount(0)
+            }
+          }, CONFLICT_COUNT_CLEAR_MS)
+        }
+        armConflictClear()
       }
       for (const conflict of result.conflicts) {
         if (conflict.op === "delete" && !conflict.server_state) {
@@ -253,6 +281,10 @@ export function SyncProvider({
       flushingRef.current = false
       setIsSyncing(false)
       await refreshPendingCount()
+      if (pendingFlushRef.current) {
+        pendingFlushRef.current = false
+        void triggerFlush()
+      }
     }
   }, [refreshPendingCount, scheduleRetry, toast, userId])
 

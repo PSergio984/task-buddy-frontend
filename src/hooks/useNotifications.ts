@@ -23,12 +23,23 @@ export function useNotifications(params?: {
   // Ref to track already toasted notification IDs to avoid duplicates
   // Using ref instead of state to avoid cascading renders
   const toastedIds = useRef<Set<number>>(new Set())
+  // Session start: only notifications created AFTER mount are toasted. Unread
+  // backlog (or re-fetches after reconnect) must not re-burst old toasts
+  // (audit #6 — every unread used to be toasted on load + every 30s refetch).
+  const sessionStartMs = useRef<number>(0)
+  useEffect(() => {
+    sessionStartMs.current = Date.now()
+  }, [])
 
   useEffect(() => {
     if (query.data?.items && query.data.items.length > 0) {
-      // Find unread notifications that haven't been toasted yet
+      // Find unread notifications newer than this session that haven't been
+      // toasted yet
       const newHighPriority = query.data.items.filter(
-        (n) => !n.is_read && !toastedIds.current.has(n.id)
+        (n) =>
+          !n.is_read &&
+          !toastedIds.current.has(n.id) &&
+          Date.parse(n.created_at) > sessionStartMs.current
       )
 
       if (newHighPriority.length > 0) {

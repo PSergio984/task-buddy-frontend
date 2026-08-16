@@ -120,6 +120,7 @@ export interface Task {
   project?: Project
   due_date?: string
   created_at: string
+  updated_at?: string
   user_id: number
   subtasks?: Subtask[]
   tags?: Tag[]

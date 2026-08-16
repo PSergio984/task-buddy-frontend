@@ -51,6 +51,30 @@ describe("SyncStatusPill", () => {
     expect(screen.getByText("2 conflicts")).toBeInTheDocument()
   })
 
+  it("combines pending and conflicts instead of shadowing conflicts", () => {
+    render(
+      <SyncStatusPill
+        isOnline={true}
+        isSyncing={false}
+        pendingCount={3}
+        conflictCount={2}
+      />
+    )
+    expect(screen.getByText("3 pending · 2 conflicts")).toBeInTheDocument()
+  })
+
+  it("singularizes a single conflict", () => {
+    render(
+      <SyncStatusPill
+        isOnline={true}
+        isSyncing={false}
+        pendingCount={1}
+        conflictCount={1}
+      />
+    )
+    expect(screen.getByText("1 pending · 1 conflict")).toBeInTheDocument()
+  })
+
   it("renders nothing when online, idle, and conflict-free", () => {
     const { container } = render(
       <SyncStatusPill

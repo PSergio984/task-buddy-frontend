@@ -70,6 +70,10 @@ export function useTaskDrawerState({
   const [prevTaskId, setPrevTaskId] = useState<number | string | null>(null)
   const [prevIsOpen, setPrevIsOpen] = useState(false)
   const currentTaskId = task?.id ?? (isCreate ? "new" : null)
+  // The task the form was LAST initialized from — distinct from `task`, which
+  // can become a fresher fetchedTask mid-session (audit #3). Kept in state
+  // (not a ref) so render-phase rebasing stays within the React Compiler rules.
+  const [formBaseTask, setFormBaseTask] = useState<Task | null>(null)
 
   const resetForm = () => {
     const isNew = isCreate || !task
@@ -98,8 +102,43 @@ export function useTaskDrawerState({
     setPrevIsOpen(isOpen)
     setPrevTaskId(currentTaskId)
     if (isOpen) {
+      setFormBaseTask(task)
       resetForm()
     }
+  }
+
+  // Baseline dirty check against what the form was initialized FROM (not the
+  // possibly-fresher `task`): used to decide whether a newer fetch may
+  // safely rebase the form without clobbering user edits.
+  const baselineDirty = useTaskDirtyState({
+    task: formBaseTask,
+    isCreate,
+    title,
+    description,
+    priority,
+    completed,
+    projectId,
+    dueDate,
+    localTags: tags.localTags,
+    localSubtasks: subtasks.localSubtasks,
+  })
+
+  // A fetch landing after the drawer opened (useTask resolves later than the
+  // list row) can carry a NEWER task: without a rebase, the form keeps the
+  // stale values while dirty checks compare against the fresh task — phantom
+  // unsaved-changes and save re-sending old values (audit #3). Rebase only
+  // when nothing has been edited since open.
+  if (
+    isOpen &&
+    fetchedTask &&
+    fetchedTask.updated_at &&
+    formBaseTask &&
+    formBaseTask.updated_at &&
+    fetchedTask.updated_at > formBaseTask.updated_at &&
+    !baselineDirty.hasChanges
+  ) {
+    setFormBaseTask(fetchedTask)
+    resetForm()
   }
 
   // Dirty checks

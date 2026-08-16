@@ -100,6 +100,10 @@ export function useTaskDrawerActions({
       return
     }
 
+    // Track each step's outcome separately: the task PUT can succeed while a
+    // tag/subtask sync fails — a blanket "Failed to save changes" misleads the
+    // user into re-submitting and duplicating tags/subtasks (audit #4).
+    const saved = { task: false, tags: false, subtasks: false }
     try {
       // null means "clear": project_id -> no project, due_date -> no deadline.
       // The wire Task type omits null, but the backend REST schema and the
@@ -148,15 +152,30 @@ export function useTaskDrawerActions({
           silent: true,
         })
       }
+      saved.task = true
 
       await syncTags(task.id, localTags, task.tags || [], true)
+      saved.tags = true
       await syncSubtasks(task.id, localSubtasks, task.subtasks || [], true)
+      saved.subtasks = true
 
       toast({ title: "Changes saved", variant: "success" })
       onClose()
     } catch (err) {
       console.error("Update failed:", err)
-      toast({ title: "Failed to save changes", variant: "destructive" })
+      const failed = (
+        ["task", "tags", "subtasks"] as const
+      ).filter((step) => !saved[step])
+      if (failed.length === 3) {
+        toast({ title: "Failed to save changes", variant: "destructive" })
+      } else {
+        toast({
+          title: `Saved, but ${failed.join(" and ")} failed to sync`,
+          description:
+            "The drawer stays open so you can retry just the failed part.",
+          variant: "destructive",
+        })
+      }
     }
   }, [
     task,
