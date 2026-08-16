@@ -2,7 +2,7 @@
   "buildCommand": "next build --webpack",
   "installCommand": "npm ci",
   "functions": {
-    "api/[...path]/route.ts": {
+    "app/api/[...path]/route.ts": {
       "maxDuration": 60
     }
   }
