@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
-import { Flag, Sparkles } from "lucide-react"
+import { Flag, ListTree, Sparkles } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import * as Icons from "lucide-react"
 import { type Task } from "@/lib/api"
 import { Input } from "@/components/ui/input"
@@ -31,6 +32,8 @@ export interface TaskDetailDrawerProps {
   readonly isOpen: boolean
   readonly onOpen: () => void
   readonly onClose: () => void
+  /** Opens the breakdown sheet pre-filled with this task's context. */
+  readonly onBreakdown?: (task: Task) => void
 }
 
 export function TaskDetailDrawer({
@@ -39,6 +42,7 @@ export function TaskDetailDrawer({
   isOpen,
   onOpen,
   onClose,
+  onBreakdown,
 }: TaskDetailDrawerProps) {
   const state = useTaskDrawerState({
     initialTask,
@@ -84,7 +88,18 @@ export function TaskDetailDrawer({
           side="right"
           className="flex w-full flex-col border-l border-white/5 bg-background/95 p-0 shadow-2xl backdrop-blur-2xl sm:max-w-3xl"
         >
-          <DrawerHeader isCreate={state.isCreate} onClose={handleClose} />
+          <DrawerHeader
+            isCreate={state.isCreate}
+            onClose={handleClose}
+            onBreakdown={
+              !state.isCreate && onBreakdown && initialTask
+                ? () => {
+                    onClose()
+                    onBreakdown(initialTask)
+                  }
+                : undefined
+            }
+          />
 
           <div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
             <div className="no-scrollbar flex flex-1 flex-col gap-6 overflow-y-auto border-b border-white/5 p-6 md:p-8 lg:border-r lg:border-b-0">
@@ -289,7 +304,8 @@ export function TaskDetailDrawer({
 
 function DrawerHeader({
   isCreate,
-}: Readonly<{ isCreate: boolean; onClose?: () => void }>) {
+  onBreakdown,
+}: Readonly<{ isCreate: boolean; onClose?: () => void; onBreakdown?: () => void }>) {
   return (
     <div className="flex shrink-0 items-center justify-between border-b border-white/5 px-8 py-6">
       <div className="flex items-center gap-3">
@@ -304,6 +320,17 @@ function DrawerHeader({
           {isCreate ? "New Task" : "Task Details"}
         </span>
       </div>
+      {onBreakdown ? (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onBreakdown}
+          className="gap-1.5 text-xs"
+        >
+          <ListTree className="h-3.5 w-3.5" />
+          Break this down
+        </Button>
+      ) : null}
     </div>
   )
 }
