@@ -21,25 +21,10 @@ import { CharacterCounter } from "@/components/ui/character-counter"
 import { useToast } from "@/hooks/use-toast"
 import { useIsOnline } from "@/hooks/useIsOnline"
 import { cn } from "@/lib/utils"
-import {
-  type BreakdownTaskProposal,
-  type Task,
-  breakdownApi,
-  createIdempotencyKey,
-  tasksApi,
-} from "@/lib/api"
+import { type Task, breakdownApi, createIdempotencyKey, tasksApi } from "@/lib/api"
+import { type DraftCard, replaceCard, toDraftCard } from "./breakdown-cards"
 
 const INPUT_CHAR_LIMIT = 10_000
-
-/** One editable draft card in the proposal list. */
-interface DraftCard {
-  number: number
-  accepted: boolean
-  title: string
-  effortMinutes: number | null
-  subtasks: { title: string; accepted: boolean }[]
-  status: "draft" | "creating" | "created" | "failed"
-}
 
 type Phase = "input" | "loading" | "review"
 
@@ -50,34 +35,6 @@ interface BreakdownSheetProps {
   readonly contextTask?: Task | null
   /** Fallback project for commits when there is no context task (current UI project). */
   readonly projectId?: number
-}
-
-function toDraftCard(task: BreakdownTaskProposal, number: number): DraftCard {
-  return {
-    number,
-    accepted: true,
-    title: task.title,
-    effortMinutes: task.estimated_effort_minutes ?? null,
-    subtasks: task.subtasks.map((sub) => ({ title: sub.title, accepted: true })),
-    status: "draft",
-  }
-}
-
-function replaceCard(
-  prev: DraftCard[],
-  targetNumber: number,
-  replacements: DraftCard[]
-): DraftCard[] {
-  // A refine replaces only the targeted card; the first replacement keeps the
-  // original number so references stay stable.
-  return prev.flatMap((card) => {
-    if (card.number !== targetNumber) return [card]
-    return replacements.length > 0
-      ? replacements.map((replacement, index) =>
-          index === 0 ? { ...replacement, number: targetNumber } : replacement
-        )
-      : []
-  })
 }
 
 export function BreakdownSheet({
@@ -97,10 +54,14 @@ export function BreakdownSheet({
   const [budgetExhausted, setBudgetExhausted] = useState(false)
   const [emptyNotice, setEmptyNotice] = useState<string | null>(null)
   const [isCommitting, setIsCommitting] = useState(false)
-  // The refine loop re-sends the ORIGINAL input plus the focus card title, so
-  // the model regenerates one card with full context instead of hallucinating.
+  // The refine loop re-sends the ORIGINAL input plus the focus card's stable
+  // number (and current title as prompt context), so the model regenerates one
+  // card with full context instead of hallucinating.
   const originalTextRef = useRef("")
-  const lastRequestRef = useRef<{ text: string; focusTitle?: string } | null>(null)
+  const lastRequestRef = useRef<{
+    text: string
+    focus?: { number: number; title?: string }
+  } | null>(null)
   const cardNumberRef = useRef(1)
 
   useEffect(() => {
@@ -119,19 +80,22 @@ export function BreakdownSheet({
     lastRequestRef.current = null
   }
 
-  async function requestBreakdown(requestText: string, focusTitle?: string) {
+  async function requestBreakdown(
+    requestText: string,
+    focus?: { number: number; title?: string }
+  ) {
     setPhase("loading")
     setError(null)
     setBudgetExhausted(false)
     setEmptyNotice(null)
-    lastRequestRef.current = { text: requestText, focusTitle }
+    lastRequestRef.current = { text: requestText, focus }
 
     try {
-      const response = await breakdownApi.propose(
-        requestText,
-        focusTitle === undefined && contextTask ? contextTask.id : undefined,
-        focusTitle
-      )
+      const response = await breakdownApi.propose(requestText, {
+        contextTaskId: focus === undefined && contextTask ? contextTask.id : undefined,
+        focusTaskNumber: focus?.number,
+        focusTaskTitle: focus?.title,
+      })
 
       if (response.tasks.length === 0) {
         if (response.reason) {
@@ -145,9 +109,7 @@ export function BreakdownSheet({
           toDraftCard(task, cardNumberRef.current++)
         )
         setCards((prev) =>
-          focusTitle === undefined
-            ? newCards
-            : replaceByFocusTitle(prev, focusTitle, newCards)
+          focus === undefined ? newCards : replaceCard(prev, focus.number, newCards)
         )
         setPhase("review")
         return
@@ -166,7 +128,7 @@ export function BreakdownSheet({
         )
       }
     }
-    setPhase(focusTitle === undefined ? "input" : "review")
+    setPhase(focus === undefined ? "input" : "review")
   }
 
   const handleBreakDownClick = () => {
@@ -181,21 +143,13 @@ export function BreakdownSheet({
     const target = Number(match[1])
     const focusCard = cards.find((card) => card.number === target)
     if (!focusCard || !originalTextRef.current) return
-    void requestBreakdown(originalTextRef.current, focusCard.title)
+    // Target by stable chip number; the title only rides along as context
+    // (clamped to the wire contract's max length).
+    void requestBreakdown(originalTextRef.current, {
+      number: target,
+      title: focusCard.title.slice(0, 200),
+    })
     setRefineText("")
-  }
-
-  function replaceByFocusTitle(
-    prev: DraftCard[],
-    focusTitle: string,
-    replacements: DraftCard[]
-  ): DraftCard[] {
-    const target = prev.find(
-      (card) =>
-        card.title.trim().toLowerCase() === focusTitle.trim().toLowerCase()
-    )
-    if (!target) return [...prev, ...replacements]
-    return replaceCard(prev, target.number, replacements)
   }
 
   const updateCard = (number: number, updater: (card: DraftCard) => DraftCard) => {
@@ -206,18 +160,29 @@ export function BreakdownSheet({
     updateCard(number, (card) => ({ ...card, status }))
   }
 
-  const acceptedCount = cards.filter((c) => c.accepted).length
+  // Cards still eligible for creation: accepted and not yet created.
+  const committableCount = cards.filter(
+    (c) => c.accepted && c.status !== "created"
+  ).length
+  const hasFailed = cards.some((c) => c.status === "failed")
+  const isCreating = cards.some((c) => c.status === "creating")
   const acceptedSubtaskCount = cards.reduce(
     (sum, card) =>
-      sum + (card.accepted ? card.subtasks.filter((s) => s.accepted).length : 0),
+      sum +
+      (card.accepted && card.status !== "created"
+        ? card.subtasks.filter((s) => s.accepted).length
+        : 0),
     0
   )
-  const hasCreated = cards.some((card) => card.status === "created")
 
   async function commit() {
     setIsCommitting(true)
     const targets = cards.filter(
       (card) => card.accepted && card.status !== "created"
+    )
+    const targetSubtaskCount = targets.reduce(
+      (sum, card) => sum + card.subtasks.filter((s) => s.accepted).length,
+      0
     )
     let created = 0
     for (const card of targets) {
@@ -245,14 +210,14 @@ export function BreakdownSheet({
     if (failed === 0) {
       toast({
         title: "Tasks added",
-        description: `Added ${acceptedCount} task${acceptedCount === 1 ? "" : "s"} · ${acceptedSubtaskCount} subtask${acceptedSubtaskCount === 1 ? "" : "s"}.`,
+        description: `Added ${targets.length} task${targets.length === 1 ? "" : "s"} · ${targetSubtaskCount} subtask${targetSubtaskCount === 1 ? "" : "s"}.`,
         variant: "success",
       })
       onClose()
     } else if (created > 0) {
       toast({
         title: `${created} task${created === 1 ? "" : "s"} added`,
-        description: `${failed} failed. Retry the remaining cards.`,
+        description: `${failed} failed. Use "Retry failed" below.`,
         variant: "destructive",
       })
     }
@@ -262,7 +227,7 @@ export function BreakdownSheet({
     if (!lastRequestRef.current) return
     void requestBreakdown(
       lastRequestRef.current.text,
-      lastRequestRef.current.focusTitle
+      lastRequestRef.current.focus
     )
   }
 
@@ -330,7 +295,7 @@ export function BreakdownSheet({
           ) : null}
         </div>
 
-        {phase === "review" && !hasCreated ? (
+        {phase === "review" ? (
           <div className="shrink-0 border-t border-white/5 px-6 py-4">
             <RefineInput
               value={refineText}
@@ -338,31 +303,30 @@ export function BreakdownSheet({
               disabled={!isOnline}
               onSubmit={handleRefineSubmit}
             />
-            <Button
-              id="breakdown-commit-btn"
-              className="mt-3 w-full"
-              onClick={() => void commit()}
-              disabled={
-                !isOnline ||
-                isCommitting ||
-                acceptedCount === 0 ||
-                cards.some((c) => c.status === "creating")
-              }
-            >
-              {isCommitting ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Check className="mr-2 h-4 w-4" />
-              )}
-              Add {acceptedCount} task{acceptedCount === 1 ? "" : "s"} ·{" "}
-              {acceptedSubtaskCount} subtask{acceptedSubtaskCount === 1 ? "" : "s"}
-            </Button>
-            {cards.some((c) => c.status === "failed") ? (
+            {/* Commit stays visible while anything is committable; after a
+                partial success only the retry affordance remains so failed
+                cards are always recoverable. */}
+            {committableCount > 0 || isCreating ? (
+              <Button
+                id="breakdown-commit-btn"
+                className="mt-3 w-full"
+                onClick={() => void commit()}
+                disabled={!isOnline || isCommitting || committableCount === 0 || isCreating}
+              >
+                {isCommitting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="mr-2 h-4 w-4" />
+                )}
+                Add {committableCount} task{committableCount === 1 ? "" : "s"} ·{" "}
+                {acceptedSubtaskCount} subtask{acceptedSubtaskCount === 1 ? "" : "s"}
+              </Button>
+            ) : null}
+            {hasFailed && !isCommitting ? (
               <Button
                 variant="destructive"
-                className="mt-2 w-full"
+                className={cn("w-full", committableCount > 0 ? "mt-2" : "mt-3")}
                 onClick={() => void commit()}
-                disabled={isCommitting}
               >
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Retry failed
