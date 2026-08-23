@@ -331,12 +331,23 @@ export const knowledgeApi = {
 }
 
 export const breakdownApi = {
-  propose: async (text: string, contextTaskId?: number, focusTaskTitle?: string) => {
+  propose: async (
+    text: string,
+    options?: {
+      contextTaskId?: number
+      focusTaskNumber?: number
+      focusTaskTitle?: string
+    }
+  ) => {
+    const { contextTaskId, focusTaskNumber, focusTaskTitle } = options ?? {}
     const response = await api.post<BreakdownResponse>(
       "/api/v1/breakdown",
       {
         text,
         ...(contextTaskId != null ? { context_task_id: contextTaskId } : {}),
+        ...(focusTaskNumber != null
+          ? { focus_task_number: focusTaskNumber }
+          : {}),
         ...(focusTaskTitle != null ? { focus_task_title: focusTaskTitle } : {}),
       },
       { skipRateLimitToast: true }
