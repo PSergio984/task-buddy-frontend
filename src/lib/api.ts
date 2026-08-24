@@ -397,12 +397,24 @@ export const planApi = {
   },
 }
 
+/** Groq sniffs the recording format by filename extension, so the uploaded
+ * name must match the actual container (ladder yields webm/mp4; a browser
+ * default fallback can still produce ogg or wav). */
+export function voiceFilename(mimeType: string): string {
+  const type = mimeType.toLowerCase()
+  if (type.includes("mp4") || type.includes("m4a")) return "clip.m4a"
+  if (type.includes("ogg")) return "clip.ogg"
+  if (type.includes("wav")) return "clip.wav"
+  return "clip.webm"
+}
+
 export const voiceApi = {
   /** One utterance, one plan: multipart upload → server-side STT + plan.
    * The filename extension is Groq's format hint, so it must match the
-   * recorded container (Safari yields audio/mp4, Chromium audio/webm). */
+   * recorded container: the codec ladder yields webm/mp4, but a browser
+   * default fallback may produce ogg or wav. */
   planFromAudio: async (audio: Blob) => {
-    const filename = audio.type.includes("mp4") ? "clip.m4a" : "clip.webm"
+    const filename = voiceFilename(audio.type)
     const form = new FormData()
     form.append("audio", audio, filename)
     const response = await api.post<VoicePlanResponse>(
