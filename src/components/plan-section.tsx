@@ -99,6 +99,10 @@ export function PlanSection({ tasks }: PlanSectionProps) {
       } else {
         handlePlanError(err)
       }
+      // A failed voice run must not leave the previous plan (or Heard chip)
+      // rendered — same symmetry as a failed Replan.
+      setPhase("idle")
+      setTranscript(null)
     } finally {
       setVoiceBusy(false)
     }

@@ -21,6 +21,10 @@ export function useMicRecorder(onComplete: (audio: Blob) => void) {
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const capRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const onCompleteRef = useRef(onComplete)
+  // Guards against overlapping start() calls while getUserMedia is pending
+  // and against a stream that resolves after unmount.
+  const acquiringRef = useRef(false)
+  const cancelledRef = useRef(false)
 
   useEffect(() => {
     onCompleteRef.current = onComplete
@@ -48,50 +52,75 @@ export function useMicRecorder(onComplete: (audio: Blob) => void) {
     }
   }, [])
 
+  const beginRecording = useCallback(
+    (stream: MediaStream) => {
+      streamRef.current = stream
+      chunksRef.current = []
+      const mimeType = pickMimeType((mime) =>
+        MediaRecorder.isTypeSupported(mime)
+      )
+      const recorder = new MediaRecorder(
+        stream,
+        mimeType ? { mimeType } : undefined
+      )
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) chunksRef.current.push(event.data)
+      }
+      recorder.onstop = () => {
+        const audio = new Blob(chunksRef.current, {
+          type: recorder.mimeType || "audio/webm",
+        })
+        recorderRef.current = null
+        clearTimers()
+        releaseStream()
+        setIsRecording(false)
+        setElapsedSeconds(0)
+        onCompleteRef.current(audio)
+      }
+      recorderRef.current = recorder
+      recorder.start()
+      setIsRecording(true)
+      setElapsedSeconds(0)
+      tickRef.current = setInterval(
+        () => setElapsedSeconds((seconds) => seconds + 1),
+        1000
+      )
+      capRef.current = setTimeout(stop, MAX_RECORDING_SECONDS * 1000)
+    },
+    [clearTimers, releaseStream, stop]
+  )
+
   const start = useCallback(async () => {
-    if (!supported || recorderRef.current?.state === "recording") return
-    setMicDenied(false)
-    let stream: MediaStream
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-    } catch {
-      setMicDenied(true)
+    if (
+      !supported ||
+      acquiringRef.current ||
+      recorderRef.current?.state === "recording"
+    ) {
       return
     }
-    streamRef.current = stream
-    chunksRef.current = []
-    const mimeType = pickMimeType((mime) => MediaRecorder.isTypeSupported(mime))
-    const recorder = new MediaRecorder(
-      stream,
-      mimeType ? { mimeType } : undefined
-    )
-    recorder.ondataavailable = (event) => {
-      if (event.data.size > 0) chunksRef.current.push(event.data)
+    acquiringRef.current = true
+    try {
+      setMicDenied(false)
+      let stream: MediaStream
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      } catch {
+        if (!cancelledRef.current) setMicDenied(true)
+        return
+      }
+      if (cancelledRef.current) {
+        stream.getTracks().forEach((track) => track.stop())
+        return
+      }
+      beginRecording(stream)
+    } finally {
+      acquiringRef.current = false
     }
-    recorder.onstop = () => {
-      const audio = new Blob(chunksRef.current, {
-        type: recorder.mimeType || "audio/webm",
-      })
-      recorderRef.current = null
-      clearTimers()
-      releaseStream()
-      setIsRecording(false)
-      setElapsedSeconds(0)
-      onCompleteRef.current(audio)
-    }
-    recorderRef.current = recorder
-    recorder.start()
-    setIsRecording(true)
-    setElapsedSeconds(0)
-    tickRef.current = setInterval(
-      () => setElapsedSeconds((seconds) => seconds + 1),
-      1000
-    )
-    capRef.current = setTimeout(stop, MAX_RECORDING_SECONDS * 1000)
-  }, [clearTimers, releaseStream, stop, supported])
+  }, [beginRecording, supported])
 
   useEffect(
     () => () => {
+      cancelledRef.current = true
       clearTimers()
       releaseStream()
       if (recorderRef.current?.state === "recording") {
