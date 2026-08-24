@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { TaskCard } from "@/components/task-card"
 import { AuditTrail } from "@/components/audit-trail"
 import { SystemOverview } from "@/components/system-overview"
+import { PlanSection } from "@/components/plan-section"
 import { ConfirmationModal } from "@/components/confirmation-modal"
 import { useFilters } from "@/contexts/FilterContext"
 import { useUserPreferences } from "@/hooks/useUserPreferences"
@@ -278,6 +279,9 @@ export function Dashboard({
             Manage your daily goals and track your progress.
           </p>
         </header>
+
+        {/* Primary: What's next planner */}
+        <PlanSection tasks={tasks} />
 
         {/* Primary: Stats & Audit */}
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-3">
