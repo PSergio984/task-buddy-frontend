@@ -10,25 +10,14 @@ const tasks = [
 ] as unknown as Task[]
 
 function stubVoiceSupport(supported: boolean) {
-  if (supported) {
-    Object.defineProperty(navigator, "mediaDevices", {
-      value: { getUserMedia: vi.fn() },
-      configurable: true,
-    })
-    Object.defineProperty(window, "MediaRecorder", {
-      value: vi.fn(),
-      configurable: true,
-    })
-  } else {
-    Object.defineProperty(navigator, "mediaDevices", {
-      value: undefined,
-      configurable: true,
-    })
-    Object.defineProperty(window, "MediaRecorder", {
-      value: undefined,
-      configurable: true,
-    })
-  }
+  Object.defineProperty(navigator, "mediaDevices", {
+    value: supported ? { getUserMedia: vi.fn() } : undefined,
+    configurable: true,
+  })
+  Object.defineProperty(window, "MediaRecorder", {
+    value: supported ? vi.fn() : undefined,
+    configurable: true,
+  })
 }
 
 afterEach(() => {

@@ -409,10 +409,7 @@ export function voiceFilename(mimeType: string): string {
 }
 
 export const voiceApi = {
-  /** One utterance, one plan: multipart upload → server-side STT + plan.
-   * The filename extension is Groq's format hint, so it must match the
-   * recorded container: the codec ladder yields webm/mp4, but a browser
-   * default fallback may produce ogg or wav. */
+  /** One utterance, one plan: multipart upload → server-side STT + plan. */
   planFromAudio: async (audio: Blob) => {
     const filename = voiceFilename(audio.type)
     const form = new FormData()

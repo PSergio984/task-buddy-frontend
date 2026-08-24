@@ -208,7 +208,7 @@ export function PlanSection({ tasks }: PlanSectionProps) {
         </p>
       ) : recorder.micDenied ? (
         <p className="flex items-center gap-2 text-sm text-destructive">
-          <MicOffHint />
+          <Mic className="h-4 w-4 shrink-0" aria-hidden />
           Microphone access is blocked. Enable it in your browser settings and
           try again.
         </p>
@@ -281,10 +281,6 @@ export function PlanSection({ tasks }: PlanSectionProps) {
       ) : null}
     </section>
   )
-}
-
-function MicOffHint() {
-  return <Mic className="h-4 w-4 shrink-0" aria-hidden />
 }
 
 function PlanBucketCard({
