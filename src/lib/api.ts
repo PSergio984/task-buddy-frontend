@@ -247,6 +247,31 @@ export interface BreakdownResponse {
   reason: string | null
 }
 
+export interface PlanTaskRow {
+  task_id: number
+  reason: string
+  effort_minutes: number | null
+}
+
+export interface PlanBucket {
+  period: "tonight" | "tomorrow" | "later"
+  tasks: PlanTaskRow[]
+}
+
+export interface PlanResponse {
+  buckets: PlanBucket[]
+  reason: string | null
+  plan_id: number | null
+  model: string
+  prompt_tokens: number
+  completion_tokens: number
+  total_tokens: number
+  cost_usd: number
+  response_time_ms: number
+  pool_size: number
+  available_minutes: number
+}
+
 // Raw API functions
 export const tasksApi = {
   list: async (filter?: string, project_id?: number, tag_id?: number) => {
@@ -350,6 +375,17 @@ export const breakdownApi = {
           : {}),
         ...(focusTaskTitle != null ? { focus_task_title: focusTaskTitle } : {}),
       },
+      { skipRateLimitToast: true }
+    )
+    return response.data
+  },
+}
+
+export const planApi = {
+  generate: async (availableMinutes?: number) => {
+    const response = await api.post<PlanResponse>(
+      "/api/v1/plan",
+      availableMinutes != null ? { available_minutes: availableMinutes } : {},
       { skipRateLimitToast: true }
     )
     return response.data
