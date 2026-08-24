@@ -19,7 +19,10 @@ export function toDraftCard(
     accepted: true,
     title: task.title,
     effortMinutes: task.estimated_effort_minutes ?? null,
-    subtasks: task.subtasks.map((sub) => ({ title: sub.title, accepted: true })),
+    subtasks: task.subtasks.map((sub) => ({
+      title: sub.title,
+      accepted: true,
+    })),
     status: "draft",
   }
 }

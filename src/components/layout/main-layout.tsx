@@ -19,7 +19,9 @@ export function MainLayout() {
   const [activeTask, setActiveTask] = useState<Task | null>(null)
   const [drawerMode, setDrawerMode] = useState<"view" | "create">("view")
   const [isBreakdownOpen, setIsBreakdownOpen] = useState(false)
-  const [breakdownContextTask, setBreakdownContextTask] = useState<Task | null>(null)
+  const [breakdownContextTask, setBreakdownContextTask] = useState<Task | null>(
+    null
+  )
   // Current UI project context (sidebar "project:<id>" filter) for commits.
   const { activeSidebarFilter } = useFilters()
   const breakdownProjectId = activeSidebarFilter.startsWith("project:")
@@ -74,7 +76,10 @@ export function MainLayout() {
       {/* Main Content Wrapper */}
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden pb-24 md:pb-0">
         {/* Persistent Top Navigation */}
-        <TopNav onNewTask={handleOpenNewTask} onBreakdown={() => handleOpenBreakdown()} />
+        <TopNav
+          onNewTask={handleOpenNewTask}
+          onBreakdown={() => handleOpenBreakdown()}
+        />
 
         {/* Scrollable Main Content */}
         <main className="flex-1 overflow-y-auto">

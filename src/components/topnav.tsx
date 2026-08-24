@@ -1,6 +1,13 @@
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { Plus, User, LogOut, ChevronDown, CheckSquare2, ListTree } from "lucide-react"
+import {
+  Plus,
+  User,
+  LogOut,
+  ChevronDown,
+  CheckSquare2,
+  ListTree,
+} from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useNavigate } from "react-router-dom"

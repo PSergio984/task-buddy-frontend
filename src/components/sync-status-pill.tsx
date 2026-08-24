@@ -37,7 +37,9 @@ export function SyncStatusPill({
     const parts: string[] = []
     if (pendingCount > 0) parts.push(`${pendingCount} pending`)
     if (conflictCount > 0)
-      parts.push(`${conflictCount} ${conflictCount === 1 ? "conflict" : "conflicts"}`)
+      parts.push(
+        `${conflictCount} ${conflictCount === 1 ? "conflict" : "conflicts"}`
+      )
     const hasConflicts = conflictCount > 0
     return (
       <span

@@ -12,7 +12,12 @@ import {
   WifiOff,
   X,
 } from "lucide-react"
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
@@ -21,7 +26,12 @@ import { CharacterCounter } from "@/components/ui/character-counter"
 import { useToast } from "@/hooks/use-toast"
 import { useIsOnline } from "@/hooks/useIsOnline"
 import { cn } from "@/lib/utils"
-import { type Task, breakdownApi, createIdempotencyKey, tasksApi } from "@/lib/api"
+import {
+  type Task,
+  breakdownApi,
+  createIdempotencyKey,
+  tasksApi,
+} from "@/lib/api"
 import { type DraftCard, replaceCard, toDraftCard } from "./breakdown-cards"
 
 const INPUT_CHAR_LIMIT = 10_000
@@ -92,7 +102,8 @@ export function BreakdownSheet({
 
     try {
       const response = await breakdownApi.propose(requestText, {
-        contextTaskId: focus === undefined && contextTask ? contextTask.id : undefined,
+        contextTaskId:
+          focus === undefined && contextTask ? contextTask.id : undefined,
         focusTaskNumber: focus?.number,
         focusTaskTitle: focus?.title,
       })
@@ -102,22 +113,25 @@ export function BreakdownSheet({
           // Parse/infra degrade — retryable, distinct from "no tasks found".
           setError("The breakdown failed. Please try again.")
         } else {
-          setEmptyNotice("I couldn't find any tasks in that. Try pasting your to-dos.")
+          setEmptyNotice(
+            "I couldn't find any tasks in that. Try pasting your to-dos."
+          )
         }
       } else {
         const newCards: DraftCard[] = response.tasks.map((task) =>
           toDraftCard(task, cardNumberRef.current++)
         )
         setCards((prev) =>
-          focus === undefined ? newCards : replaceCard(prev, focus.number, newCards)
+          focus === undefined
+            ? newCards
+            : replaceCard(prev, focus.number, newCards)
         )
         setPhase("review")
         return
       }
     } catch (err) {
-      const status = (
-        err as { response?: { status?: number } }
-      ).response?.status
+      const status = (err as { response?: { status?: number } }).response
+        ?.status
       if (status === 429) {
         setBudgetExhausted(true)
       } else {
@@ -152,8 +166,13 @@ export function BreakdownSheet({
     setRefineText("")
   }
 
-  const updateCard = (number: number, updater: (card: DraftCard) => DraftCard) => {
-    setCards((prev) => prev.map((card) => (card.number === number ? updater(card) : card)))
+  const updateCard = (
+    number: number,
+    updater: (card: DraftCard) => DraftCard
+  ) => {
+    setCards((prev) =>
+      prev.map((card) => (card.number === number ? updater(card) : card))
+    )
   }
 
   const setCardStatus = (number: number, status: DraftCard["status"]) => {
@@ -233,7 +252,10 @@ export function BreakdownSheet({
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent side="right" className="flex w-full flex-col gap-0 sm:max-w-xl">
+      <SheetContent
+        side="right"
+        className="flex w-full flex-col gap-0 sm:max-w-xl"
+      >
         <SheetHeader className="border-b border-white/5 px-6 py-5">
           <div className="flex items-center gap-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
@@ -288,7 +310,11 @@ export function BreakdownSheet({
               </button>
               <div className="flex flex-col gap-3">
                 {cards.map((card) => (
-                  <DraftCardView key={card.number} card={card} onChange={updateCard} />
+                  <DraftCardView
+                    key={card.number}
+                    card={card}
+                    onChange={updateCard}
+                  />
                 ))}
               </div>
             </>
@@ -311,7 +337,12 @@ export function BreakdownSheet({
                 id="breakdown-commit-btn"
                 className="mt-3 w-full"
                 onClick={() => void commit()}
-                disabled={!isOnline || isCommitting || committableCount === 0 || isCreating}
+                disabled={
+                  !isOnline ||
+                  isCommitting ||
+                  committableCount === 0 ||
+                  isCreating
+                }
               >
                 {isCommitting ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -319,7 +350,8 @@ export function BreakdownSheet({
                   <Check className="mr-2 h-4 w-4" />
                 )}
                 Add {committableCount} task{committableCount === 1 ? "" : "s"} ·{" "}
-                {acceptedSubtaskCount} subtask{acceptedSubtaskCount === 1 ? "" : "s"}
+                {acceptedSubtaskCount} subtask
+                {acceptedSubtaskCount === 1 ? "" : "s"}
               </Button>
             ) : null}
             {hasFailed && !isCommitting ? (
@@ -396,7 +428,12 @@ interface InputSectionProps {
   readonly onSubmit: () => void
 }
 
-function InputSection({ text, setText, disabled, onSubmit }: InputSectionProps) {
+function InputSection({
+  text,
+  setText,
+  disabled,
+  onSubmit,
+}: InputSectionProps) {
   return (
     <div className="flex flex-col gap-3">
       <Textarea
@@ -470,18 +507,20 @@ function DraftCardView({
 
   const isRejected = !card.accepted
 
-  const mapSubtasks = (
-    index: number,
-    transform: (item: { title: string; accepted: boolean }) => {
-      title: string
-      accepted: boolean
-    }
-  ) => (prev: DraftCard): DraftCard => ({
-    ...prev,
-    subtasks: prev.subtasks.map((item, itemIndex) =>
-      itemIndex === index ? transform(item) : item
-    ),
-  })
+  const mapSubtasks =
+    (
+      index: number,
+      transform: (item: { title: string; accepted: boolean }) => {
+        title: string
+        accepted: boolean
+      }
+    ) =>
+    (prev: DraftCard): DraftCard => ({
+      ...prev,
+      subtasks: prev.subtasks.map((item, itemIndex) =>
+        itemIndex === index ? transform(item) : item
+      ),
+    })
 
   return (
     <div
@@ -516,7 +555,10 @@ function DraftCardView({
             value={card.title}
             aria-label={`Task ${card.number} title`}
             onChange={(event) =>
-              onChange(card.number, (prev) => ({ ...prev, title: event.target.value }))
+              onChange(card.number, (prev) => ({
+                ...prev,
+                title: event.target.value,
+              }))
             }
             className="mt-1.5 border-transparent bg-transparent px-0 font-medium shadow-none focus-visible:border-input focus-visible:bg-background focus-visible:px-2"
           />

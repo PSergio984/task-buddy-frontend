@@ -305,7 +305,11 @@ export function TaskDetailDrawer({
 function DrawerHeader({
   isCreate,
   onBreakdown,
-}: Readonly<{ isCreate: boolean; onClose?: () => void; onBreakdown?: () => void }>) {
+}: Readonly<{
+  isCreate: boolean
+  onClose?: () => void
+  onBreakdown?: () => void
+}>) {
   return (
     <div className="flex shrink-0 items-center justify-between border-b border-white/5 px-8 py-6">
       <div className="flex items-center gap-3">
