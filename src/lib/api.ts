@@ -272,6 +272,11 @@ export interface PlanResponse {
   available_minutes: number
 }
 
+export interface VoicePlanResponse {
+  transcript: string
+  plan: PlanResponse
+}
+
 // Raw API functions
 export const tasksApi = {
   list: async (filter?: string, project_id?: number, tag_id?: number) => {
@@ -386,6 +391,32 @@ export const planApi = {
     const response = await api.post<PlanResponse>(
       "/api/v1/plan",
       availableMinutes != null ? { available_minutes: availableMinutes } : {},
+      { skipRateLimitToast: true }
+    )
+    return response.data
+  },
+}
+
+/** Groq sniffs the recording format by filename extension, so the uploaded
+ * name must match the actual container (ladder yields webm/mp4; a browser
+ * default fallback can still produce ogg or wav). */
+export function voiceFilename(mimeType: string): string {
+  const type = mimeType.toLowerCase()
+  if (type.includes("mp4") || type.includes("m4a")) return "clip.m4a"
+  if (type.includes("ogg")) return "clip.ogg"
+  if (type.includes("wav")) return "clip.wav"
+  return "clip.webm"
+}
+
+export const voiceApi = {
+  /** One utterance, one plan: multipart upload → server-side STT + plan. */
+  planFromAudio: async (audio: Blob) => {
+    const filename = voiceFilename(audio.type)
+    const form = new FormData()
+    form.append("audio", audio, filename)
+    const response = await api.post<VoicePlanResponse>(
+      "/api/v1/voice/plan",
+      form,
       { skipRateLimitToast: true }
     )
     return response.data
