@@ -45,7 +45,13 @@ export function PlanSection({ tasks }: PlanSectionProps) {
         (bucket) => resolveBucketRows(bucket, buildTitlesById(tasks)).length > 0
       )
       if (nonEmpty.length === 0) {
-        setNotice("Nothing to plan yet — add some open tasks first.")
+        // Distinguish a parse/infra degrade (reason set) from a true empty
+        // pool — same split as the breakdown sheet.
+        if (response.reason) {
+          setError("The planner couldn't generate a plan. Please try again.")
+        } else {
+          setNotice("Nothing to plan yet — add some open tasks first.")
+        }
         setBuckets([])
       } else {
         setBuckets(nonEmpty)

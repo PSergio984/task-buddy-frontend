@@ -1,16 +1,6 @@
-import type { Task } from "@/lib/api"
+import type { PlanBucket, PlanTaskRow, Task } from "@/lib/api"
 
-/** Wire shapes mirroring the backend planner schemas (app/schemas/plan.py). */
-export interface PlanTaskRow {
-  task_id: number
-  reason: string
-  effort_minutes: number | null
-}
-
-export interface PlanBucket {
-  period: "tonight" | "tomorrow" | "later"
-  tasks: PlanTaskRow[]
-}
+export type { PlanBucket, PlanTaskRow }
 
 export const BUCKET_LABELS: Record<PlanBucket["period"], string> = {
   tonight: "Tonight",
