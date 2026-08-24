@@ -222,6 +222,7 @@ export interface TaskCreateData {
   priority?: TaskPriority
   project_id?: number
   due_date?: string
+  estimated_effort_minutes?: number
   tags?: string[]
   subtasks?: Array<{
     title: string
@@ -229,6 +230,21 @@ export interface TaskCreateData {
     due_date?: string
     completed?: boolean
   }>
+}
+
+export interface BreakdownSubtaskProposal {
+  title: string
+}
+
+export interface BreakdownTaskProposal {
+  title: string
+  subtasks: BreakdownSubtaskProposal[]
+  estimated_effort_minutes: number | null
+}
+
+export interface BreakdownResponse {
+  tasks: BreakdownTaskProposal[]
+  reason: string | null
 }
 
 // Raw API functions
@@ -308,6 +324,32 @@ export const knowledgeApi = {
     const response = await api.post(
       `/api/v1/tasks/${taskId}/knowledge/answers/${answerId}/feedback`,
       { rating },
+      { skipRateLimitToast: true }
+    )
+    return response.data
+  },
+}
+
+export const breakdownApi = {
+  propose: async (
+    text: string,
+    options?: {
+      contextTaskId?: number
+      focusTaskNumber?: number
+      focusTaskTitle?: string
+    }
+  ) => {
+    const { contextTaskId, focusTaskNumber, focusTaskTitle } = options ?? {}
+    const response = await api.post<BreakdownResponse>(
+      "/api/v1/breakdown",
+      {
+        text,
+        ...(contextTaskId != null ? { context_task_id: contextTaskId } : {}),
+        ...(focusTaskNumber != null
+          ? { focus_task_number: focusTaskNumber }
+          : {}),
+        ...(focusTaskTitle != null ? { focus_task_title: focusTaskTitle } : {}),
+      },
       { skipRateLimitToast: true }
     )
     return response.data

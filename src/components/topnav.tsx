@@ -1,6 +1,13 @@
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { Plus, User, LogOut, ChevronDown, CheckSquare2 } from "lucide-react"
+import {
+  Plus,
+  User,
+  LogOut,
+  ChevronDown,
+  CheckSquare2,
+  ListTree,
+} from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useNavigate } from "react-router-dom"
@@ -21,9 +28,10 @@ import {
 
 export interface TopNavProps {
   readonly onNewTask: () => void
+  readonly onBreakdown?: () => void
 }
 
-export function TopNav({ onNewTask }: Readonly<TopNavProps>) {
+export function TopNav({ onNewTask, onBreakdown }: Readonly<TopNavProps>) {
   const { user, logout } = useAuth()
   const { toast } = useToast()
   const { data: stats } = useStats()
@@ -132,14 +140,27 @@ export function TopNav({ onNewTask }: Readonly<TopNavProps>) {
                 </TooltipContent>
               </Tooltip>
             ) : (
-              <Button
-                id="new-task-btn"
-                onClick={onNewTask}
-                className="h-12 gap-2 rounded-2xl bg-primary px-6 font-bold tracking-tight text-primary-foreground shadow-xl shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-primary/30"
-              >
-                <Plus className="h-5 w-5" />
-                <span>Create Task</span>
-              </Button>
+              <div className="flex items-center gap-3">
+                {onBreakdown ? (
+                  <Button
+                    id="breakdown-nav-btn"
+                    variant="outline"
+                    onClick={onBreakdown}
+                    className="h-12 gap-2 rounded-2xl border-primary/20 px-5 font-bold tracking-tight shadow-lg transition-all hover:bg-primary/10"
+                  >
+                    <ListTree className="h-5 w-5" />
+                    <span>Break Down</span>
+                  </Button>
+                ) : null}
+                <Button
+                  id="new-task-btn"
+                  onClick={onNewTask}
+                  className="h-12 gap-2 rounded-2xl bg-primary px-6 font-bold tracking-tight text-primary-foreground shadow-xl shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-primary/30"
+                >
+                  <Plus className="h-5 w-5" />
+                  <span>Create Task</span>
+                </Button>
+              </div>
             )}
           </motion.div>
 

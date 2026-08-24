@@ -163,9 +163,9 @@ export function useTaskDrawerActions({
       onClose()
     } catch (err) {
       console.error("Update failed:", err)
-      const failed = (
-        ["task", "tags", "subtasks"] as const
-      ).filter((step) => !saved[step])
+      const failed = (["task", "tags", "subtasks"] as const).filter(
+        (step) => !saved[step]
+      )
       if (failed.length === 3) {
         toast({ title: "Failed to save changes", variant: "destructive" })
       } else {

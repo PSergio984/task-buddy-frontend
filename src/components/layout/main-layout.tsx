@@ -3,10 +3,12 @@ import { Outlet } from "react-router-dom"
 import { Sidebar } from "@/components/sidebar"
 import { TopNav } from "@/components/topnav"
 import { TaskDetailDrawer } from "@/components/task-detail-drawer"
+import { BreakdownSheet } from "@/components/breakdown-sheet"
 import { MobileNav } from "./mobile-nav"
 import { MobileDrawer } from "./mobile-drawer"
 import type { Task } from "@/lib/api"
 import { useStats } from "@/hooks/useStats"
+import { useFilters } from "@/contexts/FilterContext"
 import { useToast } from "@/hooks/use-toast"
 import { Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -16,6 +18,15 @@ export function MainLayout() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [activeTask, setActiveTask] = useState<Task | null>(null)
   const [drawerMode, setDrawerMode] = useState<"view" | "create">("view")
+  const [isBreakdownOpen, setIsBreakdownOpen] = useState(false)
+  const [breakdownContextTask, setBreakdownContextTask] = useState<Task | null>(
+    null
+  )
+  // Current UI project context (sidebar "project:<id>" filter) for commits.
+  const { activeSidebarFilter } = useFilters()
+  const breakdownProjectId = activeSidebarFilter.startsWith("project:")
+    ? Number.parseInt(activeSidebarFilter.split(":")[1], 10) || undefined
+    : undefined
 
   // Mobile Workspace Drawer state
   const [isMobileWorkspaceOpen, setIsMobileWorkspaceOpen] = useState(false)
@@ -49,6 +60,11 @@ export function MainLayout() {
     setIsDrawerOpen(true)
   }
 
+  const handleOpenBreakdown = (task?: Task) => {
+    setBreakdownContextTask(task ?? null)
+    setIsBreakdownOpen(true)
+  }
+
   return (
     <div className="flex h-svh overflow-hidden bg-background">
       {/* Persistent Sidebar */}
@@ -60,7 +76,10 @@ export function MainLayout() {
       {/* Main Content Wrapper */}
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden pb-24 md:pb-0">
         {/* Persistent Top Navigation */}
-        <TopNav onNewTask={handleOpenNewTask} />
+        <TopNav
+          onNewTask={handleOpenNewTask}
+          onBreakdown={() => handleOpenBreakdown()}
+        />
 
         {/* Scrollable Main Content */}
         <main className="flex-1 overflow-y-auto">
@@ -106,6 +125,18 @@ export function MainLayout() {
           setIsDrawerOpen(false)
           setActiveTask(null)
         }}
+        onBreakdown={handleOpenBreakdown}
+      />
+
+      {/* Global Breakdown Bot Sheet */}
+      <BreakdownSheet
+        isOpen={isBreakdownOpen}
+        onClose={() => {
+          setIsBreakdownOpen(false)
+          setBreakdownContextTask(null)
+        }}
+        contextTask={breakdownContextTask}
+        projectId={breakdownProjectId}
       />
     </div>
   )
