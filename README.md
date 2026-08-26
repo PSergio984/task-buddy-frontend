@@ -2,7 +2,7 @@
 
 Next.js 16 + React 19 offline-first SPA for **Task Buddy — AI Task Manager (Memory · Knowledge · Planner)** — hybrid RAG front door for Knowledge/Memory/Planner, with offline queue, Realtime push, and premium dual-identity design. Deployed on **Vercel** (`vercel.json` `app/` proxy) against the FastAPI backend on **Render** + Supabase.
 
-> Monorepo front door is at workspace root `D:/Github/task-buddy/README.md` (33k, CEIT-tier: live demo, mermaid, full run-it, evaluation, rubric — local only, not tracked in this repo). This file is the deep frontend reference. Keep it in sync with `docs/codebase/` (STRUCTURE, ARCHITECTURE, TESTING) and sibling backend `D:/Github/task-buddy/task-buddy-backend/README.md`.
+> Monorepo front door is at workspace root `../README.md` (local) (33k, CEIT-tier: live demo, mermaid, full run-it, evaluation, rubric — local only, not tracked in this repo). This file is the deep frontend reference. Keep it in sync with `docs/codebase/` (STRUCTURE, ARCHITECTURE, TESTING) and sibling backend `../task-buddy-backend/README.md` (sibling, local).
 
 ## Design system (dual-identity)
 
@@ -11,7 +11,7 @@ Next.js 16 + React 19 offline-first SPA for **Task Buddy — AI Task Manager (Me
 - **Typography:** `Plus Jakarta Sans`, headings `font-black tracking-tighter uppercase`, micro-labels `10px font-black tracking-[0.3em]`
 - **Primitives:** shadcn/ui + Tailwind `4.2.1` + `tw-animate-css`, `lucide-react` icons — tokens in `src/index.css`
 
-## Architecture (frontend slice — full mermaid in workspace root `D:/Github/task-buddy/README.md`)
+## Architecture (frontend slice — full mermaid in workspace root `../README.md` (local))
 
 **Offline-first sync:** writes → IndexedDB queue `src/lib/sync-queue.ts` → `src/lib/sync-flush.ts` delta → `POST /api/v1/sync` LWW `task-buddy-backend/app/sync/lww.py`; live updates via Supabase Realtime `src/lib/realtime-client.ts` (`app/api/routers/realtime.py`). Service worker via Serwist.
 
@@ -19,7 +19,7 @@ Next.js 16 + React 19 offline-first SPA for **Task Buddy — AI Task Manager (Me
 
 **RAG surfaces:** `src/components/task-drawer/KnowledgeSection.tsx` (notes + "what do I need" `POST /api/v1/tasks/{id}/knowledge/ask` → citations + `+1/-1` feedback → `tbl_knowledge_feedback`), `src/views/` (TasksPage, TaskDetailPage, DashboardDemo with `Tonight/Tomorrow/Later` buckets via `POST /api/v1/plan`).
 
-## Project structure (see `docs/codebase/STRUCTURE.md` + workspace root `D:/Github/task-buddy/README.md` workspace tree)
+## Project structure (see `docs/codebase/STRUCTURE.md` + workspace root `../README.md` (local) workspace tree)
 
 ```text
 app/
@@ -47,7 +47,7 @@ tests/*.spec.ts             # 8 Playwright E2E (auth, landing, layout, notificat
 vercel.json                 # Vercel functions proxy app/ → backend (ecb1f0d stale-build fix)
 ```
 
-## Run it (frontend lane — backend lane in workspace root `D:/Github/task-buddy/README.md` + sibling `D:/Github/task-buddy/task-buddy-backend/README.md`)
+## Run it (frontend lane — backend lane in workspace root `../README.md` (local) + sibling `../task-buddy-backend/README.md` (sibling, local))
 
 Prereqs: Node `>=20.9.0` (`package.json:engines`, CI `node: '22'` `.github/workflows/ci.yml`) — not `18+` stale `README`/`.env.example` (`docs/codebase/CONCERNS.md`).
 
@@ -61,7 +61,7 @@ npm run typecheck           # tsc --noEmit
 npm run lint && npm run format  # eslint + prettier
 ```
 
-Backend must be running (see sibling `D:/Github/task-buddy/task-buddy-backend/README.md` `uvicorn --reload` on `8000`) or `BACKEND_URL` pointing at Render (`https://TODO.onrender.com`).
+Backend must be running (see sibling `../task-buddy-backend/README.md` (sibling, local) `uvicorn --reload` on `8000`) or `BACKEND_URL` pointing at Render (`https://TODO.onrender.com`).
 
 ## API integration (TanStack Query + axios, not single `useApi.ts`)
 
@@ -91,7 +91,7 @@ npm run test:e2e             # playwright test — 8 specs (tests/*.spec.ts: aut
 npm run test:coverage        # vitest coverage
 ```
 
-Backend suite (347/49 `pytest`, `tests/fixtures/golden_knowledge.json` gate) in sibling `D:/Github/task-buddy/task-buddy-backend/README.md` + CI `python-app.yml` separate; this repo's CI is `ci.yml` (`lint`, `format:check`, `typecheck`, `vitest`, `build`).
+Backend suite (347/49 `pytest`, `tests/fixtures/golden_knowledge.json` gate) in sibling `../task-buddy-backend/README.md` (sibling, local) + CI `python-app.yml` separate; this repo's CI is `ci.yml` (`lint`, `format:check`, `typecheck`, `vitest`, `build`).
 
 ## Screenshots (placeholder — don't ship broken images)
 
@@ -118,11 +118,11 @@ No `npm run preview` (stale Vite-era) — removed per workspace `.wayfinder/rese
 
 ## Docs
 
-- Monorepo front door: workspace root `D:/Github/task-buddy/README.md` (33k, TOC, problem, mermaid, run-it, walkthrough, endpoints ~58 routes, eval `TODO` table, monitoring Sentry/audit, rubric — local only)
-- Backend deep: sibling `D:/Github/task-buddy/task-buddy-backend/README.md` (tech stack, `app/` boundaries, `alembic`, retrieval `k1=1.5/b=0.75` + Porter + RRF `k=60`)
+- Monorepo front door: workspace root `../README.md` (local) (33k, TOC, problem, mermaid, run-it, walkthrough, endpoints ~58 routes, eval `TODO` table, monitoring Sentry/audit, rubric — local only)
+- Backend deep: sibling `../task-buddy-backend/README.md` (sibling, local) (tech stack, `app/` boundaries, `alembic`, retrieval `k1=1.5/b=0.75` + Porter + RRF `k=60`)
 - Deep docs: [`../docs/codebase/`](docs/codebase/) `STACK.md` / `STRUCTURE.md` / `ARCHITECTURE.md` / `CONVENTIONS.md` / `INTEGRATIONS.md` / `TESTING.md` / `CONCERNS.md` / `PRESENTATION.md`
 - Planning trail: `.planning/` GSD + wayfinder `.wayfinder/issues/0024-wayfinder-map-readme-refresh.md`
 
-> Stale claims removed per workspace `.wayfinder/research/existing-readmes-and-codebase-facts.md` (local, 35k): `Vite` build → `Next --webpack`, `VITE_API_BASE_URL` → `NEXT_PUBLIC_*`/`BACKEND_URL`, `preview` removed, `dashboard.tsx` aspirational → `app/[slug]/spa.tsx`, `useApi.ts` → `hooks/` + `lib/api.ts`, `338KB/108KB` → `TODO` until `next build` measured, `Node 18+` → `>=20.9`.
+<!-- Stale claims removed per workspace .wayfinder/research/existing-readmes-and-codebase-facts.md (local, 35k) — maintainer note --> `Vite` build → `Next --webpack`, `VITE_API_BASE_URL` → `NEXT_PUBLIC_*`/`BACKEND_URL`, `preview` removed, `dashboard.tsx` aspirational → `app/[slug]/spa.tsx`, `useApi.ts` → `hooks/` + `lib/api.ts`, `338KB/108KB` → `TODO` until `next build` measured, `Node 18+` → `>=20.9`.
 
 **Built with Next.js 16, React 19, TypeScript, Tailwind 4, shadcn/ui — offline-first, Realtime, premium dual-identity.**
