@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next"
+import { InstallPrompt } from "@/components/install-prompt"
 import "@fontsource-variable/geist"
 import "../src/index.css"
 import "react-datepicker/dist/react-datepicker.css"
@@ -7,7 +8,11 @@ export const metadata: Metadata = {
   title: "Task Buddy",
   description: "Premium Executive Task Management",
   icons: {
-    icon: "/task-buddy-icon.svg",
+    icon: [
+      { url: "/task-buddy-icon.svg", type: "image/svg+xml" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: "/icons/apple-touch-icon.png",
   },
 }
 
@@ -23,7 +28,10 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body>{children}</body>
+      <body>
+        {children}
+        <InstallPrompt />
+      </body>
     </html>
   )
 }
