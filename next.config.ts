@@ -15,6 +15,7 @@ const withSerwist = withSerwistInit({
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   skipTrailingSlashRedirect: true,
+  output: "standalone",
 }
 
 export default withSerwist(nextConfig)
