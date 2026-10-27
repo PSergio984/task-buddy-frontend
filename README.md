@@ -61,7 +61,7 @@ npm run typecheck           # tsc --noEmit
 npm run lint && npm run format  # eslint + prettier
 ```
 
-Backend must be running (see sibling `../task-buddy-backend/README.md` (sibling, local) `uvicorn --reload` on `8000`) or `BACKEND_URL` pointing at Render (`https://TODO.onrender.com`).
+Backend must be running (see sibling `../task-buddy-backend/README.md` (sibling, local) `uvicorn --reload` on `8000`) or `BACKEND_URL` pointing at Render (`https://task-buddy-backend-wy3w.onrender.com`).
 
 ## API integration (TanStack Query + axios, not single `useApi.ts`)
 
