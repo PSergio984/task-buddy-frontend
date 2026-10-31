@@ -16,6 +16,8 @@ export type KnowledgeAskStreamDone = {
   total_tokens: number
   cost_usd: number
   response_time_ms: number
+  /** false = token fields are unmeasured zeros; the reserve was charged */
+  usage_reported?: boolean
 }
 
 export type KnowledgeAskStreamEvent =
