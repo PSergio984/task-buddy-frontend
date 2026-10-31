@@ -67,7 +67,11 @@ function parseStreamEvent(frame: string): KnowledgeAskStreamEvent | null {
     }
     // Comment/keepalive (`:` lines) and id:/retry: fields are ignored.
   }
-  if (eventName === "" || dataLines.length === 0 || !KNOWN_EVENTS.has(eventName)) {
+  if (
+    eventName === "" ||
+    dataLines.length === 0 ||
+    !KNOWN_EVENTS.has(eventName)
+  ) {
     return null
   }
 
