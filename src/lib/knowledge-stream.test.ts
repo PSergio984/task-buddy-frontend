@@ -4,6 +4,7 @@ import {
   streamKnowledgeAsk,
   type KnowledgeAskStreamEvent,
 } from "./knowledge-stream"
+import { API_BASE_URL } from "./config"
 
 const fetchMock = vi.fn()
 
@@ -46,7 +47,7 @@ describe("streamKnowledgeAsk", () => {
     await streamKnowledgeAsk(42, "what do I need?", () => {})
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/tasks/42/knowledge/ask/stream",
+      `${API_BASE_URL}/api/v1/tasks/42/knowledge/ask/stream`,
       expect.objectContaining({
         method: "POST",
         credentials: "include",

@@ -155,7 +155,7 @@ export function KnowledgeSection({
               Thinking…
             </p>
           ) : (
-            <p className="text-sm leading-relaxed text-foreground/90">
+            <p aria-live="polite" className="text-sm leading-relaxed text-foreground/90">
               {answerText}
             </p>
           )}
