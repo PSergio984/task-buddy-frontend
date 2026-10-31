@@ -52,6 +52,10 @@ const fieldValue = (line: string, field: string): string => {
   return raw.startsWith(" ") ? raw.slice(1) : raw
 }
 
+// Unknown event names are skipped before any JSON parsing, so a server-side
+// keepalive or a future event with non-JSON data can't fail the stream.
+const KNOWN_EVENTS = new Set(["citations", "token", "verdict", "done", "error"])
+
 function parseStreamEvent(frame: string): KnowledgeAskStreamEvent | null {
   let eventName = ""
   const dataLines: string[] = []
@@ -63,7 +67,9 @@ function parseStreamEvent(frame: string): KnowledgeAskStreamEvent | null {
     }
     // Comment/keepalive (`:` lines) and id:/retry: fields are ignored.
   }
-  if (eventName === "" || dataLines.length === 0) return null
+  if (eventName === "" || dataLines.length === 0 || !KNOWN_EVENTS.has(eventName)) {
+    return null
+  }
 
   let data: Record<string, unknown>
   try {
@@ -94,17 +100,23 @@ function parseStreamEvent(frame: string): KnowledgeAskStreamEvent | null {
         explanation:
           typeof data.explanation === "string" ? data.explanation : "",
       }
-    case "done":
-      // Coerce the ids the feedback flow builds URLs from; a malformed done
-      // must not emit undefined ids (other fields pass through for display).
+    case "done": {
+      // The feedback flow builds URLs from these ids — NaN/0 from a missing
+      // or non-numeric value would silently misroute, so reject outright.
+      const answer_id = Number(data.answer_id)
+      const task_id = Number(data.task_id)
+      if (!Number.isFinite(answer_id) || !Number.isFinite(task_id)) {
+        throw new KnowledgeStreamError("Received a malformed done event")
+      }
       return {
         type: "done",
         done: {
           ...(data as unknown as KnowledgeAskStreamDone),
-          answer_id: Number(data.answer_id),
-          task_id: Number(data.task_id),
+          answer_id,
+          task_id,
         },
       }
+    }
     case "error":
       return {
         type: "error",
@@ -217,10 +229,15 @@ export async function streamKnowledgeAsk(
       }
       buffer = buffer.slice(consumed)
       for (const frame of frames) emit(frame)
+      // done/error are terminal — don't wait on the server to close.
+      if (finished) break
     }
     buffer += decoder.decode()
     if (buffer.trim() !== "") emit(buffer)
   } finally {
+    // Cancel (not just releaseLock) so an early exit or thrown event doesn't
+    // leave the response body and HTTP connection open.
+    await reader.cancel().catch(() => {})
     reader.releaseLock()
   }
 
