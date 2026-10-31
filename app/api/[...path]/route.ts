@@ -25,6 +25,8 @@ const FORWARD_RESPONSE_HEADERS = [
   "x-ratelimit-remaining",
   "x-ratelimit-reset",
   "retry-after",
+  // Lets the backend's X-Accel-Buffering: no reach the client on SSE streams.
+  "x-accel-buffering",
 ]
 
 async function handler(
@@ -65,7 +67,8 @@ async function handler(
     }
   }
 
-  return new NextResponse(await upstream.arrayBuffer(), {
+  // Pass the body through without buffering so SSE streams stay incremental.
+  return new NextResponse(upstream.body, {
     status: upstream.status,
     headers: responseHeaders,
   })

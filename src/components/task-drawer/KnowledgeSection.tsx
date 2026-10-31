@@ -33,6 +33,7 @@ export function KnowledgeSection({
     isAsking,
     askError,
     answer,
+    answerDraft,
   } = useKnowledgeNotes(taskId, userId)
 
   useEffect(() => {
@@ -112,6 +113,10 @@ export function KnowledgeSection({
     }
   }
 
+  const answerText = answer?.answer ?? answerDraft?.text ?? ""
+  const answerCitations = answer?.citations ?? answerDraft?.citations ?? []
+  const thinking = answerDraft !== null && !answerDraft.hasTokens
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -139,52 +144,61 @@ export function KnowledgeSection({
         </Button>
       </div>
 
-      {answer && (
+      {(answer !== null || answerDraft !== null) && (
         <div
           data-testid="knowledge-answer"
           className="space-y-3 rounded-xl border border-primary/20 bg-primary/5 p-4"
         >
-          <p className="text-sm leading-relaxed text-foreground/90">
-            {answer.answer}
-          </p>
-          <div className="flex items-center gap-1.5 border-t border-primary/10 pt-2.5">
-            <span className="mr-1 text-[10px] font-black tracking-widest text-foreground/40 uppercase">
-              Was this helpful?
-            </span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              aria-pressed={sentRating === 1}
-              disabled={feedbackPending || sentRating !== null}
-              onClick={() => handleFeedback(1)}
-              aria-label="Helpful"
-              className={cn(
-                "h-7 w-7 rounded-lg",
-                sentRating === 1 && "bg-primary/20 text-primary"
-              )}
-            >
-              <ThumbsUp className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              aria-pressed={sentRating === -1}
-              disabled={feedbackPending || sentRating !== null}
-              onClick={() => handleFeedback(-1)}
-              aria-label="Not helpful"
-              className={cn(
-                "h-7 w-7 rounded-lg",
-                sentRating === -1 && "bg-destructive/20 text-destructive"
-              )}
-            >
-              <ThumbsDown className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-          {answer.citations.length > 0 && (
+          {thinking ? (
+            <p className="flex items-center gap-2 text-sm text-foreground/60">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              Thinking…
+            </p>
+          ) : (
+            <p className="text-sm leading-relaxed text-foreground/90">
+              {answerText}
+            </p>
+          )}
+          {answer !== null && (
+            <div className="flex items-center gap-1.5 border-t border-primary/10 pt-2.5">
+              <span className="mr-1 text-[10px] font-black tracking-widest text-foreground/40 uppercase">
+                Was this helpful?
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-pressed={sentRating === 1}
+                disabled={feedbackPending || sentRating !== null}
+                onClick={() => handleFeedback(1)}
+                aria-label="Helpful"
+                className={cn(
+                  "h-7 w-7 rounded-lg",
+                  sentRating === 1 && "bg-primary/20 text-primary"
+                )}
+              >
+                <ThumbsUp className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-pressed={sentRating === -1}
+                disabled={feedbackPending || sentRating !== null}
+                onClick={() => handleFeedback(-1)}
+                aria-label="Not helpful"
+                className={cn(
+                  "h-7 w-7 rounded-lg",
+                  sentRating === -1 && "bg-destructive/20 text-destructive"
+                )}
+              >
+                <ThumbsDown className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          )}
+          {answerCitations.length > 0 && (
             <div className="space-y-1.5 border-t border-primary/10 pt-3">
-              {answer.citations.map((citation, index) => (
+              {answerCitations.map((citation, index) => (
                 <p
                   key={`${citation.knowledge_id}-${index}`}
                   className="text-xs leading-relaxed text-foreground/50"
