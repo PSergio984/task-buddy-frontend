@@ -302,22 +302,103 @@ describe("useFocusSessionRuntime", () => {
     expect(getActive).toHaveBeenCalledTimes(3) // floor elapsed → next poll
   })
 
-  it("adopt probe ignores a server session older than the 120s window", async () => {
+  it("adopts ANY live server session after a lost start response", async () => {
     const getActive = vi.mocked(focusSessionsApi.getActive)
     getActive.mockResolvedValue(null) // mount probe: nothing running
     const { result } = renderHook(() => useFocusSessionRuntime())
     await settle()
     expect(result.current.session).toBeNull()
 
-    // start() loses its response, but the server session it finds was
-    // started 200s ago — outside the adopt window, so fall through to local.
+    // start() loses its response; the session the server reports is 200s
+    // old but LIVE — the server already evaluated clock-death, so age can
+    // never mean "stale". Adopting beats a parallel local run (split-brain).
     getActive.mockResolvedValue(serverSession(9, T0 - 200_000))
     vi.mocked(focusSessionsApi.start).mockRejectedValue(networkDown())
     await act(async () => {
       await result.current.start(timerInput)
     })
+    expect(result.current.session?.id).toBe(9)
+    expect(result.current.isLocal).toBe(false)
+    expect(storage.has("focus-local-session:u1")).toBe(false)
+  })
+
+  it("non-network start failure (409) reconciles through the same probe", async () => {
+    const getActive = vi.mocked(focusSessionsApi.getActive)
+    getActive.mockResolvedValue(null)
+    const { result } = renderHook(() => useFocusSessionRuntime())
+    await settle()
+
+    const conflict = new axios.AxiosError("conflict")
+    conflict.response = { status: 409, data: {} } as never
+    vi.mocked(focusSessionsApi.start).mockRejectedValue(conflict)
+    getActive.mockResolvedValue(serverSession(13, T0 - 10_000))
+    await act(async () => {
+      await result.current.start(timerInput)
+    })
+    expect(result.current.session?.id).toBe(13)
+    expect(result.current.isLocal).toBe(false)
+    expect(storage.has("focus-local-session:u1")).toBe(false)
+  })
+
+  it("reconnect re-probes: a live server session supersedes the local run", async () => {
+    // Offline at mount: A's persisted local run is restored.
+    const local = createLocalSession(timerInput, T0)
+    await saveLocalSession("u1", local)
+    await enqueueGameEvent("u1", {
+      client_event_id: `web:${local.client_id}:focus_phase_completed:0`,
+      type: "focus_phase_completed",
+      client_ts: iso(T0),
+      payload: { minutes: 1 },
+    })
+    await enqueueGameEvent("u1", {
+      client_event_id: "unrelated-1",
+      type: "habit_click",
+      client_ts: iso(T0),
+      payload: { direction: "positive" },
+    })
+    const getActive = vi.mocked(focusSessionsApi.getActive)
+    getActive.mockRejectedValue(networkDown())
+    const { result } = renderHook(() => useFocusSessionRuntime())
+    await settle()
     expect(result.current.session?.id).toBe(0)
-    expect(result.current.isLocal).toBe(true)
+
+    // Reconnect: a server session started elsewhere is authoritative —
+    // the local run and its queued claims drop.
+    getActive.mockResolvedValue(serverSession(21, T0))
+    await act(async () => {
+      window.dispatchEvent(new Event("online"))
+    })
+    await settle()
+
+    expect(result.current.session?.id).toBe(21)
+    expect(await loadLocalSession("u1")).toBeNull()
+    const queued = await listGameEvents("u1")
+    expect(queued.map((e) => e.client_event_id)).toEqual(["unrelated-1"])
+  })
+
+  it("verb-throw preserves the already-evaluated transition events", async () => {
+    // [focus 1m, break 1m] — at T0+70s the focus leg is complete and the
+    // break auto-started. pause() on a break throws, but the completed
+    // phase's claim must still reach the queue.
+    const local = createLocalSession(timerInput, T0)
+    await saveLocalSession("u1", local)
+    vi.mocked(focusSessionsApi.getActive).mockRejectedValue(networkDown())
+    const { result } = renderHook(() => useFocusSessionRuntime())
+    await settle()
+    expect(result.current.view?.live?.kind).toBe("focus")
+
+    vi.setSystemTime(T0 + 70_000)
+    await act(async () => {
+      await result.current.pause()
+    })
+
+    const eids = enqueueMock.mock.calls.map((c) => c[0].client_event_id)
+    expect(eids).toContain(
+      `web:${local.client_id}:focus_phase_completed:0`
+    )
+    // The throwing verb left the break running — pause was rejected, not
+    // applied, and nothing was wrongly persisted as terminal.
+    expect(result.current.session?.status).toBe("active")
   })
 
   it("offline mirror evaluates for display only — no persist, no events", async () => {

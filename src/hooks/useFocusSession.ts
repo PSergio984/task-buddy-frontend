@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast"
 import { getErrorMessage } from "@/lib/errors"
 import { setGameProfileCache } from "@/hooks/useGameProfile"
 import { removeGameEventsByPrefix } from "@/lib/game-event-queue"
+import { armProbeGate, releaseProbeGate } from "@/lib/focus-probe-gate"
 import {
   clearLocalSession,
   createLocalSession,
@@ -35,8 +36,6 @@ export type SessionAction = "start" | "pause" | "resume" | "advance" | "stop"
 const TICK_MS = 500
 /** Floor between deadline-triggered server re-evaluations (offline / 5xx). */
 const DEADLINE_POLL_MIN_MS = 5_000
-/** A server session started within this window is the lost start response. */
-const ADOPT_WINDOW_MS = 120_000
 
 /** Statuses-only fingerprint — any local transition flips a bit. */
 const signature = (s: FocusSession) =>
@@ -172,6 +171,31 @@ export function useFocusSessionRuntime(): FocusSessionRuntime {
     refreshRef.current = refresh
   }, [refresh])
 
+  // A local run may be shadowed by a server session started on another
+  // device — on reconnect, probe once; a live session supersedes the local
+  // run (same drop path as the mount probe).
+  const reprobeLocal = useCallback(async () => {
+    const local = localRef.current
+    if (local === null) return
+    try {
+      const res = await focusSessionsApi.getActive()
+      if (res !== null) {
+        localRef.current = null
+        if (userId !== null) {
+          await removeGameEventsByPrefix(userId, `web:${local.client_id}:`)
+          await clearLocalSession(userId)
+        }
+        applyResponse(res)
+      }
+    } catch {
+      // Still unreachable — the local run continues undisturbed.
+    }
+  }, [applyResponse, userId])
+  const reprobeLocalRef = useRef(reprobeLocal)
+  useEffect(() => {
+    reprobeLocalRef.current = reprobeLocal
+  }, [reprobeLocal])
+
   // Initial probe: server session wins; a network failure falls back to the
   // persisted local run. A non-network error proves nothing about offline —
   // it must not resurrect a stale local session.
@@ -189,6 +213,9 @@ export function useFocusSessionRuntime(): FocusSessionRuntime {
     // Any stale local session belongs to the previous probe/user — only the
     // restore branch below may repopulate localRef for THIS user.
     localRef.current = null
+    // Arm BEFORE any await: GameContext's deferred mount flush awaits this
+    // gate so a supersede-drop lands before the first POST of this queue.
+    armProbeGate(userId)
     void (async () => {
       try {
         const res = await focusSessionsApi.getActive()
@@ -196,7 +223,10 @@ export function useFocusSessionRuntime(): FocusSessionRuntime {
         if (res !== null) {
           // Server session supersedes a persisted local run: its still-queued
           // web: events must drop too — server + claimable eids scoring the
-          // same wall-clock would double-count XP or HP loss.
+          // same wall-clock would double-count XP or HP loss. The drop is
+          // conservative: a non-overlapping live server session also drops
+          // local claims — duplicate session envelopes can't be told apart
+          // from real double-work, so the server always wins.
           const local = await loadLocalSession(userId)
           if (local !== null) {
             await removeGameEventsByPrefix(userId, `web:${local.client_id}:`)
@@ -225,6 +255,7 @@ export function useFocusSessionRuntime(): FocusSessionRuntime {
         applySession(null)
       }
     })().finally(() => {
+      releaseProbeGate(userId)
       if (!cancelled) setIsLoading(false)
     })
     return () => {
@@ -253,8 +284,9 @@ export function useFocusSessionRuntime(): FocusSessionRuntime {
     if (current === null || current.status !== "active") return
     const deadline = nextDeadlineMs(current)
     // Past a self-transition boundary: let the server replay wall-clock —
-    // throttled, or an offline/5xx response would re-poll every tick.
+    // throttled, and never while offline (a guaranteed-failure poll).
     if (
+      isOnline &&
       deadline !== null &&
       nowMs >= deadline &&
       Date.now() - lastDeadlinePollRef.current >= DEADLINE_POLL_MIN_MS
@@ -262,13 +294,14 @@ export function useFocusSessionRuntime(): FocusSessionRuntime {
       lastDeadlinePollRef.current = Date.now()
       void refreshRef.current()
     }
-  }, [emitLocal, nowMs])
+  }, [emitLocal, nowMs, isOnline])
 
   // Connectivity drives both refresh and the offline-mirror display state.
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true)
-      void refreshRef.current()
+      if (localRef.current !== null) void reprobeLocalRef.current()
+      else void refreshRef.current()
     }
     const handleOffline = () => setIsOnline(false)
     const handleVisibility = () => {
@@ -292,29 +325,25 @@ export function useFocusSessionRuntime(): FocusSessionRuntime {
         localRef.current = null
         applyResponse(res)
       } catch (error) {
-        if (isNetworkError(error) && userId !== null) {
-          // The POST may have committed while its response was lost — adopt a
-          // just-started server session instead of split-braining (web: +
-          // server: eids would double-score the same wall-clock).
-          try {
-            const res = await focusSessionsApi.getActive()
-            const started = res === null ? null : ms(res.session.started_at)
-            if (
-              res !== null &&
-              started !== null &&
-              Math.abs(Date.now() - started) <= ADOPT_WINDOW_MS
-            ) {
-              applyResponse(res)
-              toast({
-                title: "Session recovered",
-                description: "The server had already started this run.",
-                variant: "info",
-              })
-              return
-            }
-          } catch {
-            // Still offline — fall through to the client-run session.
+        // The POST may have committed while its response was lost — or the
+        // server refused (409 already-active). Probe once either way: ANY
+        // non-null getActive is authoritative — the server evaluated
+        // clock-death before returning, so age never means "stale".
+        try {
+          const res = await focusSessionsApi.getActive()
+          if (res !== null) {
+            applyResponse(res)
+            toast({
+              title: "Session recovered",
+              description: "The server already has a live session — resuming it.",
+              variant: "info",
+            })
+            return
           }
+        } catch {
+          // Probe failed too — fall through to the original error's path.
+        }
+        if (isNetworkError(error) && userId !== null) {
           // Offline-first: run the whole session client-side; completed
           // focus phases queue their scoring events for the ledger.
           const local = createLocalSession(
@@ -400,13 +429,17 @@ export function useFocusSessionRuntime(): FocusSessionRuntime {
       try {
         // Evaluate before the verb — server parity: _evaluate runs inside
         // the lock first, so a due transition (e.g. pause-overflow) can't
-        // be dodged by acting on the stale snapshot.
+        // be dodged by acting on the stale snapshot. Those events are real
+        // wall-clock claims regardless of the verb's outcome — enqueue them
+        // BEFORE fn so a throwing verb can't take them down with it.
         const events = evaluateLocal(local, Date.now())
-        if (local.session.status === "active") {
-          events.push(...fn(local, Date.now()))
-        }
         applySession({ ...local.session })
         for (const event of events) await enqueueEvent(event)
+        if (local.session.status === "active") {
+          const verbEvents = fn(local, Date.now())
+          applySession({ ...local.session })
+          for (const event of verbEvents) await enqueueEvent(event)
+        }
         if (local.session.status !== "active") {
           if (userId !== null) await clearLocalSession(userId)
         } else if (userId !== null) {
@@ -447,8 +480,10 @@ export function useFocusSessionRuntime(): FocusSessionRuntime {
 
   const dismissEnded = useCallback(async () => {
     localRef.current = null
-    if (userId !== null) await clearLocalSession(userId)
+    // Clear the view first — a rejected idb delete must not strand a dead
+    // session on screen (the stale snapshot is re-dropped on next mount).
     applySession(null)
+    if (userId !== null) await clearLocalSession(userId)
   }, [applySession, userId])
 
   const mirrored =

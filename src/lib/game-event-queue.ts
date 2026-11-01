@@ -9,6 +9,7 @@
  * (a transition emitting several events, a flush interleaving an enqueue)
  * would otherwise clobber each other's snapshot and silently drop events.
  */
+import axios from "axios"
 import { get, set } from "idb-keyval"
 import type { GameEventIn, GameSyncResponse } from "@/lib/api"
 import type { UserId } from "@/lib/sync-queue"
@@ -22,6 +23,10 @@ function queueKey(userId: UserId): string {
 
 let tail: Promise<unknown> = Promise.resolve()
 
+// Residual: `tail` serializes ops within THIS tab only. A second tab's
+// flush can interleave this tab's enqueue read-modify-write and lose one
+// event — mitigated by the shared client_id + server dedupe making a
+// re-emitted event safe to replay, not by cross-tab locking.
 function serialized<T>(op: () => Promise<T>): Promise<T> {
   const run = tail.then(op)
   tail = run.catch(() => {})
@@ -99,7 +104,33 @@ export function flushGameEventQueue(
     const mergedResults: GameSyncResponse["results"] = []
     for (let i = 0; i < pending.length; i += FLUSH_CHUNK) {
       const chunk = pending.slice(i, i + FLUSH_CHUNK)
-      const res = await sendBatch(chunk)
+      let res: GameSyncResponse
+      try {
+        res = await sendBatch(chunk)
+      } catch (error) {
+        // A 4xx rejects the batch permanently — retrying it wedges every
+        // event behind it. Dead-letter the chunk (eids logged for
+        // forensics) and continue; 5xx/network still retains + retries.
+        if (
+          axios.isAxiosError(error) &&
+          error.response !== undefined &&
+          error.response.status >= 400 &&
+          error.response.status < 500
+        ) {
+          console.error(
+            `Game-event chunk rejected (${error.response.status}) — dead-lettering:`,
+            chunk.map((e) => e.client_event_id)
+          )
+          const drop = new Set(chunk.map((e) => e.client_event_id))
+          const current = await readQueue(userId)
+          await set(
+            queueKey(userId),
+            current.filter((e) => !drop.has(e.client_event_id))
+          )
+          continue
+        }
+        throw error
+      }
       last = res
       mergedResults.push(...res.results)
       const settled = res.results.map((r) => r.client_event_id)

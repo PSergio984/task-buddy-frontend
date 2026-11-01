@@ -23,32 +23,13 @@ import { useTags } from "@/hooks/useTags"
 import { alertPhaseBoundary, requestAlertPermission } from "@/lib/focus-audio"
 import type { FocusSession } from "@/lib/api"
 import {
-  DEFAULT_FOCUS_SETTINGS,
   formatClock,
   sessionStartFromSettings,
+  type FocusSettings,
   type SessionView,
 } from "@/lib/focus-session"
-import type { FocusSettings } from "@/lib/focus-session"
+import { FOCUS_SETTINGS_KEY, loadFocusSettings } from "@/lib/focus-settings"
 import { cn } from "@/lib/utils"
-
-const SETTINGS_KEY = "tb_focus_settings"
-
-function loadSettings(): FocusSettings {
-  try {
-    const raw = globalThis.localStorage.getItem(SETTINGS_KEY)
-    if (raw) {
-      return {
-        ...DEFAULT_FOCUS_SETTINGS,
-        ...(JSON.parse(raw) as Partial<FocusSettings>),
-        taskId: null,
-        tagId: null,
-      }
-    }
-  } catch {
-    // Corrupt storage falls back to defaults.
-  }
-  return DEFAULT_FOCUS_SETTINGS
-}
 
 function ringTone(view: SessionView): "focus" | "break" | "stopwatch" | "idle" {
   const phase = view.live ?? view.pending
@@ -108,14 +89,22 @@ function SessionControls({
   onStop: () => void
 }>) {
   const live = view.live
-  const stopLabel =
-    view.focusDone === 0 ? "Stop → abandon (−HP)" : "End session"
+  const isStopwatch = live?.kind === "stopwatch"
+  // A stopwatch stop never owes HP — only a timer with zero completed focus
+  // phases abandons, and gets the destructive copy/variant.
+  const isAbandon = !isStopwatch && view.focusDone === 0
+  const stopLabel = isAbandon ? "Stop → abandon (−HP)" : "End session"
   const stopButton = (
     <Button
       variant="outline"
       onClick={onStop}
       disabled={busy}
-      className="h-12 gap-2 rounded-2xl border-destructive/30 px-5 font-bold text-destructive hover:bg-destructive/10"
+      className={cn(
+        "h-12 gap-2 rounded-2xl px-5 font-bold",
+        isAbandon
+          ? "border-destructive/30 text-destructive hover:bg-destructive/10"
+          : "border-white/15 text-muted-foreground hover:bg-white/5 hover:text-foreground"
+      )}
     >
       <Square className="h-4 w-4" />
       {stopLabel}
@@ -149,7 +138,6 @@ function SessionControls({
   if (view.status !== "running" && view.status !== "paused") return null
 
   const isBreak = live?.kind === "break"
-  const isStopwatch = live?.kind === "stopwatch"
   const pauseLabel = isStopwatch
     ? "Pause"
     : view.pausesLeft === null
@@ -196,7 +184,7 @@ function SessionControls({
 export function FocusPage() {
   const runtime = useFocusSession()
   const { session, view, isLocal, isLoading, busy, mirrored } = runtime
-  const [settings, setSettings] = useState<FocusSettings>(loadSettings)
+  const [settings, setSettings] = useState<FocusSettings>(loadFocusSettings)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [stopConfirmOpen, setStopConfirmOpen] = useState(false)
   const [immersive, setImmersive] = useState(false)
@@ -218,11 +206,20 @@ export function FocusPage() {
   // Persist settings (task/tag links are per-run, never persisted).
   useEffect(() => {
     const { taskId: _t, tagId: _g, ...persistable } = settings
-    globalThis.localStorage.setItem(SETTINGS_KEY, JSON.stringify(persistable))
+    globalThis.localStorage.setItem(FOCUS_SETTINGS_KEY, JSON.stringify(persistable))
   }, [settings])
 
-  // Auto-enter immersive for a fresh session when the setting is on.
+  // Auto-enter immersive for a fresh session when the setting is on. A
+  // session already live when the probe settles is a remount/restore —
+  // don't auto-immerse unprompted on reload.
+  const restoredRef = useRef(false)
   useEffect(() => {
+    if (!restoredRef.current && !isLoading) {
+      restoredRef.current = true
+      if (session !== null) {
+        immersiveEnteredFor.current = session.started_at
+      }
+    }
     if (
       session?.status === "active" &&
       settings.immersive &&
@@ -237,7 +234,7 @@ export function FocusPage() {
       void Promise.resolve().then(() => setImmersive(false))
       void document.exitFullscreen?.().catch(() => {})
     }
-  }, [session, settings.immersive, view?.status])
+  }, [session, settings.immersive, view?.status, isLoading])
 
   // Distinct work/break end alert on each freshly-finished phase. The status
   // map resets per session so a restored/sequential run can't replay tones.
@@ -408,16 +405,28 @@ export function FocusPage() {
         open={stopConfirmOpen}
         onOpenChange={setStopConfirmOpen}
         onConfirm={handleStop}
-        title={view && view.focusDone === 0 ? "Abandon session?" : "End session?"}
+        title={
+          view && view.focusDone === 0 && session?.mode !== "stopwatch"
+            ? "Abandon session?"
+            : "End session?"
+        }
         description={
-          view && view.focusDone === 0
+          view && view.focusDone === 0 && session?.mode !== "stopwatch"
             ? "No focus phase completed yet — stopping now costs HP."
-            : "Completed focus phases keep their earned XP and gold."
+            : session?.mode === "stopwatch"
+              ? "The stopwatch ends here — no HP cost."
+              : "Completed focus phases keep their earned XP and gold."
         }
         confirmText={
-          view && view.focusDone === 0 ? "Abandon (−HP)" : "End session"
+          view && view.focusDone === 0 && session?.mode !== "stopwatch"
+            ? "Abandon (−HP)"
+            : "End session"
         }
-        variant={view && view.focusDone === 0 ? "destructive" : "default"}
+        variant={
+          view && view.focusDone === 0 && session?.mode !== "stopwatch"
+            ? "destructive"
+            : "default"
+        }
         isLoading={busy !== null}
         contentClassName={immersive ? "z-[120]" : undefined}
       />

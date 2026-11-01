@@ -221,7 +221,7 @@ export function stopwatchElapsedSeconds(
   }
   return Math.max(
     0,
-    Math.floor((anchor - start) / 1000) - (phase.paused_seconds || 0)
+    Math.trunc((anchor - start) / 1000) - (phase.paused_seconds || 0)
   )
 }
 
@@ -233,7 +233,7 @@ export function pauseUsedSeconds(
   let used = phase.paused_seconds || 0
   if (phase.status === "paused" && phase.pause_started_at !== null) {
     const start = ms(phase.pause_started_at)
-    if (start !== null) used += Math.max(0, Math.floor((nowMs - start) / 1000))
+    if (start !== null) used += Math.max(0, Math.trunc((nowMs - start) / 1000))
   }
   return used
 }
@@ -370,8 +370,11 @@ function abandonEvent(
 ): GameEventIn {
   // session_abandoned itself is server-authored; `damage` is the claimable
   // carrier for the HP loss an offline abandon still owes (spec: stakes).
+  // The eid omits {reason} on purpose: two tabs abandoning the same run for
+  // different reasons must collapse to ONE damage claim via server dedupe —
+  // the reason lives in the payload for diagnostics only.
   return {
-    client_event_id: `web:${local.client_id}:session_abandoned:${reason}`,
+    client_event_id: `web:${local.client_id}:session_abandoned`,
     type: "damage",
     client_ts: iso(atMs),
     payload: {
@@ -411,7 +414,8 @@ function checkPauseOverflow(
   const session = local.session
   const banked = phase.paused_seconds || 0
   const pauseStart = ms(phase.pause_started_at) ?? nowMs
-  const extra = Math.floor((nowMs - pauseStart) / 1000)
+  // trunc toward zero — parity with the engine's int() on positive deltas.
+  const extra = Math.trunc((nowMs - pauseStart) / 1000)
   if (banked + extra <= session.pause_budget_seconds) return []
   const crossedAt = pauseStart + (session.pause_budget_seconds - banked) * 1000
   session.status = "abandoned"
@@ -518,7 +522,8 @@ export function resumeLocal(
     throw new Error("no paused phase to resume")
   }
   const pauseStart = ms(phase.pause_started_at) ?? nowMs
-  const extra = Math.floor((nowMs - pauseStart) / 1000)
+  // trunc toward zero — parity with the engine's int() on positive deltas.
+  const extra = Math.trunc((nowMs - pauseStart) / 1000)
   if (
     phase.kind === "focus" &&
     (phase.paused_seconds || 0) + extra > session.pause_budget_seconds
@@ -575,7 +580,7 @@ export function stopLocal(local: LocalSession, nowMs: number): GameEventIn[] {
     if (live.status === "paused" && live.pause_started_at !== null) {
       live.paused_seconds =
         (live.paused_seconds || 0) +
-        Math.floor((nowMs - (ms(live.pause_started_at) ?? nowMs)) / 1000)
+        Math.trunc((nowMs - (ms(live.pause_started_at) ?? nowMs)) / 1000)
       live.pause_started_at = null
     }
     live.actual_seconds = stopwatchElapsedSeconds(live, nowMs)
@@ -587,7 +592,7 @@ export function stopLocal(local: LocalSession, nowMs: number): GameEventIn[] {
     if (live.status === "paused" && live.pause_started_at !== null) {
       live.paused_seconds =
         (live.paused_seconds || 0) +
-        Math.floor((nowMs - (ms(live.pause_started_at) ?? nowMs)) / 1000)
+        Math.trunc((nowMs - (ms(live.pause_started_at) ?? nowMs)) / 1000)
       live.pause_started_at = null
     }
     live.status = live.kind === "focus" ? "abandoned" : "skipped"

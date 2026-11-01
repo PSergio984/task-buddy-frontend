@@ -17,6 +17,7 @@ import {
   pendingGameEventCount,
 } from "@/lib/game-event-queue"
 import { setGameProfileCache } from "@/hooks/useGameProfile"
+import { probeGate } from "@/lib/focus-probe-gate"
 import type { UserId } from "@/lib/sync-queue"
 
 interface GameContextValue {
@@ -86,8 +87,11 @@ export function GameProvider({
 
   useEffect(() => {
     // Deferred so the count refresh isn't a synchronous setState in an effect.
-    void Promise.resolve().then(() => {
+    void Promise.resolve().then(async () => {
       void refreshCount()
+      // A superseded local run's web: events must be dropped by the focus
+      // probe before this first flush can post them.
+      if (userId !== null) await probeGate(userId)
       if (navigator.onLine) void flushRef.current()
     })
     const handleOnline = () => void flushRef.current()
@@ -107,7 +111,7 @@ export function GameProvider({
       window.removeEventListener("focus", handleFocus)
       document.removeEventListener("visibilitychange", handleVisibility)
     }
-  }, [refreshCount])
+  }, [refreshCount, userId])
 
   const value = useMemo(
     () => ({ pendingEventCount, enqueueEvent, flushEvents }),

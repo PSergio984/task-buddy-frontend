@@ -17,14 +17,28 @@ interface GameHudProps {
 /** DiceBear pixel-art is the spec'd avatar style (#46); seed comes from the
  * profile's avatar_config blob. No seed yet -> the user's initial, same as
  * the account avatar elsewhere in the app. */
+const DICEBEAR_STYLES = new Set([
+  "pixel-art",
+  "adventurer",
+  "bottts",
+  "thumbs",
+  "micah",
+  "miniavs",
+  "personas",
+  "fun-emoji",
+])
+
 function avatarUrl(profile: GameProfile): string | null {
   const seed = profile.avatar_config?.seed
   if (typeof seed !== "string" || seed.length === 0) return null
-  const style =
-    typeof profile.avatar_config?.style === "string"
-      ? profile.avatar_config.style
-      : "pixel-art"
-  return `https://api.dicebear.com/9.x/${style}/svg?seed=${encodeURIComponent(seed)}`
+  // style interpolates into the URL path — allowlist it. Absent → spec'd
+  // pixel-art default; present-but-unknown → initials, no remote URL.
+  const raw = profile.avatar_config?.style
+  if (raw === undefined || raw === null) {
+    return `https://api.dicebear.com/9.x/pixel-art/svg?seed=${encodeURIComponent(seed)}`
+  }
+  if (typeof raw !== "string" || !DICEBEAR_STYLES.has(raw)) return null
+  return `https://api.dicebear.com/9.x/${raw}/svg?seed=${encodeURIComponent(seed)}`
 }
 
 function StatBar({

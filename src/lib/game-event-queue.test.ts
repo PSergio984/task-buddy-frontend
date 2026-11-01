@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
+import axios from "axios"
 import type { GameEventIn, GameSyncResponse } from "@/lib/api"
 import {
   enqueueGameEvent,
@@ -153,6 +154,37 @@ describe("game-event-queue", () => {
     }
     expect(res?.applied).toBe(1200)
     expect(await pendingGameEventCount(USER)).toBe(0)
+  })
+
+  it("a 4xx response dead-letters the chunk and continues", async () => {
+    const events = Array.from({ length: 1200 }, (_, i) => ev(`dl-${i}`))
+    storage.set(`game-event-queue:${USER}`, JSON.stringify(events))
+    const rejected = new axios.AxiosError("bad")
+    rejected.response = { status: 422, data: {} } as never
+    const sendBatch = vi
+      .fn()
+      .mockRejectedValueOnce(rejected)
+      .mockImplementation(async (batch: GameEventIn[]) =>
+        syncResponse(batch.map((e) => e.client_event_id))
+      )
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
+    const res = await flushGameEventQueue(USER, sendBatch)
+    expect(sendBatch).toHaveBeenCalledTimes(3) // 500 dropped + 500 + 200
+    // Chunk 1 dead-lettered; chunks 2+3 still posted and settled.
+    expect(res?.applied).toBe(700)
+    expect(await pendingGameEventCount(USER)).toBe(0)
+    expect(errorSpy).toHaveBeenCalled()
+    errorSpy.mockRestore()
+  })
+
+  it("a 5xx still retains the chunk for retry", async () => {
+    const events = Array.from({ length: 600 }, (_, i) => ev(`sv-${i}`))
+    storage.set(`game-event-queue:${USER}`, JSON.stringify(events))
+    const failed = new axios.AxiosError("oops")
+    failed.response = { status: 500, data: {} } as never
+    const sendBatch = vi.fn().mockRejectedValue(failed)
+    await expect(flushGameEventQueue(USER, sendBatch)).rejects.toThrow("oops")
+    expect(await pendingGameEventCount(USER)).toBe(600)
   })
 
   it("flush keeps the unsent remainder when a mid-chunk send fails", async () => {

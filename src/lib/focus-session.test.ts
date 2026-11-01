@@ -296,6 +296,27 @@ describe("local verbs", () => {
     expect(events[0].payload.reason).toBe("manual_stop")
   })
 
+  it("abandon eid omits the reason — divergent reasons dedupe server-side", () => {
+    // manual_stop vs pause_overflow vs absence_grace: the eid carries no
+    // {reason} suffix, so two tabs abandoning the same run for different
+    // reasons collapse to ONE damage claim (reason stays in the payload).
+    const manual = createLocalSession(timerInput(), T0)
+    const manualEvents = stopLocal(manual, at(30))
+    expect(manualEvents[0].client_event_id).toBe(
+      `web:${manual.client_id}:session_abandoned`
+    )
+    expect(manualEvents[0].payload.reason).toBe("manual_stop")
+
+    const overflow = createLocalSession(timerInput(), T0)
+    pauseLocal(overflow, T0) // pause budget 300s
+    const overflowEvents = evaluateLocal(overflow, T0 + 301_000)
+    expect(overflowEvents[0].type).toBe("damage")
+    expect(overflowEvents[0].payload.reason).toBe("pause_overflow")
+    expect(overflowEvents[0].client_event_id).toBe(
+      `web:${overflow.client_id}:session_abandoned`
+    )
+  })
+
   it("stop after a completed focus ends cleanly", () => {
     const local = createLocalSession(timerInput(), T0)
     evaluateLocal(local, at(61))
