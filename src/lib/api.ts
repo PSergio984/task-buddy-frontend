@@ -529,6 +529,169 @@ export const tagsApi = {
   },
 }
 
+// Gamified focus layer — mirrors app/schemas/game.py on the backend.
+export type SessionMode = "timer" | "stopwatch"
+export type SessionDifficulty = "trivial" | "easy" | "medium" | "hard"
+
+export interface GameProfile {
+  level: number
+  xp: number
+  xp_to_next_level: number
+  hp: number
+  max_hp: number
+  gold: number
+  str_stat: number
+  int_stat: number
+  con_stat: number
+  per_stat: number
+  unspent_stat_points: number
+  game_class: string | null
+  avatar_config: Record<string, unknown>
+  xp_today: number
+  gold_today: number
+}
+
+export interface GameEventIn {
+  client_event_id: string
+  type: string
+  client_ts: string
+  payload: Record<string, unknown>
+}
+
+export interface GameEventResult {
+  client_event_id: string
+  status: "applied" | "duplicate"
+}
+
+export interface GameSyncResponse {
+  profile: GameProfile
+  results: GameEventResult[]
+  applied: number
+  duplicates: number
+  server_time: string
+}
+
+export interface SessionPhaseIn {
+  kind: "focus" | "break"
+  minutes: number
+}
+
+export interface SessionStartRequest {
+  mode?: SessionMode
+  phases?: SessionPhaseIn[]
+  task_id?: number | null
+  tag_id?: number | null
+  activity_label?: string | null
+  difficulty?: SessionDifficulty
+  auto_start_breaks?: boolean
+  auto_start_focus?: boolean
+  pause_budget_count?: number
+  pause_budget_seconds?: number
+}
+
+export interface SessionPhaseOut {
+  seq: number
+  kind: string
+  status: string
+  planned_seconds: number
+  actual_seconds: number | null
+  pause_count: number
+  paused_seconds: number
+  pause_started_at: string | null
+  started_at: string | null
+  ended_at: string | null
+}
+
+export interface FocusSession {
+  id: number
+  mode: string
+  status: string
+  task_id: number | null
+  activity_label: string | null
+  preset: {
+    difficulty?: string
+    auto_start_breaks?: boolean
+    auto_start_focus?: boolean
+    tag_id?: number
+  } | null
+  pause_budget_count: number
+  pause_budget_seconds: number
+  started_at: string
+  ended_at: string | null
+  phases: SessionPhaseOut[]
+}
+
+export interface SessionActionResponse {
+  session: FocusSession
+  profile: GameProfile | null
+  server_time: string
+}
+
+export const gameApi = {
+  getProfile: async () => {
+    const response = await api.get<GameProfile>("/api/v1/game/profile")
+    return response.data
+  },
+  postEvents: async (events: GameEventIn[]) => {
+    const response = await api.post<GameSyncResponse>(
+      "/api/v1/game/events",
+      { events },
+      { skipRateLimitToast: true }
+    )
+    return response.data
+  },
+}
+
+export const focusSessionsApi = {
+  start: async (body: SessionStartRequest) => {
+    const response = await api.post<SessionActionResponse>(
+      "/api/v1/game/sessions",
+      body,
+      { skipRateLimitToast: true }
+    )
+    return response.data
+  },
+  getActive: async () => {
+    const response = await api.get<SessionActionResponse | null>(
+      "/api/v1/game/sessions/active",
+      { skipRateLimitToast: true }
+    )
+    return response.data
+  },
+  pause: async (sessionId: number) => {
+    const response = await api.post<SessionActionResponse>(
+      `/api/v1/game/sessions/${sessionId}/pause`,
+      {},
+      { skipRateLimitToast: true }
+    )
+    return response.data
+  },
+  resume: async (sessionId: number) => {
+    const response = await api.post<SessionActionResponse>(
+      `/api/v1/game/sessions/${sessionId}/resume`,
+      {},
+      { skipRateLimitToast: true }
+    )
+    return response.data
+  },
+  advance: async (sessionId: number) => {
+    const response = await api.post<SessionActionResponse>(
+      `/api/v1/game/sessions/${sessionId}/advance`,
+      {},
+      { skipRateLimitToast: true }
+    )
+    return response.data
+  },
+  stop: async (sessionId: number) => {
+    const response = await api.post<SessionActionResponse>(
+      `/api/v1/game/sessions/${sessionId}/stop`,
+      {},
+      { skipRateLimitToast: true }
+    )
+    return response.data
+  },
+}
+
 export const notificationsApi = {
   getVapidKey: async () => {
     const response = await api.get<{ public_key: string }>(

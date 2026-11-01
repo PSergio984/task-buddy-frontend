@@ -12,6 +12,7 @@ import * as LucideIcons from "lucide-react"
 import { PwaInstallButton } from "../pwa-install-button"
 import { CreateProjectModal } from "@/components/create-project-modal"
 import { CreateTagModal } from "@/components/create-tag-modal"
+import { GameHud } from "@/components/game-hud"
 import { useSidebarActions } from "@/hooks/useSidebarActions"
 import { useNavigate, useLocation } from "react-router-dom"
 
@@ -72,6 +73,9 @@ export function MobileDrawer({
         </SheetHeader>
 
         <div className="no-scrollbar space-y-10 overflow-y-auto pb-20">
+          {/* Game HUD */}
+          <GameHud />
+
           {/* Navigation */}
           <div className="space-y-4">
             <div className="flex items-center justify-between px-2">
@@ -94,6 +98,21 @@ export function MobileDrawer({
               >
                 <LucideIcons.LayoutDashboard className="h-5 w-5 text-primary" />
                 <span className="text-sm font-bold">Overview</span>
+              </button>
+              <button
+                onClick={() => {
+                  navigate("/focus")
+                  onOpenChange(false)
+                }}
+                className={cn(
+                  "flex items-center gap-3 rounded-2xl border p-4 transition-all",
+                  location.pathname === "/focus"
+                    ? "border-primary/20 bg-primary/10 text-primary"
+                    : "border-transparent bg-white/5 text-foreground/70"
+                )}
+              >
+                <LucideIcons.Timer className="h-5 w-5 text-violet-400" />
+                <span className="text-sm font-bold">Focus</span>
               </button>
               <button
                 onClick={() => {

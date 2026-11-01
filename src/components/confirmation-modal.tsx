@@ -14,6 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { animations } from "@/lib/animations"
+import { cn } from "@/lib/utils"
 
 interface ConfirmationModalProps {
   readonly open: boolean
@@ -28,6 +29,8 @@ interface ConfirmationModalProps {
   readonly showDontShowAgain?: boolean
   readonly dontShowAgainLabel?: string
   readonly requiredConfirmationText?: string
+  /** Extra classes for the dialog content (e.g. raising z above overlays). */
+  readonly contentClassName?: string
 }
 
 export function ConfirmationModal({
@@ -43,6 +46,7 @@ export function ConfirmationModal({
   showDontShowAgain = false,
   dontShowAgainLabel = "Don't ask me again",
   requiredConfirmationText,
+  contentClassName,
 }: Readonly<ConfirmationModalProps>) {
   const [dontShowAgain, setDontShowAgain] = useState(false)
   const [confirmationInput, setConfirmationInput] = useState("")
@@ -72,7 +76,12 @@ export function ConfirmationModal({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="max-w-[400px] overflow-hidden rounded-[2.5rem] border-white/10 bg-background/95 p-8 shadow-2xl backdrop-blur-3xl">
+      <AlertDialogContent
+        className={cn(
+          "max-w-[400px] overflow-hidden rounded-[2.5rem] border-white/10 bg-background/95 p-8 shadow-2xl backdrop-blur-3xl",
+          contentClassName
+        )}
+      >
         <AlertDialogHeader className="items-center text-center">
           <motion.div
             initial={{ scale: 0.5, opacity: 0 }}

@@ -12,6 +12,7 @@ import {
   Inbox,
   Calendar,
   CalendarRange,
+  Timer,
 } from "lucide-react"
 import { useState, useMemo } from "react"
 
@@ -23,6 +24,7 @@ import { TagsSection } from "./sidebar/tags-section"
 import { CreateProjectModal } from "./create-project-modal"
 import { CreateTagModal } from "./create-tag-modal"
 import { DeleteProjectModal } from "./delete-project-modal"
+import { GameHud } from "@/components/game-hud"
 import { useTasks } from "@/hooks/useTasks"
 
 export interface SidebarProps {
@@ -90,6 +92,7 @@ export function Sidebar({ isCollapsed, onToggle }: Readonly<SidebarProps>) {
         icon: LayoutDashboard,
       },
       { id: "tasks", path: "/tasks", label: "Tasks", icon: ListChecks },
+      { id: "focus", path: "/focus", label: "Focus", icon: Timer },
       { id: "history", path: "/audit-logs", label: "Activity", icon: Clock },
     ],
     []
@@ -117,6 +120,8 @@ export function Sidebar({ isCollapsed, onToggle }: Readonly<SidebarProps>) {
       className="group/sidebar relative z-50 hidden min-h-svh flex-col border-r border-sidebar-border bg-sidebar/40 px-4 py-8 shadow-[20px_0_50px_-20px_rgba(0,0,0,0.8)] backdrop-blur-3xl md:flex"
     >
       <SidebarBranding isCollapsed={isCollapsed} onToggle={onToggle} />
+
+      <GameHud isCollapsed={isCollapsed} />
 
       <div className="no-scrollbar flex flex-1 flex-col gap-10 overflow-y-auto pr-1">
         <SmartListsSection
