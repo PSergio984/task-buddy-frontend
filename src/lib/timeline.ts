@@ -64,6 +64,12 @@ const MIN_WIDTH_FRAC = 0.004
 
 const clampFrac = (v: number) => Math.min(1, Math.max(0, v))
 
+/** ms() but NaN-safe — a malformed ISO falls back like a missing one. */
+const msOr = (iso: string | null, fallback: number): number => {
+  const v = ms(iso)
+  return v !== null && Number.isFinite(v) ? v : fallback
+}
+
 /** "session_started" → "Session started". */
 export function markerLabel(type: string): string {
   const words = type.replaceAll("_", " ")
@@ -77,11 +83,25 @@ function blockLabel(mode: string, activityLabel: string | null): string {
 
 function durationLabel(seconds: number): string {
   const total = Math.max(0, Math.round(seconds))
-  const h = Math.floor(total / 3600)
-  const m = Math.round((total % 3600) / 60)
-  if (h > 0) return `${h}h ${m}m`
-  if (m > 0) return `${m}m`
-  return `${total}s`
+  if (total < 60) return `${total}s`
+  // Round to whole minutes first so 59.9m carries into the hour
+  // (3599s → "1h 0m", not "60m").
+  const minutes = Math.round(total / 60)
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  return h > 0 ? `${h}h ${m}m` : `${m}m`
+}
+
+/**
+ * "01:30 +1d" for an end at/past the UTC day edge — sessions bucket by
+ * start day but can run over midnight; the block clamps at the axis edge
+ * and the label stays honest about the continuation.
+ */
+function endLabel(endMs: number, dayStartMs: number, dayEndMs: number): string {
+  const label = utcTimeLabel(endMs)
+  if (endMs < dayEndMs) return label
+  const days = Math.max(1, Math.floor((endMs - dayStartMs) / DAY_MS))
+  return `${label} +${days}d`
 }
 
 /** Scoring summary from the marker's outcome blob; null when unscored. */
@@ -106,14 +126,14 @@ export function buildDayTimeline(res: TimelineDayResponse): DayTimelineView {
   const dayStartMs = Date.parse(`${res.date}T00:00:00Z`)
   const dayEndMs = dayStartMs + DAY_MS
   const span = dayEndMs - dayStartMs
-  const serverNowMs = ms(res.server_time) ?? dayEndMs
+  const serverNowMs = msOr(res.server_time, dayEndMs)
   const frac = (t: number) => clampFrac((t - dayStartMs) / span)
 
   const sessions = res.sessions
     .map((s) => {
-      const startMs = ms(s.started_at) ?? dayStartMs
+      const startMs = msOr(s.started_at, dayStartMs)
       // A still-running block closes on the response's server clock.
-      const endMs = ms(s.ended_at) ?? serverNowMs
+      const endMs = msOr(s.ended_at, serverNowMs)
       return { session: s, startMs, endMs }
     })
     .sort((a, b) => a.startMs - b.startMs || a.session.id - b.session.id)
@@ -133,16 +153,22 @@ export function buildDayTimeline(res: TimelineDayResponse): DayTimelineView {
     const phases: TimelinePhaseItem[] = s.phases
       .filter((p) => p.started_at !== null)
       .map((p) => {
-        const pStart = ms(p.started_at) ?? startMs
-        const pEnd = ms(p.ended_at) ?? endMs
+        const pStart = msOr(p.started_at, startMs)
+        const pEnd = msOr(p.ended_at, endMs)
+        const startFrac = clampFrac((pStart - startMs) / blockSpan)
         return {
           seq: p.seq,
           kind: p.kind,
           status: p.status,
-          startFrac: clampFrac((pStart - startMs) / blockSpan),
-          widthFrac: Math.max(0.02, (pEnd - pStart) / blockSpan),
+          startFrac,
+          // An overrunning phase stops at the block's edge.
+          widthFrac: Math.max(
+            0.02,
+            Math.min(1 - startFrac, (pEnd - pStart) / blockSpan)
+          ),
         }
       })
+    const startFrac = frac(startMs)
     return {
       id: s.id,
       label: blockLabel(s.mode, s.activity_label),
@@ -151,11 +177,15 @@ export function buildDayTimeline(res: TimelineDayResponse): DayTimelineView {
       taskId: s.task_id,
       startMs,
       endMs,
-      startFrac: frac(startMs),
-      widthFrac: Math.max(MIN_WIDTH_FRAC, (endMs - startMs) / span),
+      startFrac,
+      // Clamped at the axis edge — a session may end past UTC midnight.
+      widthFrac: Math.max(
+        MIN_WIDTH_FRAC,
+        Math.min(1 - startFrac, (endMs - startMs) / span)
+      ),
       lane,
       startLabel: utcTimeLabel(startMs),
-      endLabel: utcTimeLabel(endMs),
+      endLabel: endLabel(endMs, dayStartMs, dayEndMs),
       durationLabel: durationLabel((endMs - startMs) / 1000),
       phases,
     }
@@ -163,7 +193,7 @@ export function buildDayTimeline(res: TimelineDayResponse): DayTimelineView {
 
   const markers: TimelineMarkerItem[] = res.markers
     .map((e) => {
-      const tsMs = ms(e.ts) ?? dayStartMs
+      const tsMs = msOr(e.ts, dayStartMs)
       return {
         id: e.id,
         type: e.type,

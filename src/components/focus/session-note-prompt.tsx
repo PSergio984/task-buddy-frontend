@@ -12,6 +12,14 @@ interface SessionNotePromptProps {
 }
 
 /**
+ * Sessions the user already answered or skipped this browser session.
+ * Module scope so a dismissal survives unmount/remount (skip → navigate
+ * away → back); it clears on a full reload — one-shot per browser session
+ * is the intended affordance.
+ */
+const dismissedSessions = new Set<number>()
+
+/**
  * The skippable reflection note offered at focus-session end (issue #67) —
  * renders inside the Focus page's ended state, one note per session
  * (POST /game/sessions/{id}/note; the backend 409s a duplicate). Local
@@ -23,7 +31,12 @@ export function SessionNotePrompt({ sessionId }: SessionNotePromptProps) {
   const [content, setContent] = useState("")
   const [busy, setBusy] = useState(false)
   // "hidden" covers both skipped and saved — the prompt is one-shot.
-  const [hidden, setHidden] = useState(false)
+  const [hidden, setHidden] = useState(() => dismissedSessions.has(sessionId))
+
+  const dismiss = () => {
+    dismissedSessions.add(sessionId)
+    setHidden(true)
+  }
 
   if (hidden) return null
 
@@ -39,11 +52,11 @@ export function SessionNotePrompt({ sessionId }: SessionNotePromptProps) {
         description: "Your session reflection was attached.",
         variant: "success",
       })
-      setHidden(true)
+      dismiss()
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 409) {
         // A note already landed (retry/other tab) — nothing left to do.
-        setHidden(true)
+        dismiss()
         return
       }
       toast({
@@ -83,7 +96,7 @@ export function SessionNotePrompt({ sessionId }: SessionNotePromptProps) {
         </Button>
         <Button
           variant="ghost"
-          onClick={() => setHidden(true)}
+          onClick={dismiss}
           disabled={busy}
           className="h-9 rounded-xl px-3 text-xs font-bold text-muted-foreground hover:text-foreground"
         >

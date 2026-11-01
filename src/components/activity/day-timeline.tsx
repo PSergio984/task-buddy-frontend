@@ -38,7 +38,7 @@ export function DayTimeline({ timeline }: DayTimelineProps) {
       <div className="relative">
         {/* Hour gridlines + labels */}
         <div
-          className="relative"
+          className="relative overflow-hidden"
           style={{ height: axisHeight + 52 }}
           role="presentation"
         >

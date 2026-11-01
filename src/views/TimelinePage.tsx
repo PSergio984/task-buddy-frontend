@@ -25,13 +25,13 @@ export function TimelinePage() {
   const cutoff = retentionCutoffDay(profile?.retention, todayUtcDay())
   const beyondHorizon = cutoff !== null && day < cutoff
 
-  const timelineQuery = useTimelineDay(day)
+  const timelineQuery = useTimelineDay(day, beyondHorizon)
   const timeline = useMemo(
     () =>
-      timelineQuery.data !== undefined
+      !beyondHorizon && timelineQuery.data !== undefined
         ? buildDayTimeline(timelineQuery.data)
         : null,
-    [timelineQuery.data]
+    [beyondHorizon, timelineQuery.data]
   )
 
   return (
@@ -64,12 +64,12 @@ export function TimelinePage() {
         </p>
       )}
 
-      {timelineQuery.isPending ? (
+      {!beyondHorizon && timelineQuery.isPending ? (
         <div className="space-y-4">
           <div className="h-40 animate-pulse rounded-3xl bg-white/5" />
           <div className="h-56 animate-pulse rounded-3xl bg-white/5" />
         </div>
-      ) : timelineQuery.isError ? (
+      ) : !beyondHorizon && timelineQuery.isError ? (
         <div className="flex flex-col items-center gap-4 rounded-3xl border border-white/10 bg-white/5 p-10 text-center">
           {!isOnline && <WifiOff className="h-8 w-8 text-amber-400" />}
           <p className="text-sm text-muted-foreground">

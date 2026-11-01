@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react"
+import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 import { describe, it, expect, vi } from "vitest"
 import { DiaryDayPanel } from "./diary-day-panel"
 import type { DiaryEntry } from "@/lib/api"
@@ -104,8 +104,8 @@ describe("DiaryDayPanel freeform entries", () => {
     expect(onDeleteEntry).toHaveBeenCalledWith(7)
   })
 
-  it("edits an entry through the update callback", () => {
-    const onUpdateEntry = vi.fn()
+  it("edits an entry through the update callback", async () => {
+    const onUpdateEntry = vi.fn().mockResolvedValue(undefined)
     render(
       <DiaryDayPanel
         entries={[entry({ id: 7, freeform: "old text" })]}
@@ -118,6 +118,30 @@ describe("DiaryDayPanel freeform entries", () => {
     })
     fireEvent.click(screen.getByRole("button", { name: /^save$/i }))
     expect(onUpdateEntry).toHaveBeenCalledWith(7, { freeform: "new text" })
+    // The editor closes once the PATCH resolves.
+    await waitFor(() =>
+      expect(
+        screen.queryByLabelText("Edit diary entry")
+      ).not.toBeInTheDocument()
+    )
+  })
+
+  it("keeps the editor open with the draft when the update fails", async () => {
+    const onUpdateEntry = vi.fn().mockRejectedValue(new Error("500"))
+    render(
+      <DiaryDayPanel
+        entries={[entry({ id: 7, freeform: "old text" })]}
+        onUpdateEntry={onUpdateEntry}
+      />
+    )
+    fireEvent.click(screen.getByRole("button", { name: /edit entry/i }))
+    fireEvent.change(screen.getByLabelText("Edit diary entry"), {
+      target: { value: "new text" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: /^save$/i }))
+    await waitFor(() => expect(onUpdateEntry).toHaveBeenCalled())
+    // Draft preserved for retry — the edit form is still mounted.
+    expect(screen.getByLabelText("Edit diary entry")).toHaveValue("new text")
   })
 })
 

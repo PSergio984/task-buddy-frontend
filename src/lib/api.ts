@@ -550,7 +550,7 @@ export interface GameProfile {
   xp_today: number
   gold_today: number
   /** Diary/timeline read horizon: "90d" | "1y" | "forever". */
-  retention: string
+  retention: RetentionPreference
 }
 
 export interface GameEventIn {
@@ -660,7 +660,7 @@ export type DiaryEntryKind = "standup" | "freeform"
 
 export interface DiaryEntry {
   id: number
-  kind: string
+  kind: DiaryEntryKind
   /** UTC calendar day, "YYYY-MM-DD". */
   entry_date: string
   good: string | null

@@ -29,21 +29,22 @@ function useDiaryInvalidate() {
   }
 }
 
-export function useDiaryEntries(day: UtcDay) {
+/** A day past the retention horizon is filtered server-side — skip the fetch. */
+export function useDiaryEntries(day: UtcDay, beyondHorizon = false) {
   const { user } = useAuth()
   return useQuery({
     queryKey: ["diary", { userId: user?.id, date: day }],
     queryFn: () => diaryApi.list(day),
-    enabled: !!user,
+    enabled: !!user && !beyondHorizon,
   })
 }
 
-export function useTimelineDay(day: UtcDay) {
+export function useTimelineDay(day: UtcDay, beyondHorizon = false) {
   const { user } = useAuth()
   return useQuery({
     queryKey: ["timeline", { userId: user?.id, date: day }],
     queryFn: () => timelineApi.day(day),
-    enabled: !!user,
+    enabled: !!user && !beyondHorizon,
   })
 }
 
@@ -54,6 +55,10 @@ export function useCreateDiaryEntry() {
     mutationFn: (input: DiaryEntryInput) => diaryApi.create(input),
     onSuccess: invalidate,
     onError: (err) => {
+      // Resync on failure too — a 409 means another writer already owns the
+      // day's stand-up; the UI must load that row instead of 409-retrying
+      // its own copy forever.
+      invalidate()
       toast({
         title: "Couldn't save entry",
         description: getErrorMessage(err),

@@ -15,7 +15,7 @@ import {
   useUpdateDiaryEntry,
   useUpdateRetention,
 } from "@/hooks/useDiary"
-import type { RetentionPreference } from "@/lib/api"
+import type { DiaryEntryPatch } from "@/lib/api"
 import {
   retentionCutoffDay,
   todayUtcDay,
@@ -23,16 +23,28 @@ import {
   type UtcDay,
 } from "@/lib/diary"
 
+/** PATCH fields are strings-or-null: trim strings, preserve null clears. */
+const trimPatch = (patch: DiaryEntryPatch): DiaryEntryPatch =>
+  Object.fromEntries(
+    Object.entries(patch).map(([k, v]) => [
+      k,
+      typeof v === "string" ? v.trim() : v,
+    ])
+  ) as DiaryEntryPatch
+
 export function DiaryPage() {
   const [day, setDay] = useState<UtcDay>(todayUtcDay)
   const isOnline = useIsOnline()
 
   const { data: profile } = useGameProfile()
-  const retention = (profile?.retention ?? "forever") as RetentionPreference
+  const retention = profile?.retention ?? "forever"
   const cutoff = retentionCutoffDay(profile?.retention, todayUtcDay())
   const beyondHorizon = cutoff !== null && day < cutoff
+  // A stand-up for tomorrow is meaningless — the backend takes any
+  // entry_date >= cutoff, so the client adds the forward bound.
+  const futureDay = day > todayUtcDay()
 
-  const entriesQuery = useDiaryEntries(day)
+  const entriesQuery = useDiaryEntries(day, beyondHorizon)
   const createEntry = useCreateDiaryEntry()
   const updateEntry = useUpdateDiaryEntry()
   const deleteEntry = useDeleteDiaryEntry()
@@ -42,15 +54,17 @@ export function DiaryPage() {
 
   // No offline write-queue for the diary domain — writes disable with an
   // honest reason; reads still render the persisted query cache.
-  const writesDisabled = !isOnline || beyondHorizon
+  const writesDisabled = !isOnline || beyondHorizon || futureDay
   const disabledReason =
     beyondHorizon && cutoff !== null
       ? `Entries before ${utcDayLabel(cutoff)} are hidden by your ${
           retention === "90d" ? "90-day" : "1-year"
         } retention setting.`
-      : !isOnline
-        ? "You're offline — entries can be read from cache but not changed."
-        : null
+      : futureDay
+        ? "You can't write entries for a day that hasn't started yet (UTC)."
+        : !isOnline
+          ? "You're offline — entries can be read from cache but not changed."
+          : null
 
   return (
     <motion.div
@@ -84,12 +98,12 @@ export function DiaryPage() {
         </div>
       </div>
 
-      {entriesQuery.isPending ? (
+      {!beyondHorizon && entriesQuery.isPending ? (
         <div className="space-y-4">
           <div className="h-40 animate-pulse rounded-3xl bg-white/5" />
           <div className="h-56 animate-pulse rounded-3xl bg-white/5" />
         </div>
-      ) : entriesQuery.isError ? (
+      ) : !beyondHorizon && entriesQuery.isError ? (
         <div className="flex flex-col items-center gap-4 rounded-3xl border border-white/10 bg-white/5 p-10 text-center">
           {!isOnline && <WifiOff className="h-8 w-8 text-amber-400" />}
           <p className="text-sm text-muted-foreground">
@@ -106,8 +120,12 @@ export function DiaryPage() {
           </Button>
         </div>
       ) : (
+        // Keyed on the day: edit/delete-draft state belongs to the day it
+        // was started on — a stale editingId can't soft-lock another day's
+        // row actions.
         <DiaryDayPanel
-          entries={entriesQuery.data?.entries ?? []}
+          key={day}
+          entries={beyondHorizon ? [] : (entriesQuery.data?.entries ?? [])}
           writesDisabled={writesDisabled}
           disabledReason={disabledReason}
           busy={busy}
@@ -127,7 +145,9 @@ export function DiaryPage() {
               freeform: freeform.trim(),
             })
           }
-          onUpdateEntry={(id, patch) => updateEntry.mutate({ id, patch })}
+          onUpdateEntry={(id, patch) =>
+            updateEntry.mutateAsync({ id, patch: trimPatch(patch) })
+          }
           onDeleteEntry={(id) => deleteEntry.mutate(id)}
         />
       )}

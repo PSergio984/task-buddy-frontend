@@ -19,7 +19,8 @@ function session(overrides: Record<string, unknown> = {}) {
   return {
     id: 1,
     mode: "timer",
-    status: "completed",
+    // Backend session statuses are active | ended | abandoned.
+    status: "ended",
     task_id: null,
     activity_label: null,
     started_at: `${DAY}T09:00:00Z`,
@@ -165,6 +166,93 @@ describe("buildDayTimeline", () => {
     expect(phases[0].widthFrac).toBeCloseTo(25 / 60, 3)
     expect(phases[1].startFrac).toBeCloseTo(25 / 60, 3)
     expect(phases[1].widthFrac).toBeCloseTo(5 / 60, 3)
+  })
+
+  it("clamps an overnight session at the axis edge and labels it +Nd", () => {
+    const res = baseResponse()
+    res.sessions.push(
+      session({
+        started_at: `${DAY}T23:00:00Z`,
+        ended_at: "2025-11-02T01:30:00Z",
+        duration_seconds: 9000,
+      })
+    )
+    const block = buildDayTimeline(res).blocks[0]
+    expect(block.startFrac).toBeCloseTo(23 / 24, 3)
+    expect(block.startFrac + block.widthFrac).toBeLessThanOrEqual(1)
+    expect(block.widthFrac).toBeCloseTo(1 / 24, 3) // 23:00 → 24:00
+    expect(block.endLabel).toBe("01:30 +1d")
+    // The real duration is still reported even though the bar is clipped.
+    expect(block.durationLabel).toBe("2h 30m")
+  })
+
+  it("clamps a still-running session when server_time is past midnight", () => {
+    const res = baseResponse()
+    res.server_time = "2025-11-02T02:00:00Z"
+    res.sessions.push(
+      session({
+        started_at: `${DAY}T23:30:00Z`,
+        ended_at: null,
+        status: "active",
+      })
+    )
+    const block = buildDayTimeline(res).blocks[0]
+    expect(block.startFrac + block.widthFrac).toBeLessThanOrEqual(1)
+    expect(block.endLabel).toBe("02:00 +1d")
+  })
+
+  it("clamps a phase that overruns its block", () => {
+    const res = baseResponse()
+    res.sessions.push(
+      session({
+        started_at: `${DAY}T23:00:00Z`,
+        ended_at: "2025-11-02T01:00:00Z",
+        phases: [
+          {
+            seq: 0,
+            kind: "focus",
+            status: "completed",
+            planned_seconds: 7200,
+            actual_seconds: 10_800,
+            started_at: `${DAY}T23:30:00Z`,
+            // Inconsistent data: phase ends after the session's own end.
+            ended_at: "2025-11-02T02:00:00Z",
+          },
+        ],
+      })
+    )
+    const phase = buildDayTimeline(res).blocks[0].phases[0]
+    expect(phase.startFrac + phase.widthFrac).toBeLessThanOrEqual(1)
+    expect(phase.startFrac + phase.widthFrac).toBeCloseTo(1, 3)
+  })
+
+  it("renders a 59m59s duration as 1h 0m, not 60m", () => {
+    const res = baseResponse()
+    res.sessions.push(
+      session({
+        started_at: `${DAY}T09:00:00Z`,
+        ended_at: `${DAY}T09:59:59Z`,
+        duration_seconds: 3599,
+      })
+    )
+    expect(buildDayTimeline(res).blocks[0].durationLabel).toBe("1h 0m")
+  })
+
+  it("falls back instead of emitting NaN positions on malformed timestamps", () => {
+    const res = baseResponse()
+    res.sessions.push(
+      session({ started_at: "not-a-date", ended_at: `${DAY}T10:00:00Z` })
+    )
+    res.markers.push({
+      id: 1,
+      type: "session_started",
+      ts: "garbage",
+      outcome: null,
+    })
+    const view = buildDayTimeline(res)
+    expect(Number.isFinite(view.blocks[0].startFrac)).toBe(true)
+    expect(Number.isFinite(view.blocks[0].widthFrac)).toBe(true)
+    expect(Number.isFinite(view.markers[0].frac)).toBe(true)
   })
 
   it("maps ledger events to sorted point markers", () => {

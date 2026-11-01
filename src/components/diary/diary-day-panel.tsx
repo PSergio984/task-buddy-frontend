@@ -27,7 +27,8 @@ interface DiaryDayPanelProps {
   readonly busy?: boolean
   readonly onCreateStandup?: (fields: StandupFields) => void
   readonly onCreateFreeform?: (freeform: string) => void
-  readonly onUpdateEntry?: (id: number, patch: DiaryEntryPatch) => void
+  /** May return a promise — the editor closes only once it resolves. */
+  readonly onUpdateEntry?: (id: number, patch: DiaryEntryPatch) => unknown
   readonly onDeleteEntry?: (id: number) => void
 }
 
@@ -231,6 +232,14 @@ export function DiaryDayPanel({
     if (target !== null) onDeleteEntry?.(target.id)
   }
 
+  // Close the editor only once the PATCH lands — a failed save keeps the
+  // draft open for retry (the mutation hook already toasted the error).
+  const submitUpdate = (id: number, patch: DiaryEntryPatch) => {
+    void Promise.resolve(onUpdateEntry?.(id, patch))
+      .then(() => setEditingId(null))
+      .catch(() => {})
+  }
+
   return (
     <div className="space-y-6">
       {disabledReason !== null && (
@@ -279,10 +288,7 @@ export function DiaryDayPanel({
             }}
             submitLabel="Save stand-up"
             busy={busy}
-            onSubmit={(fields) => {
-              onUpdateEntry?.(standup.id, fields)
-              setEditingId(null)
-            }}
+            onSubmit={(fields) => submitUpdate(standup.id, fields)}
             onCancel={() => setEditingId(null)}
           />
         ) : (
@@ -316,10 +322,7 @@ export function DiaryDayPanel({
                   initial={entry.freeform ?? ""}
                   submitLabel="Save"
                   busy={busy}
-                  onSubmit={(freeform) => {
-                    onUpdateEntry?.(entry.id, { freeform })
-                    setEditingId(null)
-                  }}
+                  onSubmit={(freeform) => submitUpdate(entry.id, { freeform })}
                   onCancel={() => setEditingId(null)}
                 />
               ) : (

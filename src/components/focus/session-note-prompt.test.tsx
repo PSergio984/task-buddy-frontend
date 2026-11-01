@@ -36,6 +36,8 @@ describe("SessionNotePrompt", () => {
     vi.clearAllMocks()
   })
 
+  // Each test uses a distinct sessionId — a dismissed prompt stays dismissed
+  // for the rest of the browser session (module-level one-shot).
   it("attaches the note to the session, then hides the prompt", async () => {
     vi.mocked(sessionNotesApi.attach).mockResolvedValue({
       id: 1,
@@ -61,14 +63,14 @@ describe("SessionNotePrompt", () => {
   })
 
   it("skip hides the prompt without a request", () => {
-    render(<SessionNotePrompt sessionId={42} />)
+    render(<SessionNotePrompt sessionId={43} />)
     fireEvent.click(screen.getByRole("button", { name: /skip/i }))
     expect(screen.queryByTestId("session-note-prompt")).not.toBeInTheDocument()
     expect(sessionNotesApi.attach).not.toHaveBeenCalled()
   })
 
   it("keeps Save disabled while the note is blank", () => {
-    render(<SessionNotePrompt sessionId={42} />)
+    render(<SessionNotePrompt sessionId={44} />)
     const save = screen.getByRole("button", { name: /save note/i })
     expect(save).toBeDisabled()
     fireEvent.change(screen.getByLabelText("Session note"), {
@@ -82,7 +84,7 @@ describe("SessionNotePrompt", () => {
     vi.mocked(sessionNotesApi.attach).mockRejectedValue(
       new AxiosError("Network Error")
     )
-    render(<SessionNotePrompt sessionId={42} />)
+    render(<SessionNotePrompt sessionId={45} />)
     fireEvent.change(screen.getByLabelText("Session note"), {
       target: { value: "draft" },
     })
@@ -97,7 +99,7 @@ describe("SessionNotePrompt", () => {
 
   it("treats a 409 as already-saved — closes quietly, no error toast", async () => {
     vi.mocked(sessionNotesApi.attach).mockRejectedValue(noteConflict())
-    render(<SessionNotePrompt sessionId={42} />)
+    render(<SessionNotePrompt sessionId={46} />)
     fireEvent.change(screen.getByLabelText("Session note"), {
       target: { value: "draft" },
     })
@@ -108,5 +110,14 @@ describe("SessionNotePrompt", () => {
       ).not.toBeInTheDocument()
     )
     expect(toastMock).not.toHaveBeenCalled()
+  })
+
+  it("a skipped prompt stays dismissed across remounts of the same session", () => {
+    const first = render(<SessionNotePrompt sessionId={47} />)
+    fireEvent.click(screen.getByRole("button", { name: /skip/i }))
+    first.unmount()
+    // Remount (navigate away and back) — the prompt is one-shot per session.
+    render(<SessionNotePrompt sessionId={47} />)
+    expect(screen.queryByTestId("session-note-prompt")).not.toBeInTheDocument()
   })
 })
