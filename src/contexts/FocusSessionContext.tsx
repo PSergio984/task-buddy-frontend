@@ -5,7 +5,6 @@ import {
   useFocusSessionRuntime,
   type FocusSessionRuntime,
 } from "@/hooks/useFocusSession"
-import { loadFocusSettings } from "@/lib/focus-settings"
 import { alertPhaseBoundary } from "@/lib/focus-audio"
 
 /**
@@ -24,7 +23,10 @@ export function FocusSessionProvider({
   // while the user is on another route, not only on /focus. The status map
   // resets per session so a restored/sequential run can't replay tones, and
   // each fired boundary is keyed so it can't ring twice.
-  const { session, view, mirrored } = runtime
+  // alertSettings is LIVE runtime state (mirrored from the Focus page's
+  // settings UI) — never re-read the persisted blob here: a failed storage
+  // write must not leave alerts firing while the UI shows them off.
+  const { session, view, mirrored, alertSettings } = runtime
   const prevPhaseStatus = useRef<Map<number, string>>(new Map())
   const firedBoundaries = useRef<Set<string>>(new Set())
   const sessionKey = session ? `${session.id}:${session.started_at}` : null
@@ -34,7 +36,7 @@ export function FocusSessionProvider({
   }, [sessionKey])
   useEffect(() => {
     if (session === null) return
-    const { alerts, alertVolume } = loadFocusSettings()
+    const { alerts, alertVolume } = alertSettings
     for (const phase of session.phases) {
       const prev = prevPhaseStatus.current.get(phase.seq)
       prevPhaseStatus.current.set(phase.seq, phase.status)
@@ -54,7 +56,7 @@ export function FocusSessionProvider({
         }
       }
     }
-  }, [session])
+  }, [session, alertSettings])
 
   // Mirror mode: session.phases is a frozen server snapshot, so the effect
   // above can't see mirrored boundaries. Track the derived view instead — a
@@ -72,7 +74,7 @@ export function FocusSessionProvider({
       const boundaryKey = `mirror:${prev.seq}`
       if (!firedBoundaries.current.has(boundaryKey)) {
         firedBoundaries.current.add(boundaryKey)
-        const { alerts, alertVolume } = loadFocusSettings()
+        const { alerts, alertVolume } = alertSettings
         if (alerts) {
           alertPhaseBoundary(
             prev.kind === "break" ? "break" : "focus",
@@ -81,7 +83,7 @@ export function FocusSessionProvider({
         }
       }
     }
-  }, [mirrored, view])
+  }, [mirrored, view, alertSettings])
 
   return (
     <FocusSessionContext.Provider value={runtime}>

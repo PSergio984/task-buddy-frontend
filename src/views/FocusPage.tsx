@@ -267,6 +267,16 @@ export function FocusPage() {
     await runtime.stop()
   }
 
+  // Mirror alert prefs into the shared runtime — the provider's boundary
+  // alert must follow the LIVE state even if the persist below fails.
+  const handleSettingsChange = (next: FocusSettings) => {
+    setSettings(next)
+    runtime.setAlertSettings({
+      alerts: next.alerts,
+      alertVolume: next.alertVolume,
+    })
+  }
+
   const running = session !== null && view !== null
 
   const ringBlock = running && (
@@ -402,7 +412,7 @@ export function FocusPage() {
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
         settings={settings}
-        onChange={setSettings}
+        onChange={handleSettingsChange}
       />
 
       {/* Immersive mode — distraction-free overlay */}
@@ -455,7 +465,7 @@ export function FocusPage() {
           <div className="flex flex-1 items-start justify-center pt-8">
             <SessionSetup
               settings={settings}
-              onChange={setSettings}
+              onChange={handleSettingsChange}
               onStart={() => void handleStart()}
               onOpenSettings={() => setSettingsOpen(true)}
               busy={busy === "start"}

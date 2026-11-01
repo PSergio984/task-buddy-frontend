@@ -14,6 +14,7 @@ import { getErrorMessage } from "@/lib/errors"
 import { setGameProfileCache } from "@/hooks/useGameProfile"
 import { removeGameEventsByPrefix } from "@/lib/game-event-queue"
 import { armProbeGate, releaseProbeGate } from "@/lib/focus-probe-gate"
+import { FOCUS_SETTINGS_KEY, loadFocusSettings } from "@/lib/focus-settings"
 import {
   clearLocalSession,
   createLocalSession,
@@ -44,6 +45,11 @@ const signature = (s: FocusSession) =>
 const isNetworkError = (err: unknown) =>
   axios.isAxiosError(err) && err.response === undefined
 
+export interface AlertPrefs {
+  alerts: boolean
+  alertVolume: number
+}
+
 export interface FocusSessionRuntime {
   /** The live or just-finished session; null shows the setup panel. */
   session: FocusSession | null
@@ -66,6 +72,13 @@ export interface FocusSessionRuntime {
    * mirror of a server session — verbs must not run (no local scoring).
    */
   mirrored: boolean
+  /**
+   * Live alert prefs — the provider's boundary-alert effect reads these,
+   * not the persisted blob, so a failed localStorage write can't leave the
+   * alerts firing while the UI shows them off.
+   */
+  alertSettings: AlertPrefs
+  setAlertSettings: (next: AlertPrefs) => void
 }
 
 export function useFocusSessionRuntime(): FocusSessionRuntime {
@@ -80,6 +93,27 @@ export function useFocusSessionRuntime(): FocusSessionRuntime {
   const [nowMs, setNowMs] = useState(() => Date.now())
 
   const [isOnline, setIsOnline] = useState(() => navigator.onLine)
+
+  // Live alert prefs — restored from storage once, then driven by the
+  // Focus page's settings UI through setAlertSettings (the source the
+  // provider's alert effect must read, not a re-read of the blob).
+  const [alertSettings, setAlertSettingsState] = useState<AlertPrefs>(() => {
+    const s = loadFocusSettings()
+    return { alerts: s.alerts, alertVolume: s.alertVolume }
+  })
+  const setAlertSettings = useCallback((next: AlertPrefs) => {
+    setAlertSettingsState(next)
+    try {
+      const raw = globalThis.localStorage.getItem(FOCUS_SETTINGS_KEY)
+      const stored = raw ? (JSON.parse(raw) as Record<string, unknown>) : {}
+      globalThis.localStorage.setItem(
+        FOCUS_SETTINGS_KEY,
+        JSON.stringify({ ...stored, ...next })
+      )
+    } catch {
+      // Persistence is best-effort — the live state above stays canonical.
+    }
+  }, [])
 
   const localRef = useRef<LocalSession | null>(null)
   const sessionRef = useRef<FocusSession | null>(null)
@@ -547,5 +581,7 @@ export function useFocusSessionRuntime(): FocusSessionRuntime {
     stop,
     dismissEnded,
     mirrored,
+    alertSettings,
+    setAlertSettings,
   }
 }

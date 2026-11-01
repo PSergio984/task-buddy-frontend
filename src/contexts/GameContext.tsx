@@ -39,6 +39,14 @@ export function GameProvider({
   const flushingRef = useRef(false)
   const pendingFlushRef = useRef(false)
   const flushRef = useRef<() => Promise<void>>(async () => {})
+  // Live user id — closures capture a stale userId across awaits; the chunk
+  // loop and response application compare against this, never the capture.
+  // Synced post-commit (refs can't be written during render): the residual
+  // window is one effect tick, while a mid-flush POST takes a network trip.
+  const userIdRef = useRef<UserId | null>(userId)
+  useEffect(() => {
+    userIdRef.current = userId
+  }, [userId])
 
   const refreshCount = useCallback(async () => {
     setPendingEventCount(
@@ -62,20 +70,38 @@ export function GameProvider({
       // run's web: claims before they can POST.
       await probeGate(userId)
       if ((await pendingGameEventCount(userId)) === 0) return
-      const res = await flushGameEventQueue(userId, gameApi.postEvents)
-      if (res?.profile) void setGameProfileCache(res.profile, userId)
+      // isCurrent stops the chunk loop the moment auth switches — later
+      // chunks must not carry this user's events under the new login.
+      const res = await flushGameEventQueue(
+        userId,
+        gameApi.postEvents,
+        () => userIdRef.current === userId
+      )
+      // A stale flush resolving after the switch must not write under the
+      // new account either — the profile is scoped, but the guard keeps it
+      // cheap and unambiguous.
+      if (res?.profile && userIdRef.current === userId) {
+        void setGameProfileCache(res.profile, userId)
+      }
     } catch (error) {
       // The queue is authoritative — a failed flush just retries later.
       console.error("Game event flush failed; queue retained.", error)
     } finally {
       flushingRef.current = false
-      await refreshCount()
+      // Count the CURRENT user's queue — a switch mid-flush leaves the old
+      // queue untouched and the badge should reflect the live account.
+      const current = userIdRef.current
+      setPendingEventCount(
+        current === null ? 0 : await pendingGameEventCount(current)
+      )
       if (pendingFlushRef.current) {
         pendingFlushRef.current = false
-        void flushEvents()
+        // Latest closure → flushes the CURRENT user's queue, not the stale
+        // capture's.
+        void flushRef.current()
       }
     }
-  }, [refreshCount, userId])
+  }, [userId])
 
   useEffect(() => {
     flushRef.current = flushEvents

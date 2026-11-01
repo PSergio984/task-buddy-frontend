@@ -109,7 +109,8 @@ export function pendingGameEventCount(userId: UserId): Promise<number> {
  */
 export function flushGameEventQueue(
   userId: UserId,
-  sendBatch: (events: GameEventIn[]) => Promise<GameSyncResponse>
+  sendBatch: (events: GameEventIn[]) => Promise<GameSyncResponse>,
+  isCurrent?: () => boolean
 ): Promise<GameSyncResponse | null> {
   // Holding the serial lock across chunk I/O is intentional: ordering-safe.
   return serialized(async () => {
@@ -144,6 +145,9 @@ export function flushGameEventQueue(
     let last: GameSyncResponse | null = null
     const mergedResults: GameSyncResponse["results"] = []
     for (let i = 0; i < sendable.length; i += FLUSH_CHUNK) {
+      // An account switch mid-flush must not post this user's events under
+      // the new auth — stop; unsent events stay queued for the owner.
+      if (isCurrent !== undefined && !isCurrent()) break
       const chunk = sendable.slice(i, i + FLUSH_CHUNK)
       let res: GameSyncResponse
       try {

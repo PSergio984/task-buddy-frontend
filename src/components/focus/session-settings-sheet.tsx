@@ -1,3 +1,4 @@
+import { useState } from "react"
 import {
   Sheet,
   SheetContent,
@@ -48,6 +49,18 @@ function NumberField({
   max: number
   onChange: (value: number) => void
 }>) {
+  // Typing must not fight the user: hold an uncontrolled draft while the
+  // field is focused (clearing + retyping a 3-digit number is impossible if
+  // every keystroke clamps), then clamp+round and commit on blur or Enter.
+  // An empty/NaN blur reverts to the last valid prop value.
+  const [draft, setDraft] = useState<string | null>(null)
+  const commit = (raw: string) => {
+    setDraft(null)
+    const next = Number(raw)
+    if (raw.trim() !== "" && Number.isFinite(next)) {
+      onChange(Math.min(max, Math.max(min, Math.round(next))))
+    }
+  }
   return (
     <div className="space-y-1.5">
       <Label htmlFor={id} className="text-xs font-bold">
@@ -58,16 +71,12 @@ function NumberField({
         type="number"
         min={min}
         max={max}
-        value={value}
-        onChange={(e) => {
-          // A cleared field reads NaN — keep the last valid value instead
-          // of persisting NaN (which clamps to the min on next start). And
-          // min/max on the input don't stop typed/pasted values — clamp and
-          // round so an out-of-range number can't reach the request.
-          const next = e.target.valueAsNumber
-          if (Number.isFinite(next)) {
-            onChange(Math.min(max, Math.max(min, Math.round(next))))
-          }
+        value={draft ?? value}
+        onFocus={(e) => setDraft(e.target.value)}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={(e) => commit(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") commit(e.currentTarget.value)
         }}
         className="h-10 rounded-xl bg-white/5"
       />

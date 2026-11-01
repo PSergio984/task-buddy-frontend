@@ -31,4 +31,23 @@ describe("focus-probe-gate", () => {
     await Promise.resolve()
     expect(spy).toHaveBeenCalled()
   })
+
+  it("a second arm joins the in-flight gate — waiters resolve on the last release", async () => {
+    // Two rapid probes (e.g. rapid `online` events): the second arm must
+    // not displace the first — a displaced gate would strand every waiter
+    // on it forever (nobody holds a handle that resolves it).
+    const first = armProbeGate("u3")
+    const spy = vi.fn()
+    void probeGate("u3").then(spy)
+    const second = armProbeGate("u3")
+    expect(second).toBe(first)
+    releaseProbeGate("u3", first)
+    await Promise.resolve()
+    expect(spy).not.toHaveBeenCalled() // second probe still in flight
+    releaseProbeGate("u3", second)
+    await Promise.resolve()
+    expect(spy).toHaveBeenCalled()
+    // And the gate is gone — the next arm starts a fresh generation.
+    await expect(probeGate("u3")).resolves.toBeUndefined()
+  })
 })

@@ -240,6 +240,26 @@ describe("game-event-queue", () => {
     }
   )
 
+  it("stops posting chunks once the owner is no longer current", async () => {
+    // Mid-flush account switch: chunk 2+ must not carry this user's events
+    // under the new login cookie — the loop re-checks before each POST.
+    const events = Array.from({ length: 1200 }, (_, i) => ev(`sw-${i}`))
+    storage.set(`game-event-queue:${USER}`, JSON.stringify(events))
+    let current = true
+    const sendBatch = vi
+      .fn()
+      .mockImplementation(async (batch: GameEventIn[]) => {
+        current = false // auth switches after the first chunk posts
+        return syncResponse(batch.map((e) => e.client_event_id))
+      })
+    const res = await flushGameEventQueue(USER, sendBatch, () => current)
+    expect(sendBatch).toHaveBeenCalledTimes(1)
+    // Chunk 1 settled and dropped; the remaining 700 stay queued for the
+    // owner's next login — nothing was posted under the new account.
+    expect(await pendingGameEventCount(USER)).toBe(700)
+    expect(res?.applied).toBe(500)
+  })
+
   it("a 5xx still retains the chunk for retry", async () => {
     const events = Array.from({ length: 600 }, (_, i) => ev(`sv-${i}`))
     storage.set(`game-event-queue:${USER}`, JSON.stringify(events))

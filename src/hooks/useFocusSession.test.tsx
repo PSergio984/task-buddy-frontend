@@ -9,6 +9,7 @@ import {
   loadLocalSession,
 } from "@/lib/focus-session"
 import { enqueueGameEvent, listGameEvents } from "@/lib/game-event-queue"
+import { probeGate } from "@/lib/focus-probe-gate"
 import { focusSessionsApi } from "@/lib/api"
 import { useFocusSessionRuntime } from "./useFocusSession"
 
@@ -431,6 +432,46 @@ describe("useFocusSessionRuntime", () => {
     expect(await loadLocalSession("u1")).toBeNull()
     const queued = await listGameEvents("u1")
     expect(queued.map((e) => e.client_event_id)).toEqual(["unrelated-1"])
+  })
+
+  it("overlapping reconnect probes join one gate — no stranded waiters", async () => {
+    // A restored local run, then two rapid `online` events while getActive
+    // is still pending: both reprobes join the SAME gate, and a flush
+    // waiter resolves once both probes settle (the displaced-gate bug left
+    // waiters — and every later flush — hanging forever).
+    const local = createLocalSession(timerInput, T0)
+    await saveLocalSession("u1", local)
+    vi.mocked(focusSessionsApi.getActive).mockRejectedValue(networkDown())
+    const { result } = renderHook(() => useFocusSessionRuntime())
+    await settle()
+    expect(result.current.session?.id).toBe(0)
+
+    const deferreds: Array<(r: SessionActionResponse | null) => void> = []
+    vi.mocked(focusSessionsApi.getActive).mockImplementation(
+      () =>
+        new Promise((r) => {
+          deferreds.push(r)
+        })
+    )
+    await act(async () => {
+      window.dispatchEvent(new Event("online"))
+      window.dispatchEvent(new Event("online"))
+      await Promise.resolve()
+    })
+    expect(deferreds).toHaveLength(2) // both reprobes probed
+
+    const waiter = vi.fn()
+    void probeGate("u1").then(waiter)
+    await act(async () => {
+      deferreds[0](serverSession(31, T0))
+    })
+    expect(waiter).not.toHaveBeenCalled() // second probe still in flight
+    await act(async () => {
+      deferreds[1](serverSession(31, T0))
+    })
+    await settle()
+    expect(waiter).toHaveBeenCalled()
+    expect(result.current.session?.id).toBe(31)
   })
 
   it("verb-throw preserves the already-evaluated transition events", async () => {
