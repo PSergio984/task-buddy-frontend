@@ -43,15 +43,11 @@ export function primeAlertAudio(): void {
 
 /** Ask for notification permission from a user gesture (session start). */
 export function requestAlertPermission(): void {
-  try {
-    if (
-      typeof Notification !== "undefined" &&
-      Notification.permission === "default"
-    ) {
-      void Notification.requestPermission().catch(() => {})
-    }
-  } catch {
-    // Permission prompts are best-effort.
+  if (
+    typeof Notification !== "undefined" &&
+    Notification.permission === "default"
+  ) {
+    void Notification.requestPermission().catch(() => {})
   }
 }
 
