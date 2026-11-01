@@ -20,7 +20,7 @@ import { SessionSettingsSheet } from "@/components/focus/session-settings-sheet"
 import { useFocusSession } from "@/contexts/FocusSessionContext"
 import { useTasks } from "@/hooks/useTasks"
 import { useTags } from "@/hooks/useTags"
-import { alertPhaseBoundary, requestAlertPermission } from "@/lib/focus-audio"
+import { primeAlertAudio, requestAlertPermission } from "@/lib/focus-audio"
 import type { FocusSession } from "@/lib/api"
 import {
   formatClock,
@@ -55,6 +55,7 @@ function CycleDots({ session }: Readonly<{ session: FocusSession }>) {
                 ? "text-primary/60"
                 : "text-foreground/20"
           )}
+          role="img"
           aria-label={`focus phase ${p.seq} ${p.status}`}
         >
           {p.status === "completed"
@@ -189,7 +190,6 @@ export function FocusPage() {
   const [stopConfirmOpen, setStopConfirmOpen] = useState(false)
   const [immersive, setImmersive] = useState(false)
   const immersiveEnteredFor = useRef<string | null>(null)
-  const prevPhaseStatus = useRef<Map<number, string>>(new Map())
 
   const { data: tasks = [] } = useTasks()
   const { data: tags = [] } = useTags()
@@ -203,10 +203,18 @@ export function FocusPage() {
     [tags, session?.preset?.tag_id]
   )
 
-  // Persist settings (task/tag links are per-run, never persisted).
+  // Persist settings (task/tag links are per-run, never persisted). Storage
+  // can be blocked or full — a rejected write must not break the page.
   useEffect(() => {
-    const { taskId: _t, tagId: _g, ...persistable } = settings
-    globalThis.localStorage.setItem(FOCUS_SETTINGS_KEY, JSON.stringify(persistable))
+    try {
+      const { taskId: _t, tagId: _g, ...persistable } = settings
+      globalThis.localStorage.setItem(
+        FOCUS_SETTINGS_KEY,
+        JSON.stringify(persistable)
+      )
+    } catch {
+      // Settings persistence is best-effort.
+    }
   }, [settings])
 
   // Auto-enter immersive for a fresh session when the setting is on. A
@@ -236,54 +244,8 @@ export function FocusPage() {
     }
   }, [session, settings.immersive, view?.status, isLoading])
 
-  // Distinct work/break end alert on each freshly-finished phase. The status
-  // map resets per session so a restored/sequential run can't replay tones.
-  const sessionKey = session ? `${session.id}:${session.started_at}` : null
-  useEffect(() => {
-    prevPhaseStatus.current = new Map()
-  }, [sessionKey])
-  useEffect(() => {
-    if (session === null) return
-    for (const phase of session.phases) {
-      const prev = prevPhaseStatus.current.get(phase.seq)
-      prevPhaseStatus.current.set(phase.seq, phase.status)
-      const finished =
-        (phase.status === "completed" || phase.status === "skipped") &&
-        prev !== "completed" &&
-        prev !== "skipped" &&
-        prev !== undefined
-      if (finished && settings.alerts) {
-        alertPhaseBoundary(
-          phase.kind === "break" ? "break" : "focus",
-          settings.alertVolume / 100
-        )
-      }
-    }
-  }, [session, settings.alerts, settings.alertVolume])
-
-  // Mirror mode: session.phases is a frozen server snapshot, so the effect
-  // above can't see mirrored boundaries. Track the derived view instead — a
-  // live-seq change means the previous leg just ended; fire its kind's tone.
-  const mirrorLiveRef = useRef<{ seq: number; kind: string } | null>(null)
-  useEffect(() => {
-    if (!mirrored || view === null) {
-      mirrorLiveRef.current = null
-      return
-    }
-    const live = view.live
-    const prev = mirrorLiveRef.current
-    mirrorLiveRef.current = live ? { seq: live.seq, kind: live.kind } : null
-    if (
-      prev !== null &&
-      (live === null || live.seq !== prev.seq) &&
-      settings.alerts
-    ) {
-      alertPhaseBoundary(
-        prev.kind === "break" ? "break" : "focus",
-        settings.alertVolume / 100
-      )
-    }
-  }, [mirrored, view, settings.alerts, settings.alertVolume])
+  // Phase-boundary alert effects live in FocusSessionProvider — they must
+  // fire while the user is on another route, not only on /focus.
 
   const exitImmersive = () => {
     setImmersive(false)
@@ -291,8 +253,12 @@ export function FocusPage() {
   }
 
   const handleStart = async () => {
-    // User gesture — the one moment notification permission may be requested.
-    if (settings.alerts) requestAlertPermission()
+    // User gesture — the one moment notification permission may be requested
+    // and the AudioContext can be resumed (autoplay policy).
+    if (settings.alerts) {
+      requestAlertPermission()
+      primeAlertAudio()
+    }
     await runtime.start(sessionStartFromSettings(settings))
   }
 
@@ -324,7 +290,8 @@ export function FocusPage() {
           variant="outline"
           className="gap-1 rounded-full border-sky-400/30 bg-sky-400/10 px-3 py-1 text-[10px] font-black tracking-widest text-sky-400 uppercase"
         >
-          <WifiOff className="h-3 w-3" /> Offline · showing mirror — reconnect to act
+          <WifiOff className="h-3 w-3" /> Offline · showing mirror — reconnect
+          to act
         </Badge>
       )}
     </div>
@@ -443,25 +410,25 @@ export function FocusPage() {
         running &&
         view.status !== "ended" &&
         view.status !== "abandoned" && (
-        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-8 bg-background">
-          {ringBlock}
-          <SessionControls
-            view={view}
-            busy={busy !== null || mirrored}
-            compact
-            onPause={() => void runtime.pause()}
-            onResume={() => void runtime.resume()}
-            onAdvance={() => void runtime.advance()}
-            onStop={() => setStopConfirmOpen(true)}
-          />
-          <button
-            onClick={exitImmersive}
-            className="absolute top-6 right-6 flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-muted-foreground transition-all hover:bg-white/10 hover:text-foreground"
-          >
-            <Minimize2 className="h-4 w-4" /> Exit immersive
-          </button>
-        </div>
-      )}
+          <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-8 bg-background">
+            {ringBlock}
+            <SessionControls
+              view={view}
+              busy={busy !== null || mirrored}
+              compact
+              onPause={() => void runtime.pause()}
+              onResume={() => void runtime.resume()}
+              onAdvance={() => void runtime.advance()}
+              onStop={() => setStopConfirmOpen(true)}
+            />
+            <button
+              onClick={exitImmersive}
+              className="absolute top-6 right-6 flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-muted-foreground transition-all hover:bg-white/10 hover:text-foreground"
+            >
+              <Minimize2 className="h-4 w-4" /> Exit immersive
+            </button>
+          </div>
+        )}
 
       <motion.div
         initial={{ opacity: 0 }}
@@ -503,9 +470,9 @@ export function FocusPage() {
                 <button
                   onClick={() => {
                     setImmersive(true)
-                    void document.documentElement.requestFullscreen?.().catch(
-                      () => {}
-                    )
+                    void document.documentElement
+                      .requestFullscreen?.()
+                      .catch(() => {})
                   }}
                   className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-muted-foreground transition-all hover:bg-white/10 hover:text-foreground"
                 >

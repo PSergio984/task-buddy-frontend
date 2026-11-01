@@ -25,6 +25,22 @@ function audioContext(): AudioContext | null {
   }
 }
 
+/**
+ * Create/resume the shared AudioContext inside the session-start click —
+ * autoplay policy leaves a context created outside a gesture suspended, so
+ * the first boundary tone would otherwise be silent.
+ */
+export function primeAlertAudio(): void {
+  try {
+    const ctx = audioContext()
+    if (ctx !== null && ctx.state === "suspended") {
+      void ctx.resume().catch(() => {})
+    }
+  } catch {
+    // Audio is best-effort.
+  }
+}
+
 /** Ask for notification permission from a user gesture (session start). */
 export function requestAlertPermission(): void {
   try {
@@ -32,17 +48,14 @@ export function requestAlertPermission(): void {
       typeof Notification !== "undefined" &&
       Notification.permission === "default"
     ) {
-      void Notification.requestPermission()
+      void Notification.requestPermission().catch(() => {})
     }
   } catch {
     // Permission prompts are best-effort.
   }
 }
 
-export function playPhaseAlert(
-  kind: "focus" | "break",
-  volume = 0.8
-): void {
+export function playPhaseAlert(kind: "focus" | "break", volume = 0.8): void {
   try {
     const ctx = audioContext()
     if (ctx === null) return
@@ -60,7 +73,10 @@ export function playPhaseAlert(
       osc.type = "sine"
       osc.frequency.value = freq
       gain.gain.setValueAtTime(0.0001, t + startOffset)
-      gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, peak * level), t + startOffset + 0.02)
+      gain.gain.exponentialRampToValueAtTime(
+        Math.max(0.0001, peak * level),
+        t + startOffset + 0.02
+      )
       gain.gain.exponentialRampToValueAtTime(0.0001, t + endOffset)
       osc.connect(gain)
       gain.connect(ctx.destination)

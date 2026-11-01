@@ -192,15 +192,12 @@ describe("useFocusSessionRuntime", () => {
   it("a server session supersedes a local run and drops its queued events", async () => {
     const local = createLocalSession(timerInput, T0)
     await saveLocalSession("u1", local)
-    await enqueueGameEvent(
-      "u1",
-      {
-        client_event_id: `web:${local.client_id}:focus_phase_completed:0`,
-        type: "focus_phase_completed",
-        client_ts: iso(T0),
-        payload: { minutes: 1 },
-      }
-    )
+    await enqueueGameEvent("u1", {
+      client_event_id: `web:${local.client_id}:focus_phase_completed:0`,
+      type: "focus_phase_completed",
+      client_ts: iso(T0),
+      payload: { minutes: 1 },
+    })
     await enqueueGameEvent("u1", {
       client_event_id: "unrelated-1",
       type: "habit_click",
@@ -271,6 +268,66 @@ describe("useFocusSessionRuntime", () => {
     expect(enqueueMock).not.toHaveBeenCalled()
     expect(storage.has("focus-local-session:u2")).toBe(false)
     expect(await listGameEvents("u2")).toEqual([])
+  })
+
+  it("user switch clears the rendered session while the new probe runs", async () => {
+    vi.mocked(focusSessionsApi.getActive).mockResolvedValue(
+      serverSession(11, T0)
+    )
+    const { result, rerender } = renderHook(() => useFocusSessionRuntime())
+    await settle()
+    expect(result.current.session?.id).toBe(11)
+    expect(result.current.isLoading).toBe(false)
+
+    // Switch to u2 while their probe is still in flight — u1's session must
+    // not keep rendering or accepting controls under the new account.
+    let resolveU2Probe: (r: SessionActionResponse | null) => void = () => {}
+    vi.mocked(focusSessionsApi.getActive).mockImplementation(
+      () =>
+        new Promise((r) => {
+          resolveU2Probe = r
+        })
+    )
+    currentUser = { id: "u2" }
+    rerender()
+    await settle()
+
+    expect(result.current.session).toBeNull()
+    expect(result.current.isLoading).toBe(true)
+
+    await act(async () => {
+      resolveU2Probe(serverSession(22, T0))
+    })
+    await settle()
+    expect(result.current.session?.id).toBe(22)
+    expect(result.current.isLoading).toBe(false)
+  })
+
+  it("a cancelled probe cannot apply its stale session after a user switch", async () => {
+    // u1's probe is in flight; the user switches before it resolves. The
+    // late response must be dropped, not applied over u2's probe result.
+    let resolveU1Probe: (r: SessionActionResponse | null) => void = () => {}
+    vi.mocked(focusSessionsApi.getActive).mockImplementationOnce(
+      () =>
+        new Promise((r) => {
+          resolveU1Probe = r
+        })
+    )
+    const { result, rerender } = renderHook(() => useFocusSessionRuntime())
+
+    currentUser = { id: "u2" }
+    vi.mocked(focusSessionsApi.getActive).mockResolvedValue(
+      serverSession(22, T0)
+    )
+    rerender()
+    await settle()
+    expect(result.current.session?.id).toBe(22)
+
+    await act(async () => {
+      resolveU1Probe(serverSession(11, T0))
+    })
+    await settle()
+    expect(result.current.session?.id).toBe(22)
   })
 
   it("deadline refreshes are throttled to one per 5s", async () => {
@@ -393,9 +450,7 @@ describe("useFocusSessionRuntime", () => {
     })
 
     const eids = enqueueMock.mock.calls.map((c) => c[0].client_event_id)
-    expect(eids).toContain(
-      `web:${local.client_id}:focus_phase_completed:0`
-    )
+    expect(eids).toContain(`web:${local.client_id}:focus_phase_completed:0`)
     // The throwing verb left the break running — pause was rejected, not
     // applied, and nothing was wrongly persisted as terminal.
     expect(result.current.session?.status).toBe("active")

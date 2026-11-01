@@ -108,7 +108,7 @@ export function useFocusSessionRuntime(): FocusSessionRuntime {
       setServerOffset(nextOffset)
       setNowMs(Date.now() + nextOffset)
       if (res.profile && userId !== null) {
-        setGameProfileCache(res.profile, userId)
+        void setGameProfileCache(res.profile, userId)
       }
       applySession(res.session)
     },
@@ -176,19 +176,23 @@ export function useFocusSessionRuntime(): FocusSessionRuntime {
   // run (same drop path as the mount probe).
   const reprobeLocal = useCallback(async () => {
     const local = localRef.current
-    if (local === null) return
+    if (local === null || userId === null) return
+    // Re-arm the probe gate BEFORE the first await: a same-tick
+    // online-triggered flush must queue behind this probe, or it could
+    // POST the superseded local run's web: claims before the drop lands.
+    const gate = armProbeGate(userId)
     try {
       const res = await focusSessionsApi.getActive()
       if (res !== null) {
         localRef.current = null
-        if (userId !== null) {
-          await removeGameEventsByPrefix(userId, `web:${local.client_id}:`)
-          await clearLocalSession(userId)
-        }
+        await removeGameEventsByPrefix(userId, `web:${local.client_id}:`)
+        await clearLocalSession(userId)
         applyResponse(res)
       }
     } catch {
       // Still unreachable — the local run continues undisturbed.
+    } finally {
+      releaseProbeGate(userId, gate)
     }
   }, [applyResponse, userId])
   const reprobeLocalRef = useRef(reprobeLocal)
@@ -210,12 +214,21 @@ export function useFocusSessionRuntime(): FocusSessionRuntime {
       return
     }
     let cancelled = false
-    // Any stale local session belongs to the previous probe/user — only the
-    // restore branch below may repopulate localRef for THIS user.
+    // Any stale local/applied session belongs to the previous probe/user —
+    // clear it so the previous account's session can't render or accept
+    // controls under the new account while this probe is in flight. Only the
+    // restore branch below may repopulate either for THIS user.
     localRef.current = null
+    sessionRef.current = null
+    void Promise.resolve().then(() => {
+      if (!cancelled) {
+        setSession(null)
+        setIsLoading(true)
+      }
+    })
     // Arm BEFORE any await: GameContext's deferred mount flush awaits this
     // gate so a supersede-drop lands before the first POST of this queue.
-    armProbeGate(userId)
+    const gate = armProbeGate(userId)
     void (async () => {
       try {
         const res = await focusSessionsApi.getActive()
@@ -232,6 +245,9 @@ export function useFocusSessionRuntime(): FocusSessionRuntime {
             await removeGameEventsByPrefix(userId, `web:${local.client_id}:`)
             await clearLocalSession(userId)
           }
+          // Recheck after the drops — a cancelled probe must not apply a
+          // stale server session over the newer probe's state.
+          if (cancelled) return
           applyResponse(res)
           return
         }
@@ -252,10 +268,11 @@ export function useFocusSessionRuntime(): FocusSessionRuntime {
         applySession({ ...local.session })
       } else {
         if (local !== null) await clearLocalSession(userId)
+        if (cancelled) return
         applySession(null)
       }
     })().finally(() => {
-      releaseProbeGate(userId)
+      releaseProbeGate(userId, gate)
       if (!cancelled) setIsLoading(false)
     })
     return () => {
@@ -335,7 +352,8 @@ export function useFocusSessionRuntime(): FocusSessionRuntime {
             applyResponse(res)
             toast({
               title: "Session recovered",
-              description: "The server already has a live session — resuming it.",
+              description:
+                "The server already has a live session — resuming it.",
               variant: "info",
             })
             return

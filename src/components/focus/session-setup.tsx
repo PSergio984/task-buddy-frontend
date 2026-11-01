@@ -63,6 +63,8 @@ export function SessionSetup({
           {MODES.map((m) => (
             <button
               key={m.value}
+              type="button"
+              aria-pressed={settings.mode === m.value}
               onClick={() => set("mode", m.value)}
               className={cn(
                 "rounded-2xl border p-4 text-left transition-all",
@@ -92,6 +94,8 @@ export function SessionSetup({
             {PRESETS.map((p) => (
               <button
                 key={p.id}
+                type="button"
+                aria-pressed={settings.presetId === p.id}
                 onClick={() => set("presetId", p.id)}
                 className={cn(
                   "rounded-2xl border p-3 text-left transition-all",
@@ -115,7 +119,10 @@ export function SessionSetup({
       {/* Optional task / tag link */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <p className="text-[10px] font-black tracking-widest text-primary uppercase">
+          <p
+            id="focus-task-label"
+            className="text-[10px] font-black tracking-widest text-primary uppercase"
+          >
             Task <span className="text-muted-foreground">(optional)</span>
           </p>
           <Select
@@ -124,7 +131,10 @@ export function SessionSetup({
               set("taskId", v === "none" ? null : Number(v))
             }
           >
-            <SelectTrigger className="h-11 rounded-xl bg-white/5">
+            <SelectTrigger
+              aria-labelledby="focus-task-label"
+              className="h-11 rounded-xl bg-white/5"
+            >
               <SelectValue placeholder="Free focus" />
             </SelectTrigger>
             <SelectContent>
@@ -140,16 +150,20 @@ export function SessionSetup({
           </Select>
         </div>
         <div className="space-y-1.5">
-          <p className="text-[10px] font-black tracking-widest text-primary uppercase">
+          <p
+            id="focus-tag-label"
+            className="text-[10px] font-black tracking-widest text-primary uppercase"
+          >
             Tag <span className="text-muted-foreground">(optional)</span>
           </p>
           <Select
             value={settings.tagId === null ? "none" : String(settings.tagId)}
-            onValueChange={(v) =>
-              set("tagId", v === "none" ? null : Number(v))
-            }
+            onValueChange={(v) => set("tagId", v === "none" ? null : Number(v))}
           >
-            <SelectTrigger className="h-11 rounded-xl bg-white/5">
+            <SelectTrigger
+              aria-labelledby="focus-tag-label"
+              className="h-11 rounded-xl bg-white/5"
+            >
               <SelectValue placeholder="No tag" />
             </SelectTrigger>
             <SelectContent>

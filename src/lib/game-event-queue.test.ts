@@ -138,10 +138,7 @@ describe("game-event-queue", () => {
 
   it("flush chunks at the 500-event batch cap", async () => {
     const events = Array.from({ length: 1200 }, (_, i) => ev(`bulk-${i}`))
-    storage.set(
-      `game-event-queue:${USER}`,
-      JSON.stringify(events)
-    )
+    storage.set(`game-event-queue:${USER}`, JSON.stringify(events))
     const sendBatch = vi
       .fn()
       .mockImplementation(async (batch: GameEventIn[]) =>
@@ -176,6 +173,72 @@ describe("game-event-queue", () => {
     expect(errorSpy).toHaveBeenCalled()
     errorSpy.mockRestore()
   })
+
+  it("stamps events with the owning user at enqueue", async () => {
+    await enqueueGameEvent(USER, ev("a"))
+    const all = await listGameEvents(USER)
+    expect(all[0]).toMatchObject({ client_event_id: "a", user_id: USER })
+  })
+
+  it("flush re-files events stamped for another user instead of posting", async () => {
+    // A mis-keyed enqueue landed foreign-stamped events in this queue —
+    // they must never POST under the current user's auth.
+    await enqueueGameEvent(USER, ev("own"))
+    storage.set(
+      `game-event-queue:${USER}`,
+      JSON.stringify([
+        { ...ev("own"), user_id: USER },
+        { ...ev("foreign-1"), user_id: "u2" },
+        { ...ev("foreign-2"), user_id: "u2" },
+      ])
+    )
+    const sendBatch = vi
+      .fn()
+      .mockImplementation(async (batch: GameEventIn[]) =>
+        syncResponse(batch.map((e) => e.client_event_id))
+      )
+    const res = await flushGameEventQueue(USER, sendBatch)
+    // Only the current user's event posts — foreign-stamped ones re-file
+    // under their owner's key (that user may return; nothing is dropped).
+    expect(sendBatch).toHaveBeenCalledTimes(1)
+    expect(
+      sendBatch.mock.calls[0][0].map((e: GameEventIn) => e.client_event_id)
+    ).toEqual(["own"])
+    expect(res?.applied).toBe(1)
+    expect((await listGameEvents("u2")).map((e) => e.client_event_id)).toEqual([
+      "foreign-1",
+      "foreign-2",
+    ])
+    expect(await pendingGameEventCount(USER)).toBe(0)
+  })
+
+  it("flush strips the user marker before posting", async () => {
+    await enqueueGameEvent(USER, ev("a"))
+    const sendBatch = vi
+      .fn()
+      .mockImplementation(async (batch: GameEventIn[]) =>
+        syncResponse(batch.map((e) => e.client_event_id))
+      )
+    await flushGameEventQueue(USER, sendBatch)
+    for (const sent of sendBatch.mock.calls.flat()) {
+      expect(sent).not.toHaveProperty("user_id")
+    }
+  })
+
+  it.each([401, 429])(
+    "a %i response retains the chunk for retry like a 5xx",
+    async (status) => {
+      const events = Array.from({ length: 10 }, (_, i) => ev(`rt-${i}`))
+      storage.set(`game-event-queue:${USER}`, JSON.stringify(events))
+      const failed = new axios.AxiosError("rejected")
+      failed.response = { status, data: {} } as never
+      const sendBatch = vi.fn().mockRejectedValue(failed)
+      await expect(flushGameEventQueue(USER, sendBatch)).rejects.toThrow(
+        "rejected"
+      )
+      expect(await pendingGameEventCount(USER)).toBe(10)
+    }
+  )
 
   it("a 5xx still retains the chunk for retry", async () => {
     const events = Array.from({ length: 600 }, (_, i) => ev(`sv-${i}`))

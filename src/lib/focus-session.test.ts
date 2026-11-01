@@ -24,7 +24,9 @@ import {
 const T0 = Date.parse("2026-11-01T10:00:00Z")
 const at = (seconds: number) => T0 + seconds * 1000
 
-const timerInput = (overrides: Partial<Parameters<typeof createLocalSession>[0]> = {}) => ({
+const timerInput = (
+  overrides: Partial<Parameters<typeof createLocalSession>[0]> = {}
+) => ({
   mode: "timer" as const,
   phases: [
     { kind: "focus" as const, minutes: 1 },
@@ -105,16 +107,12 @@ describe("ms timestamp parse", () => {
     // SQLite datetimes carry no offset — Date.parse alone would read them
     // browser-local and skew the countdown by the UTC offset.
     expect(ms("2026-11-01T10:00:00")).toBe(Date.UTC(2026, 10, 1, 10, 0, 0))
-    expect(ms("2026-11-01T10:00:00.000")).toBe(
-      Date.UTC(2026, 10, 1, 10, 0, 0)
-    )
+    expect(ms("2026-11-01T10:00:00.000")).toBe(Date.UTC(2026, 10, 1, 10, 0, 0))
   })
 
   it("honours explicit offsets and Z, and maps null to null", () => {
     expect(ms("2026-11-01T10:00:00Z")).toBe(Date.UTC(2026, 10, 1, 10, 0, 0))
-    expect(ms("2026-11-01T10:00:00+05:00")).toBe(
-      Date.UTC(2026, 10, 1, 5, 0, 0)
-    )
+    expect(ms("2026-11-01T10:00:00+05:00")).toBe(Date.UTC(2026, 10, 1, 5, 0, 0))
     expect(ms("2026-11-01T10:00:00-02:00")).toBe(
       Date.UTC(2026, 10, 1, 12, 0, 0)
     )
@@ -146,10 +144,7 @@ describe("createLocalSession", () => {
   })
 
   it("creates a single open-ended stopwatch leg", () => {
-    const local = createLocalSession(
-      timerInput({ mode: "stopwatch" }),
-      T0
-    )
+    const local = createLocalSession(timerInput({ mode: "stopwatch" }), T0)
     expect(local.session.phases).toHaveLength(1)
     expect(local.session.phases[0].kind).toBe("stopwatch")
     expect(local.session.phases[0].planned_seconds).toBe(0)
@@ -256,10 +251,7 @@ describe("local verbs", () => {
   })
 
   it("the (n+1)th pause overflows the count budget and abandons", () => {
-    const local = createLocalSession(
-      timerInput({ pause_budget_count: 1 }),
-      T0
-    )
+    const local = createLocalSession(timerInput({ pause_budget_count: 1 }), T0)
     pauseLocal(local, at(10))
     resumeLocal(local, at(20))
     const events = pauseLocal(local, at(30))
@@ -396,15 +388,15 @@ describe("clock derivations", () => {
     const local = createLocalSession(timerInput(), T0)
     expect(nextDeadlineMs(local.session)).toBe(at(60))
     pauseLocal(local, at(10))
-    // paused at t+10 with 300s budget -> overflow at t+310
-    expect(nextDeadlineMs(local.session)).toBe(at(310))
+    // paused at t+10 with 300s budget -> equality at t+310, but the engine
+    // abandons only when banked + extra > budget (extra is truncated), so
+    // the first over-budget instant is t+311.
+    expect(nextDeadlineMs(local.session)).toBe(at(311))
     resumeLocal(local, at(20))
     evaluateLocal(local, at(70)) // focus done at 60+10 banked, break active
     evaluateLocal(local, at(132)) // break done at 130 -> awaiting grace
     // Grace deadline anchors to the last phase end (t+130), not eval time.
-    expect(nextDeadlineMs(local.session)).toBe(
-      at(130) + GRACE_SECONDS * 1000
-    )
+    expect(nextDeadlineMs(local.session)).toBe(at(130) + GRACE_SECONDS * 1000)
   })
 })
 

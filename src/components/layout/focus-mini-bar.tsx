@@ -29,7 +29,9 @@ export function FocusMiniBar() {
       aria-label={`Focus session: ${view.kindLabel}, ${formatClock(view.clockSeconds)} — open Focus page`}
       className={cn(
         "fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-1/2 z-40 -translate-x-1/2 md:bottom-6",
-        "flex w-56 flex-col overflow-hidden rounded-2xl border border-white/10 bg-background/90 shadow-xl backdrop-blur-xl",
+        // ≤360px viewports: a fixed 14rem chip reaches under the task FAB —
+        // cap the width so the center never collides with the right edge.
+        "flex w-56 max-w-[calc(100vw-10rem)] flex-col overflow-hidden rounded-2xl border border-white/10 bg-background/90 shadow-xl backdrop-blur-xl",
         "transition-all hover:border-primary/40 hover:bg-background"
       )}
     >
@@ -42,7 +44,7 @@ export function FocusMiniBar() {
         <span className="min-w-0 flex-1 truncate text-left text-[10px] font-black tracking-widest text-muted-foreground uppercase">
           {view.kindLabel}
         </span>
-        <span className="font-mono text-sm font-black tabular-nums text-foreground">
+        <span className="font-mono text-sm font-black text-foreground tabular-nums">
           {formatClock(view.clockSeconds)}
         </span>
         {offline && <WifiOff className="h-3.5 w-3.5 shrink-0 text-amber-400" />}

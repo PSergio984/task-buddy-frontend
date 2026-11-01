@@ -73,12 +73,12 @@ function StatBar({
 
 export function GameHud({ isCollapsed = false }: GameHudProps) {
   const { user } = useAuth()
-  const { data: profile, isLoading } = useGameProfile()
+  const { data: profile, isLoading, isError } = useGameProfile()
   const { pendingEventCount } = useGame()
   // Remember which seed failed — a new avatar_config resets the fallback.
   const [failedUrl, setFailedUrl] = useState<string | null>(null)
 
-  if (isLoading || !profile) {
+  if (isLoading) {
     return (
       <div className="px-2 pb-4">
         <div className="flex items-center gap-3">
@@ -94,13 +94,33 @@ export function GameHud({ isCollapsed = false }: GameHudProps) {
     )
   }
 
+  if (profile === undefined) {
+    // Failed fetch must not pin the HUD as a skeleton forever — render an
+    // honest unavailable state (still navigable, just no game totals).
+    const fallbackInitial = (
+      user?.username?.[0] ||
+      user?.email?.[0] ||
+      "U"
+    ).toUpperCase()
+    return (
+      <div className="px-2 pb-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-lg font-black text-muted-foreground">
+            {fallbackInitial}
+          </div>
+          {!isCollapsed && (
+            <p className="text-xs font-bold text-muted-foreground">
+              {isError ? "Game HUD offline" : "Game profile unavailable"}
+            </p>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   const url = avatarUrl(profile)
   const showImg = url !== null && url !== failedUrl
-  const initial = (
-    user?.username?.[0] ||
-    user?.email?.[0] ||
-    "U"
-  ).toUpperCase()
+  const initial = (user?.username?.[0] || user?.email?.[0] || "U").toUpperCase()
   const name = user?.username || user?.email?.split("@")[0] || "Friend"
   const levelLine = `Lv ${profile.level}${profile.game_class ? ` · ${profile.game_class}` : ""}`
   const statsLine = `STR ${profile.str_stat} · INT ${profile.int_stat} · CON ${profile.con_stat} · PER ${profile.per_stat}`
@@ -124,7 +144,12 @@ export function GameHud({ isCollapsed = false }: GameHudProps) {
     return (
       <div className="flex justify-center pb-4">
         <Tooltip delayDuration={0}>
-          <TooltipTrigger asChild>{avatar}</TooltipTrigger>
+          {/* A button keeps the collapsed trigger focusable + keyboard-open. */}
+          <TooltipTrigger asChild>
+            <button type="button" className="cursor-pointer">
+              {avatar}
+            </button>
+          </TooltipTrigger>
           <TooltipContent
             side="right"
             className="rounded-xl border-none bg-primary px-4 py-2 font-bold text-primary-foreground"
@@ -168,9 +193,7 @@ export function GameHud({ isCollapsed = false }: GameHudProps) {
       </div>
 
       <div className="flex items-center justify-between text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-        <span className="text-amber-400">
-          🪙 {Math.floor(profile.gold)}
-        </span>
+        <span className="text-amber-400">🪙 {Math.floor(profile.gold)}</span>
         <span className="normal-case">{statsLine}</span>
       </div>
 

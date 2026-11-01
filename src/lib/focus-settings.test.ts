@@ -26,6 +26,18 @@ describe("loadFocusSettings", () => {
     expect(s.cycles).toBe(6) // the rest of the blob still survives
   })
 
+  it.each(["constructor", "toString", "hasOwnProperty"])(
+    "falls back when stored presetId is the inherited name %s",
+    (presetId) => {
+      globalThis.localStorage.setItem(
+        FOCUS_SETTINGS_KEY,
+        JSON.stringify({ presetId })
+      )
+      const s = loadFocusSettings()
+      expect(s.presetId).toBe(DEFAULT_FOCUS_SETTINGS.presetId)
+    }
+  )
+
   it("keeps a valid persisted presetId (including custom)", () => {
     globalThis.localStorage.setItem(
       FOCUS_SETTINGS_KEY,

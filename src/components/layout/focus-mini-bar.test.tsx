@@ -106,8 +106,10 @@ describe("FocusMiniBar", () => {
 
   it("shows paused styling while paused", () => {
     mockRuntime.view = view({ status: "paused" })
-    renderBar()
-    expect(screen.getByRole("button", { name: /focus session/i }))
-      .toBeInTheDocument()
+    const { container } = renderBar()
+    // The amber progress fill marks the paused state — assert the style,
+    // not just the chip's existence.
+    expect(container.querySelector(".bg-amber-400")).toBeInTheDocument()
+    expect(container.querySelector(".bg-primary")).not.toBeInTheDocument()
   })
 })

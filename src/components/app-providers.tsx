@@ -32,6 +32,10 @@ export function AppProviders({
         dehydrateOptions: {
           shouldDehydrateQuery: (query) => {
             const queryKey = query.queryKey as string[]
+            // game-profile is deliberately NOT dehydrated: it's user-keyed,
+            // so a persisted blob could flash the previous account's totals
+            // on a shared browser before the auth context resolves — and a
+            // fresh GET lands fast anyway.
             return (
               !queryKey.includes("audit-trail") &&
               !queryKey.includes("stats") &&

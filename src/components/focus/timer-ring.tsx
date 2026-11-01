@@ -55,7 +55,10 @@ export function TimerRing({
         strokeDasharray={CIRCUMFERENCE}
         strokeDashoffset={CIRCUMFERENCE * (1 - clamped)}
         transform="rotate(-90 50 50)"
-        className={cn("transition-[stroke-dashoffset] duration-500", TONE_STROKE[tone])}
+        className={cn(
+          "transition-[stroke-dashoffset] duration-500",
+          TONE_STROKE[tone]
+        )}
       />
       <text
         x="50"

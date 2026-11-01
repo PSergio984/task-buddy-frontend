@@ -17,10 +17,12 @@ export function loadFocusSettings(): FocusSettings {
     const raw = globalThis.localStorage.getItem(FOCUS_SETTINGS_KEY)
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<FocusSettings>
+      // `in` also matches inherited names ("constructor", "toString") — a
+      // hit there yields a bogus non-preset object that crashes describePlan.
       const presetValid =
         parsed.presetId === "custom" ||
         (typeof parsed.presetId === "string" &&
-          parsed.presetId in FOCUS_PRESETS)
+          Object.prototype.hasOwnProperty.call(FOCUS_PRESETS, parsed.presetId))
       return {
         ...DEFAULT_FOCUS_SETTINGS,
         ...parsed,

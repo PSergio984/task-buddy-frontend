@@ -18,8 +18,22 @@ export function useGameProfile() {
  * actions and /game/events responses already carry the profile — writing it
  * into the cache keeps the HUD current without an extra round trip. Scoped to
  * the owner's key so a cached profile can't bleed across accounts.
+ *
+ * An in-flight GET could resolve AFTER this write and overwrite the newer
+ * authoritative totals with its older snapshot — cancel it first so the
+ * write always wins the ordering.
  */
-export function setGameProfileCache(profile: GameProfile, userId: string) {
+export async function setGameProfileCache(
+  profile: GameProfile,
+  userId: string
+): Promise<void> {
+  try {
+    await queryClient.cancelQueries({
+      queryKey: ["game-profile", { userId }],
+    })
+  } catch {
+    // Cancellation is best-effort — the write below still lands.
+  }
   queryClient.setQueriesData<GameProfile>(
     { queryKey: ["game-profile", { userId }] },
     profile

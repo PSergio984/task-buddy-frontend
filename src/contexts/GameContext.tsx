@@ -53,11 +53,17 @@ export function GameProvider({
       pendingFlushRef.current = true
       return
     }
-    if ((await pendingGameEventCount(userId)) === 0) return
+    // Synchronous guard — set before the FIRST await so two same-tick
+    // triggers can never both enter a flush.
     flushingRef.current = true
     try {
+      // Every flush path (mount, online, focus, visibility, enqueue) waits
+      // out an armed focus probe — a pending supersede must drop the local
+      // run's web: claims before they can POST.
+      await probeGate(userId)
+      if ((await pendingGameEventCount(userId)) === 0) return
       const res = await flushGameEventQueue(userId, gameApi.postEvents)
-      if (res?.profile) setGameProfileCache(res.profile, userId)
+      if (res?.profile) void setGameProfileCache(res.profile, userId)
     } catch (error) {
       // The queue is authoritative — a failed flush just retries later.
       console.error("Game event flush failed; queue retained.", error)
@@ -89,9 +95,8 @@ export function GameProvider({
     // Deferred so the count refresh isn't a synchronous setState in an effect.
     void Promise.resolve().then(async () => {
       void refreshCount()
-      // A superseded local run's web: events must be dropped by the focus
-      // probe before this first flush can post them.
-      if (userId !== null) await probeGate(userId)
+      // The probe gate lives inside flushEvents — every trigger (this mount
+      // flush included) arrives ordered behind any in-flight supersede.
       if (navigator.onLine) void flushRef.current()
     })
     const handleOnline = () => void flushRef.current()

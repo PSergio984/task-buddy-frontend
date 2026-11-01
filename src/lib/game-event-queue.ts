@@ -17,6 +17,21 @@ import type { UserId } from "@/lib/sync-queue"
 /** GameEventBatch maxItems — a larger POST is rejected wholesale (422). */
 const FLUSH_CHUNK = 500
 
+/** Statuses that mean "this batch can never succeed" — dead-letter it. 401
+ * and 429 are deliberately absent: a refresh may mint a new token and a
+ * rate limit clears, so those retain + retry like 5xx/network. */
+const DEAD_LETTER_STATUSES = new Set([400, 403, 404, 409, 422])
+
+/**
+ * Stored shape: the event plus the owning user's id. The stamp makes the
+ * auth binding explicit — a mis-keyed enqueue can then be caught (and
+ * re-filed) at flush instead of scoring under the wrong account. The marker
+ * is client-side only; it is stripped before POST.
+ */
+export interface QueuedGameEvent extends GameEventIn {
+  user_id?: UserId
+}
+
 function queueKey(userId: UserId): string {
   return `game-event-queue:${userId}`
 }
@@ -33,12 +48,12 @@ function serialized<T>(op: () => Promise<T>): Promise<T> {
   return run
 }
 
-async function readQueue(userId: UserId): Promise<GameEventIn[]> {
-  const stored = await get<GameEventIn[]>(queueKey(userId))
+async function readQueue(userId: UserId): Promise<QueuedGameEvent[]> {
+  const stored = await get<QueuedGameEvent[]>(queueKey(userId))
   return Array.isArray(stored) ? stored : []
 }
 
-export function listGameEvents(userId: UserId): Promise<GameEventIn[]> {
+export function listGameEvents(userId: UserId): Promise<QueuedGameEvent[]> {
   return serialized(() => readQueue(userId))
 }
 
@@ -49,7 +64,7 @@ export function enqueueGameEvent(
   return serialized(async () => {
     const current = await readQueue(userId)
     if (current.some((e) => e.client_event_id === event.client_event_id)) return
-    current.push(event)
+    current.push({ ...event, user_id: userId })
     await set(queueKey(userId), current)
   })
 }
@@ -100,22 +115,49 @@ export function flushGameEventQueue(
   return serialized(async () => {
     const pending = await readQueue(userId)
     if (pending.length === 0) return null
+    // Events stamped for another user must not POST under this auth —
+    // re-file them under their owner's queue key (that user may return)
+    // and drop them from this queue. Unstamped (pre-migration) events are
+    // trusted to the key they live under.
+    const foreign = pending.filter(
+      (e) => e.user_id !== undefined && e.user_id !== userId
+    )
+    if (foreign.length > 0) {
+      for (const e of foreign) {
+        const ownerQueue = await readQueue(e.user_id as UserId)
+        if (!ownerQueue.some((x) => x.client_event_id === e.client_event_id)) {
+          ownerQueue.push(e)
+          await set(queueKey(e.user_id as UserId), ownerQueue)
+        }
+      }
+      const drop = new Set(foreign.map((e) => e.client_event_id))
+      const current = await readQueue(userId)
+      await set(
+        queueKey(userId),
+        current.filter((e) => !drop.has(e.client_event_id))
+      )
+    }
+    const sendable = pending.filter(
+      (e) => e.user_id === undefined || e.user_id === userId
+    )
+    if (sendable.length === 0) return null
     let last: GameSyncResponse | null = null
     const mergedResults: GameSyncResponse["results"] = []
-    for (let i = 0; i < pending.length; i += FLUSH_CHUNK) {
-      const chunk = pending.slice(i, i + FLUSH_CHUNK)
+    for (let i = 0; i < sendable.length; i += FLUSH_CHUNK) {
+      const chunk = sendable.slice(i, i + FLUSH_CHUNK)
       let res: GameSyncResponse
       try {
-        res = await sendBatch(chunk)
+        // Strip the client-side user marker before POST (backend ignores
+        // extras, but the wire stays contract-clean).
+        res = await sendBatch(chunk.map(({ user_id: _u, ...event }) => event))
       } catch (error) {
-        // A 4xx rejects the batch permanently — retrying it wedges every
-        // event behind it. Dead-letter the chunk (eids logged for
-        // forensics) and continue; 5xx/network still retains + retries.
+        // Definitive rejections dead-letter — anything else (401/429/5xx/
+        // network) retains the chunk and retries, or the whole queue
+        // wedges behind a batch that may succeed later.
         if (
           axios.isAxiosError(error) &&
           error.response !== undefined &&
-          error.response.status >= 400 &&
-          error.response.status < 500
+          DEAD_LETTER_STATUSES.has(error.response.status)
         ) {
           console.error(
             `Game-event chunk rejected (${error.response.status}) — dead-lettering:`,

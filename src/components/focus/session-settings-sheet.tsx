@@ -61,9 +61,13 @@ function NumberField({
         value={value}
         onChange={(e) => {
           // A cleared field reads NaN — keep the last valid value instead
-          // of persisting NaN (which clamps to the min on next start).
+          // of persisting NaN (which clamps to the min on next start). And
+          // min/max on the input don't stop typed/pasted values — clamp and
+          // round so an out-of-range number can't reach the request.
           const next = e.target.valueAsNumber
-          if (Number.isFinite(next)) onChange(next)
+          if (Number.isFinite(next)) {
+            onChange(Math.min(max, Math.max(min, Math.round(next))))
+          }
         }}
         className="h-10 rounded-xl bg-white/5"
       />

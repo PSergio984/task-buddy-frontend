@@ -147,7 +147,12 @@ export function describePlan(s: FocusSettings): string {
   if (s.mode === "stopwatch") return "Stopwatch · open-ended · milestone XP"
   const r =
     s.presetId === "custom"
-      ? { label: "Custom", focus: s.customFocus, short: s.customBreak, long: s.customLongBreak }
+      ? {
+          label: "Custom",
+          focus: s.customFocus,
+          short: s.customBreak,
+          long: s.customLongBreak,
+        }
       : FOCUS_PRESETS[s.presetId]
   return `${r.label} · ${r.focus}/${r.short}/${r.long} min × ${clampInt(s.cycles, 1, 8)} cycles`
 }
@@ -181,7 +186,7 @@ export function focusPhaseCount(session: FocusSession): number {
 export const ms = (iso: string | null): number | null =>
   iso === null
     ? null
-    : Date.parse(/[zZ]|[+-]\d{2}:?\d{2}$/.test(iso) ? iso : `${iso}Z`)
+    : Date.parse(/([zZ]|[+-]\d{2}:?\d{2})$/.test(iso) ? iso : `${iso}Z`)
 
 const iso = (epoch: number): string => new Date(epoch).toISOString()
 
@@ -247,7 +252,10 @@ function pauseOverflowMs(
   const start = ms(phase.pause_started_at)
   if (start === null) return null
   const remaining = session.pause_budget_seconds - (phase.paused_seconds || 0)
-  return start + remaining * 1000
+  // The engine abandons only when banked + extra > budget, and `extra` is a
+  // truncated whole-second count — the first over-budget instant is
+  // remaining + 1s past pause start, not the equality point.
+  return start + (remaining + 1) * 1000
 }
 
 /** Newest finished phase end (or session start) — the grace-window anchor. */
@@ -448,9 +456,10 @@ function completePhase(
     )
   }
   const next = nextPendingPhase(session)
-  const auto = next?.kind === "break"
-    ? session.preset?.auto_start_breaks !== false
-    : session.preset?.auto_start_focus === true
+  const auto =
+    next?.kind === "break"
+      ? session.preset?.auto_start_breaks !== false
+      : session.preset?.auto_start_focus === true
   if (next !== null && auto) {
     next.status = "active"
     next.started_at = iso(endMs)
@@ -462,7 +471,10 @@ function completePhase(
  * place and returns the claimable scoring events each transition produced.
  * Idempotent — safe to call every render tick.
  */
-export function evaluateLocal(local: LocalSession, nowMs: number): GameEventIn[] {
+export function evaluateLocal(
+  local: LocalSession,
+  nowMs: number
+): GameEventIn[] {
   const session = local.session
   if (session.status !== "active") return []
   const events: GameEventIn[] = []
@@ -483,10 +495,7 @@ export function evaluateLocal(local: LocalSession, nowMs: number): GameEventIn[]
   }
 }
 
-export function pauseLocal(
-  local: LocalSession,
-  nowMs: number
-): GameEventIn[] {
+export function pauseLocal(local: LocalSession, nowMs: number): GameEventIn[] {
   const session = local.session
   if (session.status !== "active") return []
   const phase = livePhase(session)
@@ -511,10 +520,7 @@ export function pauseLocal(
   return [abandonEvent(local, "pause_overflow", phase.seq, nowMs)]
 }
 
-export function resumeLocal(
-  local: LocalSession,
-  nowMs: number
-): GameEventIn[] {
+export function resumeLocal(local: LocalSession, nowMs: number): GameEventIn[] {
   const session = local.session
   if (session.status !== "active") return []
   const phase = livePhase(session)
@@ -601,9 +607,7 @@ export function stopLocal(local: LocalSession, nowMs: number): GameEventIn[] {
   if (live?.kind !== "stopwatch" && completedFocusCount(session) === 0) {
     session.status = "abandoned"
     session.ended_at = iso(nowMs)
-    events.push(
-      abandonEvent(local, "manual_stop", live?.seq ?? null, nowMs)
-    )
+    events.push(abandonEvent(local, "manual_stop", live?.seq ?? null, nowMs))
     return events
   }
   session.status = "ended"
@@ -756,5 +760,3 @@ export function formatClock(totalSeconds: number): string {
   }
   return `${m}:${sec.toString().padStart(2, "0")}`
 }
-
-
