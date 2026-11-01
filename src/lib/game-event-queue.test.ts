@@ -10,12 +10,14 @@ import {
 } from "./game-event-queue"
 
 const storage = new Map<string, string>()
+let setShouldFail = false
 vi.mock("idb-keyval", () => ({
   get: async (key: string) => {
     const raw = storage.get(key)
     return raw ? JSON.parse(raw) : undefined
   },
   set: async (key: string, value: unknown) => {
+    if (setShouldFail) throw new Error("idb write failed")
     storage.set(key, JSON.stringify(value))
   },
   del: async (key: string) => {
@@ -44,7 +46,10 @@ const syncResponse = (ids: string[]): GameSyncResponse =>
   }) as unknown as GameSyncResponse
 
 describe("game-event-queue", () => {
-  beforeEach(() => storage.clear())
+  beforeEach(() => {
+    storage.clear()
+    setShouldFail = false
+  })
 
   it("enqueues in order and dedupes by client_event_id", async () => {
     await enqueueGameEvent(USER, ev("a"))
@@ -102,6 +107,19 @@ describe("game-event-queue", () => {
     await Promise.all(ids.map((id) => enqueueGameEvent(USER, ev(id))))
     const all = await listGameEvents(USER)
     expect(all.map((e) => e.client_event_id).sort()).toEqual(ids.sort())
+  })
+
+  it("a rejected op does not poison the serial tail", async () => {
+    setShouldFail = true
+    await expect(enqueueGameEvent(USER, ev("bad"))).rejects.toThrow(
+      "idb write failed"
+    )
+    setShouldFail = false
+    // tail.catch keeps the chain alive — the next write still lands.
+    await enqueueGameEvent(USER, ev("good"))
+    expect((await listGameEvents(USER)).map((e) => e.client_event_id)).toEqual([
+      "good",
+    ])
   })
 
   it("removeGameEventsByPrefix drops one local session's events only", async () => {

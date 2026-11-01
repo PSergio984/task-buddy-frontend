@@ -91,6 +91,7 @@ export function flushGameEventQueue(
   userId: UserId,
   sendBatch: (events: GameEventIn[]) => Promise<GameSyncResponse>
 ): Promise<GameSyncResponse | null> {
+  // Holding the serial lock across chunk I/O is intentional: ordering-safe.
   return serialized(async () => {
     const pending = await readQueue(userId)
     if (pending.length === 0) return null

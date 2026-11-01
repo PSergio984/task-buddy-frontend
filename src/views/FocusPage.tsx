@@ -264,6 +264,30 @@ export function FocusPage() {
     }
   }, [session, settings.alerts, settings.alertVolume])
 
+  // Mirror mode: session.phases is a frozen server snapshot, so the effect
+  // above can't see mirrored boundaries. Track the derived view instead — a
+  // live-seq change means the previous leg just ended; fire its kind's tone.
+  const mirrorLiveRef = useRef<{ seq: number; kind: string } | null>(null)
+  useEffect(() => {
+    if (!mirrored || view === null) {
+      mirrorLiveRef.current = null
+      return
+    }
+    const live = view.live
+    const prev = mirrorLiveRef.current
+    mirrorLiveRef.current = live ? { seq: live.seq, kind: live.kind } : null
+    if (
+      prev !== null &&
+      (live === null || live.seq !== prev.seq) &&
+      settings.alerts
+    ) {
+      alertPhaseBoundary(
+        prev.kind === "break" ? "break" : "focus",
+        settings.alertVolume / 100
+      )
+    }
+  }, [mirrored, view, settings.alerts, settings.alertVolume])
+
   const exitImmersive = () => {
     setImmersive(false)
     void document.exitFullscreen?.().catch(() => {})

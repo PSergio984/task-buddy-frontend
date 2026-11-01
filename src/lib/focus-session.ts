@@ -501,6 +501,7 @@ export function pauseLocal(
   }
   phase.status = "abandoned"
   phase.ended_at = iso(nowMs)
+  phase.pause_started_at = null // parity: session_engine.py clears it on abandon
   session.status = "abandoned"
   session.ended_at = iso(nowMs)
   return [abandonEvent(local, "pause_overflow", phase.seq, nowMs)]

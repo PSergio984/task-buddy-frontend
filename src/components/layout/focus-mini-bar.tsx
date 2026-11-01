@@ -17,7 +17,8 @@ export function FocusMiniBar() {
 
   if (session === null || view === null) return null
   if (view.status === "ended" || view.status === "abandoned") return null
-  if (location.pathname === "/focus") return null
+  if (location.pathname === "/focus" || location.pathname.startsWith("/focus/"))
+    return null
 
   const offline = isLocal || mirrored
   const progressPct = Math.round(Math.min(1, Math.max(0, view.progress)) * 100)

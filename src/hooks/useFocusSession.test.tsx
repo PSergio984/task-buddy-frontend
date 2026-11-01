@@ -1,7 +1,7 @@
 import { renderHook, act } from "@testing-library/react"
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import axios from "axios"
-import type { GameEventIn } from "@/lib/api"
+import type { GameEventIn, SessionActionResponse } from "@/lib/api"
 import {
   createLocalSession,
   pauseLocal,
@@ -26,8 +26,9 @@ vi.mock("idb-keyval", () => ({
   },
 }))
 
+let currentUser: { id: string } | null = { id: "u1" }
 vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({ user: { id: "u1" }, loading: false }),
+  useAuth: () => ({ user: currentUser, loading: false }),
 }))
 
 const enqueueMock = vi.fn((_event: GameEventIn) => Promise.resolve())
@@ -96,10 +97,58 @@ async function settle() {
   }
 }
 
+const serverSession = (
+  id: number,
+  startedAt: number,
+  focusSeconds = 60
+): SessionActionResponse => ({
+  session: {
+    id,
+    mode: "timer",
+    status: "active",
+    task_id: null,
+    activity_label: null,
+    preset: null,
+    pause_budget_count: 3,
+    pause_budget_seconds: 300,
+    started_at: iso(startedAt),
+    ended_at: null,
+    phases: [
+      {
+        seq: 0,
+        kind: "focus",
+        status: "active",
+        planned_seconds: focusSeconds,
+        actual_seconds: null,
+        pause_count: 0,
+        paused_seconds: 0,
+        pause_started_at: null,
+        started_at: iso(startedAt),
+        ended_at: null,
+      },
+      {
+        seq: 1,
+        kind: "break",
+        status: "pending",
+        planned_seconds: 60,
+        actual_seconds: null,
+        pause_count: 0,
+        paused_seconds: 0,
+        pause_started_at: null,
+        started_at: null,
+        ended_at: null,
+      },
+    ],
+  },
+  profile: null,
+  server_time: iso(T0),
+})
+
 describe("useFocusSessionRuntime", () => {
   beforeEach(() => {
     storage.clear()
     vi.clearAllMocks()
+    currentUser = { id: "u1" }
     vi.useFakeTimers()
     vi.setSystemTime(T0)
   })
@@ -198,5 +247,105 @@ describe("useFocusSessionRuntime", () => {
     const queued = await listGameEvents("u1")
     expect(queued.map((e) => e.client_event_id)).toEqual(["unrelated-1"])
     expect(await loadLocalSession("u1")).toBeNull()
+  })
+
+  it("user switch drops the previous user's localRef — no cross-user leak", async () => {
+    // User A offline: probe restores A's persisted local run.
+    const local = createLocalSession(timerInput, T0)
+    await saveLocalSession("u1", local)
+    vi.mocked(focusSessionsApi.getActive).mockRejectedValue(networkDown())
+    const { result, rerender } = renderHook(() => useFocusSessionRuntime())
+    await settle()
+    expect(result.current.session?.id).toBe(0)
+
+    // Jump past every boundary, then switch to B (no server, no local). If
+    // A's localRef leaked, the eval effect would emit A's web: events into
+    // B's queue and persist A's snapshot under B's key.
+    vi.setSystemTime(T0 + 300_000)
+    currentUser = { id: "u2" }
+    vi.mocked(focusSessionsApi.getActive).mockResolvedValue(null)
+    rerender()
+    await settle()
+
+    expect(result.current.session).toBeNull()
+    expect(enqueueMock).not.toHaveBeenCalled()
+    expect(storage.has("focus-local-session:u2")).toBe(false)
+    expect(await listGameEvents("u2")).toEqual([])
+  })
+
+  it("deadline refreshes are throttled to one per 5s", async () => {
+    const getActive = vi.mocked(focusSessionsApi.getActive)
+    // Live phase is an hour past deadline — an offline/5xx loop would
+    // re-poll every 500ms tick without the floor. server_time tracks the
+    // (fake) clock so applyResponse doesn't drag nowMs backward.
+    getActive.mockImplementation(async () => ({
+      ...serverSession(7, T0 - 3_600_000),
+      server_time: iso(Date.now()),
+    }))
+    renderHook(() => useFocusSessionRuntime())
+    await settle()
+    expect(getActive).toHaveBeenCalledTimes(1) // mount probe
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500)
+    })
+    expect(getActive).toHaveBeenCalledTimes(2) // first past-deadline tick
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(4_500)
+    })
+    expect(getActive).toHaveBeenCalledTimes(2) // still inside the 5s floor
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000)
+    })
+    expect(getActive).toHaveBeenCalledTimes(3) // floor elapsed → next poll
+  })
+
+  it("adopt probe ignores a server session older than the 120s window", async () => {
+    const getActive = vi.mocked(focusSessionsApi.getActive)
+    getActive.mockResolvedValue(null) // mount probe: nothing running
+    const { result } = renderHook(() => useFocusSessionRuntime())
+    await settle()
+    expect(result.current.session).toBeNull()
+
+    // start() loses its response, but the server session it finds was
+    // started 200s ago — outside the adopt window, so fall through to local.
+    getActive.mockResolvedValue(serverSession(9, T0 - 200_000))
+    vi.mocked(focusSessionsApi.start).mockRejectedValue(networkDown())
+    await act(async () => {
+      await result.current.start(timerInput)
+    })
+    expect(result.current.session?.id).toBe(0)
+    expect(result.current.isLocal).toBe(true)
+  })
+
+  it("offline mirror evaluates for display only — no persist, no events", async () => {
+    // server_time tracks the (fake) clock — a static one would recompute a
+    // huge negative offset on each refresh and snap nowMs backward.
+    vi.mocked(focusSessionsApi.getActive).mockImplementation(async () => ({
+      ...serverSession(11, T0),
+      server_time: iso(Date.now()),
+    }))
+    const { result } = renderHook(() => useFocusSessionRuntime())
+    await settle()
+    expect(result.current.session?.id).toBe(11)
+    expect(result.current.mirrored).toBe(false)
+
+    act(() => {
+      window.dispatchEvent(new Event("offline"))
+    })
+    expect(result.current.mirrored).toBe(true)
+
+    // Past the focus leg's wall-clock end — the mirror shows the transition…
+    vi.setSystemTime(T0 + 90_000)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000)
+    })
+    expect(result.current.view?.live?.kind).toBe("break")
+    // …but nothing is persisted or queued for the server-owned session.
+    expect(enqueueMock).not.toHaveBeenCalled()
+    expect(storage.has("focus-local-session:u1")).toBe(false)
+    expect(await listGameEvents("u1")).toEqual([])
   })
 })

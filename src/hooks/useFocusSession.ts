@@ -84,7 +84,9 @@ export function useFocusSessionRuntime(): FocusSessionRuntime {
 
   const localRef = useRef<LocalSession | null>(null)
   const sessionRef = useRef<FocusSession | null>(null)
-  const offsetRef = useRef(0) // server_time - client clock
+  // server_time - client clock; state (not a ref) so the view memo can
+  // un-skew local sessions with pure inputs: nowMs - serverOffset.
+  const [serverOffset, setServerOffset] = useState(0)
   const refreshingRef = useRef(false)
   const lastDeadlinePollRef = useRef(0)
 
@@ -99,8 +101,13 @@ export function useFocusSessionRuntime(): FocusSessionRuntime {
         applySession(null)
         return
       }
-      offsetRef.current = Date.parse(res.server_time) - Date.now()
-      setNowMs(Date.now() + offsetRef.current)
+      const serverNow = ms(res.server_time)
+      const nextOffset =
+        serverNow === null || !Number.isFinite(serverNow)
+          ? 0
+          : serverNow - Date.now()
+      setServerOffset(nextOffset)
+      setNowMs(Date.now() + nextOffset)
       if (res.profile && userId !== null) {
         setGameProfileCache(res.profile, userId)
       }
@@ -122,11 +129,17 @@ export function useFocusSessionRuntime(): FocusSessionRuntime {
       // Enqueue before persisting: a tab death between the two must strand
       // the snapshot, never the scoring events (eids re-dedupe on replay).
       void (async () => {
-        for (const event of events) await enqueueEvent(event)
-        if (local.session.status !== "active") {
-          if (userId !== null) await clearLocalSession(userId)
-        } else if (userId !== null) {
-          await saveLocalSession(userId, local)
+        try {
+          for (const event of events) await enqueueEvent(event)
+          if (local.session.status !== "active") {
+            if (userId !== null) await clearLocalSession(userId)
+          } else if (userId !== null) {
+            await saveLocalSession(userId, local)
+          }
+        } catch (error) {
+          // A rejected write leaves the event queued-or-not; the next mount
+          // re-evaluates and dedupes — failure just must not be silent.
+          console.error("Failed to persist local session progress:", error)
         }
       })()
     },
@@ -164,10 +177,18 @@ export function useFocusSessionRuntime(): FocusSessionRuntime {
   // it must not resurrect a stale local session.
   useEffect(() => {
     if (userId === null) {
-      void Promise.resolve().then(() => setIsLoading(false))
+      localRef.current = null
+      sessionRef.current = null
+      void Promise.resolve().then(() => {
+        setSession(null)
+        setIsLoading(false)
+      })
       return
     }
     let cancelled = false
+    // Any stale local session belongs to the previous probe/user — only the
+    // restore branch below may repopulate localRef for THIS user.
+    localRef.current = null
     void (async () => {
       try {
         const res = await focusSessionsApi.getActive()
@@ -181,7 +202,6 @@ export function useFocusSessionRuntime(): FocusSessionRuntime {
             await removeGameEventsByPrefix(userId, `web:${local.client_id}:`)
             await clearLocalSession(userId)
           }
-          localRef.current = null
           applyResponse(res)
           return
         }
@@ -212,13 +232,16 @@ export function useFocusSessionRuntime(): FocusSessionRuntime {
     }
   }, [userId, applyResponse, applySession, emitLocal])
 
+  const hasSession = session !== null
   // Ticker: recompute the clock; local sessions re-evaluate every tick.
+  // Runs only while a session exists — the provider outlives the page.
   useEffect(() => {
+    if (!hasSession) return
     const timer = setInterval(() => {
-      setNowMs(Date.now() + offsetRef.current)
+      setNowMs(Date.now() + serverOffset)
     }, TICK_MS)
     return () => clearInterval(timer)
-  }, [])
+  }, [hasSession, serverOffset])
 
   useEffect(() => {
     if (localRef.current !== null) {
@@ -436,7 +459,15 @@ export function useFocusSessionRuntime(): FocusSessionRuntime {
 
   const view = useMemo(() => {
     if (session === null) return null
-    if (!mirrored) return deriveSessionView(session, nowMs)
+    // Local sessions are client-clock authored — the server offset must not
+    // skew their ring (nowMs - offset ≡ the client clock at last tick).
+    // Mirrored sessions evaluate the server clone on skewed nowMs.
+    if (!mirrored) {
+      return deriveSessionView(
+        session,
+        session.id === 0 ? nowMs - serverOffset : nowMs
+      )
+    }
     // Offline mirror: replay wall-clock transitions on a throwaway clone for
     // display only. No LocalSession is persisted and the returned events are
     // discarded — the server stays the only scoring authority.
@@ -446,7 +477,7 @@ export function useFocusSessionRuntime(): FocusSessionRuntime {
     }
     evaluateLocal(clone, nowMs)
     return deriveSessionView(clone.session, nowMs)
-  }, [session, nowMs, mirrored])
+  }, [session, nowMs, mirrored, serverOffset])
 
   return {
     session,
