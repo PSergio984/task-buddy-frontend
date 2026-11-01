@@ -46,7 +46,10 @@ const cardClass = "rounded-3xl border border-white/10 bg-white/5 p-5"
 
 function entryTimeLabel(entry: DiaryEntry): string {
   const created = ms(entry.created_at)
-  return created === null ? "" : utcTimeLabel(created)
+  // ms() yields NaN on a malformed ISO — never print "NaN:NaN".
+  return created !== null && Number.isFinite(created)
+    ? `${utcTimeLabel(created)} UTC`
+    : "time unknown"
 }
 
 function StandupForm({
@@ -332,7 +335,7 @@ export function DiaryDayPanel({
                       {entry.freeform}
                     </p>
                     <p className="mt-1.5 text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-                      {entryTimeLabel(entry)} UTC
+                      {entryTimeLabel(entry)}
                     </p>
                   </div>
                   {canWrite && editingId === null && (

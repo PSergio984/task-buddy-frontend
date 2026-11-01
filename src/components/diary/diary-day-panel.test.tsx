@@ -145,6 +145,16 @@ describe("DiaryDayPanel freeform entries", () => {
   })
 })
 
+describe("DiaryDayPanel malformed timestamps", () => {
+  it("renders 'time unknown' rather than NaN:NaN for a bad created_at", () => {
+    render(
+      <DiaryDayPanel entries={[entry({ id: 3, created_at: "not-a-date" })]} />
+    )
+    expect(screen.getByText("time unknown")).toBeInTheDocument()
+    expect(screen.queryByText(/NaN/)).not.toBeInTheDocument()
+  })
+})
+
 describe("DiaryDayPanel gated states", () => {
   it("hides all forms and shows the reason when writes are disabled (retention horizon)", () => {
     render(

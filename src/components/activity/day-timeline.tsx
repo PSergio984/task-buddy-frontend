@@ -121,7 +121,15 @@ export function DayTimeline({ timeline }: DayTimelineProps) {
                 aria-label={`${marker.label} at ${marker.timeLabel} UTC`}
                 title={`${marker.timeLabel} UTC · ${marker.label}`}
                 className={cn(
-                  "absolute h-2.5 w-2.5 -translate-x-1/2 rounded-full",
+                  "absolute h-2.5 w-2.5 rounded-full",
+                  // Edge-aware translate (same trick as the tick labels): a
+                  // centered dot at frac 0 or 1 would lose half its width
+                  // to the container's overflow clip.
+                  marker.frac === 0
+                    ? "translate-x-0"
+                    : marker.frac === 1
+                      ? "-translate-x-full"
+                      : "-translate-x-1/2",
                   marker.scoreLabel !== null && marker.scoreLabel.includes("−")
                     ? "bg-destructive"
                     : marker.scoreLabel !== null

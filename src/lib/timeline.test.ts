@@ -186,6 +186,22 @@ describe("buildDayTimeline", () => {
     expect(block.durationLabel).toBe("2h 30m")
   })
 
+  it("holds the strict invariant even for a start in the day's last sliver", () => {
+    const res = baseResponse()
+    res.sessions.push(
+      session({
+        started_at: `${DAY}T23:59:30Z`,
+        ended_at: "2025-11-02T00:10:00Z",
+        duration_seconds: 2400,
+      })
+    )
+    const block = buildDayTimeline(res).blocks[0]
+    // startFrac ≈ 0.9997 > 1 − MIN_WIDTH_FRAC: the floor must yield, not bleed.
+    expect(block.startFrac).toBeGreaterThan(0.996)
+    expect(block.startFrac + block.widthFrac).toBeLessThanOrEqual(1)
+    expect(block.widthFrac).toBeCloseTo(1 - block.startFrac, 5)
+  })
+
   it("clamps a still-running session when server_time is past midnight", () => {
     const res = baseResponse()
     res.server_time = "2025-11-02T02:00:00Z"

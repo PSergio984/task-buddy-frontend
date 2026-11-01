@@ -64,6 +64,20 @@ const MIN_WIDTH_FRAC = 0.004
 
 const clampFrac = (v: number) => Math.min(1, Math.max(0, v))
 
+/**
+ * Width fraction for a span starting at startFrac — the minimum floor is
+ * capped by the room left so startFrac + width ≤ 1 always holds, even when
+ * the span starts in the axis' last sliver.
+ */
+const spanFrac = (
+  startFrac: number,
+  rawFrac: number,
+  minFrac: number
+): number => {
+  const maxFrac = Math.max(0, 1 - startFrac)
+  return Math.max(Math.min(minFrac, maxFrac), Math.min(maxFrac, rawFrac))
+}
+
 /** ms() but NaN-safe — a malformed ISO falls back like a missing one. */
 const msOr = (iso: string | null, fallback: number): number => {
   const v = ms(iso)
@@ -162,10 +176,7 @@ export function buildDayTimeline(res: TimelineDayResponse): DayTimelineView {
           status: p.status,
           startFrac,
           // An overrunning phase stops at the block's edge.
-          widthFrac: Math.max(
-            0.02,
-            Math.min(1 - startFrac, (pEnd - pStart) / blockSpan)
-          ),
+          widthFrac: spanFrac(startFrac, (pEnd - pStart) / blockSpan, 0.02),
         }
       })
     const startFrac = frac(startMs)
@@ -179,10 +190,7 @@ export function buildDayTimeline(res: TimelineDayResponse): DayTimelineView {
       endMs,
       startFrac,
       // Clamped at the axis edge — a session may end past UTC midnight.
-      widthFrac: Math.max(
-        MIN_WIDTH_FRAC,
-        Math.min(1 - startFrac, (endMs - startMs) / span)
-      ),
+      widthFrac: spanFrac(startFrac, (endMs - startMs) / span, MIN_WIDTH_FRAC),
       lane,
       startLabel: utcTimeLabel(startMs),
       endLabel: endLabel(endMs, dayStartMs, dayEndMs),
