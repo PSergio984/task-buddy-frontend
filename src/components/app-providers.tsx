@@ -7,6 +7,7 @@ import { get, set, del } from "idb-keyval"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/contexts/AuthContext"
 import { SyncProvider } from "@/contexts/SyncContext"
+import { GameProvider } from "@/contexts/GameContext"
 import { queryClient } from "@/lib/query-client"
 
 const persister = createAsyncStoragePersister({
@@ -31,7 +32,9 @@ export function AppProviders({
           shouldDehydrateQuery: (query) => {
             const queryKey = query.queryKey as string[]
             return (
-              !queryKey.includes("audit-trail") && !queryKey.includes("stats")
+              !queryKey.includes("audit-trail") &&
+              !queryKey.includes("stats") &&
+              !queryKey.includes("game-profile")
             )
           },
         },
@@ -39,7 +42,9 @@ export function AppProviders({
     >
       <AuthProvider>
         <SyncProvider>
-          <ThemeProvider>{children}</ThemeProvider>
+          <GameProvider>
+            <ThemeProvider>{children}</ThemeProvider>
+          </GameProvider>
         </SyncProvider>
       </AuthProvider>
     </PersistQueryClientProvider>

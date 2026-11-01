@@ -41,6 +41,9 @@ const AuditLogsPage = lazy(() =>
 const TasksPage = lazy(() =>
   import("@/views/TasksPage").then((m) => ({ default: m.TasksPage }))
 )
+const FocusPage = lazy(() =>
+  import("@/views/FocusPage").then((m) => ({ default: m.FocusPage }))
+)
 const ResetPasswordPage = lazy(() =>
   import("@/views/ResetPasswordPage").then((m) => ({
     default: m.ResetPasswordPage,
@@ -135,6 +138,7 @@ export function App() {
               >
                 <Route path="/dashboard" element={<DashboardDemo />} />
                 <Route path="/tasks" element={<TasksPage />} />
+                <Route path="/focus" element={<FocusPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/audit-logs" element={<AuditLogsPage />} />
               </Route>
