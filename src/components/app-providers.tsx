@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/contexts/AuthContext"
 import { SyncProvider } from "@/contexts/SyncContext"
 import { GameProvider } from "@/contexts/GameContext"
+import { FocusSessionProvider } from "@/contexts/FocusSessionContext"
 import { queryClient } from "@/lib/query-client"
 
 const persister = createAsyncStoragePersister({
@@ -43,7 +44,9 @@ export function AppProviders({
       <AuthProvider>
         <SyncProvider>
           <GameProvider>
-            <ThemeProvider>{children}</ThemeProvider>
+            <FocusSessionProvider>
+              <ThemeProvider>{children}</ThemeProvider>
+            </FocusSessionProvider>
           </GameProvider>
         </SyncProvider>
       </AuthProvider>

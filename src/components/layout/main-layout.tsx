@@ -6,6 +6,7 @@ import { TaskDetailDrawer } from "@/components/task-detail-drawer"
 import { BreakdownSheet } from "@/components/breakdown-sheet"
 import { MobileNav } from "./mobile-nav"
 import { MobileDrawer } from "./mobile-drawer"
+import { FocusMiniBar } from "./focus-mini-bar"
 import type { Task } from "@/lib/api"
 import { useStats } from "@/hooks/useStats"
 import { useFilters } from "@/contexts/FilterContext"
@@ -93,6 +94,9 @@ export function MainLayout() {
           onOpenWorkspace={() => setIsMobileWorkspaceOpen(true)}
           isWorkspaceOpen={isMobileWorkspaceOpen}
         />
+
+        {/* Persistent focus-session chip (all pages but /focus) */}
+        <FocusMiniBar />
       </div>
 
       {/* Floating Action Button (FAB) for mobile viewports */}

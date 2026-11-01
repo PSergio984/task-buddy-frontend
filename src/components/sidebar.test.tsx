@@ -72,6 +72,14 @@ vi.mock("@/contexts/AuthContext", () => ({
   ),
 }))
 
+vi.mock("@/contexts/GameContext", () => ({
+  useGame: vi.fn(() => ({
+    pendingEventCount: 0,
+    enqueueEvent: vi.fn(),
+    flushEvents: vi.fn(),
+  })),
+}))
+
 vi.mock("@/hooks/useTasks", () => ({
   useTasks: vi.fn(() => ({ data: [], isLoading: false })),
   useUpdateTask: vi.fn(() => ({ mutateAsync: vi.fn() })),

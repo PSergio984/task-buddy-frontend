@@ -18,6 +18,7 @@ import {
   loadLocalSession,
   clearLocalSession,
   GRACE_SECONDS,
+  ms,
 } from "./focus-session"
 
 const T0 = Date.parse("2026-11-01T10:00:00Z")
@@ -84,6 +85,40 @@ describe("buildPhasePlan", () => {
     expect(plan).toHaveLength(16)
     expect(plan[0].minutes).toBe(600)
     expect(plan[1].minutes).toBe(1)
+  })
+
+  it("places a long break after every 4th focus phase", () => {
+    const plan = buildPhasePlan({
+      focusMinutes: 25,
+      breakMinutes: 5,
+      longBreakMinutes: 15,
+      cycles: 8,
+    })
+    const breaks = plan.filter((p) => p.kind === "break")
+    // Short breaks after legs 1-3 and 5-7; long after leg 4 and the last leg.
+    expect(breaks.map((b) => b.minutes)).toEqual([5, 5, 5, 15, 5, 5, 5, 15])
+  })
+})
+
+describe("ms timestamp parse", () => {
+  it("treats offset-less timestamps as UTC", () => {
+    // SQLite datetimes carry no offset — Date.parse alone would read them
+    // browser-local and skew the countdown by the UTC offset.
+    expect(ms("2026-11-01T10:00:00")).toBe(Date.UTC(2026, 10, 1, 10, 0, 0))
+    expect(ms("2026-11-01T10:00:00.000")).toBe(
+      Date.UTC(2026, 10, 1, 10, 0, 0)
+    )
+  })
+
+  it("honours explicit offsets and Z, and maps null to null", () => {
+    expect(ms("2026-11-01T10:00:00Z")).toBe(Date.UTC(2026, 10, 1, 10, 0, 0))
+    expect(ms("2026-11-01T10:00:00+05:00")).toBe(
+      Date.UTC(2026, 10, 1, 5, 0, 0)
+    )
+    expect(ms("2026-11-01T10:00:00-02:00")).toBe(
+      Date.UTC(2026, 10, 1, 12, 0, 0)
+    )
+    expect(ms(null)).toBeNull()
   })
 })
 
@@ -278,6 +313,36 @@ describe("local verbs", () => {
     expect(local.session.phases[0].status).toBe("completed")
     expect(local.session.phases[0].actual_seconds).toBe(30 * 60)
     expect(events).toHaveLength(0)
+  })
+
+  it("stopwatch stop banks the open pause (engine parity)", () => {
+    const local = createLocalSession(timerInput({ mode: "stopwatch" }), T0)
+    pauseLocal(local, at(60))
+    stopLocal(local, at(120))
+    const phase = local.session.phases[0]
+    expect(phase.paused_seconds).toBe(60)
+    expect(phase.pause_started_at).toBeNull()
+    expect(phase.actual_seconds).toBe(60)
+  })
+})
+
+describe("terminal-state verb guards", () => {
+  it("verbs no-op on an ended session (no double-stop damage)", () => {
+    const local = createLocalSession(timerInput(), T0)
+    stopLocal(local, at(30)) // manual_stop abandon — zero completed focus
+    expect(local.session.status).toBe("abandoned")
+    // A second stop/pause/resume/advance must not re-emit or mutate.
+    expect(stopLocal(local, at(60))).toEqual([])
+    expect(pauseLocal(local, at(60))).toEqual([])
+    expect(resumeLocal(local, at(60))).toEqual([])
+    expect(advanceLocal(local, at(60))).toEqual([])
+    expect(local.session.status).toBe("abandoned")
+  })
+
+  it("evaluateLocal no-ops on a terminal session", () => {
+    const local = createLocalSession(timerInput(), T0)
+    stopLocal(local, at(30))
+    expect(evaluateLocal(local, at(9999))).toEqual([])
   })
 })
 

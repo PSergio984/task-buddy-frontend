@@ -6,6 +6,8 @@
  * shape), and a fully offline session is driven by `evaluateLocal` + the local
  * verb functions, which mirror the backend's app/game/session_engine.py rules —
  * same statuses, same pause budget, same 5-minute absence grace.
+ * mirror-drift: GRACE_SECONDS, the pause budget and transition rules below
+ * duplicate session_engine.py — a backend change must be mirrored here.
  *
  * Scoring is server-authoritative: a local run can only emit client-claimable
  * events (`focus_phase_completed`, `damage`) — session/phase lifecycle types
@@ -25,13 +27,16 @@ import type {
 import { createUuid } from "@/lib/utils"
 import type { UserId } from "@/lib/sync-queue"
 
+/** Long break replaces the short break after every Nth focus phase. */
+const LONG_BREAK_EVERY = 4
+
 export const GRACE_SECONDS = 300 // absence grace after a phase boundary
 export const STOPWATCH_MILESTONE_SECONDS = 25 * 60
 
 export const FOCUS_PRESETS = {
   classic: { label: "Classic", focus: 25, short: 5, long: 15 },
   quick: { label: "Quick", focus: 15, short: 3, long: 10 },
-  deep: { label: "Deep", focus: 50, short: 10, long: 30 },
+  deep: { label: "Extended", focus: 50, short: 10, long: 30 },
 } as const
 
 export type FocusPresetId = keyof typeof FOCUS_PRESETS | "custom"
@@ -56,7 +61,8 @@ export function buildPhasePlan(opts: FocusPlanOptions): SessionPhaseIn[] {
   const phases: SessionPhaseIn[] = []
   for (let i = 0; i < cycles; i++) {
     phases.push({ kind: "focus", minutes: focus })
-    phases.push({ kind: "break", minutes: i === cycles - 1 ? long : short })
+    const longDue = (i + 1) % LONG_BREAK_EVERY === 0 || i === cycles - 1
+    phases.push({ kind: "break", minutes: longDue ? long : short })
   }
   return phases
 }
@@ -78,6 +84,8 @@ export interface FocusSettings {
   immersive: boolean
   /** Work/break end alert tones. */
   alerts: boolean
+  /** Alert loudness 0–100 (applies to the WebAudio tones). */
+  alertVolume: number
   difficulty: SessionDifficulty
   pauseCount: number
   pauseSeconds: number
@@ -96,6 +104,7 @@ export const DEFAULT_FOCUS_SETTINGS: FocusSettings = {
   autoFocus: false,
   immersive: false,
   alerts: true,
+  alertVolume: 80,
   difficulty: "easy",
   pauseCount: 3,
   pauseSeconds: 300,
@@ -168,8 +177,11 @@ export function focusPhaseCount(session: FocusSession): number {
   return session.phases.filter((p) => p.kind === "focus").length
 }
 
-const ms = (iso: string | null): number | null =>
-  iso === null ? null : Date.parse(iso)
+/** ISO → epoch ms; offset-less strings (SQLite datetimes) parse as UTC. */
+export const ms = (iso: string | null): number | null =>
+  iso === null
+    ? null
+    : Date.parse(/[zZ]|[+-]\d{2}:?\d{2}$/.test(iso) ? iso : `${iso}Z`)
 
 const iso = (epoch: number): string => new Date(epoch).toISOString()
 
@@ -472,6 +484,7 @@ export function pauseLocal(
   nowMs: number
 ): GameEventIn[] {
   const session = local.session
+  if (session.status !== "active") return []
   const phase = livePhase(session)
   if (phase === null || phase.status !== "active") {
     throw new Error("no running phase to pause")
@@ -498,6 +511,7 @@ export function resumeLocal(
   nowMs: number
 ): GameEventIn[] {
   const session = local.session
+  if (session.status !== "active") return []
   const phase = livePhase(session)
   if (phase === null || phase.status !== "paused") {
     throw new Error("no paused phase to resume")
@@ -527,6 +541,7 @@ export function advanceLocal(
   nowMs: number
 ): GameEventIn[] {
   const session = local.session
+  if (session.status !== "active") return []
   const live = livePhase(session)
   if (live !== null && live.kind === "break" && live.status === "active") {
     live.status = "skipped"
@@ -552,10 +567,17 @@ export function advanceLocal(
 export function stopLocal(local: LocalSession, nowMs: number): GameEventIn[] {
   const session = local.session
   const events: GameEventIn[] = []
+  if (session.status !== "active") return events
   const live = livePhase(session)
   if (live !== null && live.kind === "stopwatch") {
+    // Bank the open pause too — else it counts as focus time (engine parity).
+    if (live.status === "paused" && live.pause_started_at !== null) {
+      live.paused_seconds =
+        (live.paused_seconds || 0) +
+        Math.floor((nowMs - (ms(live.pause_started_at) ?? nowMs)) / 1000)
+      live.pause_started_at = null
+    }
     live.actual_seconds = stopwatchElapsedSeconds(live, nowMs)
-    live.pause_started_at = null
     live.status = "completed"
     live.ended_at = iso(nowMs)
     // No claimable event: milestone XP is server-authored and claiming the

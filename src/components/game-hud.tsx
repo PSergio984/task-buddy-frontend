@@ -1,4 +1,6 @@
+import { useState } from "react"
 import { useAuth } from "@/contexts/AuthContext"
+import { useGame } from "@/contexts/GameContext"
 import { useGameProfile } from "@/hooks/useGameProfile"
 import { cn } from "@/lib/utils"
 import {
@@ -58,6 +60,9 @@ function StatBar({
 export function GameHud({ isCollapsed = false }: GameHudProps) {
   const { user } = useAuth()
   const { data: profile, isLoading } = useGameProfile()
+  const { pendingEventCount } = useGame()
+  // Remember which seed failed — a new avatar_config resets the fallback.
+  const [failedUrl, setFailedUrl] = useState<string | null>(null)
 
   if (isLoading || !profile) {
     return (
@@ -76,6 +81,7 @@ export function GameHud({ isCollapsed = false }: GameHudProps) {
   }
 
   const url = avatarUrl(profile)
+  const showImg = url !== null && url !== failedUrl
   const initial = (
     user?.username?.[0] ||
     user?.email?.[0] ||
@@ -87,10 +93,11 @@ export function GameHud({ isCollapsed = false }: GameHudProps) {
 
   const avatar = (
     <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-gradient-to-tr from-primary to-accent text-lg font-black text-primary-foreground shadow-lg">
-      {url ? (
+      {showImg ? (
         <img
           src={url}
           alt={`${name}'s avatar`}
+          onError={() => setFailedUrl(url)}
           className="h-full w-full [image-rendering:pixelated]"
         />
       ) : (
@@ -110,6 +117,7 @@ export function GameHud({ isCollapsed = false }: GameHudProps) {
           >
             {levelLine} · {Math.floor(profile.gold)}g · HP{" "}
             {Math.floor(profile.hp)}/{Math.floor(profile.max_hp)}
+            {pendingEventCount > 0 && ` · ${pendingEventCount} pending`}
           </TooltipContent>
         </Tooltip>
       </div>
@@ -151,6 +159,13 @@ export function GameHud({ isCollapsed = false }: GameHudProps) {
         </span>
         <span className="normal-case">{statsLine}</span>
       </div>
+
+      {pendingEventCount > 0 && (
+        <p className="text-[10px] font-bold tracking-widest text-amber-400/90 uppercase">
+          {pendingEventCount} event{pendingEventCount === 1 ? "" : "s"} pending
+          sync
+        </p>
+      )}
     </div>
   )
 }

@@ -14,13 +14,14 @@ export function useGameProfile() {
 }
 
 /**
- * Push authoritative totals into every game-profile cache entry. Session
+ * Push authoritative totals into this user's game-profile cache entry. Session
  * actions and /game/events responses already carry the profile — writing it
- * into the cache keeps the HUD current without an extra round trip.
+ * into the cache keeps the HUD current without an extra round trip. Scoped to
+ * the owner's key so a cached profile can't bleed across accounts.
  */
-export function setGameProfileCache(profile: GameProfile) {
+export function setGameProfileCache(profile: GameProfile, userId: string) {
   queryClient.setQueriesData<GameProfile>(
-    { queryKey: ["game-profile"] },
+    { queryKey: ["game-profile", { userId }] },
     profile
   )
 }

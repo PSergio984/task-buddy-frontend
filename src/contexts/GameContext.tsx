@@ -56,7 +56,7 @@ export function GameProvider({
     flushingRef.current = true
     try {
       const res = await flushGameEventQueue(userId, gameApi.postEvents)
-      if (res?.profile) setGameProfileCache(res.profile)
+      if (res?.profile) setGameProfileCache(res.profile, userId)
     } catch (error) {
       // The queue is authoritative — a failed flush just retries later.
       console.error("Game event flush failed; queue retained.", error)

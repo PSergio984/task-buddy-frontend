@@ -16,7 +16,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import type { SessionDifficulty } from "@/lib/api"
-import type { FocusSettings } from "@/lib/focus-session"
+import { DEFAULT_FOCUS_SETTINGS, type FocusSettings } from "@/lib/focus-session"
+import { Button } from "@/components/ui/button"
 
 interface SessionSettingsSheetProps {
   readonly open: boolean
@@ -58,7 +59,12 @@ function NumberField({
         min={min}
         max={max}
         value={value}
-        onChange={(e) => onChange(e.target.valueAsNumber)}
+        onChange={(e) => {
+          // A cleared field reads NaN — keep the last valid value instead
+          // of persisting NaN (which clamps to the min on next start).
+          const next = e.target.valueAsNumber
+          if (Number.isFinite(next)) onChange(next)
+        }}
         className="h-10 rounded-xl bg-white/5"
       />
     </div>
@@ -260,11 +266,29 @@ export function SessionSettingsSheet({
             <ToggleRow
               id="focus-alerts"
               label="Phase-end alert sounds"
-              hint="Distinct tones for work-end and break-end."
+              hint="Distinct tones for work-end and break-end — browser notifications fire while you're in another tab."
               checked={settings.alerts}
               onChange={(v) => set("alerts", v)}
             />
+            {settings.alerts && (
+              <NumberField
+                id="focus-alert-volume"
+                label="Alert volume (%)"
+                min={0}
+                max={100}
+                value={settings.alertVolume}
+                onChange={(v) => set("alertVolume", v)}
+              />
+            )}
           </div>
+
+          <Button
+            variant="ghost"
+            onClick={() => onChange({ ...DEFAULT_FOCUS_SETTINGS })}
+            className="h-10 w-full rounded-xl text-xs font-bold text-muted-foreground hover:bg-white/5 hover:text-foreground"
+          >
+            Reset to defaults
+          </Button>
         </div>
       </SheetContent>
     </Sheet>

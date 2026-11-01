@@ -4,6 +4,7 @@ import {
   enqueueGameEvent,
   listGameEvents,
   removeGameEvents,
+  removeGameEventsByPrefix,
   pendingGameEventCount,
   flushGameEventQueue,
 } from "./game-event-queue"
@@ -92,5 +93,63 @@ describe("game-event-queue", () => {
     const sendBatch = vi.fn()
     expect(await flushGameEventQueue(USER, sendBatch)).toBeNull()
     expect(sendBatch).not.toHaveBeenCalled()
+  })
+
+  it("serialized writes: 20 concurrent enqueues all land", async () => {
+    // Unsynchronized read-modify-write would lose most of these — the old
+    // implementation collapsed to a handful under Promise.all.
+    const ids = Array.from({ length: 20 }, (_, i) => `race-${i}`)
+    await Promise.all(ids.map((id) => enqueueGameEvent(USER, ev(id))))
+    const all = await listGameEvents(USER)
+    expect(all.map((e) => e.client_event_id).sort()).toEqual(ids.sort())
+  })
+
+  it("removeGameEventsByPrefix drops one local session's events only", async () => {
+    await enqueueGameEvent(USER, ev("web:s1:focus_phase_completed:0"))
+    await enqueueGameEvent(USER, ev("web:s1:damage:manual_stop"))
+    await enqueueGameEvent(USER, ev("web:s2:focus_phase_completed:0"))
+    await enqueueGameEvent(USER, ev("habit-1"))
+    const dropped = await removeGameEventsByPrefix(USER, "web:s1:")
+    expect(dropped).toBe(2)
+    expect((await listGameEvents(USER)).map((e) => e.client_event_id)).toEqual([
+      "web:s2:focus_phase_completed:0",
+      "habit-1",
+    ])
+  })
+
+  it("flush chunks at the 500-event batch cap", async () => {
+    const events = Array.from({ length: 1200 }, (_, i) => ev(`bulk-${i}`))
+    storage.set(
+      `game-event-queue:${USER}`,
+      JSON.stringify(events)
+    )
+    const sendBatch = vi
+      .fn()
+      .mockImplementation(async (batch: GameEventIn[]) =>
+        syncResponse(batch.map((e) => e.client_event_id))
+      )
+    const res = await flushGameEventQueue(USER, sendBatch)
+    expect(sendBatch).toHaveBeenCalledTimes(3)
+    for (const call of sendBatch.mock.calls) {
+      expect(call[0].length).toBeLessThanOrEqual(500)
+    }
+    expect(res?.applied).toBe(1200)
+    expect(await pendingGameEventCount(USER)).toBe(0)
+  })
+
+  it("flush keeps the unsent remainder when a mid-chunk send fails", async () => {
+    const events = Array.from({ length: 600 }, (_, i) => ev(`part-${i}`))
+    storage.set(`game-event-queue:${USER}`, JSON.stringify(events))
+    const sendBatch = vi
+      .fn()
+      .mockImplementationOnce(async (batch: GameEventIn[]) =>
+        syncResponse(batch.map((e) => e.client_event_id))
+      )
+      .mockRejectedValueOnce(new Error("offline"))
+    await expect(flushGameEventQueue(USER, sendBatch)).rejects.toThrow(
+      "offline"
+    )
+    // First 500 settled and dropped; the failed chunk stays queued.
+    expect(await pendingGameEventCount(USER)).toBe(100)
   })
 })

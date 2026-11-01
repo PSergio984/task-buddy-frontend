@@ -17,10 +17,10 @@ import { ConfirmationModal } from "@/components/confirmation-modal"
 import { TimerRing } from "@/components/focus/timer-ring"
 import { SessionSetup } from "@/components/focus/session-setup"
 import { SessionSettingsSheet } from "@/components/focus/session-settings-sheet"
-import { useFocusSession } from "@/hooks/useFocusSession"
+import { useFocusSession } from "@/contexts/FocusSessionContext"
 import { useTasks } from "@/hooks/useTasks"
 import { useTags } from "@/hooks/useTags"
-import { playPhaseAlert } from "@/lib/focus-audio"
+import { alertPhaseBoundary, requestAlertPermission } from "@/lib/focus-audio"
 import type { FocusSession } from "@/lib/api"
 import {
   DEFAULT_FOCUS_SETTINGS,
@@ -195,7 +195,7 @@ function SessionControls({
 
 export function FocusPage() {
   const runtime = useFocusSession()
-  const { session, view, isLocal, isLoading, busy } = runtime
+  const { session, view, isLocal, isLoading, busy, mirrored } = runtime
   const [settings, setSettings] = useState<FocusSettings>(loadSettings)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [stopConfirmOpen, setStopConfirmOpen] = useState(false)
@@ -256,10 +256,13 @@ export function FocusPage() {
         prev !== "skipped" &&
         prev !== undefined
       if (finished && settings.alerts) {
-        playPhaseAlert(phase.kind === "break" ? "break" : "focus")
+        alertPhaseBoundary(
+          phase.kind === "break" ? "break" : "focus",
+          settings.alertVolume / 100
+        )
       }
     }
-  }, [session, settings.alerts])
+  }, [session, settings.alerts, settings.alertVolume])
 
   const exitImmersive = () => {
     setImmersive(false)
@@ -267,6 +270,8 @@ export function FocusPage() {
   }
 
   const handleStart = async () => {
+    // User gesture — the one moment notification permission may be requested.
+    if (settings.alerts) requestAlertPermission()
     await runtime.start(sessionStartFromSettings(settings))
   }
 
@@ -291,6 +296,14 @@ export function FocusPage() {
           className="gap-1 rounded-full border-amber-400/30 bg-amber-400/10 px-3 py-1 text-[10px] font-black tracking-widest text-amber-400 uppercase"
         >
           <WifiOff className="h-3 w-3" /> Offline · syncs later
+        </Badge>
+      )}
+      {mirrored && (
+        <Badge
+          variant="outline"
+          className="gap-1 rounded-full border-sky-400/30 bg-sky-400/10 px-3 py-1 text-[10px] font-black tracking-widest text-sky-400 uppercase"
+        >
+          <WifiOff className="h-3 w-3" /> Offline · showing mirror — reconnect to act
         </Badge>
       )}
     </div>
@@ -344,9 +357,10 @@ export function FocusPage() {
         )}
         <Button
           onClick={() => void runtime.dismissEnded()}
+          disabled={mirrored}
           className="h-11 rounded-2xl bg-primary px-8 font-bold text-primary-foreground"
         >
-          Done
+          {mirrored ? "Reconnect to dismiss" : "Done"}
         </Button>
       </div>
     )
@@ -356,7 +370,7 @@ export function FocusPage() {
     view.status !== "abandoned" && (
       <SessionControls
         view={view}
-        busy={busy !== null}
+        busy={busy !== null || mirrored}
         onPause={() => void runtime.pause()}
         onResume={() => void runtime.resume()}
         onAdvance={() => void runtime.advance()}
@@ -381,6 +395,7 @@ export function FocusPage() {
         }
         variant={view && view.focusDone === 0 ? "destructive" : "default"}
         isLoading={busy !== null}
+        contentClassName={immersive ? "z-[120]" : undefined}
       />
 
       <SessionSettingsSheet
@@ -399,7 +414,7 @@ export function FocusPage() {
           {ringBlock}
           <SessionControls
             view={view}
-            busy={busy !== null}
+            busy={busy !== null || mirrored}
             compact
             onPause={() => void runtime.pause()}
             onResume={() => void runtime.resume()}
