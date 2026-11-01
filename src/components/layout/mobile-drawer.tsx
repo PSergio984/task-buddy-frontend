@@ -116,6 +116,36 @@ export function MobileDrawer({
               </button>
               <button
                 onClick={() => {
+                  navigate("/diary")
+                  onOpenChange(false)
+                }}
+                className={cn(
+                  "flex items-center gap-3 rounded-2xl border p-4 transition-all",
+                  location.pathname === "/diary"
+                    ? "border-primary/20 bg-primary/10 text-primary"
+                    : "border-transparent bg-white/5 text-foreground/70"
+                )}
+              >
+                <LucideIcons.NotebookPen className="h-5 w-5 text-amber-400" />
+                <span className="text-sm font-bold">Diary</span>
+              </button>
+              <button
+                onClick={() => {
+                  navigate("/timeline")
+                  onOpenChange(false)
+                }}
+                className={cn(
+                  "flex items-center gap-3 rounded-2xl border p-4 transition-all",
+                  location.pathname === "/timeline"
+                    ? "border-primary/20 bg-primary/10 text-primary"
+                    : "border-transparent bg-white/5 text-foreground/70"
+                )}
+              >
+                <LucideIcons.ChartGantt className="h-5 w-5 text-emerald-400" />
+                <span className="text-sm font-bold">Timeline</span>
+              </button>
+              <button
+                onClick={() => {
                   navigate("/audit-logs")
                   onOpenChange(false)
                 }}

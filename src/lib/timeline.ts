@@ -24,6 +24,7 @@ export interface TimelineBlockItem {
   label: string
   mode: string
   status: string
+  taskId: number | null
   startMs: number
   endMs: number
   /** Position on the day axis, 0..1. */
@@ -147,6 +148,7 @@ export function buildDayTimeline(res: TimelineDayResponse): DayTimelineView {
       label: blockLabel(s.mode, s.activity_label),
       mode: s.mode,
       status: s.status,
+      taskId: s.task_id,
       startMs,
       endMs,
       startFrac: frac(startMs),

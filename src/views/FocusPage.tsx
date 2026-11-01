@@ -17,6 +17,7 @@ import { ConfirmationModal } from "@/components/confirmation-modal"
 import { TimerRing } from "@/components/focus/timer-ring"
 import { SessionSetup } from "@/components/focus/session-setup"
 import { SessionSettingsSheet } from "@/components/focus/session-settings-sheet"
+import { SessionNotePrompt } from "@/components/focus/session-note-prompt"
 import { useFocusSession } from "@/contexts/FocusSessionContext"
 import { useTasks } from "@/hooks/useTasks"
 import { useTags } from "@/hooks/useTags"
@@ -339,6 +340,12 @@ export function FocusPage() {
                 Finished phases already scored — totals updated.
               </p>
             </div>
+            {/* Skippable end-of-session note (issue #67) — only a real
+                server session can carry one; local runs have no row.
+                Keyed on the id so the next ended run re-opens it. */}
+            {session.id !== 0 && (
+              <SessionNotePrompt key={session.id} sessionId={session.id} />
+            )}
           </>
         ) : (
           <>
