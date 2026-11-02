@@ -73,7 +73,8 @@ export function useUpdateAvatarConfig() {
     mutationFn: (avatarConfig: Record<string, unknown>) =>
       gameApi.updateAvatarConfig(avatarConfig),
     onSuccess: async (profile) => {
-      if (user?.id !== undefined) await setGameProfileCache(profile, user.id)
+      if (user?.id !== undefined)
+        await setGameProfileCache(profile, user.id, profile.server_time)
       toast({ title: "Avatar saved", variant: "success" })
     },
     onError: (err) => {

@@ -18,6 +18,8 @@ const PROFILE: GameProfile = {
   per_stat: 1,
   unspent_stat_points: 0,
   game_class: null,
+  class_unlocked: false,
+  auto_allocate: false,
   avatar_config: {
     style: "pixel-art",
     seed: "kiki",
