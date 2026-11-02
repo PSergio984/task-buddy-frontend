@@ -110,6 +110,22 @@ describe("AvatarCard", () => {
     expect(config.traits).not.toHaveProperty("gear")
   })
 
+  it("saves the fallback seed when the stored seed is cleared", async () => {
+    mockProfile = {
+      ...PROFILE,
+      avatar_config: { ...PROFILE.avatar_config, seed: "stored" },
+    }
+    render(<AvatarCard />)
+    fireEvent.change(screen.getByLabelText(/seed/i), { target: { value: "" } })
+    fireEvent.click(screen.getByRole("button", { name: /save avatar/i }))
+    await waitFor(() =>
+      expect(mutate).toHaveBeenCalledWith(
+        expect.objectContaining({ seed: "kiki" }),
+        expect.anything()
+      )
+    )
+  })
+
   it("disables save until the draft differs from the saved config", () => {
     render(<AvatarCard />)
     const save = screen.getByRole("button", { name: /save avatar/i })

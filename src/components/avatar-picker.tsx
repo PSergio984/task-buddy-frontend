@@ -114,7 +114,10 @@ export function AvatarCard() {
     const timer = setTimeout(() => setDebouncedSeed(effective.seed), 300)
     return () => clearTimeout(timer)
   }, [effective.seed])
-  const previewUrl = avatarConfigToUrl({ ...effective, seed: debouncedSeed })
+  const previewUrl = avatarConfigToUrl({
+    ...effective,
+    seed: debouncedSeed || fallbackSeed,
+  })
   const showImg = previewUrl !== null && previewUrl !== failedUrl
 
   const edit = (patch: Partial<AvatarConfig>) =>
@@ -129,9 +132,13 @@ export function AvatarCard() {
   const handleSave = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!hasChanged) return
-    updateAvatar.mutate(effective, {
-      onSuccess: () => setDraft(null),
-    })
+    // A cleared seed saves the same fallback the preview shows.
+    updateAvatar.mutate(
+      { ...effective, seed: effective.seed || fallbackSeed },
+      {
+        onSuccess: () => setDraft(null),
+      }
+    )
   }
 
   // Loading/error resolve to `body`; `??` (not a nested ternary) leaves the
