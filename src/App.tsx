@@ -50,6 +50,9 @@ const DiaryPage = lazy(() =>
 const TimelinePage = lazy(() =>
   import("@/views/TimelinePage").then((m) => ({ default: m.TimelinePage }))
 )
+const HabitsPage = lazy(() =>
+  import("@/views/HabitsPage").then((m) => ({ default: m.HabitsPage }))
+)
 const ResetPasswordPage = lazy(() =>
   import("@/views/ResetPasswordPage").then((m) => ({
     default: m.ResetPasswordPage,
@@ -145,6 +148,7 @@ export function App() {
                 <Route path="/dashboard" element={<DashboardDemo />} />
                 <Route path="/tasks" element={<TasksPage />} />
                 <Route path="/focus" element={<FocusPage />} />
+                <Route path="/habits" element={<HabitsPage />} />
                 <Route path="/diary" element={<DiaryPage />} />
                 <Route path="/timeline" element={<TimelinePage />} />
                 <Route path="/profile" element={<ProfilePage />} />

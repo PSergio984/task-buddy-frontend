@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import { useToast } from "@/hooks/use-toast"
 import { queryClient } from "@/lib/query-client"
 import { getErrorMessage } from "@/lib/errors"
+import { ms } from "@/lib/focus-session"
 
 export function useGameProfile() {
   const { user } = useAuth()
@@ -15,6 +16,12 @@ export function useGameProfile() {
   })
 }
 
+// High-water mark of the newest server_time applied per user. Scoring
+// responses carry their own server_time — a late-arriving response (e.g. a
+// slower parallel POST resolving after a newer one) holds an older profile
+// snapshot and must not regress the HUD totals.
+const maxServerTime = new Map<string, number>()
+
 /**
  * Push authoritative totals into this user's game-profile cache entry. Session
  * actions and /game/events responses already carry the profile — writing it
@@ -24,10 +31,15 @@ export function useGameProfile() {
  * An in-flight GET could resolve AFTER this write and overwrite the newer
  * authoritative totals with its older snapshot — cancel it first so the
  * write always wins the ordering.
+ *
+ * `serverTime` orders competing writes: a response stamped older than the
+ * newest applied write is dropped. Callers without a server_time in their
+ * response leave it undefined — absent means always-apply.
  */
 export async function setGameProfileCache(
   profile: GameProfile,
-  userId: string
+  userId: string,
+  serverTime?: string
 ): Promise<void> {
   try {
     await queryClient.cancelQueries({
@@ -35,6 +47,14 @@ export async function setGameProfileCache(
     })
   } catch {
     // Cancellation is best-effort — the write below still lands.
+  }
+  if (serverTime !== undefined) {
+    const at = ms(serverTime)
+    if (at !== null && Number.isFinite(at)) {
+      const seen = maxServerTime.get(userId)
+      if (seen !== undefined && at < seen) return
+      maxServerTime.set(userId, at)
+    }
   }
   queryClient.setQueriesData<GameProfile>(
     { queryKey: ["game-profile", { userId }] },
