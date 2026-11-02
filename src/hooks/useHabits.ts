@@ -132,5 +132,13 @@ export function useClickHabit() {
         variant: "destructive",
       })
     },
+    onSettled: () => {
+      // Settling while another write is still running means the success
+      // path above cancelled the list refetch that write relies on — a
+      // created/edited row would never appear. Resync in that case only;
+      // isMutating counts this still-callback-running mutation, hence > 1.
+      if (queryClient.isMutating() > 1)
+        void queryClient.invalidateQueries({ queryKey: ["habits"] })
+    },
   })
 }

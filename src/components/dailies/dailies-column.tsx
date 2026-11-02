@@ -619,12 +619,15 @@ export function DailiesColumn({
         </div>
       </div>
 
-      {isPending ? (
+      {/* A paused fetch stays isPending — offline with no cached list that
+          means skeletons forever, so the uncached-offline case joins the
+          error branch's explanation instead. */}
+      {isPending && isOnline ? (
         <div className="space-y-3">
           <div className="h-12 animate-pulse rounded-2xl bg-white/5" />
           <div className="h-12 animate-pulse rounded-2xl bg-white/5" />
         </div>
-      ) : isError && dailies === undefined ? (
+      ) : (isError || !isOnline) && dailies === undefined ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
           {!isOnline && <WifiOff className="h-6 w-6 text-amber-400" />}
           <p className="text-sm text-muted-foreground">

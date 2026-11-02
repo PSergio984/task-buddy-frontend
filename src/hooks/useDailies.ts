@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   dailiesApi,
@@ -21,6 +22,37 @@ export const DAILY_CHECK_MUTATION_KEY = ["daily-check"] as const
  */
 export function useDailies() {
   const { user } = useAuth()
+  const queryClient = useQueryClient()
+
+  // completed_today is server-computed per UTC day, and the app disables
+  // refetchOnWindowFocus — without these triggers an overnight tab keeps
+  // rendering (and un-marking) yesterday's checks.
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const resync = () =>
+      void queryClient.invalidateQueries({ queryKey: ["dailies"] })
+    let timer: ReturnType<typeof setTimeout>
+    const armRollover = () => {
+      const midnight = new Date()
+      midnight.setUTCHours(24, 0, 0, 0)
+      timer = setTimeout(() => {
+        resync()
+        armRollover()
+      }, midnight.getTime() - Date.now())
+    }
+    armRollover()
+    // A suspended tab wakes to visibilitychange, not a window-focus refetch
+    // — same staleness hole after a sleep-overnight.
+    const onVisible = () => {
+      if (document.visibilityState === "visible") resync()
+    }
+    document.addEventListener("visibilitychange", onVisible)
+    return () => {
+      clearTimeout(timer)
+      document.removeEventListener("visibilitychange", onVisible)
+    }
+  }, [queryClient])
+
   return useQuery({
     queryKey: ["dailies", { userId: user?.id }],
     queryFn: dailiesApi.list,
@@ -126,6 +158,14 @@ export function useCheckDaily() {
         description: getErrorMessage(err),
         variant: "destructive",
       })
+    },
+    onSettled: () => {
+      // Settling while another write is still running means the success
+      // path above cancelled the list refetch that write relies on — a
+      // created/edited row would never appear. Resync in that case only;
+      // isMutating counts this still-callback-running mutation, hence > 1.
+      if (queryClient.isMutating() > 1)
+        void queryClient.invalidateQueries({ queryKey: ["dailies"] })
     },
   })
 }
