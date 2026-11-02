@@ -546,11 +546,15 @@ export interface GameProfile {
   per_stat: number
   unspent_stat_points: number
   game_class: string | null
+  class_unlocked: boolean
+  auto_allocate: boolean
   avatar_config: Record<string, unknown>
   xp_today: number
   gold_today: number
   /** Diary/timeline read horizon: "90d" | "1y" | "forever". */
   retention: RetentionPreference
+  /** Orders competing cache writes; absent until the backend ships it on GameProfileRead. */
+  server_time?: string
 }
 
 export interface GameEventIn {

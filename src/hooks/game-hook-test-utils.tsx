@@ -40,6 +40,8 @@ export const profile: GameProfile = {
   per_stat: 0,
   unspent_stat_points: 0,
   game_class: null,
+  class_unlocked: false,
+  auto_allocate: false,
   avatar_config: {},
   xp_today: 10,
   gold_today: 5,
