@@ -118,6 +118,24 @@ describe("HabitsColumn", () => {
     expect(onUpdate.mock.calls[0][1].reminder_times).toEqual(["21:00"])
   })
 
+  it("explains the missing cache instead of loading forever on an offline cold-open", () => {
+    // A paused query stays isPending — without the offline branch the
+    // skeletons would render indefinitely.
+    render(
+      <HabitsColumn
+        habits={undefined}
+        isPending
+        isError={false}
+        isOnline={false}
+        writesDisabled
+        onRetry={vi.fn()}
+      />
+    )
+    expect(
+      screen.getByText(/offline and your habits aren't in the local cache/i)
+    ).toBeInTheDocument()
+  })
+
   it("disables clicks while offline instead of pretending to queue them", () => {
     render(
       <HabitsColumn

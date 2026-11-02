@@ -108,6 +108,24 @@ describe("DailiesColumn", () => {
     expect(screen.getByLabelText("Check sit")).toBeDisabled()
   })
 
+  it("explains the missing cache instead of loading forever on an offline cold-open", () => {
+    // A paused query stays isPending — without the offline branch the
+    // skeletons would render indefinitely.
+    render(
+      <DailiesColumn
+        dailies={undefined}
+        isPending
+        isError={false}
+        isOnline={false}
+        writesDisabled
+        onRetry={vi.fn()}
+      />
+    )
+    expect(
+      screen.getByText(/offline and your dailies aren't in the local cache/i)
+    ).toBeInTheDocument()
+  })
+
   it("disables checks on a paused (inactive) daily", () => {
     renderColumn([daily(1, { active: false })])
     expect(screen.getByLabelText("Check daily 1")).toBeDisabled()
