@@ -129,10 +129,12 @@ function DailyForm({
   const canSubmit = hasTitle && recurrenceValid && itemsValid
 
   // An `items` PATCH full-replaces the checklist server-side — a submit
-  // whose checklist text never changed must omit `items`, or the replace
-  // cascade-deletes today's item check marks.
+  // whose checklist never changed must omit `items`, or the replace
+  // cascade-deletes today's item check marks. Compare parsed titles, not
+  // raw text, so whitespace-only edits don't trigger the replace either.
   const itemsChanged =
-    initial === undefined || itemsText !== itemLines(initial.items)
+    initial === undefined ||
+    items.map((i) => i.title).join("\n") !== itemLines(initial.items)
 
   // reminder_times is a full-replace field too — only send it when the
   // slot changed, merging the edit over the stored tail (same rule as the

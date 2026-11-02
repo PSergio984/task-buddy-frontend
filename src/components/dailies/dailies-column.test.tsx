@@ -134,6 +134,22 @@ describe("DailiesColumn", () => {
     expect(patch).not.toHaveProperty("items")
   })
 
+  it("omits items when the checklist text changed only in whitespace", async () => {
+    const onUpdate = renderEditable(
+      daily(1, {
+        items: [{ id: 11, title: "sit", position: 0, done_today: false }],
+      })
+    )
+    fireEvent.change(screen.getByLabelText(/checklist/i), {
+      target: { value: "  sit  \n\n" },
+    })
+    fireEvent.change(screen.getByLabelText(/^daily$/i), {
+      target: { value: "renamed" },
+    })
+    await submit()
+    expect(onUpdate.mock.calls[0][1]).not.toHaveProperty("items")
+  })
+
   it("sends the parsed checklist only once the text changed", async () => {
     const onUpdate = renderEditable(
       daily(1, {

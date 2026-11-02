@@ -39,6 +39,13 @@ export async function setGameProfileCache(
   userId: string,
   serverTime?: string
 ): Promise<void> {
+  try {
+    await queryClient.cancelQueries({
+      queryKey: ["game-profile", { userId }],
+    })
+  } catch {
+    // Cancellation is best-effort — the write below still lands.
+  }
   if (serverTime !== undefined) {
     const at = ms(serverTime)
     if (at !== null && Number.isFinite(at)) {
@@ -46,13 +53,6 @@ export async function setGameProfileCache(
       if (seen !== undefined && at < seen) return
       maxServerTime.set(userId, at)
     }
-  }
-  try {
-    await queryClient.cancelQueries({
-      queryKey: ["game-profile", { userId }],
-    })
-  } catch {
-    // Cancellation is best-effort — the write below still lands.
   }
   queryClient.setQueriesData<GameProfile>(
     { queryKey: ["game-profile", { userId }] },
