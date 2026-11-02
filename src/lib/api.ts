@@ -652,6 +652,13 @@ export const gameApi = {
     )
     return response.data
   },
+  updateAvatarConfig: async (avatarConfig: Record<string, unknown>) => {
+    const response = await api.patch<GameProfile>(
+      "/api/v1/game/profile/avatar",
+      { avatar_config: avatarConfig }
+    )
+    return response.data
+  },
 }
 
 // Diary + timeline — mirrors the diary/session-note/timeline routes in

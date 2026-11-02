@@ -35,6 +35,7 @@ import {
   validatePassword,
 } from "@/lib/auth"
 import { useToast } from "@/hooks/use-toast"
+import { AvatarCard } from "@/components/avatar-picker"
 import { cn } from "@/lib/utils"
 import axios from "axios"
 import { useRegisterPush, useVapidKey } from "@/hooks/useNotifications"
@@ -100,6 +101,7 @@ export function ProfilePage() {
 
         <div className="grid gap-12">
           <UsernameCard />
+          <AvatarCard />
           <PreferencesCard />
           <ConfirmationPreferencesCard />
           <SecurityCard />

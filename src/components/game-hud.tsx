@@ -8,37 +8,10 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import type { GameProfile } from "@/lib/api"
+import { avatarConfigToUrl } from "@/lib/avatar"
 
 interface GameHudProps {
   readonly isCollapsed?: boolean
-}
-
-/** DiceBear pixel-art is the spec'd avatar style (#46); seed comes from the
- * profile's avatar_config blob. No seed yet -> the user's initial, same as
- * the account avatar elsewhere in the app. */
-const DICEBEAR_STYLES = new Set([
-  "pixel-art",
-  "adventurer",
-  "bottts",
-  "thumbs",
-  "micah",
-  "miniavs",
-  "personas",
-  "fun-emoji",
-])
-
-function avatarUrl(profile: GameProfile): string | null {
-  const seed = profile.avatar_config?.seed
-  if (typeof seed !== "string" || seed.length === 0) return null
-  // style interpolates into the URL path — allowlist it. Absent → spec'd
-  // pixel-art default; present-but-unknown → initials, no remote URL.
-  const raw = profile.avatar_config?.style
-  if (raw === undefined || raw === null) {
-    return `https://api.dicebear.com/9.x/pixel-art/svg?seed=${encodeURIComponent(seed)}`
-  }
-  if (typeof raw !== "string" || !DICEBEAR_STYLES.has(raw)) return null
-  return `https://api.dicebear.com/9.x/${raw}/svg?seed=${encodeURIComponent(seed)}`
 }
 
 function StatBar({
@@ -118,7 +91,9 @@ export function GameHud({ isCollapsed = false }: GameHudProps) {
     )
   }
 
-  const url = avatarUrl(profile)
+  // No seed in the config yet → the user's initial, same as the account
+  // avatar elsewhere in the app.
+  const url = avatarConfigToUrl(profile.avatar_config)
   const showImg = url !== null && url !== failedUrl
   const initial = (user?.username?.[0] || user?.email?.[0] || "U").toUpperCase()
   const name = user?.username || user?.email?.split("@")[0] || "Friend"
