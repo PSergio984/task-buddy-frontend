@@ -2,6 +2,8 @@ import { useState } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useGame } from "@/contexts/GameContext"
 import { useGameProfile } from "@/hooks/useGameProfile"
+import { useGear } from "@/hooks/useGear"
+import { AvatarGearOverlay } from "@/components/avatar-gear-overlay"
 import { cn } from "@/lib/utils"
 import {
   Tooltip,
@@ -47,6 +49,7 @@ function StatBar({
 export function GameHud({ isCollapsed = false }: GameHudProps) {
   const { user } = useAuth()
   const { data: profile, isLoading, isError } = useGameProfile()
+  const { data: gear } = useGear()
   const { pendingEventCount } = useGame()
   // Remember which seed failed — a new avatar_config resets the fallback.
   const [failedUrl, setFailedUrl] = useState<string | null>(null)
@@ -101,17 +104,20 @@ export function GameHud({ isCollapsed = false }: GameHudProps) {
   const statsLine = `STR ${profile.str_stat} · INT ${profile.int_stat} · CON ${profile.con_stat} · PER ${profile.per_stat}`
 
   const avatar = (
-    <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-gradient-to-tr from-primary to-accent text-lg font-black text-primary-foreground shadow-lg">
-      {showImg ? (
-        <img
-          src={url}
-          alt={`${name}'s avatar`}
-          onError={() => setFailedUrl(url)}
-          className="h-full w-full [image-rendering:pixelated]"
-        />
-      ) : (
-        initial
-      )}
+    <div className="relative shrink-0">
+      <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-gradient-to-tr from-primary to-accent text-lg font-black text-primary-foreground shadow-lg">
+        {showImg ? (
+          <img
+            src={url}
+            alt={`${name}'s avatar`}
+            onError={() => setFailedUrl(url)}
+            className="h-full w-full [image-rendering:pixelated]"
+          />
+        ) : (
+          initial
+        )}
+      </div>
+      <AvatarGearOverlay items={gear ?? []} config={profile.avatar_config} />
     </div>
   )
 

@@ -636,6 +636,30 @@ export interface SessionActionResponse {
 /** Diary/timeline read horizon — mirrors RetentionIn on the backend. */
 export type RetentionPreference = "90d" | "1y" | "forever"
 
+/** One catalog row merged with the viewer's flags — mirrors GearItemRead
+    on the backend (#65). `costume` is absent on pre-#65 backends; consumers
+    must treat missing as false. */
+export interface GearItem {
+  key: string
+  name: string
+  slot: string
+  klass: string
+  tier: number
+  stats: Record<string, number>
+  cost: number
+  losable: boolean
+  owned: boolean
+  equipped: boolean
+  costume: boolean
+}
+
+/** Post-mutation catalog plus authoritative totals for the HUD — mirrors
+    GearListResponse on the backend. */
+export interface GearListResponse {
+  items: GearItem[]
+  profile: GameProfile
+}
+
 export const gameApi = {
   getProfile: async () => {
     const response = await api.get<GameProfile>("/api/v1/game/profile")
@@ -660,6 +684,20 @@ export const gameApi = {
     const response = await api.patch<GameProfile>(
       "/api/v1/game/profile/avatar",
       { avatar_config: avatarConfig }
+    )
+    return response.data
+  },
+  listGear: async (): Promise<GearItem[]> => {
+    const response = await api.get<GearItem[]>("/api/v1/game/gear")
+    return response.data
+  },
+  toggleGearCostume: async (input: {
+    key: string
+    costume: boolean
+  }): Promise<GearListResponse> => {
+    const response = await api.post<GearListResponse>(
+      "/api/v1/game/gear/costume",
+      input
     )
     return response.data
   },
