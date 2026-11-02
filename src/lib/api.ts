@@ -650,7 +650,7 @@ export interface GearItem {
   losable: boolean
   owned: boolean
   equipped: boolean
-  costume: boolean
+  costume?: boolean
 }
 
 /** Post-mutation catalog plus authoritative totals for the HUD — mirrors
@@ -697,7 +697,8 @@ export const gameApi = {
   }): Promise<GearListResponse> => {
     const response = await api.post<GearListResponse>(
       "/api/v1/game/gear/costume",
-      input
+      input,
+      { skipRateLimitToast: true }
     )
     return response.data
   },

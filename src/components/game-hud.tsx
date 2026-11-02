@@ -10,7 +10,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { avatarConfigToUrl } from "@/lib/avatar"
+import { avatarConfigToUrl, DEFAULT_AVATAR_STYLE } from "@/lib/avatar"
 
 interface GameHudProps {
   readonly isCollapsed?: boolean
@@ -49,7 +49,15 @@ function StatBar({
 export function GameHud({ isCollapsed = false }: GameHudProps) {
   const { user } = useAuth()
   const { data: profile, isLoading, isError } = useGameProfile()
-  const { data: gear } = useGear()
+  // The gear overlay renders for pixel-art only — another resolved style
+  // would discard the rows, so the catalog fetch waits for a profile that
+  // uses them (absent style means the pixel-art default, same as below).
+  const avatarStyle = profile?.avatar_config.style
+  const { data: gear } = useGear(
+    profile !== undefined &&
+      (typeof avatarStyle === "string" ? avatarStyle : DEFAULT_AVATAR_STYLE) ===
+        "pixel-art"
+  )
   const { pendingEventCount } = useGame()
   // Remember which seed failed — a new avatar_config resets the fallback.
   const [failedUrl, setFailedUrl] = useState<string | null>(null)

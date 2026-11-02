@@ -9,13 +9,13 @@ import { getErrorMessage } from "@/lib/errors"
  * Gear queries/mutations (#65). The list doubles as the avatar overlay's
  * worn-gear source — owned items carry the equipped/costume flags.
  */
-export function useGear() {
+export function useGear(enabled = true) {
   const { user } = useAuth()
 
   return useQuery({
     queryKey: ["gear", { userId: user?.id }],
     queryFn: gameApi.listGear,
-    enabled: !!user,
+    enabled: !!user && enabled,
   })
 }
 
@@ -51,6 +51,14 @@ export function useToggleGearCostume() {
         description: getErrorMessage(err),
         variant: "destructive",
       })
+    },
+    onSettled: () => {
+      // Settling while another write is still running means the success
+      // path above cancelled the list refetch that write relies on — its
+      // rows would never appear. Resync in that case only; isMutating
+      // counts this still-callback-running mutation, hence > 1.
+      if (queryClient.isMutating() > 1)
+        void queryClient.invalidateQueries({ queryKey: ["gear"] })
     },
   })
 }

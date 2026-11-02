@@ -299,8 +299,9 @@ export function AvatarCard() {
 
           {/* Costume flags live on owned gear, not the config blob — toggles
               POST straight to /game/gear/costume (no Save needed) and the
-              overlay on the preview reflects the response cache. */}
-          {ownedGear.length > 0 && (
+              overlay on the preview reflects the response cache. Pixel-art
+              gated like the pickers: other styles never show the overlay. */}
+          {effective.style === "pixel-art" && ownedGear.length > 0 && (
             <fieldset className="space-y-2">
               <legend className="ml-1 text-sm font-semibold">Worn gear</legend>
               <p className="ml-1 text-xs text-muted-foreground">

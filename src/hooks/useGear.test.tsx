@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 import { QueryClientProvider } from "@tanstack/react-query"
-import { renderHook, waitFor } from "@testing-library/react"
+import { act, renderHook, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import {
   gameApi,
@@ -80,6 +80,7 @@ describe("useToggleGearCostume", () => {
     }
     vi.mocked(gameApi.toggleGearCostume).mockResolvedValue(res)
 
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries")
     const { result } = renderHook(() => useToggleGearCostume(), { wrapper })
     result.current.mutate({ key: "warrior-weapon-1", costume: true })
     await waitFor(() => expect(queryClient.isMutating()).toBe(0))
@@ -91,5 +92,44 @@ describe("useToggleGearCostume", () => {
       queryClient.getQueryData<GameProfile>(["game-profile", { userId: "u1" }])
         ?.gold
     ).toBe(42)
+    // No other write in flight — the settle-time resync must not fire.
+    expect(invalidate).not.toHaveBeenCalledWith({ queryKey: ["gear"] })
+  })
+
+  it("resyncs the list when a toggle settles while another write is in flight", async () => {
+    // The settled toggle's success path cancels the list refetch the other
+    // write's own invalidation kicked off — the settle-time guard must
+    // restart it or that write's rows never appear.
+    const res: GearListResponse = {
+      items: [{ ...SWORD, costume: true }],
+      profile: { ...PROFILE, gold: 42 },
+    }
+    let resolveHold!: (value: GearListResponse) => void
+    vi.mocked(gameApi.toggleGearCostume)
+      .mockImplementationOnce(
+        () =>
+          new Promise<GearListResponse>((resolve) => (resolveHold = resolve))
+      )
+      .mockResolvedValue(res)
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries")
+    const { result } = renderHook(
+      () => ({ hold: useToggleGearCostume(), toggle: useToggleGearCostume() }),
+      { wrapper }
+    )
+
+    act(() => {
+      result.current.hold.mutate({ key: "warrior-weapon-1", costume: true })
+    })
+    await waitFor(() => expect(result.current.hold.isPending).toBe(true))
+    act(() => {
+      result.current.toggle.mutate({ key: "warrior-weapon-1", costume: false })
+    })
+    await waitFor(() => expect(result.current.toggle.isSuccess).toBe(true))
+
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["gear"] })
+
+    await act(async () => {
+      resolveHold(res)
+    })
   })
 })
