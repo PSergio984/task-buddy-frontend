@@ -14,10 +14,13 @@ import { cn } from "@/lib/utils"
 interface ActivityPanelProps {
   readonly grid: ActivityGrid | undefined
   readonly stats: ActivityStats | undefined
-  readonly isPending: boolean
-  readonly isError: boolean
+  readonly gridIsPending: boolean
+  readonly gridIsError: boolean
+  readonly statsIsPending: boolean
+  readonly statsIsError: boolean
   readonly isOnline: boolean
-  readonly onRetry: () => void
+  readonly onGridRetry: () => void
+  readonly onStatsRetry: () => void
 }
 
 /** Intensity ramp indexed by tier (tier > 4 clamps to the top swatch). */
@@ -63,6 +66,7 @@ function DayCell({
       <TooltipTrigger asChild>
         <button
           type="button"
+          tabIndex={-1}
           aria-label={`${date}: ${Math.round(day.score)} pts, ${Math.round(day.focus_minutes)}m focus`}
           className={cn(
             "h-3.5 w-3.5 rounded-[4px] border border-white/5 transition-transform hover:scale-125",
@@ -94,32 +98,41 @@ function DayCell({
   )
 }
 
-export function ActivityPanel({
-  grid,
-  stats,
+/**
+ * One section's loading/offline contract (same rules the panel had as a
+ * whole): pending while online → skeleton; error or offline-uncached →
+ * an inline retry card; anything else with no data renders nothing.
+ */
+function SectionFallback({
   isPending,
   isError,
   isOnline,
+  onlineMessage,
+  offlineMessage,
+  skeletonClass,
   onRetry,
-}: ActivityPanelProps) {
-  // Same loading/offline contract as the habits column.
+}: {
+  isPending: boolean
+  isError: boolean
+  isOnline: boolean
+  onlineMessage: string
+  offlineMessage: string
+  skeletonClass: string
+  onRetry: () => void
+}) {
   if (isPending && isOnline) {
     return (
-      <div className="space-y-3">
-        <div className="h-20 animate-pulse rounded-3xl bg-white/5" />
-        <div className="h-40 animate-pulse rounded-3xl bg-white/5" />
-      </div>
+      <div
+        className={cn("animate-pulse rounded-3xl bg-white/5", skeletonClass)}
+      />
     )
   }
-  const missing = grid === undefined && stats === undefined
-  if ((isError || !isOnline) && missing) {
+  if (isError || !isOnline) {
     return (
       <div className="flex flex-col items-center gap-3 rounded-3xl border border-white/10 bg-white/5 p-6 text-center">
         {!isOnline && <WifiOff className="h-6 w-6 text-amber-400" />}
         <p className="text-sm text-muted-foreground">
-          {isOnline
-            ? "Couldn't load your activity."
-            : "You're offline and your activity isn't in the local cache."}
+          {isOnline ? onlineMessage : offlineMessage}
         </p>
         <Button
           variant="outline"
@@ -131,12 +144,25 @@ export function ActivityPanel({
       </div>
     )
   }
+  return null
+}
 
+export function ActivityPanel({
+  grid,
+  stats,
+  gridIsPending,
+  gridIsError,
+  statsIsPending,
+  statsIsError,
+  isOnline,
+  onGridRetry,
+  onStatsRetry,
+}: ActivityPanelProps) {
   const weeks = grid !== undefined ? buildWeeks(grid.days) : []
 
   return (
     <div className="space-y-8">
-      {stats !== undefined && (
+      {stats !== undefined ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           <StatChip
             label="Avg / day"
@@ -158,9 +184,19 @@ export function ActivityPanel({
             value={`${Math.round(stats.weekly_total)} pts`}
           />
         </div>
+      ) : (
+        <SectionFallback
+          isPending={statsIsPending}
+          isError={statsIsError}
+          isOnline={isOnline}
+          onlineMessage="Couldn't load your activity stats."
+          offlineMessage="You're offline and your activity stats aren't in the local cache."
+          skeletonClass="h-20"
+          onRetry={onStatsRetry}
+        />
       )}
 
-      {grid !== undefined && (
+      {grid !== undefined ? (
         <section className={cardClass} aria-labelledby="activity-grid-heading">
           <div className="mb-4 flex items-center justify-between gap-2">
             <h2
@@ -175,11 +211,7 @@ export function ActivityPanel({
           </div>
 
           <div className="overflow-x-auto pb-1">
-            <div
-              className="flex w-max gap-[3px]"
-              role="grid"
-              aria-label="Contribution grid"
-            >
+            <div className="flex w-max gap-[3px]">
               {weeks.map((week, wi) => (
                 <div key={wi} className="flex flex-col gap-[3px]">
                   {week.map((day, di) =>
@@ -220,6 +252,16 @@ export function ActivityPanel({
             </span>
           </div>
         </section>
+      ) : (
+        <SectionFallback
+          isPending={gridIsPending}
+          isError={gridIsError}
+          isOnline={isOnline}
+          onlineMessage="Couldn't load the activity grid."
+          offlineMessage="You're offline and the activity grid isn't in the local cache."
+          skeletonClass="h-40"
+          onRetry={onGridRetry}
+        />
       )}
     </div>
   )

@@ -5,12 +5,14 @@ import { Label } from "@/components/ui/label"
 import type { GameClass, GameProfile, StatKey } from "@/lib/api"
 import { cardClass } from "@/lib/game-columns"
 import {
+  allocatedPoints,
   CLASS_MIN_LEVEL,
   classChoiceOpen,
   GAME_CLASSES,
   RESPEC_GOLD_COST,
   STAT_COLUMN,
   STAT_META,
+  STAT_POINT_CAP,
 } from "@/lib/game-profile"
 import { cn } from "@/lib/utils"
 
@@ -46,6 +48,9 @@ export function StatsPanel({
   const canWrite = !writesDisabled
   const unspent = profile?.unspent_stat_points ?? 0
   const respecBlocked = profile !== undefined && profile.gold < RESPEC_GOLD_COST
+  // allocate_points rejects once the allocated pool hits the cap.
+  const capReached =
+    profile !== undefined && allocatedPoints(profile) >= STAT_POINT_CAP
 
   // Same loading/offline contract as the habits column: a paused query
   // stays isPending, so the uncached-offline case joins the error branch.
@@ -117,7 +122,7 @@ export function StatsPanel({
                 <button
                   aria-label={`Add ${label} point`}
                   onClick={() => onAllocate?.(key)}
-                  disabled={busy || unspent === 0}
+                  disabled={busy || unspent === 0 || capReached}
                   className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-emerald-400/20 bg-emerald-400/10 text-emerald-400 transition-all hover:bg-emerald-400/20 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <Plus className="h-4 w-4" />

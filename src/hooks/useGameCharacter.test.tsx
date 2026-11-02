@@ -9,7 +9,12 @@ import {
   useEquipGear,
   useSelectClass,
 } from "./useGameCharacter"
-import { characterApi, gearApi, type GearItem } from "@/lib/api"
+import {
+  characterApi,
+  gearApi,
+  type GearItem,
+  type GearListResponse,
+} from "@/lib/api"
 import { setGameProfileCache } from "@/hooks/useGameProfile"
 
 vi.mock("@/lib/api", async (importOriginal) => {
@@ -79,6 +84,8 @@ describe("useBuyGear", () => {
     expect(invalidate).toHaveBeenCalledWith({
       queryKey: ["game-achievements"],
     })
+    // No other write in flight — the settle-time resync must not fire.
+    expect(invalidate).not.toHaveBeenCalledWith({ queryKey: ["game-gear"] })
   })
 
   it("resyncs the gear cache when a buy fails", async () => {
@@ -94,6 +101,42 @@ describe("useBuyGear", () => {
     })
     await waitFor(() => expect(result.current.isError).toBe(true))
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["game-gear"] })
+  })
+
+  it("resyncs the gear cache when the buy settles while an equip is still in flight", async () => {
+    // The buy's success path cancels the gear refetch the equip's own
+    // resync kicked off — the settle-time guard must restart it or the
+    // equip's updated rows never appear.
+    let resolveEquip!: (res: GearListResponse) => void
+    vi.mocked(gearApi.equip).mockImplementation(
+      () => new Promise<GearListResponse>((resolve) => (resolveEquip = resolve))
+    )
+    vi.mocked(gearApi.buy).mockResolvedValue({
+      items: [gear()],
+      profile: stampedProfile,
+    })
+    const queryClient = new QueryClient()
+    queryClient.setQueryData(["game-gear", { userId: 1 }], [gear()])
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries")
+    const { result } = renderHook(
+      () => ({ buy: useBuyGear(), equip: useEquipGear() }),
+      { wrapper: makeWrapper(queryClient) }
+    )
+
+    act(() => {
+      result.current.equip.mutate({ key: "warrior-weapon-1", equipped: true })
+    })
+    await waitFor(() => expect(result.current.equip.isPending).toBe(true))
+    act(() => {
+      result.current.buy.mutate("warrior-weapon-1")
+    })
+    await waitFor(() => expect(result.current.buy.isSuccess).toBe(true))
+
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["game-gear"] })
+
+    await act(async () => {
+      resolveEquip({ items: [gear()], profile: stampedProfile })
+    })
   })
 })
 
@@ -156,6 +199,21 @@ describe("useAllocateStats", () => {
     expect(characterApi.allocate).toHaveBeenCalledWith({ str: 1 })
     expect(setGameProfileCache).toHaveBeenCalledWith(allocated, 1, SERVER_TIME)
   })
+
+  it("resyncs the profile cache when the write fails", async () => {
+    vi.mocked(characterApi.allocate).mockRejectedValue(new AxiosError("boom"))
+    const queryClient = new QueryClient()
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries")
+    const { result } = renderHook(() => useAllocateStats(), {
+      wrapper: makeWrapper(queryClient),
+    })
+
+    act(() => {
+      result.current.mutate({ str: 1 })
+    })
+    await waitFor(() => expect(result.current.isError).toBe(true))
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["game-profile"] })
+  })
 })
 
 describe("useSelectClass", () => {
@@ -183,5 +241,22 @@ describe("useSelectClass", () => {
       queryKey: ["game-achievements"],
     })
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["game-gear"] })
+  })
+
+  it("resyncs the profile cache when the pick fails", async () => {
+    vi.mocked(characterApi.selectClass).mockRejectedValue(
+      new AxiosError("boom")
+    )
+    const queryClient = new QueryClient()
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries")
+    const { result } = renderHook(() => useSelectClass(), {
+      wrapper: makeWrapper(queryClient),
+    })
+
+    act(() => {
+      result.current.mutate("warrior")
+    })
+    await waitFor(() => expect(result.current.isError).toBe(true))
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["game-profile"] })
   })
 })

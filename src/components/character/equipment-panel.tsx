@@ -93,10 +93,25 @@ export function EquipmentPanel({
           </h2>
           <div className="space-y-2">
             {slotItems.map((item) => {
+              // A missing profile is neutral, not a gold shortage — the
+              // write buttons disable without claiming a reason.
               const block =
                 profile !== undefined
                   ? buyBlock(item, items ?? [], profile)
-                  : "gold"
+                  : null
+              // set_equipped enforces the same class lock as buy_gear:
+              // an owned cross-class piece stays owned but can't be
+              // re-worn. A missing profile disables the write too, but
+              // only a known mismatch shows the lock indicator.
+              const equipLocked =
+                item.klass !== "all" && profile?.game_class !== item.klass
+              const classLocked = profile !== undefined && equipLocked
+              const hint =
+                block !== null && block !== "owned"
+                  ? BLOCK_HINT[block]
+                  : classLocked
+                    ? BLOCK_HINT.class
+                    : null
               const pending = pendingKeys?.has(item.key) ?? false
               return (
                 <div
@@ -124,7 +139,7 @@ export function EquipmentPanel({
                           variant="outline"
                           className={cn(
                             "shrink-0 rounded-full px-2 py-0 text-[9px] font-black tracking-widest uppercase",
-                            block === "class"
+                            classLocked
                               ? "border-destructive/30 bg-destructive/10 text-destructive"
                               : "border-accent/30 bg-accent/10 text-accent"
                           )}
@@ -136,11 +151,8 @@ export function EquipmentPanel({
                     <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
                       {statsLabel(item.stats)}
                       {!item.owned && ` · ${item.cost}g`}
-                      {block !== null && block !== "owned" && (
-                        <span className="text-amber-400">
-                          {" "}
-                          · {BLOCK_HINT[block]}
-                        </span>
+                      {hint !== null && (
+                        <span className="text-amber-400"> · {hint}</span>
                       )}
                     </p>
                   </div>
@@ -160,16 +172,23 @@ export function EquipmentPanel({
                       variant="outline"
                       aria-label={`Equip ${item.name}`}
                       onClick={() => onEquip?.(item.key, true)}
-                      disabled={!canWrite || pending}
+                      disabled={!canWrite || pending || equipLocked}
+                      title={classLocked ? BLOCK_HINT.class : undefined}
                       className="h-8 shrink-0 rounded-xl border-white/15 px-3 text-xs font-bold"
                     >
+                      {classLocked && <Lock className="h-3.5 w-3.5" />}
                       Equip
                     </Button>
                   ) : (
                     <Button
                       aria-label={`Buy ${item.name}`}
                       onClick={() => onBuy?.(item.key)}
-                      disabled={!canWrite || pending || block !== null}
+                      disabled={
+                        !canWrite ||
+                        pending ||
+                        profile === undefined ||
+                        block !== null
+                      }
                       title={
                         block !== null && block !== "owned"
                           ? BLOCK_HINT[block]

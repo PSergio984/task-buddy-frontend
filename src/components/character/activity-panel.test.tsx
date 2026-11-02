@@ -49,16 +49,24 @@ function stats(overrides: Partial<ActivityStats> = {}): ActivityStats {
   }
 }
 
-function renderPanel(g: ActivityGrid, s?: ActivityStats) {
+function renderPanel(
+  g: ActivityGrid | undefined,
+  s: ActivityStats | undefined,
+  props: Record<string, unknown> = {}
+) {
   return render(
     <TooltipProvider delayDuration={0}>
       <ActivityPanel
         grid={g}
         stats={s}
-        isPending={false}
-        isError={false}
+        gridIsPending={false}
+        gridIsError={false}
+        statsIsPending={false}
+        statsIsError={false}
         isOnline
-        onRetry={vi.fn()}
+        onGridRetry={vi.fn()}
+        onStatsRetry={vi.fn()}
+        {...props}
       />
     </TooltipProvider>
   )
@@ -67,7 +75,8 @@ function renderPanel(g: ActivityGrid, s?: ActivityStats) {
 describe("ActivityPanel", () => {
   it("colors cells by the tier the score reaches via tier_thresholds", () => {
     const { container } = renderPanel(
-      grid([day("2025-11-01", { score: 0 }), day("2025-11-02", { score: 40 })])
+      grid([day("2025-11-01", { score: 0 }), day("2025-11-02", { score: 40 })]),
+      undefined
     )
     const cells = container.querySelectorAll("button.h-3\\.5")
     // tier 0 → muted swatch; score 40 ≥ 35 → tier 3 → emerald-600.
@@ -83,7 +92,8 @@ describe("ActivityPanel", () => {
           focus_minutes: 45,
           events: { habit_click: 3, daily_check: 1 },
         }),
-      ])
+      ]),
+      undefined
     )
 
     fireEvent.focus(screen.getByLabelText("Mon, Nov 3: 20 pts, 45m focus"))
@@ -104,21 +114,47 @@ describe("ActivityPanel", () => {
     expect(screen.getByText("42 pts")).toBeInTheDocument()
   })
 
-  it("explains the missing cache on an offline cold-open", () => {
-    render(
-      <TooltipProvider delayDuration={0}>
-        <ActivityPanel
-          grid={undefined}
-          stats={undefined}
-          isPending
-          isError={false}
-          isOnline={false}
-          onRetry={vi.fn()}
-        />
-      </TooltipProvider>
-    )
+  it("keeps the grid visible and retries only the failed stats section", () => {
+    const onStatsRetry = vi.fn()
+    renderPanel(grid([day("2025-11-01")]), undefined, {
+      statsIsError: true,
+      onStatsRetry,
+    })
+
+    expect(screen.getByText("Activity")).toBeInTheDocument()
     expect(
-      screen.getByText(/activity isn't in the local cache/)
+      screen.getByText(/Couldn't load your activity stats/)
+    ).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: /Retry/ }))
+    expect(onStatsRetry).toHaveBeenCalled()
+  })
+
+  it("keeps the stat chips visible and retries only the failed grid section", () => {
+    const onGridRetry = vi.fn()
+    renderPanel(undefined, stats(), {
+      gridIsError: true,
+      onGridRetry,
+    })
+
+    expect(screen.getByText("Avg / day")).toBeInTheDocument()
+    expect(
+      screen.getByText(/Couldn't load the activity grid/)
+    ).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: /Retry/ }))
+    expect(onGridRetry).toHaveBeenCalled()
+  })
+
+  it("explains the missing cache on an offline cold-open", () => {
+    renderPanel(undefined, undefined, {
+      gridIsPending: true,
+      statsIsPending: true,
+      isOnline: false,
+    })
+    expect(
+      screen.getByText(/activity stats aren't in the local cache/)
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/activity grid isn't in the local cache/)
     ).toBeInTheDocument()
   })
 })

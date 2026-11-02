@@ -40,20 +40,20 @@ export function useAchievements() {
   })
 }
 
-export function useActivityGrid(start?: string, end?: string) {
+export function useActivityGrid() {
   const { user } = useAuth()
   return useQuery({
-    queryKey: ["game-activity-grid", { userId: user?.id, start, end }],
-    queryFn: () => activityApi.grid(start, end),
+    queryKey: ["game-activity-grid", { userId: user?.id }],
+    queryFn: () => activityApi.grid(),
     enabled: !!user,
   })
 }
 
-export function useActivityStats(start?: string, end?: string) {
+export function useActivityStats() {
   const { user } = useAuth()
   return useQuery({
-    queryKey: ["game-activity-stats", { userId: user?.id, start, end }],
-    queryFn: () => activityApi.stats(start, end),
+    queryKey: ["game-activity-stats", { userId: user?.id }],
+    queryFn: () => activityApi.stats(),
     enabled: !!user,
   })
 }
@@ -78,9 +78,10 @@ export function useBuyGear() {
       } catch {
         // Cancellation is best-effort — the write below still lands.
       }
-      queryClient.setQueryData(["game-gear", { userId }], res.items)
-      if (userId !== undefined)
+      if (userId !== undefined) {
+        queryClient.setQueryData(["game-gear", { userId }], res.items)
         await setGameProfileCache(res.profile, userId, res.profile.server_time)
+      }
       // 'first-gear' can grant on the buy — resync the badge list.
       void queryClient.invalidateQueries({ queryKey: ["game-achievements"] })
     },
@@ -91,6 +92,14 @@ export function useBuyGear() {
         description: getErrorMessage(err),
         variant: "destructive",
       })
+    },
+    onSettled: () => {
+      // Settling while another write is still running means the success
+      // path above cancelled the gear refetch that write relies on — the
+      // stripped/updated rows would never appear. Resync in that case
+      // only; isMutating counts this still-running mutation, hence > 1.
+      if (queryClient.isMutating() > 1)
+        void queryClient.invalidateQueries({ queryKey: ["game-gear"] })
     },
   })
 }
@@ -112,9 +121,10 @@ export function useEquipGear() {
       } catch {
         // Cancellation is best-effort — the write below still lands.
       }
-      queryClient.setQueryData(["game-gear", { userId }], res.items)
-      if (userId !== undefined)
+      if (userId !== undefined) {
+        queryClient.setQueryData(["game-gear", { userId }], res.items)
         await setGameProfileCache(res.profile, userId, res.profile.server_time)
+      }
     },
     onError: (err) => {
       void queryClient.invalidateQueries({ queryKey: ["game-gear"] })
@@ -123,6 +133,14 @@ export function useEquipGear() {
         description: getErrorMessage(err),
         variant: "destructive",
       })
+    },
+    onSettled: () => {
+      // Settling while another write is still running means the success
+      // path above cancelled the gear refetch that write relies on — the
+      // stripped/updated rows would never appear. Resync in that case
+      // only; isMutating counts this still-running mutation, hence > 1.
+      if (queryClient.isMutating() > 1)
+        void queryClient.invalidateQueries({ queryKey: ["game-gear"] })
     },
   })
 }
@@ -141,12 +159,16 @@ function useProfileCacheWrite() {
 
 export function useAllocateStats() {
   const { toast } = useToast()
+  const queryClient = useQueryClient()
   const applyProfile = useProfileCacheWrite()
   return useMutation({
     mutationFn: (points: Partial<Record<StatKey, number>>) =>
       characterApi.allocate(points),
     onSuccess: applyProfile,
     onError: (err) => {
+      // Resync on failure — the cached profile keeps stale totals
+      // otherwise (same contract as the habit click).
+      void queryClient.invalidateQueries({ queryKey: ["game-profile"] })
       toast({
         title: "Couldn't allocate points",
         description: getErrorMessage(err),
@@ -158,11 +180,13 @@ export function useAllocateStats() {
 
 export function useUpdateCharacter() {
   const { toast } = useToast()
+  const queryClient = useQueryClient()
   const applyProfile = useProfileCacheWrite()
   return useMutation({
     mutationFn: (autoAllocate: boolean) => characterApi.update(autoAllocate),
     onSuccess: applyProfile,
     onError: (err) => {
+      void queryClient.invalidateQueries({ queryKey: ["game-profile"] })
       toast({
         title: "Couldn't update character",
         description: getErrorMessage(err),
@@ -186,11 +210,18 @@ export function useSelectClass() {
       void queryClient.invalidateQueries({ queryKey: ["game-gear"] })
     },
     onError: (err) => {
+      void queryClient.invalidateQueries({ queryKey: ["game-profile"] })
       toast({
         title: "Couldn't pick class",
         description: getErrorMessage(err),
         variant: "destructive",
       })
+    },
+    onSettled: () => {
+      // Same settle-reconcile as the gear writes above — this mutation
+      // also touches the gear cache.
+      if (queryClient.isMutating() > 1)
+        void queryClient.invalidateQueries({ queryKey: ["game-gear"] })
     },
   })
 }
@@ -207,11 +238,18 @@ export function useRespec() {
       void queryClient.invalidateQueries({ queryKey: ["game-gear"] })
     },
     onError: (err) => {
+      void queryClient.invalidateQueries({ queryKey: ["game-profile"] })
       toast({
         title: "Couldn't respec",
         description: getErrorMessage(err),
         variant: "destructive",
       })
+    },
+    onSettled: () => {
+      // Same settle-reconcile as the gear writes above — this mutation
+      // also touches the gear cache.
+      if (queryClient.isMutating() > 1)
+        void queryClient.invalidateQueries({ queryKey: ["game-gear"] })
     },
   })
 }

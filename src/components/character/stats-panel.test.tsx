@@ -60,6 +60,29 @@ describe("StatsPanel", () => {
     expect(onAllocate).not.toHaveBeenCalled()
   })
 
+  it("guards allocation once the allocated pool hits the 100-point cap", () => {
+    const onAllocate = vi.fn()
+    // 97 + 3 = 100 = STAT_POINT_CAP — unspent points can't be spent.
+    renderPanel(
+      profile({ str_stat: 97, per_stat: 3, unspent_stat_points: 5 }),
+      { onAllocate }
+    )
+
+    expect(screen.getByLabelText("Add Strength point")).toBeDisabled()
+    expect(screen.getByLabelText("Add Perception point")).toBeDisabled()
+    expect(onAllocate).not.toHaveBeenCalled()
+  })
+
+  it("still allows spending while the allocated pool sits below the cap", () => {
+    const onAllocate = vi.fn()
+    renderPanel(
+      profile({ str_stat: 96, per_stat: 3, unspent_stat_points: 5 }),
+      { onAllocate }
+    )
+
+    expect(screen.getByLabelText("Add Strength point")).toBeEnabled()
+  })
+
   it("hides write affordances while offline", () => {
     renderPanel(profile({ unspent_stat_points: 2 }), {
       writesDisabled: true,

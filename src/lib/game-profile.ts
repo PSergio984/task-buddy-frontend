@@ -14,8 +14,6 @@ import type {
   StatKey,
 } from "@/lib/api"
 
-export const STAT_KEYS: readonly StatKey[] = ["str", "int", "con", "per"]
-
 /** Maps a StatKey onto the GameProfile column it increments. */
 export const STAT_COLUMN = {
   str: "str_stat",
@@ -47,10 +45,24 @@ export const GAME_CLASSES: ReadonlyArray<{
 export const CLASS_MIN_LEVEL = 10
 
 /**
+ * engine.STAT_POINT_CAP — the TOTAL allocated pool (sum of the four
+ * <stat>_stat columns) tops out at 100.
+ */
+export const STAT_POINT_CAP = 100
+
+/**
  * GameRates.respec_gold_cost default — display-only; the server enforces
  * the live value when the POST lands.
  */
 export const RESPEC_GOLD_COST = 100
+
+/**
+ * Total allocated points — allocate_points caps this at STAT_POINT_CAP,
+ * so the + buttons disable once it's reached.
+ */
+export function allocatedPoints(profile: GameProfile): number {
+  return STAT_META.reduce((n, { key }) => n + profile[STAT_COLUMN[key]], 0)
+}
 
 /**
  * A first pick needs level >= CLASS_MIN_LEVEL; class_unlocked is sticky
@@ -110,7 +122,7 @@ export function activityTier(score: number, tierThresholds: number[]): number {
 }
 
 /** Mon=0..Sun=6 — the same weekday convention RecurrenceWeekdays uses. */
-export function weekdayIndex(date: string): number {
+function weekdayIndex(date: string): number {
   const dow = new Date(`${date}T00:00:00Z`).getUTCDay()
   return (dow + 6) % 7
 }

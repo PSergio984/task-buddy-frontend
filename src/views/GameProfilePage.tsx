@@ -152,15 +152,13 @@ export function GameProfilePage() {
           <ActivityPanel
             grid={activityGridQuery.data}
             stats={activityStatsQuery.data}
-            isPending={
-              activityGridQuery.isPending && activityStatsQuery.isPending
-            }
-            isError={activityGridQuery.isError && activityStatsQuery.isError}
+            gridIsPending={activityGridQuery.isPending}
+            gridIsError={activityGridQuery.isError}
+            statsIsPending={activityStatsQuery.isPending}
+            statsIsError={activityStatsQuery.isError}
             isOnline={isOnline}
-            onRetry={() => {
-              void activityGridQuery.refetch()
-              void activityStatsQuery.refetch()
-            }}
+            onGridRetry={() => void activityGridQuery.refetch()}
+            onStatsRetry={() => void activityStatsQuery.refetch()}
           />
         </TabsContent>
       </Tabs>

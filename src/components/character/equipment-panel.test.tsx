@@ -116,6 +116,46 @@ describe("EquipmentPanel", () => {
     expect(onEquip).toHaveBeenCalledWith("traveller-boots", false)
   })
 
+  it("locks equipping an owned cross-class piece — set_equipped rejects it", () => {
+    const onEquip = vi.fn()
+    renderPanel(
+      [
+        gear({ owned: true }),
+        gear({
+          key: "mage-staff-1",
+          name: "Apprentice Staff",
+          klass: "mage",
+          owned: true,
+        }),
+      ],
+      profile({ game_class: "warrior" }),
+      { onEquip }
+    )
+
+    const locked = screen.getByLabelText("Equip Apprentice Staff")
+    expect(locked).toBeDisabled()
+    expect(locked).toHaveAttribute("title", "Class locked")
+    // Same-class and 'all'-class owned pieces still equip.
+    expect(screen.getByLabelText("Equip Training Sword")).toBeEnabled()
+    fireEvent.click(locked)
+    expect(onEquip).not.toHaveBeenCalled()
+  })
+
+  it("disables writes without a claimed reason while the profile is missing", () => {
+    render(
+      <EquipmentPanel
+        items={[gear()]}
+        profile={undefined}
+        isPending={false}
+        isError={false}
+        isOnline
+        onRetry={vi.fn()}
+      />
+    )
+    expect(screen.getByLabelText("Buy Training Sword")).toBeDisabled()
+    expect(screen.queryByText(/Not enough gold/)).not.toBeInTheDocument()
+  })
+
   it("explains the missing cache on an offline cold-open", () => {
     render(
       <EquipmentPanel
