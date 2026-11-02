@@ -1,3 +1,4 @@
+import { useRef, useState, type KeyboardEvent } from "react"
 import { RefreshCw, WifiOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -51,12 +52,28 @@ function StatChip({ label, value }: { label: string; value: string }) {
   )
 }
 
+/** Arrow-key deltas over the flat day list — weeks are 7-day columns. */
+const ARROW_DELTAS: Record<string, number> = {
+  ArrowLeft: -1,
+  ArrowRight: 1,
+  ArrowUp: -7,
+  ArrowDown: 7,
+}
+
 function DayCell({
   day,
   tierThresholds,
+  tabIndex,
+  onFocus,
+  onKeyDown,
+  cellRef,
 }: {
   day: ActivityDay
   tierThresholds: number[]
+  tabIndex: number
+  onFocus: () => void
+  onKeyDown: (e: KeyboardEvent<HTMLButtonElement>) => void
+  cellRef: (el: HTMLButtonElement | null) => void
 }) {
   const tier = activityTier(day.score, tierThresholds)
   const date = utcDayLabel(day.date)
@@ -66,7 +83,10 @@ function DayCell({
       <TooltipTrigger asChild>
         <button
           type="button"
-          tabIndex={-1}
+          ref={cellRef}
+          tabIndex={tabIndex}
+          onFocus={onFocus}
+          onKeyDown={onKeyDown}
           aria-label={`${date}: ${Math.round(day.score)} pts, ${Math.round(day.focus_minutes)}m focus`}
           className={cn(
             "h-3.5 w-3.5 rounded-[4px] border border-white/5 transition-transform hover:scale-125",
@@ -159,6 +179,39 @@ export function ActivityPanel({
   onStatsRetry,
 }: ActivityPanelProps) {
   const weeks = grid !== undefined ? buildWeeks(grid.days) : []
+  // Roving tabindex over the flat (chronological) day list — exactly one
+  // cell is tabbable and arrows walk it: Left/Right an adjacent day,
+  // Up/Down the same weekday a week over. Weeks are column-major and
+  // each column is exactly 7 slots, so ±7 always lands on the same
+  // weekday of the adjacent week (out-of-range = that day isn't in the
+  // window → stay put).
+  const days: ActivityDay[] = []
+  const dayIndex = new Map<string, number>()
+  for (const week of weeks)
+    for (const d of week)
+      if (d !== null) {
+        dayIndex.set(d.date, days.length)
+        days.push(d)
+      }
+  const [focusIndex, setFocusIndex] = useState(0)
+  const cellRefs = useRef<(HTMLButtonElement | null)[]>([])
+  const rovingIndex = focusIndex < days.length ? focusIndex : 0
+
+  const moveFocus = (index: number, delta: number) => {
+    const next = index + delta
+    if (next < 0 || next >= days.length) return
+    setFocusIndex(next)
+    // DOM focus opens the cell's tooltip via the Radix trigger.
+    cellRefs.current[next]?.focus()
+  }
+
+  const onDayKeyDown =
+    (index: number) => (e: KeyboardEvent<HTMLButtonElement>) => {
+      const delta = ARROW_DELTAS[e.key]
+      if (delta === undefined) return
+      e.preventDefault()
+      moveFocus(index, delta)
+    }
 
   return (
     <div className="space-y-8">
@@ -226,6 +279,17 @@ export function ActivityPanel({
                         key={day.date}
                         day={day}
                         tierThresholds={grid.tier_thresholds}
+                        tabIndex={
+                          dayIndex.get(day.date) === rovingIndex ? 0 : -1
+                        }
+                        onFocus={() =>
+                          setFocusIndex(dayIndex.get(day.date) ?? 0)
+                        }
+                        onKeyDown={onDayKeyDown(dayIndex.get(day.date) ?? 0)}
+                        cellRef={(el) => {
+                          const i = dayIndex.get(day.date)
+                          if (i !== undefined) cellRefs.current[i] = el
+                        }}
                       />
                     )
                   )}

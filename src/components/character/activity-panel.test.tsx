@@ -104,6 +104,47 @@ describe("ActivityPanel", () => {
     expect(tooltip).toHaveTextContent("daily check ×1")
   })
 
+  it("keeps one tabbable cell and roves it with the arrow keys", async () => {
+    // Two full Mon–Sun weeks — Up/Down jump a whole week column.
+    const days = Array.from({ length: 14 }, (_, i) =>
+      day(`2025-11-${String(3 + i).padStart(2, "0")}`, { score: i })
+    )
+    renderPanel(grid(days), undefined)
+    const cells = screen.getAllByRole("button")
+    expect(cells).toHaveLength(14)
+    expect(cells.filter((c) => c.tabIndex === 0)).toHaveLength(1)
+    expect(cells[0].tabIndex).toBe(0)
+
+    // Right → adjacent day; focus opens that day's tooltip.
+    fireEvent.keyDown(cells[0], { key: "ArrowRight" })
+    expect(document.activeElement).toBe(cells[1])
+    expect(cells[0].tabIndex).toBe(-1)
+    expect(cells[1].tabIndex).toBe(0)
+    const tooltip = await screen.findByRole("tooltip")
+    expect(tooltip).toHaveTextContent("Tue, Nov 4 — 1 pts")
+
+    // Down → same weekday next week (flat index +7).
+    fireEvent.keyDown(cells[1], { key: "ArrowDown" })
+    expect(document.activeElement).toBe(cells[8])
+    expect(cells[8].tabIndex).toBe(0)
+
+    // No third week — the roving cell stays at the window edge.
+    fireEvent.keyDown(cells[8], { key: "ArrowDown" })
+    expect(document.activeElement).toBe(cells[8])
+
+    fireEvent.keyDown(cells[8], { key: "ArrowUp" })
+    expect(document.activeElement).toBe(cells[1])
+    fireEvent.keyDown(cells[1], { key: "ArrowLeft" })
+    expect(document.activeElement).toBe(cells[0])
+    fireEvent.keyDown(cells[0], { key: "ArrowLeft" })
+    expect(document.activeElement).toBe(cells[0])
+
+    // Focusing a cell directly roves the tabindex to it.
+    fireEvent.focus(cells[13])
+    expect(cells.filter((c) => c.tabIndex === 0)).toHaveLength(1)
+    expect(cells[13].tabIndex).toBe(0)
+  })
+
   it("renders the stat row from the stats payload", () => {
     renderPanel(grid([day("2025-11-01")]), stats())
     expect(screen.getByText("Avg / day")).toBeInTheDocument()

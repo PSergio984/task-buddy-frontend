@@ -1,15 +1,18 @@
 import { renderHook, act, waitFor } from "@testing-library/react"
 import { QueryClient } from "@tanstack/react-query"
-import { describe, it, expect, vi, beforeEach } from "vitest"
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { AxiosError } from "axios"
 import { makeWrapper, profile, SERVER_TIME } from "./game-hook-test-utils"
 import {
+  useActivityGrid,
+  useActivityStats,
   useAllocateStats,
   useBuyGear,
   useEquipGear,
   useSelectClass,
 } from "./useGameCharacter"
 import {
+  activityApi,
   characterApi,
   gearApi,
   type GearItem,
@@ -22,6 +25,7 @@ vi.mock("@/lib/api", async (importOriginal) => {
   return {
     ...mod,
     gearApi: { ...mod.gearApi, buy: vi.fn(), equip: vi.fn() },
+    activityApi: { ...mod.activityApi, grid: vi.fn(), stats: vi.fn() },
     characterApi: {
       ...mod.characterApi,
       allocate: vi.fn(),
@@ -47,6 +51,79 @@ function gear(overrides: Partial<GearItem> = {}): GearItem {
     ...overrides,
   }
 }
+
+describe("activity day-boundary resync", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(activityApi.grid).mockResolvedValue({
+      start: "2025-11-01",
+      end: "2025-11-01",
+      days: [],
+      tier_thresholds: [],
+      server_time: SERVER_TIME,
+    })
+    vi.mocked(activityApi.stats).mockResolvedValue({
+      start: "2025-11-01",
+      end: "2025-11-01",
+      avg_hours_per_day: 0,
+      total_hours: 0,
+      current_streak: 0,
+      longest_streak: 0,
+      best_day: null,
+      weekly_total: 0,
+      speedrun_pbs: null,
+      server_time: SERVER_TIME,
+    })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it("invalidates the activity queries at the next UTC midnight", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2025-11-01T10:00:00Z"))
+    const queryClient = new QueryClient()
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries")
+    renderHook(() => ({ grid: useActivityGrid(), stats: useActivityStats() }), {
+      wrapper: makeWrapper(queryClient),
+    })
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(14 * 60 * 60 * 1000)
+    })
+
+    expect(invalidate).toHaveBeenCalledWith({
+      queryKey: ["game-activity-grid"],
+    })
+    expect(invalidate).toHaveBeenCalledWith({
+      queryKey: ["game-activity-stats"],
+    })
+  })
+
+  it("invalidates the activity queries when the tab becomes visible again", () => {
+    const visibility = vi
+      .spyOn(document, "visibilityState", "get")
+      .mockReturnValue("visible")
+    const queryClient = new QueryClient()
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries")
+    renderHook(() => ({ grid: useActivityGrid(), stats: useActivityStats() }), {
+      wrapper: makeWrapper(queryClient),
+    })
+
+    act(() => {
+      document.dispatchEvent(new Event("visibilitychange"))
+    })
+
+    expect(invalidate).toHaveBeenCalledWith({
+      queryKey: ["game-activity-grid"],
+    })
+    expect(invalidate).toHaveBeenCalledWith({
+      queryKey: ["game-activity-stats"],
+    })
+    visibility.mockRestore()
+  })
+})
 
 describe("useBuyGear", () => {
   beforeEach(() => {

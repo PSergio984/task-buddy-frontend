@@ -10,6 +10,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext"
 import { useToast } from "@/hooks/use-toast"
 import { setGameProfileCache } from "@/hooks/useGameProfile"
+import { useUtcDayRollover } from "@/hooks/useUtcDayRollover"
 import { getErrorMessage } from "@/lib/errors"
 
 /** Lets `useMutationState` find in-flight buys/equips for pending-key sets. */
@@ -42,6 +43,8 @@ export function useAchievements() {
 
 export function useActivityGrid() {
   const { user } = useAuth()
+  // The grid is a fixed trailing-day window — roll it at the UTC boundary.
+  useUtcDayRollover("game-activity-grid")
   return useQuery({
     queryKey: ["game-activity-grid", { userId: user?.id }],
     queryFn: () => activityApi.grid(),
@@ -51,6 +54,7 @@ export function useActivityGrid() {
 
 export function useActivityStats() {
   const { user } = useAuth()
+  useUtcDayRollover("game-activity-stats")
   return useQuery({
     queryKey: ["game-activity-stats", { userId: user?.id }],
     queryFn: () => activityApi.stats(),
