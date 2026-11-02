@@ -13,7 +13,9 @@ export type AvatarConfig = {
   style: string
   seed: string
   traits: Record<string, string>
-  costume: Record<string, string>
+  // Picker-unmanaged — raw members carry through saves, so the member type
+  // is unconstrained (backend currently stores string maps).
+  costume: Record<string, unknown>
 }
 
 /** DiceBear pixel-art is the spec'd avatar style (#46). */
@@ -93,6 +95,20 @@ const PIXEL_ART_OPTION_KEYS = new Set([
   ...Object.keys(PIXEL_ART_COLORS),
 ])
 
+/** Picked traits → pixel-art query params. Unknown keys and non-string
+    values are skipped — options stored ahead of the picker's vocabulary
+    carry through saves but never reach the URL. `accessories` also pins its
+    probability gate to 100 so a picked variant always renders. */
+function setPixelArtParams(params: URLSearchParams, traits: unknown): void {
+  if (traits === null || typeof traits !== "object") return
+  for (const [key, value] of Object.entries(traits)) {
+    if (!PIXEL_ART_OPTION_KEYS.has(key)) continue
+    if (typeof value !== "string" || value.length === 0) continue
+    params.set(key, value)
+    if (key === "accessories") params.set("accessoriesProbability", "100")
+  }
+}
+
 /**
  * Config blob → DiceBear HTTP-API URL. Requires a seed; an absent style
  * defaults to pixel-art and a present-but-unknown style yields null so the
@@ -113,17 +129,7 @@ export function avatarConfigToUrl(
   if (typeof raw !== "string" || !DICEBEAR_STYLES.has(raw)) return null
 
   const params = new URLSearchParams({ seed })
-  if (raw === "pixel-art") {
-    const traits = config?.traits
-    if (traits !== null && typeof traits === "object") {
-      for (const [key, value] of Object.entries(traits)) {
-        if (!PIXEL_ART_OPTION_KEYS.has(key)) continue
-        if (typeof value !== "string" || value.length === 0) continue
-        params.set(key, value)
-        if (key === "accessories") params.set("accessoriesProbability", "100")
-      }
-    }
-  }
+  if (raw === "pixel-art") setPixelArtParams(params, config?.traits)
   return `https://api.dicebear.com/9.x/${raw}/svg?${params.toString()}`
 }
 

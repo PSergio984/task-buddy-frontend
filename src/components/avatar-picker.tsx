@@ -43,8 +43,8 @@ const COLOR_LABELS: Record<string, string> = {
   backgroundColor: "Background",
 }
 
-/** String-valued members of a blob section — traits/costume are
-    Record<string,string>; other member types couldn't be saved back anyway. */
+/** String-valued members of the traits blob — Record<string,string>;
+    other member types couldn't be saved back anyway. */
 function stringMembers(value: unknown): Record<string, string> {
   const out: Record<string, string> = {}
   if (value !== null && typeof value === "object") {
@@ -68,7 +68,12 @@ function normalizeConfig(
     style: typeof raw?.style === "string" ? raw.style : DEFAULT_AVATAR_STYLE,
     seed: typeof raw?.seed === "string" ? raw.seed : "",
     traits: stringMembers(raw?.traits),
-    costume: stringMembers(raw?.costume),
+    // costume is picker-unmanaged — the raw object passes through so
+    // non-string members (ids, flags) survive a save unmangled.
+    costume:
+      raw?.costume !== null && typeof raw?.costume === "object"
+        ? (raw.costume as Record<string, unknown>)
+        : {},
   }
 }
 
@@ -79,7 +84,7 @@ function stableStringify(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`
   const record = value as Record<string, unknown>
   const entries = Object.keys(record)
-    .sort()
+    .sort((a, b) => a.localeCompare(b))
     .map((key) => `${JSON.stringify(key)}:${stableStringify(record[key])}`)
   return `{${entries.join(",")}}`
 }
@@ -129,6 +134,20 @@ export function AvatarCard() {
     })
   }
 
+  // Loading/error resolve to `body`; `??` (not a nested ternary) leaves the
+  // form as the default content.
+  let body: React.ReactNode = null
+  if (isLoading) {
+    body = <div className="h-40 animate-pulse rounded-2xl bg-white/5" />
+  } else if (isError || profile === undefined) {
+    body = (
+      <p className="text-sm font-bold text-muted-foreground">
+        Game profile unavailable — the avatar picker will return when the game
+        API does.
+      </p>
+    )
+  }
+
   return (
     <Card className="overflow-hidden rounded-[2rem] border bg-background/50 p-8 shadow-2xl shadow-primary/5 backdrop-blur-xl">
       <div className="mb-8 flex items-center gap-4">
@@ -143,14 +162,7 @@ export function AvatarCard() {
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="h-40 animate-pulse rounded-2xl bg-white/5" />
-      ) : isError || profile === undefined ? (
-        <p className="text-sm font-bold text-muted-foreground">
-          Game profile unavailable — the avatar picker will return when the game
-          API does.
-        </p>
-      ) : (
+      {body ?? (
         <form onSubmit={handleSave} className="space-y-8">
           <div className="flex flex-col items-center gap-3">
             <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-tr from-primary to-accent text-4xl font-black text-primary-foreground">
@@ -176,6 +188,7 @@ export function AvatarCard() {
                 id="avatar-seed"
                 value={effective.seed}
                 onChange={(e) => edit({ seed: e.target.value })}
+                disabled={updateAvatar.isPending}
                 maxLength={64}
                 placeholder="Anything — e.g. your username"
                 className="h-12 rounded-2xl border-border bg-background/50 px-4 focus-visible:ring-accent/30"
@@ -183,79 +196,89 @@ export function AvatarCard() {
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            {Object.entries(PIXEL_ART_VARIANTS).map(([key, options]) => (
-              <div key={key} className="space-y-2">
-                <Label className="ml-1 text-sm font-semibold">
-                  {VARIANT_LABELS[key] ?? traitLabel(key)}
-                </Label>
-                <Select
-                  value={effective.traits[key] ?? AUTO}
-                  onValueChange={(value) => setTrait(key, value)}
-                >
-                  <SelectTrigger
-                    aria-label={VARIANT_LABELS[key] ?? key}
-                    className="h-11 rounded-xl bg-background/50"
-                  >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={AUTO}>Auto</SelectItem>
-                    {options.map((option) => (
-                      <SelectItem key={option} value={option}>
-                        {traitLabel(option)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            ))}
-          </div>
-
-          <div className="space-y-5">
-            {Object.entries(PIXEL_ART_COLORS).map(([key, palette]) => {
-              const picked = effective.traits[key]
-              return (
-                <fieldset key={key} className="space-y-2">
-                  <legend className="ml-1 text-sm font-semibold">
-                    {COLOR_LABELS[key] ?? traitLabel(key)}
-                  </legend>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setTrait(key, AUTO)}
-                      className={cn(
-                        "h-7 rounded-full border border-white/10 px-3 text-[10px] font-bold tracking-widest uppercase transition-colors",
-                        picked === undefined
-                          ? "bg-primary/20 text-primary"
-                          : "text-muted-foreground hover:bg-white/10"
-                      )}
+          {/* Trait/color pickers only apply to pixel-art — avatarConfigToUrl
+              ignores their option names for other stored styles. The seed
+              above still applies to every style. */}
+          {effective.style === "pixel-art" && (
+            <>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {Object.entries(PIXEL_ART_VARIANTS).map(([key, options]) => (
+                  <div key={key} className="space-y-2">
+                    <Label className="ml-1 text-sm font-semibold">
+                      {VARIANT_LABELS[key] ?? traitLabel(key)}
+                    </Label>
+                    <Select
+                      value={effective.traits[key] ?? AUTO}
+                      onValueChange={(value) => setTrait(key, value)}
+                      disabled={updateAvatar.isPending}
                     >
-                      Auto
-                    </button>
-                    {palette.map((color) => (
-                      <button
-                        key={color}
-                        type="button"
-                        aria-label={`${COLOR_LABELS[key] ?? key} ${color}`}
-                        onClick={() => setTrait(key, color)}
-                        className={cn(
-                          "flex h-7 w-7 items-center justify-center rounded-full border border-white/10 transition-transform hover:scale-110",
-                          picked === color &&
-                            "ring-2 ring-primary ring-offset-2 ring-offset-background"
-                        )}
-                        style={{ backgroundColor: `#${color}` }}
+                      <SelectTrigger
+                        aria-label={VARIANT_LABELS[key] ?? key}
+                        className="h-11 rounded-xl bg-background/50"
                       >
-                        {picked === color && (
-                          <Check className="h-3.5 w-3.5 text-white drop-shadow" />
-                        )}
-                      </button>
-                    ))}
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={AUTO}>Auto</SelectItem>
+                        {options.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {traitLabel(option)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                </fieldset>
-              )
-            })}
-          </div>
+                ))}
+              </div>
+
+              <div className="space-y-5">
+                {Object.entries(PIXEL_ART_COLORS).map(([key, palette]) => {
+                  const picked = effective.traits[key]
+                  return (
+                    <fieldset key={key} className="space-y-2">
+                      <legend className="ml-1 text-sm font-semibold">
+                        {COLOR_LABELS[key] ?? traitLabel(key)}
+                      </legend>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          disabled={updateAvatar.isPending}
+                          onClick={() => setTrait(key, AUTO)}
+                          className={cn(
+                            "h-7 rounded-full border border-white/10 px-3 text-[10px] font-bold tracking-widest uppercase transition-colors",
+                            picked === undefined
+                              ? "bg-primary/20 text-primary"
+                              : "text-muted-foreground hover:bg-white/10"
+                          )}
+                        >
+                          Auto
+                        </button>
+                        {palette.map((color) => (
+                          <button
+                            key={color}
+                            type="button"
+                            disabled={updateAvatar.isPending}
+                            aria-label={`${COLOR_LABELS[key] ?? key} ${color}`}
+                            onClick={() => setTrait(key, color)}
+                            className={cn(
+                              "flex h-7 w-7 items-center justify-center rounded-full border border-white/10 transition-transform hover:scale-110",
+                              picked === color &&
+                                "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                            )}
+                            style={{ backgroundColor: `#${color}` }}
+                          >
+                            {picked === color && (
+                              <Check className="h-3.5 w-3.5 text-white drop-shadow" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </fieldset>
+                  )
+                })}
+              </div>
+            </>
+          )}
 
           <div className="flex items-center gap-3">
             <Button

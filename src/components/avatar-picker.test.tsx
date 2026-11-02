@@ -33,6 +33,7 @@ const PROFILE: GameProfile = {
 }
 
 let mockProfile: GameProfile | undefined = PROFILE
+let mockPending = false
 
 vi.mock("@/contexts/AuthContext", () => ({
   useAuth: () => ({ user: { id: "u1", username: "kiki" } }),
@@ -44,13 +45,14 @@ vi.mock("@/hooks/useGameProfile", () => ({
     isLoading: false,
     isError: false,
   }),
-  useUpdateAvatarConfig: () => ({ mutate, isPending: false }),
+  useUpdateAvatarConfig: () => ({ mutate, isPending: mockPending }),
 }))
 
 describe("AvatarCard", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockProfile = PROFILE
+    mockPending = false
     mutate.mockImplementation((_config, options) => options?.onSuccess?.())
   })
 
@@ -160,5 +162,52 @@ describe("AvatarCard", () => {
     fireEvent.error(screen.getByAltText("Avatar preview"))
     expect(screen.queryByAltText("Avatar preview")).not.toBeInTheDocument()
     expect(screen.getByText("K")).toBeInTheDocument()
+  })
+
+  it("disables the controls while a save is in flight", () => {
+    mockPending = true
+    render(<AvatarCard />)
+    expect(screen.getByLabelText(/seed/i)).toBeDisabled()
+    expect(screen.getByRole("combobox", { name: "Hair" })).toBeDisabled()
+    expect(screen.getByRole("button", { name: "Skin f5cfa0" })).toBeDisabled()
+  })
+
+  it("hides the pixel-art pickers for a non-pixel-art stored style", () => {
+    mockProfile = {
+      ...PROFILE,
+      avatar_config: { ...PROFILE.avatar_config, style: "bottts" },
+    }
+    render(<AvatarCard />)
+    expect(
+      screen.queryByRole("combobox", { name: "Hair" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "Skin f5cfa0" })
+    ).not.toBeInTheDocument()
+    // The seed still applies to every style.
+    expect(screen.getByLabelText(/seed/i)).toBeEnabled()
+  })
+
+  it("passes non-string costume members through a save untouched", async () => {
+    mockProfile = {
+      ...PROFILE,
+      avatar_config: {
+        ...PROFILE.avatar_config,
+        costume: { slot: "cape", itemId: 42, glow: true },
+      },
+    }
+    render(<AvatarCard />)
+    fireEvent.change(screen.getByLabelText(/seed/i), {
+      target: { value: "newseed" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: /save avatar/i }))
+    await waitFor(() =>
+      expect(mutate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          costume: { slot: "cape", itemId: 42, glow: true },
+        }),
+        expect.anything()
+      )
+    )
   })
 })
