@@ -1,7 +1,9 @@
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import { gameApi, type GameProfile } from "@/lib/api"
 import { useAuth } from "@/contexts/AuthContext"
+import { useToast } from "@/hooks/use-toast"
 import { queryClient } from "@/lib/query-client"
+import { getErrorMessage } from "@/lib/errors"
 import { ms } from "@/lib/focus-session"
 
 export function useGameProfile() {
@@ -58,4 +60,28 @@ export async function setGameProfileCache(
     { queryKey: ["game-profile", { userId }] },
     profile
   )
+}
+
+/**
+ * Save the avatar picker's config blob. The PATCH returns the authoritative
+ * profile — writing it into the cache refreshes the HUD without a refetch.
+ */
+export function useUpdateAvatarConfig() {
+  const { user } = useAuth()
+  const { toast } = useToast()
+  return useMutation({
+    mutationFn: (avatarConfig: Record<string, unknown>) =>
+      gameApi.updateAvatarConfig(avatarConfig),
+    onSuccess: async (profile) => {
+      if (user?.id !== undefined) await setGameProfileCache(profile, user.id)
+      toast({ title: "Avatar saved", variant: "success" })
+    },
+    onError: (err) => {
+      toast({
+        title: "Couldn't save avatar",
+        description: getErrorMessage(err),
+        variant: "destructive",
+      })
+    },
+  })
 }
