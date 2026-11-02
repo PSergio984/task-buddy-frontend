@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import { Check, Palette, Save } from "lucide-react"
 import { Card } from "@/components/ui/card"
@@ -15,7 +15,6 @@ import {
 import { useAuth } from "@/contexts/AuthContext"
 import { useGameProfile, useUpdateAvatarConfig } from "@/hooks/useGameProfile"
 import {
-  AVATAR_COSTUMES,
   DEFAULT_AVATAR_STYLE,
   PIXEL_ART_COLORS,
   PIXEL_ART_VARIANTS,
@@ -44,29 +43,45 @@ const COLOR_LABELS: Record<string, string> = {
   backgroundColor: "Background",
 }
 
-/** Read the stored blob into a picker draft; unknown/mistyped keys drop out. */
-function normalizeConfig(
-  raw: Record<string, unknown> | undefined,
-  fallbackSeed: string
-): AvatarConfig {
-  const traits: Record<string, string> = {}
-  if (raw?.traits !== null && typeof raw?.traits === "object") {
-    for (const [key, value] of Object.entries(raw.traits)) {
-      if (typeof value === "string" && value.length > 0) traits[key] = value
+/** String-valued members of a blob section — traits/costume are
+    Record<string,string>; other member types couldn't be saved back anyway. */
+function stringMembers(value: unknown): Record<string, string> {
+  const out: Record<string, string> = {}
+  if (value !== null && typeof value === "object") {
+    for (const [key, member] of Object.entries(value)) {
+      if (typeof member === "string" && member.length > 0) out[key] = member
     }
   }
-  const costume: { name?: string } = {}
-  const rawCostume = raw?.costume
-  if (rawCostume !== null && typeof rawCostume === "object") {
-    const name = (rawCostume as Record<string, unknown>).name
-    if (typeof name === "string" && name.length > 0) costume.name = name
-  }
+  return out
+}
+
+/**
+ * Read the stored blob into a picker draft. Keys the picker doesn't manage —
+ * costume gear flags, unrecognized trait keys, future top-level additions —
+ * carry through untouched so a save never wipes them.
+ */
+function normalizeConfig(
+  raw: Record<string, unknown> | undefined
+): AvatarConfig {
   return {
+    ...raw,
     style: typeof raw?.style === "string" ? raw.style : DEFAULT_AVATAR_STYLE,
-    seed: typeof raw?.seed === "string" ? raw.seed : fallbackSeed,
-    traits,
-    costume,
+    seed: typeof raw?.seed === "string" ? raw.seed : "",
+    traits: stringMembers(raw?.traits),
+    costume: stringMembers(raw?.costume),
   }
+}
+
+/** Key-order-insensitive stringify — reverting a pick must disable Save even
+    when delete/re-add reordered the draft's keys. */
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== "object") return JSON.stringify(value)
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`
+  const record = value as Record<string, unknown>
+  const entries = Object.keys(record)
+    .sort()
+    .map((key) => `${JSON.stringify(key)}:${stableStringify(record[key])}`)
+  return `{${entries.join(",")}}`
 }
 
 export function AvatarCard() {
@@ -76,13 +91,26 @@ export function AvatarCard() {
   // null draft = untouched; edits build a whole-config candidate so Save can
   // compare it against the saved blob and disable on revert.
   const [draft, setDraft] = useState<AvatarConfig | null>(null)
+  // Which preview URL failed to load — an invalid stored option degrades to
+  // initials instead of a broken image; a changed URL resets the fallback.
+  const [failedUrl, setFailedUrl] = useState<string | null>(null)
 
   const fallbackSeed =
     user?.username || user?.email?.split("@")[0] || "taskbuddy"
-  const saved = normalizeConfig(profile?.avatar_config, fallbackSeed)
-  const effective = draft ?? saved
-  const hasChanged = JSON.stringify(effective) !== JSON.stringify(saved)
-  const previewUrl = avatarConfigToUrl(effective)
+  const saved = normalizeConfig(profile?.avatar_config)
+  // No stored seed → preview and Save both use the fallback seed, so what the
+  // preview shows is exactly what Save writes (and Save is enabled for it).
+  const effective = draft ?? { ...saved, seed: saved.seed || fallbackSeed }
+  const hasChanged = stableStringify(effective) !== stableStringify(saved)
+
+  // Debounce the seed so typing doesn't fire a DiceBear fetch per keystroke.
+  const [debouncedSeed, setDebouncedSeed] = useState(effective.seed)
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSeed(effective.seed), 300)
+    return () => clearTimeout(timer)
+  }, [effective.seed])
+  const previewUrl = avatarConfigToUrl({ ...effective, seed: debouncedSeed })
+  const showImg = previewUrl !== null && previewUrl !== failedUrl
 
   const edit = (patch: Partial<AvatarConfig>) =>
     setDraft({ ...effective, ...patch })
@@ -92,8 +120,6 @@ export function AvatarCard() {
     else traits[key] = value
     edit({ traits })
   }
-  const setCostume = (name: string | null) =>
-    edit({ costume: name ? { name } : {} })
 
   const handleSave = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -128,10 +154,11 @@ export function AvatarCard() {
         <form onSubmit={handleSave} className="space-y-8">
           <div className="flex flex-col items-center gap-3">
             <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-tr from-primary to-accent text-4xl font-black text-primary-foreground">
-              {previewUrl !== null ? (
+              {showImg ? (
                 <img
                   src={previewUrl}
                   alt="Avatar preview"
+                  onError={() => setFailedUrl(previewUrl)}
                   className="h-full w-full [image-rendering:pixelated]"
                 />
               ) : (
@@ -229,31 +256,6 @@ export function AvatarCard() {
               )
             })}
           </div>
-
-          <fieldset className="space-y-2">
-            <legend className="ml-1 text-sm font-semibold">Costume</legend>
-            <div className="flex flex-wrap gap-2">
-              {[null, ...AVATAR_COSTUMES].map((name) => (
-                <button
-                  key={name ?? "none"}
-                  type="button"
-                  onClick={() => setCostume(name)}
-                  className={cn(
-                    "h-9 rounded-full border border-white/10 px-4 text-xs font-bold transition-colors",
-                    effective.costume.name === (name ?? undefined)
-                      ? "bg-primary/20 text-primary"
-                      : "text-muted-foreground hover:bg-white/10"
-                  )}
-                >
-                  {name === null ? "None" : traitLabel(name)}
-                </button>
-              ))}
-            </div>
-            <p className="ml-1 text-[10px] font-bold tracking-wider text-muted-foreground/60 uppercase">
-              Stored separately from traits — the visual overlay lands with
-              equipment (#64); it never touches stats.
-            </p>
-          </fieldset>
 
           <div className="flex items-center gap-3">
             <Button

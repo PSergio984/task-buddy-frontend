@@ -4,16 +4,16 @@
  * backend stores the blob as given.
  *
  * traits maps DiceBear HTTP-API option names to a single picked value — the
- * picker writes only the pixel-art keys below. costume is a distinct layer
- * meant to override equipment visuals; gear doesn't exist yet (#64), so it
- * is stored but renders nothing.
+ * picker writes only the pixel-art keys below. costume is the gear layer —
+ * owned equipment flagged as costume (#64, Habitica-style); the picker
+ * doesn't manage it but must carry it through saves untouched.
  */
 
 export type AvatarConfig = {
   style: string
   seed: string
   traits: Record<string, string>
-  costume: { name?: string }
+  costume: Record<string, string>
 }
 
 /** DiceBear pixel-art is the spec'd avatar style (#46). */
@@ -29,9 +29,6 @@ const DICEBEAR_STYLES = new Set([
   "personas",
   "fun-emoji",
 ])
-
-/** Named costumes stored under `costume.name` — the overlay lands with #64. */
-export const AVATAR_COSTUMES = ["adventurer", "knight", "mage", "rogue"]
 
 const numbered = (prefix: string, count: number) =>
   Array.from(

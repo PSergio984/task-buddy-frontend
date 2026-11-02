@@ -1,5 +1,5 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react"
-import { describe, it, expect, vi, beforeEach } from "vitest"
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react"
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { AvatarCard } from "./avatar-picker"
 import type { GameProfile } from "@/lib/api"
 
@@ -21,27 +21,41 @@ const PROFILE: GameProfile = {
   avatar_config: {
     style: "pixel-art",
     seed: "kiki",
-    traits: { hair: "short01", eyes: "variant02" },
-    costume: { name: "knight" },
+    // futureOption stands in for trait keys the picker doesn't model yet.
+    traits: { hair: "short01", eyes: "variant02", futureOption: "x9" },
+    // Gear-layer blob the picker doesn't manage (#64) — must survive a save.
+    costume: { slot: "cape", color: "crimson" },
+    gear: { helmet: "iron" },
   },
   xp_today: 0,
   gold_today: 0,
   retention: "forever",
 }
 
+let mockProfile: GameProfile | undefined = PROFILE
+
 vi.mock("@/contexts/AuthContext", () => ({
   useAuth: () => ({ user: { id: "u1", username: "kiki" } }),
 }))
 
 vi.mock("@/hooks/useGameProfile", () => ({
-  useGameProfile: () => ({ data: PROFILE, isLoading: false, isError: false }),
+  useGameProfile: () => ({
+    data: mockProfile,
+    isLoading: false,
+    isError: false,
+  }),
   useUpdateAvatarConfig: () => ({ mutate, isPending: false }),
 }))
 
 describe("AvatarCard", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockProfile = PROFILE
     mutate.mockImplementation((_config, options) => options?.onSuccess?.())
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it("previews the saved config as a DiceBear URL with trait params", () => {
@@ -64,39 +78,87 @@ describe("AvatarCard", () => {
         {
           style: "pixel-art",
           seed: "newseed",
-          traits: { hair: "short01", eyes: "variant02" },
-          costume: { name: "knight" },
+          traits: { hair: "short01", eyes: "variant02", futureOption: "x9" },
+          costume: { slot: "cape", color: "crimson" },
+          gear: { helmet: "iron" },
         },
         expect.anything()
       )
     )
   })
 
-  it("stores the costume pick in the distinct costume field, not traits", async () => {
+  it("carries keys the picker doesn't manage through a save untouched", async () => {
     render(<AvatarCard />)
-    fireEvent.click(screen.getByRole("button", { name: "Mage" }))
+    fireEvent.change(screen.getByLabelText(/seed/i), {
+      target: { value: "newseed" },
+    })
     fireEvent.click(screen.getByRole("button", { name: /save avatar/i }))
     await waitFor(() =>
       expect(mutate).toHaveBeenCalledWith(
         expect.objectContaining({
-          costume: { name: "mage" },
-          traits: { hair: "short01", eyes: "variant02" },
+          costume: { slot: "cape", color: "crimson" },
+          gear: { helmet: "iron" },
+          traits: { hair: "short01", eyes: "variant02", futureOption: "x9" },
         }),
         expect.anything()
       )
     )
     const [config] = mutate.mock.calls[0]
     expect(config.traits).not.toHaveProperty("costume")
-    expect(config.traits).not.toHaveProperty("name")
+    expect(config.traits).not.toHaveProperty("gear")
   })
 
   it("disables save until the draft differs from the saved config", () => {
     render(<AvatarCard />)
     const save = screen.getByRole("button", { name: /save avatar/i })
     expect(save).toBeDisabled()
-    fireEvent.click(screen.getByRole("button", { name: "Rogue" }))
+    fireEvent.click(screen.getByRole("button", { name: "Skin f5cfa0" }))
     expect(save).toBeEnabled()
-    fireEvent.click(screen.getByRole("button", { name: "Knight" }))
+    fireEvent.click(screen.getAllByRole("button", { name: "Auto" })[0])
     expect(save).toBeDisabled()
+  })
+
+  it("previews the fallback seed as a saveable avatar when none is stored", async () => {
+    mockProfile = { ...PROFILE, avatar_config: {} }
+    render(<AvatarCard />)
+    expect(screen.getByAltText("Avatar preview")).toHaveAttribute(
+      "src",
+      "https://api.dicebear.com/9.x/pixel-art/svg?seed=kiki"
+    )
+    const save = screen.getByRole("button", { name: /save avatar/i })
+    expect(save).toBeEnabled()
+    fireEvent.click(save)
+    await waitFor(() =>
+      expect(mutate).toHaveBeenCalledWith(
+        expect.objectContaining({ seed: "kiki", style: "pixel-art" }),
+        expect.anything()
+      )
+    )
+  })
+
+  it("debounces preview URL updates while the seed is typed", async () => {
+    vi.useFakeTimers()
+    render(<AvatarCard />)
+    const img = screen.getByAltText("Avatar preview")
+    expect(img).toHaveAttribute("src", expect.stringContaining("seed=kiki"))
+    fireEvent.change(screen.getByLabelText(/seed/i), {
+      target: { value: "abc" },
+    })
+    // Still the old URL — the fetch waits for a pause in typing.
+    expect(img).toHaveAttribute("src", expect.stringContaining("seed=kiki"))
+    await act(async () => {
+      vi.advanceTimersByTime(300)
+    })
+    expect(screen.getByAltText("Avatar preview")).toHaveAttribute(
+      "src",
+      expect.stringContaining("seed=abc")
+    )
+  })
+
+  it("falls back to the initial when the preview image fails to load", () => {
+    render(<AvatarCard />)
+    fireEvent.error(screen.getByAltText("Avatar preview"))
+    expect(screen.queryByAltText("Avatar preview")).not.toBeInTheDocument()
+    expect(screen.getByText("K")).toBeInTheDocument()
   })
 })
