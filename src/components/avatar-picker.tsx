@@ -305,8 +305,8 @@ export function AvatarCard() {
             <fieldset className="space-y-2">
               <legend className="ml-1 text-sm font-semibold">Worn gear</legend>
               <p className="ml-1 text-xs text-muted-foreground">
-                Checked pieces show over the avatar; stats still come from
-                equipped gear.
+                Equipped gear shows on the avatar; a checked piece wears as a
+                costume over its slot instead — the two flags are independent.
               </p>
               <ul className="space-y-1">
                 {ownedGear.map((item) => (
@@ -324,7 +324,7 @@ export function AvatarCard() {
                           costume: checked === true,
                         })
                       }
-                      aria-label={`Show ${item.name} on the avatar`}
+                      aria-label={`Use ${item.name} as costume`}
                     />
                     <Label
                       htmlFor={`costume-${item.key}`}

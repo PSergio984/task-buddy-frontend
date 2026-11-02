@@ -306,12 +306,14 @@ describe("AvatarCard", () => {
     // Unowned catalog rows stay out of the worn-gear list.
     expect(screen.queryByText("Broad Sword")).not.toBeInTheDocument()
     expect(
-      screen.getByRole("checkbox", { name: /wooden shield/i })
+      screen.getByRole("checkbox", { name: /use wooden shield as costume/i })
     ).toBeChecked()
     expect(
-      screen.getByRole("checkbox", { name: /training sword/i })
+      screen.getByRole("checkbox", { name: /use training sword as costume/i })
     ).not.toBeChecked()
-    fireEvent.click(screen.getByRole("checkbox", { name: /training sword/i }))
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: /use training sword as costume/i })
+    )
     expect(costumeMutate).toHaveBeenCalledWith({
       key: "warrior-weapon-1",
       costume: true,
