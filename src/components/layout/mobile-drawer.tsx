@@ -116,6 +116,21 @@ export function MobileDrawer({
               </button>
               <button
                 onClick={() => {
+                  navigate("/habits")
+                  onOpenChange(false)
+                }}
+                className={cn(
+                  "flex items-center gap-3 rounded-2xl border p-4 transition-all",
+                  location.pathname === "/habits"
+                    ? "border-primary/20 bg-primary/10 text-primary"
+                    : "border-transparent bg-white/5 text-foreground/70"
+                )}
+              >
+                <LucideIcons.Repeat className="h-5 w-5 text-rose-400" />
+                <span className="text-sm font-bold">Habits</span>
+              </button>
+              <button
+                onClick={() => {
                   navigate("/diary")
                   onOpenChange(false)
                 }}
