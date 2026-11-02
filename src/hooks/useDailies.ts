@@ -88,12 +88,14 @@ export function useCheckDaily() {
       dailiesApi.check(id, input),
     onSuccess: async (res) => {
       // The response carries the daily with today's marks plus authoritative
-      // totals — fold both into their caches instead of a refetch.
+      // totals — fold both into their caches instead of a refetch. The check
+      // also lands a daily_check row in the ledger → the timeline's markers.
       const userId = user?.id
       queryClient.setQueryData<Daily[]>(["dailies", { userId }], (old) =>
         old?.map((d) => (d.id === res.daily.id ? res.daily : d))
       )
       if (userId !== undefined) await setGameProfileCache(res.profile, userId)
+      void queryClient.invalidateQueries({ queryKey: ["timeline"] })
     },
     onError: (err) => {
       void queryClient.invalidateQueries({ queryKey: ["dailies"] })

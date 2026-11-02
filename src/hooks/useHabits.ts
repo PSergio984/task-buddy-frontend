@@ -95,12 +95,14 @@ export function useClickHabit() {
     }) => habitsApi.click(id, direction),
     onSuccess: async (res) => {
       // The response carries the post-click habit plus authoritative totals —
-      // fold both into their caches instead of a refetch round trip.
+      // fold both into their caches instead of a refetch round trip. The click
+      // also lands a habit_click row in the ledger → the timeline's markers.
       const userId = user?.id
       queryClient.setQueryData<Habit[]>(["habits", { userId }], (old) =>
         old?.map((h) => (h.id === res.habit.id ? res.habit : h))
       )
       if (userId !== undefined) await setGameProfileCache(res.profile, userId)
+      void queryClient.invalidateQueries({ queryKey: ["timeline"] })
     },
     onError: (err) => {
       // Resync on failure — a rejected click (e.g. direction PATCHed
