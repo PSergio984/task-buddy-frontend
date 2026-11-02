@@ -549,6 +549,8 @@ export interface GameProfile {
   avatar_config: Record<string, unknown>
   xp_today: number
   gold_today: number
+  /** Diary/timeline read horizon: "90d" | "1y" | "forever". */
+  retention: RetentionPreference
 }
 
 export interface GameEventIn {
@@ -627,6 +629,9 @@ export interface SessionActionResponse {
   server_time: string
 }
 
+/** Diary/timeline read horizon — mirrors RetentionIn on the backend. */
+export type RetentionPreference = "90d" | "1y" | "forever"
+
 export const gameApi = {
   getProfile: async () => {
     const response = await api.get<GameProfile>("/api/v1/game/profile")
@@ -637,6 +642,136 @@ export const gameApi = {
       "/api/v1/game/events",
       { events },
       { skipRateLimitToast: true }
+    )
+    return response.data
+  },
+  updateRetention: async (retention: RetentionPreference) => {
+    const response = await api.patch<GameProfile>(
+      "/api/v1/game/profile/retention",
+      { retention }
+    )
+    return response.data
+  },
+}
+
+// Diary + timeline — mirrors the diary/session-note/timeline routes in
+// app/api/routers/game.py. All day bucketing is UTC on the backend.
+export type DiaryEntryKind = "standup" | "freeform"
+
+export interface DiaryEntry {
+  id: number
+  kind: DiaryEntryKind
+  /** UTC calendar day, "YYYY-MM-DD". */
+  entry_date: string
+  good: string | null
+  bad: string | null
+  next: string | null
+  freeform: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface DiaryEntryInput {
+  kind: DiaryEntryKind
+  /** Missing → today (UTC). Client may backfill a missed day. */
+  entry_date?: string
+  good?: string | null
+  bad?: string | null
+  next?: string | null
+  freeform?: string | null
+}
+
+export type DiaryEntryPatch = Partial<
+  Pick<DiaryEntry, "good" | "bad" | "next" | "freeform">
+>
+
+export interface DiaryListResponse {
+  entries: DiaryEntry[]
+  has_more: boolean
+}
+
+export interface SessionNote {
+  id: number
+  session_id: number | null
+  content: string
+  created_at: string
+}
+
+export interface TimelinePhase {
+  seq: number
+  kind: string
+  status: string
+  planned_seconds: number
+  actual_seconds: number | null
+  started_at: string | null
+  ended_at: string | null
+}
+
+export interface TimelineSessionBlock {
+  id: number
+  mode: string
+  status: string
+  task_id: number | null
+  activity_label: string | null
+  started_at: string
+  ended_at: string | null
+  duration_seconds: number
+  phases: TimelinePhase[]
+}
+
+export interface TimelineMarker {
+  id: number
+  type: string
+  ts: string
+  outcome: Record<string, unknown> | null
+}
+
+export interface TimelineDayResponse {
+  date: string
+  sessions: TimelineSessionBlock[]
+  markers: TimelineMarker[]
+  diary: DiaryEntry[]
+  server_time: string
+}
+
+export const diaryApi = {
+  list: async (date?: string) => {
+    const response = await api.get<DiaryListResponse>("/api/v1/game/diary", {
+      params: date ? { date } : undefined,
+    })
+    return response.data
+  },
+  create: async (input: DiaryEntryInput) => {
+    const response = await api.post<DiaryEntry>("/api/v1/game/diary", input)
+    return response.data
+  },
+  update: async (id: number, patch: DiaryEntryPatch) => {
+    const response = await api.patch<DiaryEntry>(
+      `/api/v1/game/diary/${id}`,
+      patch
+    )
+    return response.data
+  },
+  remove: async (id: number) => {
+    await api.delete(`/api/v1/game/diary/${id}`)
+  },
+}
+
+export const sessionNotesApi = {
+  attach: async (sessionId: number, content: string) => {
+    const response = await api.post<SessionNote>(
+      `/api/v1/game/sessions/${sessionId}/note`,
+      { content }
+    )
+    return response.data
+  },
+}
+
+export const timelineApi = {
+  day: async (date: string) => {
+    const response = await api.get<TimelineDayResponse>(
+      "/api/v1/game/timeline",
+      { params: { date } }
     )
     return response.data
   },
