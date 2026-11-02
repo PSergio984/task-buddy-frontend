@@ -127,7 +127,7 @@ export function MobileDrawer({
                 )}
               >
                 <LucideIcons.Repeat className="h-5 w-5 text-rose-400" />
-                <span className="text-sm font-bold">Habits</span>
+                <span className="text-sm font-bold">Habits &amp; Dailies</span>
               </button>
               <button
                 onClick={() => {

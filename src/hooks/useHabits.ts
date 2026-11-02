@@ -11,6 +11,9 @@ import { useToast } from "@/hooks/use-toast"
 import { setGameProfileCache } from "@/hooks/useGameProfile"
 import { getErrorMessage } from "@/lib/errors"
 
+/** Lets `useMutationState` find in-flight clicks for the pending-id set. */
+export const HABIT_CLICK_MUTATION_KEY = ["habit-click"] as const
+
 /**
  * Habit queries/mutations. Like the diary domain there is no offline
  * write-queue for these writes yet — a click needs the server's drifted
@@ -56,6 +59,9 @@ export function useUpdateHabit() {
       habitsApi.update(id, patch),
     onSuccess: invalidate,
     onError: (err) => {
+      // Resync on failure too — a rejected PATCH (e.g. deleted on another
+      // device mid-edit) must reload the stored list, not keep the row.
+      void invalidate()
       toast({
         title: "Couldn't update habit",
         description: getErrorMessage(err),
@@ -72,6 +78,7 @@ export function useDeleteHabit() {
     mutationFn: (id: number) => habitsApi.remove(id),
     onSuccess: invalidate,
     onError: (err) => {
+      void invalidate()
       toast({
         title: "Couldn't delete habit",
         description: getErrorMessage(err),
@@ -86,22 +93,33 @@ export function useClickHabit() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
   return useMutation({
+    mutationKey: HABIT_CLICK_MUTATION_KEY,
     mutationFn: ({
       id,
       direction,
+      clientEventId,
     }: {
       id: number
       direction: HabitClickDirection
-    }) => habitsApi.click(id, direction),
+      clientEventId: string
+    }) => habitsApi.click(id, direction, clientEventId),
     onSuccess: async (res) => {
       // The response carries the post-click habit plus authoritative totals —
       // fold both into their caches instead of a refetch round trip. The click
       // also lands a habit_click row in the ledger → the timeline's markers.
       const userId = user?.id
+      try {
+        // An in-flight list refetch resolving after this write would fold
+        // the stale GET over the newer row — cancel it so the write wins.
+        await queryClient.cancelQueries({ queryKey: ["habits", { userId }] })
+      } catch {
+        // Cancellation is best-effort — the write below still lands.
+      }
       queryClient.setQueryData<Habit[]>(["habits", { userId }], (old) =>
         old?.map((h) => (h.id === res.habit.id ? res.habit : h))
       )
-      if (userId !== undefined) await setGameProfileCache(res.profile, userId)
+      if (userId !== undefined)
+        await setGameProfileCache(res.profile, userId, res.server_time)
       void queryClient.invalidateQueries({ queryKey: ["timeline"] })
     },
     onError: (err) => {

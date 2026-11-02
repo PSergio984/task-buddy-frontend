@@ -6,7 +6,33 @@
  * pushed the payout below neutral ("farmed"), value < 0 means the habit is
  * neglected and pays more than neutral ("fresh").
  */
-import type { Daily, DailyItem, DailyItemInput, Recurrence } from "@/lib/api"
+import type {
+  Daily,
+  DailyItem,
+  DailyItemInput,
+  Recurrence,
+  SessionDifficulty,
+} from "@/lib/api"
+
+/** Mirrors the backend's field bound (HabitIn/DailyIn.title max_length). */
+export const TITLE_MAX = 200
+/** Checklist bounds — DailyIn.items ≤30 rows, DailyItemIn.title ≤200. */
+export const ITEMS_MAX = 30
+export const ITEM_TITLE_MAX = 200
+
+export const cardClass = "rounded-3xl border border-white/10 bg-white/5 p-5"
+export const fieldClass =
+  "rounded-2xl border-white/10 bg-white/5 text-sm focus-visible:ring-primary/30"
+
+export const DIFFICULTY_OPTIONS: ReadonlyArray<{
+  value: SessionDifficulty
+  label: string
+}> = [
+  { value: "trivial", label: "Trivial" },
+  { value: "easy", label: "Easy" },
+  { value: "medium", label: "Medium" },
+  { value: "hard", label: "Hard" },
+]
 
 export type HabitDrift = "fresh" | "steady" | "farmed"
 
@@ -17,7 +43,7 @@ export function habitDrift(value: number): HabitDrift {
   return "steady"
 }
 
-const WEEKDAY_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+export const WEEKDAY_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
 /** One-line summary of a stored recurrence blob; unknown shapes → "Custom". */
 export function recurrenceLabel(recurrence: Recurrence | undefined): string {

@@ -18,6 +18,7 @@ import {
 } from "@/lib/game-event-queue"
 import { setGameProfileCache } from "@/hooks/useGameProfile"
 import { probeGate } from "@/lib/focus-probe-gate"
+import { queryClient } from "@/lib/query-client"
 import type { UserId } from "@/lib/sync-queue"
 
 interface GameContextValue {
@@ -81,7 +82,10 @@ export function GameProvider({
       // new account either — the profile is scoped, but the guard keeps it
       // cheap and unambiguous.
       if (res?.profile && userIdRef.current === userId) {
-        void setGameProfileCache(res.profile, userId)
+        void setGameProfileCache(res.profile, userId, res.server_time)
+        // A flushed focus_phase_completed may have run server-side
+        // bind_focus auto-clicks — the habits list cache is stale too.
+        void queryClient.invalidateQueries({ queryKey: ["habits"] })
       }
     } catch (error) {
       // The queue is authoritative — a failed flush just retries later.

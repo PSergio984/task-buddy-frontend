@@ -872,7 +872,9 @@ export const habitsApi = {
     return response.data
   },
   create: async (input: HabitInput) => {
-    const response = await api.post<Habit>("/api/v1/game/habits", input)
+    const response = await api.post<Habit>("/api/v1/game/habits", input, {
+      skipRateLimitToast: true,
+    })
     return response.data
   },
   update: async (id: number, patch: HabitPatch) => {
@@ -882,12 +884,18 @@ export const habitsApi = {
   remove: async (id: number) => {
     await api.delete(`/api/v1/game/habits/${id}`)
   },
-  click: async (id: number, direction: HabitClickDirection) => {
+  click: async (
+    id: number,
+    direction: HabitClickDirection,
+    clientEventId: string
+  ) => {
     const response = await api.post<HabitClickResponse>(
       `/api/v1/game/habits/${id}/click`,
-      // A minted client_event_id dedupes a retried POST the way the offline
-      // queue's own eids do — the server ignores it otherwise.
-      { direction, client_event_id: createIdempotencyKey() }
+      // The caller mints one client_event_id per gesture — a refired call
+      // reuses it so the server's dedupe can engage (same contract as the
+      // offline queue's eids). The server ignores it otherwise.
+      { direction, client_event_id: clientEventId },
+      { skipRateLimitToast: true }
     )
     return response.data
   },
@@ -940,7 +948,12 @@ export interface DailyInput {
   active?: boolean
 }
 
-export type DailyPatch = Partial<DailyInput>
+// `active` is engine-owned on create (DailyIn tolerates but ignores it) —
+// splitting it out keeps the PATCH contract honest about which writes can
+// pause/resume a daily.
+export type DailyPatch = Partial<Omit<DailyInput, "active">> & {
+  active?: boolean
+}
 
 export interface DailyCheckInput {
   /** Omit to check the whole daily (pays the items' remaining share). */
@@ -962,7 +975,9 @@ export const dailiesApi = {
     return response.data
   },
   create: async (input: DailyInput) => {
-    const response = await api.post<Daily>("/api/v1/game/dailies", input)
+    const response = await api.post<Daily>("/api/v1/game/dailies", input, {
+      skipRateLimitToast: true,
+    })
     return response.data
   },
   update: async (id: number, patch: DailyPatch) => {
@@ -972,10 +987,16 @@ export const dailiesApi = {
   remove: async (id: number) => {
     await api.delete(`/api/v1/game/dailies/${id}`)
   },
-  check: async (id: number, input: DailyCheckInput) => {
+  check: async (
+    id: number,
+    input: DailyCheckInput,
+    clientEventId: string
+  ) => {
     const response = await api.post<DailyCheckResponse>(
       `/api/v1/game/dailies/${id}/check`,
-      { ...input, client_event_id: createIdempotencyKey() }
+      // Same per-gesture eid contract as the habit click.
+      { ...input, client_event_id: clientEventId },
+      { skipRateLimitToast: true }
     )
     return response.data
   },

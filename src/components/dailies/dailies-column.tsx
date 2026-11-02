@@ -31,20 +31,20 @@ import type {
   SessionDifficulty,
 } from "@/lib/api"
 import {
+  cardClass,
+  DIFFICULTY_OPTIONS,
+  fieldClass,
+  ITEM_TITLE_MAX,
+  ITEMS_MAX,
   itemLines,
   itemsProgress,
   parseItemLines,
   recurrenceLabel,
   reminderLabel,
+  TITLE_MAX,
+  WEEKDAY_SHORT,
 } from "@/lib/game-columns"
 import { cn } from "@/lib/utils"
-
-/** Mirrors the backend's field bound (DailyIn.title max_length). */
-const TITLE_MAX = 200
-
-const cardClass = "rounded-3xl border border-white/10 bg-white/5 p-5"
-const fieldClass =
-  "rounded-2xl border-white/10 bg-white/5 text-sm focus-visible:ring-primary/30"
 
 interface DailiesColumnProps {
   readonly dailies: Daily[] | undefined
@@ -53,8 +53,8 @@ interface DailiesColumnProps {
   readonly isOnline: boolean
   /** Offline — checks and edits can't reach the server. */
   readonly writesDisabled?: boolean
-  /** Id of the daily whose check is in flight; its boxes stay disabled. */
-  readonly checkingId?: number | null
+  /** Ids of dailies with a check in flight; their boxes stay disabled. */
+  readonly checkingIds?: ReadonlySet<number>
   readonly busy?: boolean
   readonly onRetry: () => void
   /** May return a promise — the form closes only once it resolves. */
@@ -63,16 +63,6 @@ interface DailiesColumnProps {
   readonly onDelete?: (id: number) => void
   readonly onCheck?: (id: number, input: DailyCheckInput) => void
 }
-
-const DIFFICULTY_OPTIONS: ReadonlyArray<{
-  value: SessionDifficulty
-  label: string
-}> = [
-  { value: "trivial", label: "Trivial" },
-  { value: "easy", label: "Easy" },
-  { value: "medium", label: "Medium" },
-  { value: "hard", label: "Hard" },
-]
 
 const RECURRENCE_OPTIONS: ReadonlyArray<{
   value: Recurrence["kind"]
@@ -83,8 +73,6 @@ const RECURRENCE_OPTIONS: ReadonlyArray<{
   { value: "every_n_days", label: "Every N days" },
   { value: "times_per_week", label: "Times per week" },
 ]
-
-const WEEKDAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
 type RecurrenceKind = Recurrence["kind"]
 
@@ -132,7 +120,34 @@ function DailyForm({
   const [active, setActive] = useState(initial?.active ?? true)
   const hasTitle = title.trim() !== ""
   const recurrenceValid = kind !== "weekdays" || days.length > 0
-  const canSubmit = hasTitle && recurrenceValid
+  // Client-side mirror of the backend checklist bounds (DailyIn.items ≤30,
+  // DailyItemIn.title ≤200) — invalid input blocks the submit.
+  const items = parseItemLines(itemsText)
+  const itemsValid =
+    items.length <= ITEMS_MAX &&
+    items.every((i) => i.title.length <= ITEM_TITLE_MAX)
+  const canSubmit = hasTitle && recurrenceValid && itemsValid
+
+  // An `items` PATCH full-replaces the checklist server-side — a submit
+  // whose checklist text never changed must omit `items`, or the replace
+  // cascade-deletes today's item check marks.
+  const itemsChanged =
+    initial === undefined || itemsText !== itemLines(initial.items)
+
+  // reminder_times is a full-replace field too — only send it when the
+  // slot changed, merging the edit over the stored tail (same rule as the
+  // habit form) so extra stored times survive.
+  const storedReminders = initial?.reminder_times ?? []
+  const reminderPatch: string[] | undefined =
+    initial === undefined
+      ? reminder === ""
+        ? []
+        : [reminder]
+      : reminder === (storedReminders[0] ?? "")
+        ? undefined
+        : reminder === ""
+          ? storedReminders.slice(1)
+          : [reminder, ...storedReminders.slice(1)]
 
   const toggleDay = (day: number) =>
     setDays((current) =>
@@ -233,7 +248,7 @@ function DailyForm({
             On days
           </Label>
           <div className="flex flex-wrap gap-1.5">
-            {WEEKDAY_NAMES.map((name, day) => (
+            {WEEKDAY_SHORT.map((name, day) => (
               <button
                 key={name}
                 type="button"
@@ -311,6 +326,11 @@ function DailyForm({
           onChange={(e) => setItemsText(e.target.value)}
           className={cn(fieldClass, "min-h-[64px]")}
         />
+        {!itemsValid && (
+          <p className="text-xs font-bold text-destructive">
+            Up to {ITEMS_MAX} items, {ITEM_TITLE_MAX} characters each.
+          </p>
+        )}
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
@@ -368,8 +388,10 @@ function DailyForm({
               notes: notes.trim() === "" ? null : notes.trim(),
               difficulty,
               recurrence,
-              items: parseItemLines(itemsText),
-              reminder_times: reminder === "" ? [] : [reminder],
+              ...(itemsChanged ? { items } : {}),
+              ...(reminderPatch !== undefined
+                ? { reminder_times: reminderPatch }
+                : {}),
               ...(initial !== undefined ? { active } : {}),
             })
           }
@@ -538,7 +560,7 @@ export function DailiesColumn({
   isError,
   isOnline,
   writesDisabled = false,
-  checkingId = null,
+  checkingIds,
   busy = false,
   onRetry,
   onCreate,
@@ -600,7 +622,7 @@ export function DailiesColumn({
           <div className="h-12 animate-pulse rounded-2xl bg-white/5" />
           <div className="h-12 animate-pulse rounded-2xl bg-white/5" />
         </div>
-      ) : isError ? (
+      ) : isError && dailies === undefined ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
           {!isOnline && <WifiOff className="h-6 w-6 text-amber-400" />}
           <p className="text-sm text-muted-foreground">
@@ -632,8 +654,12 @@ export function DailiesColumn({
                         notes: input.notes,
                         difficulty: input.difficulty,
                         recurrence: input.recurrence,
-                        items: input.items,
-                        reminder_times: input.reminder_times,
+                        ...(input.items !== undefined
+                          ? { items: input.items }
+                          : {}),
+                        ...(input.reminder_times !== undefined
+                          ? { reminder_times: input.reminder_times }
+                          : {}),
                         active: input.active,
                       })
                     }
@@ -644,7 +670,7 @@ export function DailiesColumn({
                 <DailyRow
                   daily={daily}
                   canWrite={canWrite}
-                  checking={checkingId === daily.id}
+                  checking={checkingIds?.has(daily.id) ?? false}
                   onCheck={(input) => onCheck?.(daily.id, input)}
                   onEdit={() => setEditingId(daily.id)}
                   onDelete={() => setPendingDelete(daily)}
@@ -663,8 +689,9 @@ export function DailiesColumn({
           )}
 
           <p className="text-xs text-muted-foreground/70">
-            Unchecked scheduled days cost HP after the ~3am UTC grace — one miss
-            per 7 scheduled days is absorbed.
+            Unchecked scheduled days cost HP after the ~3am UTC grace — one
+            miss per rolling 7 scheduled days keeps the streak; the HP loss
+            still applies.
           </p>
 
           {canWrite && creating && (
@@ -696,7 +723,6 @@ export function DailiesColumn({
         }
         confirmText="Delete"
         variant="destructive"
-        isLoading={busy}
       />
     </section>
   )

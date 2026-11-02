@@ -30,15 +30,16 @@ import type {
   HabitPatch,
   SessionDifficulty,
 } from "@/lib/api"
-import { counterLabel, habitDrift, reminderLabel } from "@/lib/game-columns"
+import {
+  cardClass,
+  counterLabel,
+  DIFFICULTY_OPTIONS,
+  fieldClass,
+  habitDrift,
+  reminderLabel,
+  TITLE_MAX,
+} from "@/lib/game-columns"
 import { cn } from "@/lib/utils"
-
-/** Mirrors the backend's field bound (HabitIn.title max_length). */
-const TITLE_MAX = 200
-
-const cardClass = "rounded-3xl border border-white/10 bg-white/5 p-5"
-const fieldClass =
-  "rounded-2xl border-white/10 bg-white/5 text-sm focus-visible:ring-primary/30"
 
 interface HabitsColumnProps {
   readonly habits: Habit[] | undefined
@@ -47,8 +48,8 @@ interface HabitsColumnProps {
   readonly isOnline: boolean
   /** Offline — clicks and edits are rejected server-side / unreachable. */
   readonly writesDisabled?: boolean
-  /** Id of the habit whose click is in flight; its buttons stay disabled. */
-  readonly clickingId?: number | null
+  /** Ids of habits with a click in flight; their buttons stay disabled. */
+  readonly clickingIds?: ReadonlySet<number>
   readonly busy?: boolean
   readonly onRetry: () => void
   /** May return a promise — the form closes only once it resolves. */
@@ -65,16 +66,6 @@ const DIRECTION_OPTIONS: ReadonlyArray<{
   { value: "both", label: "+ and −" },
   { value: "positive", label: "+ only" },
   { value: "negative", label: "− only" },
-]
-
-const DIFFICULTY_OPTIONS: ReadonlyArray<{
-  value: SessionDifficulty
-  label: string
-}> = [
-  { value: "trivial", label: "Trivial" },
-  { value: "easy", label: "Easy" },
-  { value: "medium", label: "Medium" },
-  { value: "hard", label: "Hard" },
 ]
 
 const DRIFT_STYLES = {
@@ -112,13 +103,27 @@ function HabitForm({
     initial?.difficulty ?? "easy"
   )
   const [bindFocus, setBindFocus] = useState(initial?.bind_focus ?? false)
-  // shortcut: the editor exposes one reminder slot — saving writes
-  // reminder_times=[time] or [] and drops any extra stored times.
+  // shortcut: the editor exposes one reminder slot — it edits slot 0 and
+  // preserves any extra stored times (see the submit merge below).
   const [reminder, setReminder] = useState(initial?.reminder_times[0] ?? "")
   const hasTitle = title.trim() !== ""
   // A negative-only habit accepts no +click, so binding it is a stored no-op
   // (the backend skips it) — the UI doesn't offer the flag there.
   const bindable = direction !== "negative"
+
+  // reminder_times full-replaces server-side — send it only when the slot
+  // changed, merging the edit over the stored tail so extra times survive.
+  const storedReminders = initial?.reminder_times ?? []
+  const reminderPatch: string[] | undefined =
+    initial === undefined
+      ? reminder === ""
+        ? []
+        : [reminder]
+      : reminder === (storedReminders[0] ?? "")
+        ? undefined
+        : reminder === ""
+          ? storedReminders.slice(1)
+          : [reminder, ...storedReminders.slice(1)]
 
   return (
     <div className="space-y-4" data-testid="habit-form">
@@ -242,7 +247,9 @@ function HabitForm({
               direction,
               difficulty,
               bind_focus: bindFocus && bindable,
-              reminder_times: reminder === "" ? [] : [reminder],
+              ...(reminderPatch !== undefined
+                ? { reminder_times: reminderPatch }
+                : {}),
             })
           }
           disabled={busy || !hasTitle}
@@ -299,7 +306,7 @@ export function HabitsColumn({
   isError,
   isOnline,
   writesDisabled = false,
-  clickingId = null,
+  clickingIds,
   busy = false,
   onRetry,
   onCreate,
@@ -363,7 +370,7 @@ export function HabitsColumn({
           <div className="h-12 animate-pulse rounded-2xl bg-white/5" />
           <div className="h-12 animate-pulse rounded-2xl bg-white/5" />
         </div>
-      ) : isError ? (
+      ) : isError && habits === undefined ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
           {!isOnline && <WifiOff className="h-6 w-6 text-amber-400" />}
           <p className="text-sm text-muted-foreground">
@@ -397,7 +404,9 @@ export function HabitsColumn({
                       notes: input.notes,
                       direction: input.direction,
                       difficulty: input.difficulty,
-                      reminder_times: input.reminder_times,
+                      ...(input.reminder_times !== undefined
+                        ? { reminder_times: input.reminder_times }
+                        : {}),
                       bind_focus: input.bind_focus,
                     })
                   }
@@ -410,7 +419,9 @@ export function HabitsColumn({
                       <ClickButton
                         habit={habit}
                         direction="positive"
-                        disabled={!canWrite || clickingId === habit.id}
+                        disabled={
+                          !canWrite || (clickingIds?.has(habit.id) ?? false)
+                        }
                         onClick={() => onClick?.(habit.id, "positive")}
                       />
                     )}
@@ -418,7 +429,9 @@ export function HabitsColumn({
                       <ClickButton
                         habit={habit}
                         direction="negative"
-                        disabled={!canWrite || clickingId === habit.id}
+                        disabled={
+                          !canWrite || (clickingIds?.has(habit.id) ?? false)
+                        }
                         onClick={() => onClick?.(habit.id, "negative")}
                       />
                     )}
@@ -532,7 +545,6 @@ export function HabitsColumn({
         }
         confirmText="Delete"
         variant="destructive"
-        isLoading={busy}
       />
     </section>
   )

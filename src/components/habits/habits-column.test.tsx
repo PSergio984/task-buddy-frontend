@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react"
+import { render, screen, fireEvent, act } from "@testing-library/react"
 import { describe, it, expect, vi } from "vitest"
 import { HabitsColumn } from "./habits-column"
 import type { Habit } from "@/lib/api"
@@ -34,6 +34,31 @@ function renderColumn(habits: Habit[], onClick = vi.fn()) {
   return onClick
 }
 
+function renderEditable(row: Habit) {
+  const onUpdate = vi.fn()
+  render(
+    <HabitsColumn
+      habits={[row]}
+      isPending={false}
+      isError={false}
+      isOnline
+      onRetry={vi.fn()}
+      onUpdate={onUpdate}
+    />
+  )
+  fireEvent.click(screen.getByLabelText(`Edit ${row.title}`))
+  expect(screen.getByTestId("habit-form")).toBeInTheDocument()
+  return onUpdate
+}
+
+// A successful save closes the editor inside a promise .then — flush that
+// microtask inside act or React warns about an unwrapped state update.
+const save = async () => {
+  await act(async () => {
+    fireEvent.click(screen.getByRole("button", { name: "Save habit" }))
+  })
+}
+
 describe("HabitsColumn", () => {
   it("renders only the click buttons the habit's direction accepts", () => {
     renderColumn([
@@ -58,6 +83,42 @@ describe("HabitsColumn", () => {
     expect(onClick).toHaveBeenCalledWith(1, "positive")
     fireEvent.click(screen.getByLabelText("−click habit 1"))
     expect(onClick).toHaveBeenCalledWith(1, "negative")
+  })
+
+  it("omits reminder_times from the PATCH when the slot is unchanged", async () => {
+    // The field full-replaces server-side — an untouched slot must not
+    // truncate the stored tail.
+    const onUpdate = renderEditable(
+      habit(1, { reminder_times: ["07:00", "21:00"] })
+    )
+    await save()
+    const patch = onUpdate.mock.calls[0][1]
+    expect(patch).not.toHaveProperty("reminder_times")
+  })
+
+  it("merges an edited reminder slot over the stored tail", async () => {
+    const onUpdate = renderEditable(
+      habit(1, { reminder_times: ["07:00", "21:00"] })
+    )
+    fireEvent.change(screen.getByLabelText("Reminder"), {
+      target: { value: "08:30" },
+    })
+    await save()
+    expect(onUpdate.mock.calls[0][1].reminder_times).toEqual([
+      "08:30",
+      "21:00",
+    ])
+  })
+
+  it("a cleared reminder slot promotes the stored tail", async () => {
+    const onUpdate = renderEditable(
+      habit(1, { reminder_times: ["07:00", "21:00"] })
+    )
+    fireEvent.change(screen.getByLabelText("Reminder"), {
+      target: { value: "" },
+    })
+    await save()
+    expect(onUpdate.mock.calls[0][1].reminder_times).toEqual(["21:00"])
   })
 
   it("disables clicks while offline instead of pretending to queue them", () => {

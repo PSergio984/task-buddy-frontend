@@ -11,6 +11,9 @@ import { useToast } from "@/hooks/use-toast"
 import { setGameProfileCache } from "@/hooks/useGameProfile"
 import { getErrorMessage } from "@/lib/errors"
 
+/** Lets `useMutationState` find in-flight checks for the pending-id set. */
+export const DAILY_CHECK_MUTATION_KEY = ["daily-check"] as const
+
 /**
  * Daily queries/mutations. Same write convention as the habits column —
  * checks write straight to the API (no offline queue yet) and failures
@@ -54,6 +57,8 @@ export function useUpdateDaily() {
       dailiesApi.update(id, patch),
     onSuccess: invalidate,
     onError: (err) => {
+      // Resync on failure too — same contract as the update-habit hook.
+      void invalidate()
       toast({
         title: "Couldn't update daily",
         description: getErrorMessage(err),
@@ -70,6 +75,7 @@ export function useDeleteDaily() {
     mutationFn: (id: number) => dailiesApi.remove(id),
     onSuccess: invalidate,
     onError: (err) => {
+      void invalidate()
       toast({
         title: "Couldn't delete daily",
         description: getErrorMessage(err),
@@ -84,17 +90,33 @@ export function useCheckDaily() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, input }: { id: number; input: DailyCheckInput }) =>
-      dailiesApi.check(id, input),
+    mutationKey: DAILY_CHECK_MUTATION_KEY,
+    mutationFn: ({
+      id,
+      input,
+      clientEventId,
+    }: {
+      id: number
+      input: DailyCheckInput
+      clientEventId: string
+    }) => dailiesApi.check(id, input, clientEventId),
     onSuccess: async (res) => {
       // The response carries the daily with today's marks plus authoritative
       // totals — fold both into their caches instead of a refetch. The check
       // also lands a daily_check row in the ledger → the timeline's markers.
       const userId = user?.id
+      try {
+        // Cancel a racing list refetch so it can't fold a stale GET over
+        // the newer row — same ordering guard as the game-profile write.
+        await queryClient.cancelQueries({ queryKey: ["dailies", { userId }] })
+      } catch {
+        // Cancellation is best-effort — the write below still lands.
+      }
       queryClient.setQueryData<Daily[]>(["dailies", { userId }], (old) =>
         old?.map((d) => (d.id === res.daily.id ? res.daily : d))
       )
-      if (userId !== undefined) await setGameProfileCache(res.profile, userId)
+      if (userId !== undefined)
+        await setGameProfileCache(res.profile, userId, res.server_time)
       void queryClient.invalidateQueries({ queryKey: ["timeline"] })
     },
     onError: (err) => {

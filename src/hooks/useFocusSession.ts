@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import { useGame } from "@/contexts/GameContext"
 import { useToast } from "@/hooks/use-toast"
 import { getErrorMessage } from "@/lib/errors"
+import { queryClient } from "@/lib/query-client"
 import { setGameProfileCache } from "@/hooks/useGameProfile"
 import { removeGameEventsByPrefix } from "@/lib/game-event-queue"
 import { armProbeGate, releaseProbeGate } from "@/lib/focus-probe-gate"
@@ -142,7 +143,10 @@ export function useFocusSessionRuntime(): FocusSessionRuntime {
       setServerOffset(nextOffset)
       setNowMs(Date.now() + nextOffset)
       if (res.profile && userId !== null) {
-        void setGameProfileCache(res.profile, userId)
+        void setGameProfileCache(res.profile, userId, res.server_time)
+        // A scored response may have run server-side bind_focus auto-clicks
+        // — the habits list cache is stale alongside the profile.
+        void queryClient.invalidateQueries({ queryKey: ["habits"] })
       }
       applySession(res.session)
     },
