@@ -104,10 +104,7 @@ describe("HabitsColumn", () => {
       target: { value: "08:30" },
     })
     await save()
-    expect(onUpdate.mock.calls[0][1].reminder_times).toEqual([
-      "08:30",
-      "21:00",
-    ])
+    expect(onUpdate.mock.calls[0][1].reminder_times).toEqual(["08:30", "21:00"])
   })
 
   it("a cleared reminder slot promotes the stored tail", async () => {

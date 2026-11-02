@@ -104,19 +104,11 @@ describe("useCheckDaily", () => {
     })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
-    expect(dailiesApi.check).toHaveBeenCalledWith(
-      1,
-      { done: true },
-      "eid-1"
-    )
+    expect(dailiesApi.check).toHaveBeenCalledWith(1, { done: true }, "eid-1")
     expect(
       queryClient.getQueryData<Daily[]>(["dailies", { userId: 1 }])
     ).toEqual([checked, daily(2)])
-    expect(setGameProfileCache).toHaveBeenCalledWith(
-      profile,
-      1,
-      SERVER_TIME
-    )
+    expect(setGameProfileCache).toHaveBeenCalledWith(profile, 1, SERVER_TIME)
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["timeline"] })
   })
 

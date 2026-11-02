@@ -107,11 +107,7 @@ describe("useClickHabit", () => {
     expect(
       queryClient.getQueryData<Habit[]>(["habits", { userId: 1 }])
     ).toEqual([scored, habit(2)])
-    expect(setGameProfileCache).toHaveBeenCalledWith(
-      profile,
-      1,
-      SERVER_TIME
-    )
+    expect(setGameProfileCache).toHaveBeenCalledWith(profile, 1, SERVER_TIME)
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["timeline"] })
   })
 

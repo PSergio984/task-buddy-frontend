@@ -206,9 +206,6 @@ describe("DailiesColumn", () => {
       target: { value: "08:30" },
     })
     await submit()
-    expect(onUpdate.mock.calls[0][1].reminder_times).toEqual([
-      "08:30",
-      "21:00",
-    ])
+    expect(onUpdate.mock.calls[0][1].reminder_times).toEqual(["08:30", "21:00"])
   })
 })

@@ -987,11 +987,7 @@ export const dailiesApi = {
   remove: async (id: number) => {
     await api.delete(`/api/v1/game/dailies/${id}`)
   },
-  check: async (
-    id: number,
-    input: DailyCheckInput,
-    clientEventId: string
-  ) => {
+  check: async (id: number, input: DailyCheckInput, clientEventId: string) => {
     const response = await api.post<DailyCheckResponse>(
       `/api/v1/game/dailies/${id}/check`,
       // Same per-gesture eid contract as the habit click.

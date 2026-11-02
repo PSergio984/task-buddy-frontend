@@ -691,9 +691,9 @@ export function DailiesColumn({
           )}
 
           <p className="text-xs text-muted-foreground/70">
-            Unchecked scheduled days cost HP after the ~3am UTC grace — one
-            miss per rolling 7 scheduled days keeps the streak; the HP loss
-            still applies.
+            Unchecked scheduled days cost HP after the ~3am UTC grace — one miss
+            per rolling 7 scheduled days keeps the streak; the HP loss still
+            applies.
           </p>
 
           {canWrite && creating && (
