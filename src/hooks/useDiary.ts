@@ -110,7 +110,9 @@ export function useUpdateRetention() {
       gameApi.updateRetention(retention),
     onSuccess: async (profile) => {
       // The PATCH returns the authoritative profile — write it into the HUD
-      // cache, then re-read the day views under the new horizon.
+      // cache, then re-read the day views under the new horizon. Unlike the
+      // scoring endpoints this response carries no server_time, so the write
+      // always applies (setGameProfileCache's absent-serverTime path).
       if (user?.id !== undefined) await setGameProfileCache(profile, user.id)
       void queryClient.invalidateQueries({ queryKey: ["diary"] })
       void queryClient.invalidateQueries({ queryKey: ["timeline"] })

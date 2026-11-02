@@ -15,6 +15,7 @@ import {
   Timer,
   NotebookPen,
   ChartGantt,
+  Repeat,
 } from "lucide-react"
 import { useState, useMemo } from "react"
 
@@ -95,6 +96,12 @@ export function Sidebar({ isCollapsed, onToggle }: Readonly<SidebarProps>) {
       },
       { id: "tasks", path: "/tasks", label: "Tasks", icon: ListChecks },
       { id: "focus", path: "/focus", label: "Focus", icon: Timer },
+      {
+        id: "habits",
+        path: "/habits",
+        label: "Habits & Dailies",
+        icon: Repeat,
+      },
       { id: "diary", path: "/diary", label: "Diary", icon: NotebookPen },
       {
         id: "timeline",
