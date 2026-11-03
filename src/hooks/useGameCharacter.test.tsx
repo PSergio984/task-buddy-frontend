@@ -173,8 +173,8 @@ describe("useBuyGear", () => {
     expect(invalidate).toHaveBeenCalledWith({
       queryKey: ["game-achievements"],
     })
-    // No other write in flight — the settle-time resync must not fire.
-    expect(invalidate).not.toHaveBeenCalledWith({ queryKey: ["game-gear"] })
+    // The settle-time gear resync is unconditional.
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["game-gear"] })
   })
 
   it("resyncs the gear cache when a buy fails", async () => {
@@ -264,8 +264,8 @@ describe("useToggleGearCostume", () => {
       1,
       SERVER_TIME
     )
-    // No other write in flight — the settle-time resync must not fire.
-    expect(invalidate).not.toHaveBeenCalledWith({ queryKey: ["game-gear"] })
+    // The settle-time gear resync is unconditional.
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["game-gear"] })
   })
 
   it("resyncs the list when a toggle settles while another write is in flight", async () => {

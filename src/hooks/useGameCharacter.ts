@@ -98,12 +98,10 @@ export function useBuyGear() {
       })
     },
     onSettled: () => {
-      // Settling while another write is still running means the success
-      // path above cancelled the gear refetch that write relies on — the
-      // stripped/updated rows would never appear. Resync in that case
-      // only; isMutating counts this still-running mutation, hence > 1.
-      if (queryClient.isMutating() > 1)
-        void queryClient.invalidateQueries({ queryKey: ["game-gear"] })
+      // Always resync: a stale fold can cancel a fresher write's spawned
+      // refetch even when that write already settled (isMutating==1 misses
+      // the interleave). Cheap endpoint — re-pull after every gear write.
+      void queryClient.invalidateQueries({ queryKey: ["game-gear"] })
     },
   })
 }
@@ -145,12 +143,7 @@ export function useToggleGearCostume() {
       })
     },
     onSettled: () => {
-      // Settling while another write is still running means the success
-      // path above cancelled the gear refetch that write relies on — the
-      // updated rows would never appear. Resync in that case only;
-      // isMutating counts this still-running mutation, hence > 1.
-      if (queryClient.isMutating() > 1)
-        void queryClient.invalidateQueries({ queryKey: ["game-gear"] })
+      void queryClient.invalidateQueries({ queryKey: ["game-gear"] })
     },
   })
 }
@@ -186,12 +179,7 @@ export function useEquipGear() {
       })
     },
     onSettled: () => {
-      // Settling while another write is still running means the success
-      // path above cancelled the gear refetch that write relies on — the
-      // stripped/updated rows would never appear. Resync in that case
-      // only; isMutating counts this still-running mutation, hence > 1.
-      if (queryClient.isMutating() > 1)
-        void queryClient.invalidateQueries({ queryKey: ["game-gear"] })
+      void queryClient.invalidateQueries({ queryKey: ["game-gear"] })
     },
   })
 }
@@ -269,10 +257,7 @@ export function useSelectClass() {
       })
     },
     onSettled: () => {
-      // Same settle-reconcile as the gear writes above — this mutation
-      // also touches the gear cache.
-      if (queryClient.isMutating() > 1)
-        void queryClient.invalidateQueries({ queryKey: ["game-gear"] })
+      void queryClient.invalidateQueries({ queryKey: ["game-gear"] })
     },
   })
 }
@@ -297,10 +282,9 @@ export function useRespec() {
       })
     },
     onSettled: () => {
-      // Same settle-reconcile as the gear writes above — this mutation
-      // also touches the gear cache.
-      if (queryClient.isMutating() > 1)
-        void queryClient.invalidateQueries({ queryKey: ["game-gear"] })
+      // Same unconditional resync as the gear writes above — this
+      // mutation also touches the gear cache.
+      void queryClient.invalidateQueries({ queryKey: ["game-gear"] })
     },
   })
 }
