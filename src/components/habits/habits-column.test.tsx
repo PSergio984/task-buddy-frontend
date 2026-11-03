@@ -166,6 +166,36 @@ describe("HabitsColumn", () => {
     expect(screen.getByRole("button", { name: "Save habit" })).toBeDisabled()
   })
 
+  it("keeps an open create draft when the connection drops mid-create", () => {
+    const { rerender } = render(
+      <HabitsColumn
+        habits={[habit(1)]}
+        isPending={false}
+        isError={false}
+        isOnline
+        onRetry={vi.fn()}
+      />
+    )
+    fireEvent.click(screen.getByLabelText("New habit"))
+    fireEvent.change(screen.getByLabelText("Habit"), {
+      target: { value: "draft title" },
+    })
+
+    rerender(
+      <HabitsColumn
+        habits={[habit(1)]}
+        isPending={false}
+        isError={false}
+        isOnline={false}
+        writesDisabled
+        onRetry={vi.fn()}
+      />
+    )
+    // Same rule as the edit draft — the form stays mounted, submit blocks.
+    expect(screen.getByLabelText("Habit")).toHaveValue("draft title")
+    expect(screen.getByRole("button", { name: "Add habit" })).toBeDisabled()
+  })
+
   it("disables clicks while offline instead of pretending to queue them", () => {
     render(
       <HabitsColumn

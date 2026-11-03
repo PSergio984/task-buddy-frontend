@@ -521,7 +521,7 @@ export function HabitsColumn({
             </p>
           )}
 
-          {canWrite && creating && (
+          {creating && (
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
               <HabitForm
                 submitLabel={
@@ -529,7 +529,9 @@ export function HabitsColumn({
                     <Plus className="h-3.5 w-3.5" /> Add habit
                   </span>
                 }
-                busy={busy}
+                // Same rule as the edit form — a dropped connection keeps
+                // the draft mounted with the submit blocked, not discarded.
+                busy={busy || !canWrite}
                 onSubmit={submitCreate}
                 onCancel={() => setCreating(false)}
               />

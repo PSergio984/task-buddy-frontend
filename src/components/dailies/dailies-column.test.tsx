@@ -156,6 +156,36 @@ describe("DailiesColumn", () => {
     expect(screen.getByRole("button", { name: "Save daily" })).toBeDisabled()
   })
 
+  it("keeps an open create draft when the connection drops mid-create", () => {
+    const { rerender } = render(
+      <DailiesColumn
+        dailies={[daily(1)]}
+        isPending={false}
+        isError={false}
+        isOnline
+        onRetry={vi.fn()}
+      />
+    )
+    fireEvent.click(screen.getByLabelText("New daily"))
+    fireEvent.change(screen.getByLabelText(/^daily$/i), {
+      target: { value: "draft title" },
+    })
+
+    rerender(
+      <DailiesColumn
+        dailies={[daily(1)]}
+        isPending={false}
+        isError={false}
+        isOnline={false}
+        writesDisabled
+        onRetry={vi.fn()}
+      />
+    )
+    // Same rule as the edit draft — the form stays mounted, submit blocks.
+    expect(screen.getByLabelText(/^daily$/i)).toHaveValue("draft title")
+    expect(screen.getByRole("button", { name: "Add daily" })).toBeDisabled()
+  })
+
   it("disables checks on a paused (inactive) daily", () => {
     renderColumn([daily(1, { active: false })])
     expect(screen.getByLabelText("Check daily 1")).toBeDisabled()
