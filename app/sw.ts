@@ -47,17 +47,18 @@ self.addEventListener("push", (event) => {
     }
 
     // Relay to window clients — a focused page plays an in-app cue; the OS
-    // notification covers hidden/closed tabs (#68). A visible page makes
-    // the OS copy silent so the two can't double the sound. The relay is
-    // best-effort: a failed matchAll still shows the notification (with
+    // notification covers everything else (#68). Silence the OS copy only
+    // when a focused window exists to cue instead: a merely visible page
+    // plays no cue, so its notification must keep the OS sound. The relay
+    // is best-effort: a failed matchAll still shows the notification (with
     // sound — the page can't cue what it never heard about).
-    const anyVisible = self.clients
+    const anyFocused = self.clients
       .matchAll({ type: "window" })
       .then((clientList) => {
         for (const client of clientList) {
           client.postMessage({ type: "tb:push-received" })
         }
-        return clientList.some((client) => client.visibilityState === "visible")
+        return clientList.some((client) => client.focused === true)
       })
       .catch((err) => {
         console.warn("Push relay to window clients failed:", err)
@@ -67,13 +68,13 @@ self.addEventListener("push", (event) => {
     // waitUntil must never reject — Chrome renders its generic "updated in
     // the background" notification on top of the real one when it does.
     event.waitUntil(
-      anyVisible
-        .then((visible) =>
+      anyFocused
+        .then((focused) =>
           self.registration.showNotification(title || "Task Buddy", {
             ...options,
             body: body || "",
             icon: icon || "/task-buddy-icon.svg",
-            silent: visible || options.silent === true,
+            silent: focused || options.silent === true,
             data: { action_url },
           })
         )

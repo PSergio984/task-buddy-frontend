@@ -26,7 +26,7 @@ vi.mock("@/hooks/useIsOnline", () => ({
   useIsOnline: () => state.isOnline,
 }))
 
-const LOCAL_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone
+const LOCAL_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
 
 function prefsData(
   overrides: Partial<NotificationPrefs> = {}
