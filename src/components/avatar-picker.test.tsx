@@ -13,6 +13,8 @@ import type { GameProfile, GearItem } from "@/lib/api"
 
 const mutate = vi.fn()
 const costumeMutate = vi.fn()
+// Records the enabled flag — the catalog fetch is gated on pixel-art.
+const useGearMock = vi.fn()
 
 const PROFILE: GameProfile = {
   level: 3,
@@ -103,7 +105,7 @@ vi.mock("@/hooks/useGameProfile", () => ({
 }))
 
 vi.mock("@/hooks/useGameCharacter", () => ({
-  useGear: () => ({ data: mockGear }),
+  useGear: (enabled?: boolean) => useGearMock(enabled),
   useToggleGearCostume: () => ({ mutate: costumeMutate, isPending: false }),
 }))
 
@@ -126,6 +128,7 @@ describe("AvatarCard", () => {
     mockProfile = PROFILE
     mockPending = false
     mockGear = []
+    useGearMock.mockImplementation(() => ({ data: mockGear }))
     mutate.mockImplementation((_config, options) => options?.onSuccess?.())
   })
 
@@ -259,6 +262,30 @@ describe("AvatarCard", () => {
     expect(screen.getByLabelText(/seed/i)).toBeDisabled()
     expect(screen.getByRole("combobox", { name: "Hair" })).toBeDisabled()
     expect(screen.getByRole("button", { name: "Skin f5cfa0" })).toBeDisabled()
+  })
+
+  it("emits a picked style in the preview URL and the saved config", async () => {
+    render(<AvatarCard />)
+    fireEvent.click(screen.getByRole("button", { name: "bottts" }))
+
+    // The preview switches to the picked style; pixel-art pickers hide and
+    // the gear catalog isn't fetched for it.
+    expect(screen.getByAltText("Avatar preview")).toHaveAttribute(
+      "src",
+      "https://api.dicebear.com/9.x/bottts/svg?seed=kiki"
+    )
+    expect(
+      screen.queryByRole("combobox", { name: "Hair" })
+    ).not.toBeInTheDocument()
+    expect(useGearMock).toHaveBeenLastCalledWith(false)
+
+    fireEvent.click(screen.getByRole("button", { name: /save avatar/i }))
+    await waitFor(() =>
+      expect(mutate).toHaveBeenCalledWith(
+        expect.objectContaining({ style: "bottts", seed: "kiki" }),
+        expect.anything()
+      )
+    )
   })
 
   it("hides the pixel-art pickers for a non-pixel-art stored style", () => {
