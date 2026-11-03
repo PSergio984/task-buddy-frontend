@@ -3,6 +3,7 @@ import { QueryClient } from "@tanstack/react-query"
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { AxiosError } from "axios"
 import {
+  authUser,
   deferred,
   expectSettleResync,
   makeWrapper,
@@ -10,7 +11,7 @@ import {
   SERVER_TIME,
 } from "./game-hook-test-utils"
 import { useClickHabit, useCreateHabit } from "./useHabits"
-import { habitsApi, type Habit } from "@/lib/api"
+import { habitsApi, type Habit, type HabitClickResponse } from "@/lib/api"
 import { setGameProfileCache } from "@/hooks/useGameProfile"
 
 vi.mock("@/lib/api", async (importOriginal) => {
@@ -79,6 +80,54 @@ describe("useClickHabit", () => {
     })
     // The settle-time resync is unconditional — same contract as gear.
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["habits"] })
+  })
+
+  it("folds under the account that fired the write when auth swaps mid-flight", async () => {
+    // React Query swaps a pending mutation's options onto the latest render,
+    // so the success path sees the NEW user — the owner must come from the
+    // onMutate context captured at mutate() time.
+    const held = deferred<HabitClickResponse>()
+    vi.mocked(habitsApi.click).mockImplementation(() => held.promise)
+    const queryClient = new QueryClient()
+    queryClient.setQueryData(["habits", { userId: 1 }], [habit(1)])
+    const { result, rerender } = renderHook(() => useClickHabit(), {
+      wrapper: makeWrapper(queryClient),
+    })
+
+    act(() => {
+      result.current.mutate({
+        id: 1,
+        direction: "positive",
+        clientEventId: "eid-1",
+      })
+    })
+    await waitFor(() => expect(result.current.isPending).toBe(true))
+
+    try {
+      // Logout → login as another account while the write is in flight.
+      authUser.id = 2
+      rerender()
+      const scored = habit(1, { counter: 1 })
+      await act(async () => {
+        held.resolve({
+          habit: scored,
+          profile,
+          status: "applied",
+          server_time: SERVER_TIME,
+        })
+      })
+      await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+      expect(
+        queryClient.getQueryData<Habit[]>(["habits", { userId: 1 }])
+      ).toEqual([scored])
+      expect(
+        queryClient.getQueryData(["habits", { userId: 2 }])
+      ).toBeUndefined()
+      expect(setGameProfileCache).toHaveBeenCalledWith(profile, 1, SERVER_TIME)
+    } finally {
+      authUser.id = 1
+    }
   })
 
   it("resyncs the habits cache when a click fails", async () => {

@@ -108,12 +108,18 @@ export function useUpdateRetention() {
   return useMutation({
     mutationFn: (retention: RetentionPreference) =>
       gameApi.updateRetention(retention),
-    onSuccess: async (profile) => {
+    // Stamp the write's owner at mutate() time — a pending mutation's options
+    // swap onto the latest render, so the onSuccess closure would read the NEW
+    // user after a mid-flight auth swap (same guard as the gear fold).
+    onMutate: () => user?.id,
+    onSuccess: async (profile, _retention, userId) => {
       // The PATCH returns the authoritative profile — write it into the HUD
-      // cache, then re-read the day views under the new horizon. Unlike the
-      // scoring endpoints this response carries no server_time, so the write
-      // always applies (setGameProfileCache's absent-serverTime path).
-      if (user?.id !== undefined) await setGameProfileCache(profile, user.id)
+      // cache under its own stamp, then re-read the day views under the new
+      // horizon. An absent server_time keeps the always-apply path; a present
+      // one advances the high-water mark so a later stale-stamped write is
+      // dropped instead of regressing this snapshot.
+      if (userId !== undefined)
+        await setGameProfileCache(profile, userId, profile.server_time)
       invalidate()
     },
     onError: (err) => {

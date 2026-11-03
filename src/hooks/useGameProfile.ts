@@ -74,9 +74,13 @@ export function useUpdateAvatarConfig() {
   return useMutation({
     mutationFn: (avatarConfig: Record<string, unknown>) =>
       gameApi.updateAvatarConfig(avatarConfig),
-    onSuccess: async (profile) => {
-      if (user?.id !== undefined)
-        await setGameProfileCache(profile, user.id, profile.server_time)
+    // Stamp the write's owner at mutate() time — a pending mutation's options
+    // swap onto the latest render, so the onSuccess closure would read the NEW
+    // user after a mid-flight auth swap (same guard as the gear fold).
+    onMutate: () => user?.id,
+    onSuccess: async (profile, _avatarConfig, userId) => {
+      if (userId !== undefined)
+        await setGameProfileCache(profile, userId, profile.server_time)
       toast({ title: "Avatar saved", variant: "success" })
     },
     onError: (err) => {

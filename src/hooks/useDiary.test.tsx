@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { AxiosError } from "axios"
 import type { ReactNode } from "react"
-import { profile } from "./game-hook-test-utils"
+import { profile, SERVER_TIME } from "./game-hook-test-utils"
 import {
   useCreateDiaryEntry,
   useDiaryEntries,
@@ -96,7 +96,11 @@ describe("useUpdateRetention", () => {
   })
 
   it("writes the returned profile into the HUD cache and re-reads the day views", async () => {
-    const updated = { ...profile, retention: "90d" as const }
+    const updated = {
+      ...profile,
+      retention: "90d" as const,
+      server_time: SERVER_TIME,
+    }
     vi.mocked(gameApi.updateRetention).mockResolvedValue(updated)
     const queryClient = new QueryClient()
     const invalidate = vi.spyOn(queryClient, "invalidateQueries")
@@ -110,8 +114,9 @@ describe("useUpdateRetention", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
     expect(gameApi.updateRetention).toHaveBeenCalledWith("90d")
-    // No server_time on this response — the write always applies.
-    expect(setGameProfileCache).toHaveBeenCalledWith(updated, 1)
+    // The response's stamp rides along so the high-water mark advances — a
+    // later stale-stamped write gets dropped instead of regressing this.
+    expect(setGameProfileCache).toHaveBeenCalledWith(updated, 1, SERVER_TIME)
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["diary"] })
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["timeline"] })
   })

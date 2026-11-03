@@ -106,11 +106,14 @@ export function useCheckDaily() {
       input: DailyCheckInput
       clientEventId: string
     }) => dailiesApi.check(id, input, clientEventId),
-    onSuccess: async (res) => {
+    // Stamp the write's owner at mutate() time — a pending mutation's options
+    // swap onto the latest render, so the onSuccess closure would read the NEW
+    // user after a mid-flight auth swap (same guard as the gear fold).
+    onMutate: () => user?.id,
+    onSuccess: async (res, _vars, userId) => {
       // The response carries the daily with today's marks plus authoritative
       // totals — fold both into their caches instead of a refetch. The check
       // also lands a daily_check row in the ledger → the timeline's markers.
-      const userId = user?.id
       try {
         // Cancel a racing list refetch so it can't fold a stale GET over
         // the newer row — same ordering guard as the game-profile write.

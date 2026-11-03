@@ -103,11 +103,14 @@ export function useClickHabit() {
       direction: HabitClickDirection
       clientEventId: string
     }) => habitsApi.click(id, direction, clientEventId),
-    onSuccess: async (res) => {
+    // Stamp the write's owner at mutate() time — a pending mutation's options
+    // swap onto the latest render, so the onSuccess closure would read the NEW
+    // user after a mid-flight auth swap (same guard as the gear fold).
+    onMutate: () => user?.id,
+    onSuccess: async (res, _vars, userId) => {
       // The response carries the post-click habit plus authoritative totals —
       // fold both into their caches instead of a refetch round trip. The click
       // also lands a habit_click row in the ledger → the timeline's markers.
-      const userId = user?.id
       try {
         // An in-flight list refetch resolving after this write would fold
         // the stale GET over the newer row — cancel it so the write wins.
