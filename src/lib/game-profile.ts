@@ -3,8 +3,8 @@
  *
  * The buy guard mirrors the rules character_service.buy_gear enforces
  * server-side (class lock, ladder order, gold) so the UI can disable a
- * purchase it knows will fail; the activity helpers mirror tracking.py's
- * tier_for + filled-day window.
+ * purchase it knows will fail; buildWeeks mirrors the filled-day window
+ * (a day's tier arrives server-computed on ActivityDay.tier).
  */
 import type {
   ActivityDay,
@@ -108,17 +108,6 @@ export function buyBlock(
   }
   if (profile.gold < item.cost) return "gold"
   return null
-}
-
-/**
- * 0..thresholds.length: count of cutoffs the score reaches — mirrors
- * tracking.tier_for (tier n applies when score >= tier_thresholds[n-1]).
- */
-export function activityTier(score: number, tierThresholds: number[]): number {
-  return tierThresholds.reduce(
-    (tier, cutoff) => (score >= cutoff ? tier + 1 : tier),
-    0
-  )
 }
 
 /** Mon=0..Sun=6 — the same weekday convention RecurrenceWeekdays uses. */

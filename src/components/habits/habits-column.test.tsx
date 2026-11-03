@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, act } from "@testing-library/react"
 import { describe, it, expect, vi } from "vitest"
 import { HabitsColumn } from "./habits-column"
+import { offlineDraftChecks } from "../game-column-test-utils"
 import type { Habit } from "@/lib/api"
 
 function habit(id: number, overrides: Partial<Habit> = {}): Habit {
@@ -58,6 +59,13 @@ const save = async () => {
     fireEvent.click(screen.getByRole("button", { name: "Save habit" }))
   })
 }
+
+const offlineDrafts = offlineDraftChecks({
+  Column: HabitsColumn,
+  listProp: "habits",
+  row: habit(1),
+  noun: "habit",
+})
 
 describe("HabitsColumn", () => {
   it("renders only the click buttons the habit's direction accepts", () => {
@@ -134,6 +142,14 @@ describe("HabitsColumn", () => {
     expect(
       screen.getByText(/offline and your habits aren't in the local cache/i)
     ).toBeInTheDocument()
+  })
+
+  it("keeps an open edit draft when the connection drops mid-edit", () => {
+    offlineDrafts.edit()
+  })
+
+  it("keeps an open create draft when the connection drops mid-create", () => {
+    offlineDrafts.create()
   })
 
   it("disables clicks while offline instead of pretending to queue them", () => {

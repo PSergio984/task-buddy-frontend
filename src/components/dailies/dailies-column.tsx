@@ -647,12 +647,14 @@ export function DailiesColumn({
         <div className="space-y-3">
           {(dailies ?? []).map((daily) => (
             <div key={daily.id}>
-              {editingId === daily.id && canWrite ? (
+              {editingId === daily.id ? (
                 <div className="rounded-2xl border border-white/5 bg-white/5 p-3">
                   <DailyForm
                     initial={daily}
                     submitLabel="Save daily"
-                    busy={busy}
+                    // A dropped connection keeps the draft open — the form
+                    // stays mounted with the submit blocked, not discarded.
+                    busy={busy || !canWrite}
                     onSubmit={(input) =>
                       submitUpdate(daily.id, {
                         title: input.title,
@@ -699,7 +701,7 @@ export function DailiesColumn({
             applies.
           </p>
 
-          {canWrite && creating && (
+          {creating && (
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
               <DailyForm
                 submitLabel={
@@ -707,7 +709,9 @@ export function DailiesColumn({
                     <Plus className="h-3.5 w-3.5" /> Add daily
                   </span>
                 }
-                busy={busy}
+                // Same rule as the edit form — a dropped connection keeps
+                // the draft mounted with the submit blocked, not discarded.
+                busy={busy || !canWrite}
                 onSubmit={submitCreate}
                 onCancel={() => setCreating(false)}
               />

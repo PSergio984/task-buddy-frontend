@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, act } from "@testing-library/react"
 import { describe, it, expect, vi } from "vitest"
 import { DailiesColumn } from "./dailies-column"
+import { offlineDraftChecks } from "../game-column-test-utils"
 import type { Daily } from "@/lib/api"
 
 function daily(id: number, overrides: Partial<Daily> = {}): Daily {
@@ -59,6 +60,13 @@ const submit = async () => {
     fireEvent.click(screen.getByRole("button", { name: "Save daily" }))
   })
 }
+
+const offlineDrafts = offlineDraftChecks({
+  Column: DailiesColumn,
+  listProp: "dailies",
+  row: daily(1),
+  noun: "daily",
+})
 
 describe("DailiesColumn", () => {
   it("checks the whole daily with done=true, unchecks with done=false", () => {
@@ -124,6 +132,14 @@ describe("DailiesColumn", () => {
     expect(
       screen.getByText(/offline and your dailies aren't in the local cache/i)
     ).toBeInTheDocument()
+  })
+
+  it("keeps an open edit draft when the connection drops mid-edit", () => {
+    offlineDrafts.edit()
+  })
+
+  it("keeps an open create draft when the connection drops mid-create", () => {
+    offlineDrafts.create()
   })
 
   it("disables checks on a paused (inactive) daily", () => {

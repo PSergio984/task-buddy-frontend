@@ -3,22 +3,29 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { AxiosError } from "axios"
 import type { ReactNode } from "react"
-import { useCreateDiaryEntry, useDiaryEntries } from "./useDiary"
-import { diaryApi } from "@/lib/api"
-
-vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({ user: { id: 1 } }),
-}))
-
-vi.mock("@/hooks/use-toast", () => ({
-  useToast: () => ({ toast: vi.fn() }),
-}))
+// AuthContext/useToast/useGameProfile mocks come from the shared utils —
+// a local vi.mock for them would be dead (the imported mocks win), and the
+// swap test needs the mutable authUser those register.
+import {
+  authUser,
+  deferred,
+  profile,
+  SERVER_TIME,
+} from "./game-hook-test-utils"
+import {
+  useCreateDiaryEntry,
+  useDiaryEntries,
+  useUpdateRetention,
+} from "./useDiary"
+import { diaryApi, gameApi, type GameProfile } from "@/lib/api"
+import { setGameProfileCache } from "@/hooks/useGameProfile"
 
 vi.mock("@/lib/api", async (importOriginal) => {
   const mod = await importOriginal<typeof import("@/lib/api")>()
   return {
     ...mod,
     diaryApi: { ...mod.diaryApi, list: vi.fn(), create: vi.fn() },
+    gameApi: { ...mod.gameApi, updateRetention: vi.fn() },
   }
 })
 
@@ -78,6 +85,101 @@ describe("useCreateDiaryEntry", () => {
       result.current.mutate({ kind: "standup", good: "shipped it" })
     })
     await waitFor(() => expect(result.current.isError).toBe(true))
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["diary"] })
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["timeline"] })
+  })
+})
+
+describe("useUpdateRetention", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it("writes the returned profile into the HUD cache and re-reads the day views", async () => {
+    const updated = {
+      ...profile,
+      retention: "90d" as const,
+      server_time: SERVER_TIME,
+    }
+    vi.mocked(gameApi.updateRetention).mockResolvedValue(updated)
+    const queryClient = new QueryClient()
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries")
+    const { result } = renderHook(() => useUpdateRetention(), {
+      wrapper: makeWrapper(queryClient),
+    })
+
+    act(() => {
+      result.current.mutate("90d")
+    })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(gameApi.updateRetention).toHaveBeenCalledWith("90d")
+    // The response's stamp rides along so the high-water mark advances — a
+    // later stale-stamped write gets dropped instead of regressing this.
+    expect(setGameProfileCache).toHaveBeenCalledWith(updated, 1, SERVER_TIME)
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["diary"] })
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["timeline"] })
+  })
+
+  it("folds under the account that fired the write when auth swaps mid-flight", async () => {
+    // React Query swaps a pending mutation's options onto the latest render,
+    // so the success path sees the NEW user — the owner must come from the
+    // onMutate context captured at mutate() time.
+    const held = deferred<GameProfile>()
+    vi.mocked(gameApi.updateRetention).mockImplementation(() => held.promise)
+    const queryClient = new QueryClient()
+    const { result, rerender } = renderHook(() => useUpdateRetention(), {
+      wrapper: makeWrapper(queryClient),
+    })
+
+    act(() => {
+      result.current.mutate("90d")
+    })
+    await waitFor(() => expect(result.current.isPending).toBe(true))
+
+    try {
+      // Logout → login as another account while the write is in flight.
+      authUser.id = 2
+      rerender()
+      const updated = {
+        ...profile,
+        retention: "90d" as const,
+        server_time: SERVER_TIME,
+      }
+      await act(async () => {
+        held.resolve(updated)
+      })
+      await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+      // The profile cache write lands under the account that fired it.
+      expect(setGameProfileCache).toHaveBeenCalledWith(updated, 1, SERVER_TIME)
+      expect(setGameProfileCache).not.toHaveBeenCalledWith(
+        updated,
+        2,
+        SERVER_TIME
+      )
+    } finally {
+      authUser.id = 1
+    }
+  })
+
+  it("resyncs the day views when the write fails", async () => {
+    // A timeout after commit leaves the horizon changed server-side —
+    // re-read the gated day views instead of trusting the cached cutoff.
+    vi.mocked(gameApi.updateRetention).mockRejectedValue(new AxiosError("boom"))
+    const queryClient = new QueryClient()
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries")
+    const { result } = renderHook(() => useUpdateRetention(), {
+      wrapper: makeWrapper(queryClient),
+    })
+
+    act(() => {
+      result.current.mutate("1y")
+    })
+    await waitFor(() => expect(result.current.isError).toBe(true))
+    // The beyondHorizon gate reads the cutoff from the profile cache —
+    // the widened horizon stays hidden unless it refetches too.
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["game-profile"] })
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["diary"] })
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["timeline"] })
   })

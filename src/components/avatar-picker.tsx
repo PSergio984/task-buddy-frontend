@@ -18,6 +18,7 @@ import { useGameProfile, useUpdateAvatarConfig } from "@/hooks/useGameProfile"
 import { useGear, useToggleGearCostume } from "@/hooks/useGameCharacter"
 import { AvatarGearOverlay } from "@/components/avatar-gear-overlay"
 import {
+  AVATAR_STYLES,
   DEFAULT_AVATAR_STYLE,
   PIXEL_ART_COLORS,
   PIXEL_ART_VARIANTS,
@@ -96,7 +97,6 @@ export function AvatarCard() {
   const { user } = useAuth()
   const { data: profile, isLoading, isError } = useGameProfile()
   const updateAvatar = useUpdateAvatarConfig()
-  const { data: gear } = useGear()
   const toggleCostume = useToggleGearCostume()
   // null draft = untouched; edits build a whole-config candidate so Save can
   // compare it against the saved blob and disable on revert.
@@ -111,6 +111,9 @@ export function AvatarCard() {
   // No stored seed → preview and Save both use the fallback seed, so what the
   // preview shows is exactly what Save writes (and Save is enabled for it).
   const effective = draft ?? { ...saved, seed: saved.seed || fallbackSeed }
+  // The catalog only feeds the pixel-art overlay/fieldset — other resolved
+  // styles never show it, so don't pull it (same gate as the HUD).
+  const { data: gear } = useGear(effective.style === "pixel-art")
   const hasChanged = stableStringify(effective) !== stableStringify(saved)
 
   // Debounce the seed so typing doesn't fire a DiceBear fetch per keystroke.
@@ -171,7 +174,7 @@ export function AvatarCard() {
         <div>
           <h2 className="text-xl font-bold">Game Avatar</h2>
           <p className="text-sm text-muted-foreground">
-            Your pixel-art character — traits are free-tier DiceBear options.
+            Your game avatar — pixel-art adds free-tier DiceBear traits.
           </p>
         </div>
       </div>
@@ -212,6 +215,31 @@ export function AvatarCard() {
               />
             </div>
           </div>
+
+          {/* Style gates every section below — only pixel-art has the
+              trait/color pickers and the worn-gear layer. */}
+          <fieldset className="space-y-2">
+            <legend className="ml-1 text-sm font-semibold">Style</legend>
+            <div className="flex flex-wrap items-center gap-2">
+              {AVATAR_STYLES.map((style) => (
+                <button
+                  key={style}
+                  type="button"
+                  disabled={updateAvatar.isPending}
+                  aria-pressed={effective.style === style}
+                  onClick={() => edit({ style })}
+                  className={cn(
+                    "h-7 rounded-full border px-3 text-[10px] font-bold tracking-widest uppercase transition-colors",
+                    effective.style === style
+                      ? "border-primary/30 bg-primary/20 text-primary"
+                      : "border-white/10 text-muted-foreground hover:bg-white/10"
+                  )}
+                >
+                  {style}
+                </button>
+              ))}
+            </div>
+          </fieldset>
 
           {/* Trait/color pickers only apply to pixel-art — avatarConfigToUrl
               ignores their option names for other stored styles. The seed

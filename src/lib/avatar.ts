@@ -21,7 +21,9 @@ export type AvatarConfig = {
 /** DiceBear pixel-art is the spec'd avatar style (#46). */
 export const DEFAULT_AVATAR_STYLE = "pixel-art"
 
-const DICEBEAR_STYLES = new Set([
+/** The DiceBear styles the picker offers — also the URL allowlist, so a
+    stored config can never inject an arbitrary path segment. */
+export const AVATAR_STYLES = [
   "pixel-art",
   "adventurer",
   "bottts",
@@ -30,7 +32,9 @@ const DICEBEAR_STYLES = new Set([
   "miniavs",
   "personas",
   "fun-emoji",
-])
+] as const
+
+const DICEBEAR_STYLES = new Set<string>(AVATAR_STYLES)
 
 const numbered = (prefix: string, count: number) =>
   Array.from(

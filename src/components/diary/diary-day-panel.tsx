@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react"
+import { useCallback, useEffect, useState, type ReactNode } from "react"
 import { Check, Pencil, Plus, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -58,16 +58,24 @@ function StandupForm({
   busy,
   onSubmit,
   onCancel,
+  onMount,
 }: Readonly<{
   initial?: StandupFields
   submitLabel: ReactNode
   busy: boolean
   onSubmit: (fields: StandupFields) => void
   onCancel?: () => void
+  /** Fired once when the form mounts — the parent latches the open state. */
+  onMount?: () => void
 }>) {
   const [fields, setFields] = useState<StandupFields>(
     initial ?? { good: "", bad: "", next: "" }
   )
+  // Once opened, the parent keeps the form mounted through an offline flip
+  // so the draft survives — submit blocks on busy instead of unmounting.
+  useEffect(() => {
+    onMount?.()
+  }, [onMount])
   // Backend requires at least one of good/bad/next — an all-blank stand-up
   // is an empty diary row and the POST would 422.
   const hasContent = FIELD_LABELS.some(({ key }) => fields[key].trim() !== "")
@@ -141,14 +149,21 @@ function FreeformEditor({
   busy,
   onSubmit,
   onCancel,
+  onMount,
 }: Readonly<{
   initial?: string
   submitLabel: ReactNode
   busy: boolean
   onSubmit: (freeform: string) => void
   onCancel?: () => void
+  /** Fired once when the form mounts — the parent latches the open state. */
+  onMount?: () => void
 }>) {
   const [text, setText] = useState(initial ?? "")
+  // Same latch as the stand-up form — an opened draft survives offline.
+  useEffect(() => {
+    onMount?.()
+  }, [onMount])
   const hasContent = text.trim() !== ""
   return (
     <div className="space-y-2" data-testid="freeform-form">
@@ -221,6 +236,14 @@ export function DiaryDayPanel({
 }: DiaryDayPanelProps) {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [pendingDelete, setPendingDelete] = useState<DiaryEntry | null>(null)
+  // Same rule as the columns' `creating` state: an opened form stays
+  // mounted when the connection drops — the draft survives, the submit
+  // blocks on busy. The create forms open themselves while writable, so
+  // their mount effects set these latches.
+  const [standupFormOpen, setStandupFormOpen] = useState(false)
+  const [freeformFormOpen, setFreeformFormOpen] = useState(false)
+  const openStandupForm = useCallback(() => setStandupFormOpen(true), [])
+  const openFreeformForm = useCallback(() => setFreeformFormOpen(true), [])
 
   // The backend enforces one stand-up per (user, UTC day) with a partial
   // unique index; the UI mirrors it — the create form only renders while
@@ -271,18 +294,21 @@ export function DiaryDayPanel({
         </div>
 
         {standup === undefined ? (
-          canWrite ? (
+          canWrite || standupFormOpen ? (
             <StandupForm
               submitLabel="Save stand-up"
-              busy={busy}
+              // A dropped connection keeps the draft mounted with the
+              // submit blocked, not discarded.
+              busy={busy || !canWrite}
               onSubmit={(fields) => onCreateStandup?.(fields)}
+              onMount={openStandupForm}
             />
           ) : (
             <p className="text-sm text-muted-foreground">
               No stand-up for this day.
             </p>
           )
-        ) : editingId === standup.id && canWrite ? (
+        ) : editingId === standup.id ? (
           <StandupForm
             initial={{
               good: standup.good ?? "",
@@ -290,7 +316,9 @@ export function DiaryDayPanel({
               next: standup.next ?? "",
             }}
             submitLabel="Save stand-up"
-            busy={busy}
+            // Same rule as the create form — mid-edit offline keeps the
+            // draft mounted with the submit blocked.
+            busy={busy || !canWrite}
             onSubmit={(fields) => submitUpdate(standup.id, fields)}
             onCancel={() => setEditingId(null)}
           />
@@ -320,11 +348,11 @@ export function DiaryDayPanel({
               key={entry.id}
               className="rounded-2xl border border-white/5 bg-white/5 p-4"
             >
-              {editingId === entry.id && canWrite ? (
+              {editingId === entry.id ? (
                 <FreeformEditor
                   initial={entry.freeform ?? ""}
                   submitLabel="Save"
-                  busy={busy}
+                  busy={busy || !canWrite}
                   onSubmit={(freeform) => submitUpdate(entry.id, { freeform })}
                   onCancel={() => setEditingId(null)}
                 />
@@ -357,7 +385,7 @@ export function DiaryDayPanel({
             </p>
           )}
 
-          {canWrite && (
+          {(canWrite || freeformFormOpen) && (
             // Keyed on the entry count: a successful add remounts the editor
             // empty, while a failed add keeps the draft for retry.
             <FreeformEditor
@@ -367,8 +395,11 @@ export function DiaryDayPanel({
                   <Plus className="h-3.5 w-3.5" /> Add entry
                 </span>
               }
-              busy={busy}
+              // Same draft rule — offline keeps the editor mounted, submit
+              // blocked.
+              busy={busy || !canWrite}
               onSubmit={(freeform) => onCreateFreeform?.(freeform)}
+              onMount={openFreeformForm}
             />
           )}
         </div>

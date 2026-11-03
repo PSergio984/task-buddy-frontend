@@ -813,21 +813,12 @@ export const achievementsApi = {
 }
 
 export const activityApi = {
-  grid: async (start?: string, end?: string) => {
-    const response = await api.get<ActivityGrid>("/api/v1/game/activity", {
-      params:
-        start !== undefined || end !== undefined ? { start, end } : undefined,
-    })
+  grid: async () => {
+    const response = await api.get<ActivityGrid>("/api/v1/game/activity")
     return response.data
   },
-  stats: async (start?: string, end?: string) => {
-    const response = await api.get<ActivityStats>(
-      "/api/v1/game/activity/stats",
-      {
-        params:
-          start !== undefined || end !== undefined ? { start, end } : undefined,
-      }
-    )
+  stats: async () => {
+    const response = await api.get<ActivityStats>("/api/v1/game/activity/stats")
     return response.data
   },
 }

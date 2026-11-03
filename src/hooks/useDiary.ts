@@ -105,19 +105,31 @@ export function useUpdateRetention() {
   const { user } = useAuth()
   const { toast } = useToast()
   const queryClient = useQueryClient()
+  const invalidate = useDiaryInvalidate()
   return useMutation({
     mutationFn: (retention: RetentionPreference) =>
       gameApi.updateRetention(retention),
-    onSuccess: async (profile) => {
+    // Stamp the write's owner at mutate() time — a pending mutation's options
+    // swap onto the latest render, so the onSuccess closure would read the NEW
+    // user after a mid-flight auth swap (same guard as the gear fold).
+    onMutate: () => user?.id,
+    onSuccess: async (profile, _retention, userId) => {
       // The PATCH returns the authoritative profile — write it into the HUD
-      // cache, then re-read the day views under the new horizon. Unlike the
-      // scoring endpoints this response carries no server_time, so the write
-      // always applies (setGameProfileCache's absent-serverTime path).
-      if (user?.id !== undefined) await setGameProfileCache(profile, user.id)
-      void queryClient.invalidateQueries({ queryKey: ["diary"] })
-      void queryClient.invalidateQueries({ queryKey: ["timeline"] })
+      // cache under its own stamp, then re-read the day views under the new
+      // horizon. An absent server_time keeps the always-apply path; a present
+      // one advances the high-water mark so a later stale-stamped write is
+      // dropped instead of regressing this snapshot.
+      if (userId !== undefined)
+        await setGameProfileCache(profile, userId, profile.server_time)
+      invalidate()
     },
     onError: (err) => {
+      // Resync on failure too — a timeout after commit leaves the horizon
+      // changed server-side while the day views render the old cutoff. The
+      // profile holds the cutoff itself — the beyondHorizon gate reads it,
+      // so it must refetch or the widened horizon stays hidden.
+      void queryClient.invalidateQueries({ queryKey: ["game-profile"] })
+      invalidate()
       toast({
         title: "Couldn't update retention",
         description: getErrorMessage(err),

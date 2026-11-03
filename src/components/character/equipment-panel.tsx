@@ -113,6 +113,14 @@ export function EquipmentPanel({
                     ? BLOCK_HINT.class
                     : null
               const pending = pendingKeys?.has(item.key) ?? false
+              // Cost joins a non-empty stats line with " · " — an item
+              // with no stats must not orphan the separator.
+              const meta = [
+                statsLabel(item.stats),
+                item.owned ? "" : `${item.cost}g`,
+              ]
+                .filter((part) => part !== "")
+                .join(" · ")
               return (
                 <div
                   key={item.key}
@@ -134,6 +142,15 @@ export function EquipmentPanel({
                       >
                         T{item.tier}
                       </Badge>
+                      {item.losable && (
+                        <Badge
+                          variant="outline"
+                          title="Dropped when you die"
+                          className="shrink-0 rounded-full border-destructive/20 bg-destructive/10 px-2 py-0 text-[9px] font-black tracking-widest text-destructive uppercase"
+                        >
+                          Losable
+                        </Badge>
+                      )}
                       {item.klass !== "all" && (
                         <Badge
                           variant="outline"
@@ -149,10 +166,12 @@ export function EquipmentPanel({
                       )}
                     </div>
                     <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-                      {statsLabel(item.stats)}
-                      {!item.owned && ` · ${item.cost}g`}
+                      {meta}
                       {hint !== null && (
-                        <span className="text-amber-400"> · {hint}</span>
+                        <span className="text-amber-400">
+                          {meta === "" ? "" : " · "}
+                          {hint}
+                        </span>
                       )}
                     </p>
                   </div>

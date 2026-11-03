@@ -173,6 +173,11 @@ export function GameHud({ isCollapsed = false }: GameHudProps) {
           max={profile.max_hp}
           barClass="bg-destructive"
         />
+        {profile.hp <= 0 && (
+          <p className="text-[10px] font-bold tracking-widest text-destructive uppercase">
+            You died — losable gear was dropped
+          </p>
+        )}
         <StatBar
           label="XP"
           current={profile.xp}
