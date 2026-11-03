@@ -3,6 +3,7 @@ import { QueryClient } from "@tanstack/react-query"
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { AxiosError } from "axios"
 import {
+  authUser,
   deferred,
   expectSettleResync,
   makeWrapper,
@@ -15,8 +16,10 @@ import {
   useAllocateStats,
   useBuyGear,
   useEquipGear,
+  useRespec,
   useSelectClass,
   useToggleGearCostume,
+  useUpdateCharacter,
 } from "./useGameCharacter"
 import {
   activityApi,
@@ -41,7 +44,9 @@ vi.mock("@/lib/api", async (importOriginal) => {
     characterApi: {
       ...mod.characterApi,
       allocate: vi.fn(),
+      respec: vi.fn(),
       selectClass: vi.fn(),
+      update: vi.fn(),
     },
   }
 })
@@ -329,6 +334,47 @@ describe("useEquipGear", () => {
       SERVER_TIME
     )
   })
+
+  it("folds under the account that fired the write when auth swaps mid-flight", async () => {
+    // React Query swaps a pending mutation's options onto the latest render,
+    // so the success path sees the NEW user — the owner must come from the
+    // onMutate context captured at mutate() time.
+    const held = deferred<GearListResponse>()
+    vi.mocked(gearApi.equip).mockImplementation(() => held.promise)
+    const queryClient = new QueryClient()
+    const { result, rerender } = renderHook(() => useEquipGear(), {
+      wrapper: makeWrapper(queryClient),
+    })
+
+    act(() => {
+      result.current.mutate({ key: "warrior-weapon-1", equipped: true })
+    })
+    await waitFor(() => expect(result.current.isPending).toBe(true))
+
+    try {
+      // Logout → login as another account while the write is in flight.
+      authUser.id = 2
+      rerender()
+      await act(async () => {
+        held.resolve({ items: [gear()], profile: stampedProfile })
+      })
+      await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+      expect(
+        queryClient.getQueryData<GearItem[]>(["game-gear", { userId: 1 }])
+      ).toEqual([gear()])
+      expect(
+        queryClient.getQueryData(["game-gear", { userId: 2 }])
+      ).toBeUndefined()
+      expect(setGameProfileCache).toHaveBeenCalledWith(
+        stampedProfile,
+        1,
+        SERVER_TIME
+      )
+    } finally {
+      authUser.id = 1
+    }
+  })
 })
 
 describe("useAllocateStats", () => {
@@ -367,6 +413,90 @@ describe("useAllocateStats", () => {
 
     act(() => {
       result.current.mutate({ str: 1 })
+    })
+    await waitFor(() => expect(result.current.isError).toBe(true))
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["game-profile"] })
+  })
+})
+
+describe("useUpdateCharacter", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it("writes the returned profile into the HUD cache", async () => {
+    const updated = { ...stampedProfile, auto_allocate: true }
+    vi.mocked(characterApi.update).mockResolvedValue(updated)
+    const queryClient = new QueryClient()
+    const { result } = renderHook(() => useUpdateCharacter(), {
+      wrapper: makeWrapper(queryClient),
+    })
+
+    act(() => {
+      result.current.mutate(true)
+    })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(characterApi.update).toHaveBeenCalledWith(true)
+    expect(setGameProfileCache).toHaveBeenCalledWith(updated, 1, SERVER_TIME)
+  })
+
+  it("resyncs the profile cache when the write fails", async () => {
+    vi.mocked(characterApi.update).mockRejectedValue(new AxiosError("boom"))
+    const queryClient = new QueryClient()
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries")
+    const { result } = renderHook(() => useUpdateCharacter(), {
+      wrapper: makeWrapper(queryClient),
+    })
+
+    act(() => {
+      result.current.mutate(false)
+    })
+    await waitFor(() => expect(result.current.isError).toBe(true))
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["game-profile"] })
+  })
+})
+
+describe("useRespec", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it("writes the returned profile into the HUD cache and resyncs stripped gear", async () => {
+    const respeced = {
+      ...stampedProfile,
+      str_stat: 0,
+      unspent_stat_points: 4,
+      game_class: null,
+    }
+    vi.mocked(characterApi.respec).mockResolvedValue(respeced)
+    const queryClient = new QueryClient()
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries")
+    const { result } = renderHook(() => useRespec(), {
+      wrapper: makeWrapper(queryClient),
+    })
+
+    act(() => {
+      result.current.mutate()
+    })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(characterApi.respec).toHaveBeenCalled()
+    expect(setGameProfileCache).toHaveBeenCalledWith(respeced, 1, SERVER_TIME)
+    // Equipped class pieces were stripped — the list must reload.
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["game-gear"] })
+  })
+
+  it("resyncs the profile cache when the respec fails", async () => {
+    vi.mocked(characterApi.respec).mockRejectedValue(new AxiosError("boom"))
+    const queryClient = new QueryClient()
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries")
+    const { result } = renderHook(() => useRespec(), {
+      wrapper: makeWrapper(queryClient),
+    })
+
+    act(() => {
+      result.current.mutate()
     })
     await waitFor(() => expect(result.current.isError).toBe(true))
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["game-profile"] })

@@ -3,8 +3,14 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { AxiosError } from "axios"
 import type { ReactNode } from "react"
-import { useCreateDiaryEntry, useDiaryEntries } from "./useDiary"
-import { diaryApi } from "@/lib/api"
+import { profile } from "./game-hook-test-utils"
+import {
+  useCreateDiaryEntry,
+  useDiaryEntries,
+  useUpdateRetention,
+} from "./useDiary"
+import { diaryApi, gameApi } from "@/lib/api"
+import { setGameProfileCache } from "@/hooks/useGameProfile"
 
 vi.mock("@/contexts/AuthContext", () => ({
   useAuth: () => ({ user: { id: 1 } }),
@@ -19,6 +25,7 @@ vi.mock("@/lib/api", async (importOriginal) => {
   return {
     ...mod,
     diaryApi: { ...mod.diaryApi, list: vi.fn(), create: vi.fn() },
+    gameApi: { ...mod.gameApi, updateRetention: vi.fn() },
   }
 })
 
@@ -76,6 +83,51 @@ describe("useCreateDiaryEntry", () => {
     })
     act(() => {
       result.current.mutate({ kind: "standup", good: "shipped it" })
+    })
+    await waitFor(() => expect(result.current.isError).toBe(true))
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["diary"] })
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["timeline"] })
+  })
+})
+
+describe("useUpdateRetention", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it("writes the returned profile into the HUD cache and re-reads the day views", async () => {
+    const updated = { ...profile, retention: "90d" as const }
+    vi.mocked(gameApi.updateRetention).mockResolvedValue(updated)
+    const queryClient = new QueryClient()
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries")
+    const { result } = renderHook(() => useUpdateRetention(), {
+      wrapper: makeWrapper(queryClient),
+    })
+
+    act(() => {
+      result.current.mutate("90d")
+    })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(gameApi.updateRetention).toHaveBeenCalledWith("90d")
+    // No server_time on this response — the write always applies.
+    expect(setGameProfileCache).toHaveBeenCalledWith(updated, 1)
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["diary"] })
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["timeline"] })
+  })
+
+  it("resyncs the day views when the write fails", async () => {
+    // A timeout after commit leaves the horizon changed server-side —
+    // re-read the gated day views instead of trusting the cached cutoff.
+    vi.mocked(gameApi.updateRetention).mockRejectedValue(new AxiosError("boom"))
+    const queryClient = new QueryClient()
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries")
+    const { result } = renderHook(() => useUpdateRetention(), {
+      wrapper: makeWrapper(queryClient),
+    })
+
+    act(() => {
+      result.current.mutate("1y")
     })
     await waitFor(() => expect(result.current.isError).toBe(true))
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["diary"] })

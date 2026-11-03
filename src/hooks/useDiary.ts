@@ -104,7 +104,7 @@ export function useDeleteDiaryEntry() {
 export function useUpdateRetention() {
   const { user } = useAuth()
   const { toast } = useToast()
-  const queryClient = useQueryClient()
+  const invalidate = useDiaryInvalidate()
   return useMutation({
     mutationFn: (retention: RetentionPreference) =>
       gameApi.updateRetention(retention),
@@ -114,10 +114,12 @@ export function useUpdateRetention() {
       // scoring endpoints this response carries no server_time, so the write
       // always applies (setGameProfileCache's absent-serverTime path).
       if (user?.id !== undefined) await setGameProfileCache(profile, user.id)
-      void queryClient.invalidateQueries({ queryKey: ["diary"] })
-      void queryClient.invalidateQueries({ queryKey: ["timeline"] })
+      invalidate()
     },
     onError: (err) => {
+      // Resync on failure too — a timeout after commit leaves the horizon
+      // changed server-side while the day views render the old cutoff.
+      invalidate()
       toast({
         title: "Couldn't update retention",
         description: getErrorMessage(err),

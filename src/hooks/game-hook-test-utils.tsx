@@ -7,8 +7,14 @@ import type { GameProfile } from "@/lib/api"
 // Shared scaffolding for the game-column hook tests. The mocks register at
 // import time, so test files must import this module before the hook under
 // test (whose own imports pull in the mocked modules).
+// Mutable so a test can swap accounts while a write is in flight — the
+// mutation's owner must be captured at mutate() time, not re-read off the
+// post-switch render.
+const authUserState = vi.hoisted(() => ({ id: 1 }))
+export const authUser = authUserState
+
 vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({ user: { id: 1 } }),
+  useAuth: () => ({ user: { id: authUserState.id } }),
 }))
 
 vi.mock("@/hooks/use-toast", () => ({
