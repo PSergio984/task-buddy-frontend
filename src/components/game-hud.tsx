@@ -2,7 +2,7 @@ import { useState } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useGame } from "@/contexts/GameContext"
 import { useGameProfile } from "@/hooks/useGameProfile"
-import { useGear } from "@/hooks/useGear"
+import { useGear } from "@/hooks/useGameCharacter"
 import { AvatarGearOverlay } from "@/components/avatar-gear-overlay"
 import { cn } from "@/lib/utils"
 import {

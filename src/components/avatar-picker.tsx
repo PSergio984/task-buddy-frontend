@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select"
 import { useAuth } from "@/contexts/AuthContext"
 import { useGameProfile, useUpdateAvatarConfig } from "@/hooks/useGameProfile"
-import { useGear, useToggleGearCostume } from "@/hooks/useGear"
+import { useGear, useToggleGearCostume } from "@/hooks/useGameCharacter"
 import { AvatarGearOverlay } from "@/components/avatar-gear-overlay"
 import {
   DEFAULT_AVATAR_STYLE,

@@ -102,7 +102,7 @@ vi.mock("@/hooks/useGameProfile", () => ({
   useUpdateAvatarConfig: () => ({ mutate, isPending: mockPending }),
 }))
 
-vi.mock("@/hooks/useGear", () => ({
+vi.mock("@/hooks/useGameCharacter", () => ({
   useGear: () => ({ data: mockGear }),
   useToggleGearCostume: () => ({ mutate: costumeMutate, isPending: false }),
 }))
