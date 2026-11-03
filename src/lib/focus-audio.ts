@@ -51,6 +51,31 @@ export function requestAlertPermission(): void {
   }
 }
 
+function tone(
+  ctx: AudioContext,
+  t: number,
+  level: number,
+  freq: number,
+  startOffset: number,
+  peak: number,
+  endOffset: number
+): void {
+  const osc = ctx.createOscillator()
+  const gain = ctx.createGain()
+  osc.type = "sine"
+  osc.frequency.value = freq
+  gain.gain.setValueAtTime(0.0001, t + startOffset)
+  gain.gain.exponentialRampToValueAtTime(
+    Math.max(0.0001, peak * level),
+    t + startOffset + 0.02
+  )
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + endOffset)
+  osc.connect(gain)
+  gain.connect(ctx.destination)
+  osc.start(t + startOffset)
+  osc.stop(t + endOffset + 0.05)
+}
+
 export function playPhaseAlert(kind: "focus" | "break", volume = 0.8): void {
   try {
     const ctx = audioContext()
@@ -58,36 +83,34 @@ export function playPhaseAlert(kind: "focus" | "break", volume = 0.8): void {
     void ctx.resume().catch(() => {})
     const level = Math.min(1, Math.max(0, volume))
     const t = ctx.currentTime
-    const tone = (
-      freq: number,
-      startOffset: number,
-      peak: number,
-      endOffset: number
-    ) => {
-      const osc = ctx.createOscillator()
-      const gain = ctx.createGain()
-      osc.type = "sine"
-      osc.frequency.value = freq
-      gain.gain.setValueAtTime(0.0001, t + startOffset)
-      gain.gain.exponentialRampToValueAtTime(
-        Math.max(0.0001, peak * level),
-        t + startOffset + 0.02
-      )
-      gain.gain.exponentialRampToValueAtTime(0.0001, t + endOffset)
-      osc.connect(gain)
-      gain.connect(ctx.destination)
-      osc.start(t + startOffset)
-      osc.stop(t + endOffset + 0.05)
-    }
     // Focus end = high double ping; break end = low single tone.
     if (kind === "focus") {
-      tone(880, 0, 0.2, 0.5)
-      tone(1174, 0.15, 0.15, 0.6)
+      tone(ctx, t, level, 880, 0, 0.2, 0.5)
+      tone(ctx, t, level, 1174, 0.15, 0.15, 0.6)
     } else {
-      tone(520, 0, 0.2, 0.5)
+      tone(ctx, t, level, 520, 0, 0.2, 0.5)
     }
   } catch {
     // Audio is best-effort — a blocked context must not break the timer.
+  }
+}
+
+/**
+ * Short, soft cue for a push that arrives while the app is visible — the OS
+ * notification covers hidden/closed tabs, so this only ever plays over a
+ * foreground page. Deliberately quieter and distinct from the phase tones.
+ */
+export function playNotificationCue(volume = 0.5): void {
+  try {
+    const ctx = audioContext()
+    if (ctx === null) return
+    void ctx.resume().catch(() => {})
+    const level = Math.min(1, Math.max(0, volume))
+    const t = ctx.currentTime
+    tone(ctx, t, level, 660, 0, 0.12, 0.25)
+    tone(ctx, t, level, 990, 0.08, 0.1, 0.3)
+  } catch {
+    // Audio is best-effort — a suspended context stays silent.
   }
 }
 
