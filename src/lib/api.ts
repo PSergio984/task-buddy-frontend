@@ -665,6 +665,161 @@ export const gameApi = {
   },
 }
 
+// Character sheet — mirrors the *In/*Read contracts in app/schemas/game.py
+// (issue #64) plus the activity endpoints in app/schemas/game_tracking.py.
+export type GameClass = "warrior" | "mage" | "healer" | "rogue"
+
+/** Allocatable stat keys — engine.STAT_KEYS; values index <stat>_stat. */
+export type StatKey = "str" | "int" | "con" | "per"
+
+export interface GearItem {
+  key: string
+  name: string
+  /** Catalog slot — "weapon" | "armor" | "head" | "shield" | "body" | "back" | "eyewear". */
+  slot: string
+  /** Class lock — "all" or a GameClass. */
+  klass: string
+  tier: number
+  stats: Record<string, number>
+  cost: number
+  losable: boolean
+  owned: boolean
+  equipped: boolean
+}
+
+export interface GearListResponse {
+  items: GearItem[]
+  profile: GameProfile
+}
+
+export interface Achievement {
+  key: string
+  name: string
+  description: string | null
+  gold_reward: number
+  /** null until the badge is granted. */
+  earned_at: string | null
+}
+
+export interface ActivityDay {
+  /** UTC calendar day, "YYYY-MM-DD". */
+  date: string
+  score: number
+  focus_minutes: number
+  /** Score-eligible per-type counts — not raw ledger activity. */
+  events: Record<string, number>
+  /** Server-computed intensity bucket (index into tier_thresholds). */
+  tier: number
+}
+
+export interface ActivityGrid {
+  start: string
+  end: string
+  /** One row per UTC day in [start, end] — the server fills empty days. */
+  days: ActivityDay[]
+  /** Sorted score cutoffs: tier n applies when score >= tier_thresholds[n-1]. */
+  tier_thresholds: number[]
+  server_time: string
+}
+
+export interface ActivityStats {
+  start: string
+  end: string
+  avg_hours_per_day: number
+  total_hours: number
+  current_streak: number
+  longest_streak: number
+  best_day: { date: string; score: number } | null
+  /** Score sum over the 7 days ending at server-today, clipped to the window. */
+  weekly_total: number
+  /** Reserved (#69 speedrun records) — always null until the PB table exists. */
+  speedrun_pbs: Record<string, unknown>[] | null
+  server_time: string
+}
+
+export const characterApi = {
+  update: async (autoAllocate: boolean) => {
+    const response = await api.patch<GameProfile>("/api/v1/game/character", {
+      auto_allocate: autoAllocate,
+    })
+    return response.data
+  },
+  allocate: async (points: Partial<Record<StatKey, number>>) => {
+    const response = await api.post<GameProfile>(
+      "/api/v1/game/character/allocate",
+      { points },
+      { skipRateLimitToast: true }
+    )
+    return response.data
+  },
+  selectClass: async (gameClass: GameClass) => {
+    const response = await api.post<GameProfile>(
+      "/api/v1/game/character/class",
+      { game_class: gameClass },
+      { skipRateLimitToast: true }
+    )
+    return response.data
+  },
+  respec: async () => {
+    const response = await api.post<GameProfile>(
+      "/api/v1/game/character/respec",
+      {},
+      { skipRateLimitToast: true }
+    )
+    return response.data
+  },
+}
+
+export const gearApi = {
+  list: async () => {
+    const response = await api.get<GearItem[]>("/api/v1/game/gear")
+    return response.data
+  },
+  buy: async (key: string) => {
+    const response = await api.post<GearListResponse>(
+      "/api/v1/game/gear/buy",
+      { key },
+      { skipRateLimitToast: true }
+    )
+    return response.data
+  },
+  equip: async (key: string, equipped: boolean) => {
+    const response = await api.post<GearListResponse>(
+      "/api/v1/game/gear/equip",
+      { key, equipped },
+      { skipRateLimitToast: true }
+    )
+    return response.data
+  },
+}
+
+export const achievementsApi = {
+  list: async () => {
+    const response = await api.get<Achievement[]>("/api/v1/game/achievements")
+    return response.data
+  },
+}
+
+export const activityApi = {
+  grid: async (start?: string, end?: string) => {
+    const response = await api.get<ActivityGrid>("/api/v1/game/activity", {
+      params:
+        start !== undefined || end !== undefined ? { start, end } : undefined,
+    })
+    return response.data
+  },
+  stats: async (start?: string, end?: string) => {
+    const response = await api.get<ActivityStats>(
+      "/api/v1/game/activity/stats",
+      {
+        params:
+          start !== undefined || end !== undefined ? { start, end } : undefined,
+      }
+    )
+    return response.data
+  },
+}
+
 // Diary + timeline — mirrors the diary/session-note/timeline routes in
 // app/api/routers/game.py. All day bucketing is UTC on the backend.
 export type DiaryEntryKind = "standup" | "freeform"

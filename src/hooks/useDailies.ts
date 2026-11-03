@@ -1,4 +1,3 @@
-import { useEffect } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   dailiesApi,
@@ -10,6 +9,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext"
 import { useToast } from "@/hooks/use-toast"
 import { setGameProfileCache } from "@/hooks/useGameProfile"
+import { useUtcDayRollover } from "@/hooks/useUtcDayRollover"
 import { getErrorMessage } from "@/lib/errors"
 
 /** Lets `useMutationState` find in-flight checks for the pending-id set. */
@@ -22,36 +22,10 @@ export const DAILY_CHECK_MUTATION_KEY = ["daily-check"] as const
  */
 export function useDailies() {
   const { user } = useAuth()
-  const queryClient = useQueryClient()
 
-  // completed_today is server-computed per UTC day, and the app disables
-  // refetchOnWindowFocus — without these triggers an overnight tab keeps
-  // rendering (and un-marking) yesterday's checks.
-  useEffect(() => {
-    if (typeof window === "undefined") return
-    const resync = () =>
-      void queryClient.invalidateQueries({ queryKey: ["dailies"] })
-    let timer: ReturnType<typeof setTimeout>
-    const armRollover = () => {
-      const midnight = new Date()
-      midnight.setUTCHours(24, 0, 0, 0)
-      timer = setTimeout(() => {
-        resync()
-        armRollover()
-      }, midnight.getTime() - Date.now())
-    }
-    armRollover()
-    // A suspended tab wakes to visibilitychange, not a window-focus refetch
-    // — same staleness hole after a sleep-overnight.
-    const onVisible = () => {
-      if (document.visibilityState === "visible") resync()
-    }
-    document.addEventListener("visibilitychange", onVisible)
-    return () => {
-      clearTimeout(timer)
-      document.removeEventListener("visibilitychange", onVisible)
-    }
-  }, [queryClient])
+  // completed_today is server-computed per UTC day — an overnight tab
+  // would keep rendering (and un-marking) yesterday's checks.
+  useUtcDayRollover("dailies")
 
   return useQuery({
     queryKey: ["dailies", { userId: user?.id }],

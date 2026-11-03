@@ -53,6 +53,11 @@ const TimelinePage = lazy(() =>
 const HabitsPage = lazy(() =>
   import("@/views/HabitsPage").then((m) => ({ default: m.HabitsPage }))
 )
+const GameProfilePage = lazy(() =>
+  import("@/views/GameProfilePage").then((m) => ({
+    default: m.GameProfilePage,
+  }))
+)
 const ResetPasswordPage = lazy(() =>
   import("@/views/ResetPasswordPage").then((m) => ({
     default: m.ResetPasswordPage,
@@ -149,6 +154,7 @@ export function App() {
                 <Route path="/tasks" element={<TasksPage />} />
                 <Route path="/focus" element={<FocusPage />} />
                 <Route path="/habits" element={<HabitsPage />} />
+                <Route path="/character" element={<GameProfilePage />} />
                 <Route path="/diary" element={<DiaryPage />} />
                 <Route path="/timeline" element={<TimelinePage />} />
                 <Route path="/profile" element={<ProfilePage />} />

@@ -16,6 +16,7 @@ import {
   NotebookPen,
   ChartGantt,
   Repeat,
+  Swords,
 } from "lucide-react"
 import { useState, useMemo } from "react"
 
@@ -101,6 +102,12 @@ export function Sidebar({ isCollapsed, onToggle }: Readonly<SidebarProps>) {
         path: "/habits",
         label: "Habits & Dailies",
         icon: Repeat,
+      },
+      {
+        id: "character",
+        path: "/character",
+        label: "Character",
+        icon: Swords,
       },
       { id: "diary", path: "/diary", label: "Diary", icon: NotebookPen },
       {
