@@ -134,6 +134,15 @@ export function EquipmentPanel({
                       >
                         T{item.tier}
                       </Badge>
+                      {item.losable && (
+                        <Badge
+                          variant="outline"
+                          title="Dropped when you die"
+                          className="shrink-0 rounded-full border-destructive/20 bg-destructive/10 px-2 py-0 text-[9px] font-black tracking-widest text-destructive uppercase"
+                        >
+                          Losable
+                        </Badge>
+                      )}
                       {item.klass !== "all" && (
                         <Badge
                           variant="outline"

@@ -141,6 +141,24 @@ describe("EquipmentPanel", () => {
     expect(onEquip).not.toHaveBeenCalled()
   })
 
+  it("marks losable gear — it drops on death", () => {
+    renderPanel(
+      [
+        gear(),
+        gear({
+          key: "all-charm-1",
+          name: "Lucky Charm",
+          slot: "back",
+          klass: "all",
+          losable: false,
+        }),
+      ],
+      profile()
+    )
+    // Only the losable row carries the badge.
+    expect(screen.getAllByText("Losable")).toHaveLength(1)
+  })
+
   it("disables writes without a claimed reason while the profile is missing", () => {
     render(
       <EquipmentPanel
