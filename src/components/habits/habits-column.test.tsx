@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, act } from "@testing-library/react"
 import { describe, it, expect, vi } from "vitest"
 import { HabitsColumn } from "./habits-column"
+import { offlineDraftChecks } from "../game-column-test-utils"
 import type { Habit } from "@/lib/api"
 
 function habit(id: number, overrides: Partial<Habit> = {}): Habit {
@@ -58,6 +59,13 @@ const save = async () => {
     fireEvent.click(screen.getByRole("button", { name: "Save habit" }))
   })
 }
+
+const offlineDrafts = offlineDraftChecks({
+  Column: HabitsColumn,
+  listProp: "habits",
+  row: habit(1),
+  noun: "habit",
+})
 
 describe("HabitsColumn", () => {
   it("renders only the click buttons the habit's direction accepts", () => {
@@ -137,63 +145,11 @@ describe("HabitsColumn", () => {
   })
 
   it("keeps an open edit draft when the connection drops mid-edit", () => {
-    const { rerender } = render(
-      <HabitsColumn
-        habits={[habit(1)]}
-        isPending={false}
-        isError={false}
-        isOnline
-        onRetry={vi.fn()}
-      />
-    )
-    fireEvent.click(screen.getByLabelText("Edit habit 1"))
-    fireEvent.change(screen.getByLabelText("Habit"), {
-      target: { value: "draft title" },
-    })
-
-    rerender(
-      <HabitsColumn
-        habits={[habit(1)]}
-        isPending={false}
-        isError={false}
-        isOnline={false}
-        writesDisabled
-        onRetry={vi.fn()}
-      />
-    )
-    // The form stays mounted with the draft — only the submit blocks.
-    expect(screen.getByLabelText("Habit")).toHaveValue("draft title")
-    expect(screen.getByRole("button", { name: "Save habit" })).toBeDisabled()
+    offlineDrafts.edit()
   })
 
   it("keeps an open create draft when the connection drops mid-create", () => {
-    const { rerender } = render(
-      <HabitsColumn
-        habits={[habit(1)]}
-        isPending={false}
-        isError={false}
-        isOnline
-        onRetry={vi.fn()}
-      />
-    )
-    fireEvent.click(screen.getByLabelText("New habit"))
-    fireEvent.change(screen.getByLabelText("Habit"), {
-      target: { value: "draft title" },
-    })
-
-    rerender(
-      <HabitsColumn
-        habits={[habit(1)]}
-        isPending={false}
-        isError={false}
-        isOnline={false}
-        writesDisabled
-        onRetry={vi.fn()}
-      />
-    )
-    // Same rule as the edit draft — the form stays mounted, submit blocks.
-    expect(screen.getByLabelText("Habit")).toHaveValue("draft title")
-    expect(screen.getByRole("button", { name: "Add habit" })).toBeDisabled()
+    offlineDrafts.create()
   })
 
   it("disables clicks while offline instead of pretending to queue them", () => {

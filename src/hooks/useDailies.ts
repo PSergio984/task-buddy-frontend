@@ -1,14 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   dailiesApi,
-  type Daily,
   type DailyCheckInput,
+  type DailyCheckResponse,
   type DailyInput,
   type DailyPatch,
 } from "@/lib/api"
 import { useAuth } from "@/contexts/AuthContext"
 import { useToast } from "@/hooks/use-toast"
-import { setGameProfileCache } from "@/hooks/useGameProfile"
+import { useScoredListWrite } from "@/hooks/useScoredListWrite"
 import { useUtcDayRollover } from "@/hooks/useUtcDayRollover"
 import { getErrorMessage } from "@/lib/errors"
 
@@ -92,10 +92,9 @@ export function useDeleteDaily() {
 }
 
 export function useCheckDaily() {
-  const { user } = useAuth()
-  const { toast } = useToast()
-  const queryClient = useQueryClient()
-  return useMutation({
+  // The check also lands a daily_check row in the ledger → the timeline's
+  // markers — the shared scored-write path resyncs it beside the fold.
+  return useScoredListWrite({
     mutationKey: DAILY_CHECK_MUTATION_KEY,
     mutationFn: ({
       id,
@@ -106,44 +105,8 @@ export function useCheckDaily() {
       input: DailyCheckInput
       clientEventId: string
     }) => dailiesApi.check(id, input, clientEventId),
-    // Stamp the write's owner at mutate() time — a pending mutation's options
-    // swap onto the latest render, so the onSuccess closure would read the NEW
-    // user after a mid-flight auth swap (same guard as the gear fold).
-    onMutate: () => user?.id,
-    onSuccess: async (res, _vars, userId) => {
-      // The response carries the daily with today's marks plus authoritative
-      // totals — fold both into their caches instead of a refetch. The check
-      // also lands a daily_check row in the ledger → the timeline's markers.
-      try {
-        // Cancel a racing list refetch so it can't fold a stale GET over
-        // the newer row — same ordering guard as the game-profile write.
-        await queryClient.cancelQueries({ queryKey: ["dailies", { userId }] })
-      } catch {
-        // Cancellation is best-effort — the write below still lands.
-      }
-      queryClient.setQueryData<Daily[]>(["dailies", { userId }], (old) =>
-        old?.map((d) => (d.id === res.daily.id ? res.daily : d))
-      )
-      if (userId !== undefined)
-        await setGameProfileCache(res.profile, userId, res.server_time)
-      void queryClient.invalidateQueries({ queryKey: ["timeline"] })
-      // Every scored write runs the server's achievement evaluation —
-      // resync the badge list beside the totals.
-      void queryClient.invalidateQueries({ queryKey: ["game-achievements"] })
-    },
-    onError: (err) => {
-      void queryClient.invalidateQueries({ queryKey: ["dailies"] })
-      toast({
-        title: "Couldn't record check",
-        description: getErrorMessage(err),
-        variant: "destructive",
-      })
-    },
-    onSettled: () => {
-      // Unconditional, same as the gear resync — a stale fold can cancel a
-      // fresher write's spawned refetch even when that write already
-      // settled, and the isMutating()>1 guard missed that interleave.
-      void queryClient.invalidateQueries({ queryKey: ["dailies"] })
-    },
+    listKey: "dailies",
+    errorTitle: "Couldn't record check",
+    pickRow: (res: DailyCheckResponse) => res.daily,
   })
 }

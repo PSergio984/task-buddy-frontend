@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, act } from "@testing-library/react"
 import { describe, it, expect, vi } from "vitest"
 import { DailiesColumn } from "./dailies-column"
+import { offlineDraftChecks } from "../game-column-test-utils"
 import type { Daily } from "@/lib/api"
 
 function daily(id: number, overrides: Partial<Daily> = {}): Daily {
@@ -59,6 +60,13 @@ const submit = async () => {
     fireEvent.click(screen.getByRole("button", { name: "Save daily" }))
   })
 }
+
+const offlineDrafts = offlineDraftChecks({
+  Column: DailiesColumn,
+  listProp: "dailies",
+  row: daily(1),
+  noun: "daily",
+})
 
 describe("DailiesColumn", () => {
   it("checks the whole daily with done=true, unchecks with done=false", () => {
@@ -127,63 +135,11 @@ describe("DailiesColumn", () => {
   })
 
   it("keeps an open edit draft when the connection drops mid-edit", () => {
-    const { rerender } = render(
-      <DailiesColumn
-        dailies={[daily(1)]}
-        isPending={false}
-        isError={false}
-        isOnline
-        onRetry={vi.fn()}
-      />
-    )
-    fireEvent.click(screen.getByLabelText("Edit daily 1"))
-    fireEvent.change(screen.getByLabelText(/^daily$/i), {
-      target: { value: "draft title" },
-    })
-
-    rerender(
-      <DailiesColumn
-        dailies={[daily(1)]}
-        isPending={false}
-        isError={false}
-        isOnline={false}
-        writesDisabled
-        onRetry={vi.fn()}
-      />
-    )
-    // The form stays mounted with the draft — only the submit blocks.
-    expect(screen.getByLabelText(/^daily$/i)).toHaveValue("draft title")
-    expect(screen.getByRole("button", { name: "Save daily" })).toBeDisabled()
+    offlineDrafts.edit()
   })
 
   it("keeps an open create draft when the connection drops mid-create", () => {
-    const { rerender } = render(
-      <DailiesColumn
-        dailies={[daily(1)]}
-        isPending={false}
-        isError={false}
-        isOnline
-        onRetry={vi.fn()}
-      />
-    )
-    fireEvent.click(screen.getByLabelText("New daily"))
-    fireEvent.change(screen.getByLabelText(/^daily$/i), {
-      target: { value: "draft title" },
-    })
-
-    rerender(
-      <DailiesColumn
-        dailies={[daily(1)]}
-        isPending={false}
-        isError={false}
-        isOnline={false}
-        writesDisabled
-        onRetry={vi.fn()}
-      />
-    )
-    // Same rule as the edit draft — the form stays mounted, submit blocks.
-    expect(screen.getByLabelText(/^daily$/i)).toHaveValue("draft title")
-    expect(screen.getByRole("button", { name: "Add daily" })).toBeDisabled()
+    offlineDrafts.create()
   })
 
   it("disables checks on a paused (inactive) daily", () => {

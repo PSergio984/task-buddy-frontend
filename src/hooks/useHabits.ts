@@ -1,14 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   habitsApi,
-  type Habit,
   type HabitClickDirection,
+  type HabitClickResponse,
   type HabitInput,
   type HabitPatch,
 } from "@/lib/api"
 import { useAuth } from "@/contexts/AuthContext"
 import { useToast } from "@/hooks/use-toast"
-import { setGameProfileCache } from "@/hooks/useGameProfile"
+import { useScoredListWrite } from "@/hooks/useScoredListWrite"
 import { getErrorMessage } from "@/lib/errors"
 
 /** Lets `useMutationState` find in-flight clicks for the pending-id set. */
@@ -89,10 +89,9 @@ export function useDeleteHabit() {
 }
 
 export function useClickHabit() {
-  const { user } = useAuth()
-  const { toast } = useToast()
-  const queryClient = useQueryClient()
-  return useMutation({
+  // The click also lands a habit_click row in the ledger → the timeline's
+  // markers — the shared scored-write path resyncs it beside the fold.
+  return useScoredListWrite({
     mutationKey: HABIT_CLICK_MUTATION_KEY,
     mutationFn: ({
       id,
@@ -103,46 +102,8 @@ export function useClickHabit() {
       direction: HabitClickDirection
       clientEventId: string
     }) => habitsApi.click(id, direction, clientEventId),
-    // Stamp the write's owner at mutate() time — a pending mutation's options
-    // swap onto the latest render, so the onSuccess closure would read the NEW
-    // user after a mid-flight auth swap (same guard as the gear fold).
-    onMutate: () => user?.id,
-    onSuccess: async (res, _vars, userId) => {
-      // The response carries the post-click habit plus authoritative totals —
-      // fold both into their caches instead of a refetch round trip. The click
-      // also lands a habit_click row in the ledger → the timeline's markers.
-      try {
-        // An in-flight list refetch resolving after this write would fold
-        // the stale GET over the newer row — cancel it so the write wins.
-        await queryClient.cancelQueries({ queryKey: ["habits", { userId }] })
-      } catch {
-        // Cancellation is best-effort — the write below still lands.
-      }
-      queryClient.setQueryData<Habit[]>(["habits", { userId }], (old) =>
-        old?.map((h) => (h.id === res.habit.id ? res.habit : h))
-      )
-      if (userId !== undefined)
-        await setGameProfileCache(res.profile, userId, res.server_time)
-      void queryClient.invalidateQueries({ queryKey: ["timeline"] })
-      // Every scored write runs the server's achievement evaluation — the
-      // badge list is as stale as the totals after a click.
-      void queryClient.invalidateQueries({ queryKey: ["game-achievements"] })
-    },
-    onError: (err) => {
-      // Resync on failure — a rejected click (e.g. direction PATCHed
-      // mid-flight on another device) must reload the stored row.
-      void queryClient.invalidateQueries({ queryKey: ["habits"] })
-      toast({
-        title: "Couldn't record click",
-        description: getErrorMessage(err),
-        variant: "destructive",
-      })
-    },
-    onSettled: () => {
-      // Unconditional, same as the gear resync — a stale fold can cancel a
-      // fresher write's spawned refetch even when that write already
-      // settled, and the isMutating()>1 guard missed that interleave.
-      void queryClient.invalidateQueries({ queryKey: ["habits"] })
-    },
+    listKey: "habits",
+    errorTitle: "Couldn't record click",
+    pickRow: (res: HabitClickResponse) => res.habit,
   })
 }
