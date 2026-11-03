@@ -2,7 +2,13 @@ import { renderHook, act, waitFor } from "@testing-library/react"
 import { QueryClient } from "@tanstack/react-query"
 import { afterEach, describe, it, expect, vi, beforeEach } from "vitest"
 import { AxiosError } from "axios"
-import { makeWrapper, profile, SERVER_TIME } from "./game-hook-test-utils"
+import {
+  deferred,
+  expectSettleResync,
+  makeWrapper,
+  profile,
+  SERVER_TIME,
+} from "./game-hook-test-utils"
 import { useCheckDaily, useCreateDaily, useDailies } from "./useDailies"
 import { dailiesApi, type Daily } from "@/lib/api"
 import { setGameProfileCache } from "@/hooks/useGameProfile"
@@ -140,41 +146,25 @@ describe("useCheckDaily", () => {
   it("resyncs the list when the check settles while a create is still in flight", async () => {
     // Same race as the habit click — the check's success path cancels the
     // list refetch the create's invalidation kicked off.
-    let resolveCreate!: (created: Daily) => void
-    vi.mocked(dailiesApi.create).mockImplementation(
-      () => new Promise<Daily>((resolve) => (resolveCreate = resolve))
-    )
+    const queryClient = new QueryClient()
+    queryClient.setQueryData(["dailies", { userId: 1 }], [daily(1)])
+    const checked = daily(1, { completed_today: true })
+    const created = deferred<Daily>()
+    vi.mocked(dailiesApi.create).mockImplementation(() => created.promise)
     vi.mocked(dailiesApi.check).mockResolvedValue({
-      daily: daily(1, { completed_today: true }),
+      daily: checked,
       profile,
       status: "applied",
       server_time: SERVER_TIME,
     })
-    const queryClient = new QueryClient()
-    queryClient.setQueryData(["dailies", { userId: 1 }], [daily(1)])
-    const invalidate = vi.spyOn(queryClient, "invalidateQueries")
-    const { result } = renderHook(
-      () => ({ create: useCreateDaily(), check: useCheckDaily() }),
-      { wrapper: makeWrapper(queryClient) }
-    )
 
-    act(() => {
-      result.current.create.mutate({ title: "new daily" })
-    })
-    await waitFor(() => expect(result.current.create.isPending).toBe(true))
-    act(() => {
-      result.current.check.mutate({
-        id: 1,
-        input: { done: true },
-        clientEventId: "eid-1",
-      })
-    })
-    await waitFor(() => expect(result.current.check.isSuccess).toBe(true))
-
-    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["dailies"] })
-
-    await act(async () => {
-      resolveCreate(daily(2))
+    await expectSettleResync({
+      useMutations: () => ({ hold: useCreateDaily(), settle: useCheckDaily() }),
+      holdVars: { title: "new daily" },
+      settleVars: { id: 1, input: { done: true }, clientEventId: "eid-1" },
+      queryClient,
+      listQueryKey: "dailies",
+      releaseHold: () => created.resolve(daily(2)),
     })
   })
 })

@@ -672,6 +672,8 @@ export type GameClass = "warrior" | "mage" | "healer" | "rogue"
 /** Allocatable stat keys — engine.STAT_KEYS; values index <stat>_stat. */
 export type StatKey = "str" | "int" | "con" | "per"
 
+/** One catalog row merged with the viewer's flags — mirrors GearItemRead
+    on the backend. */
 export interface GearItem {
   key: string
   name: string
@@ -685,6 +687,8 @@ export interface GearItem {
   losable: boolean
   owned: boolean
   equipped: boolean
+  /** Absent on pre-#65 backends — consumers must treat missing as false. */
+  costume?: boolean
 }
 
 export interface GearListResponse {
@@ -787,6 +791,14 @@ export const gearApi = {
     const response = await api.post<GearListResponse>(
       "/api/v1/game/gear/equip",
       { key, equipped },
+      { skipRateLimitToast: true }
+    )
+    return response.data
+  },
+  toggleCostume: async (input: { key: string; costume: boolean }) => {
+    const response = await api.post<GearListResponse>(
+      "/api/v1/game/gear/costume",
+      input,
       { skipRateLimitToast: true }
     )
     return response.data

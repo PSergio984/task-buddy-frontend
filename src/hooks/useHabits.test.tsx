@@ -2,7 +2,13 @@ import { renderHook, act, waitFor } from "@testing-library/react"
 import { QueryClient } from "@tanstack/react-query"
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { AxiosError } from "axios"
-import { makeWrapper, profile, SERVER_TIME } from "./game-hook-test-utils"
+import {
+  deferred,
+  expectSettleResync,
+  makeWrapper,
+  profile,
+  SERVER_TIME,
+} from "./game-hook-test-utils"
 import { useClickHabit, useCreateHabit } from "./useHabits"
 import { habitsApi, type Habit } from "@/lib/api"
 import { setGameProfileCache } from "@/hooks/useGameProfile"
@@ -94,10 +100,8 @@ describe("useClickHabit", () => {
     // The click's success path cancels the list refetch the create's own
     // invalidation kicked off — the settle-time guard must restart it or
     // the created row never appears.
-    let resolveCreate!: (created: Habit) => void
-    vi.mocked(habitsApi.create).mockImplementation(
-      () => new Promise<Habit>((resolve) => (resolveCreate = resolve))
-    )
+    const created = deferred<Habit>()
+    vi.mocked(habitsApi.create).mockImplementation(() => created.promise)
     vi.mocked(habitsApi.click).mockResolvedValue({
       habit: habit(1, { counter: 1 }),
       profile,
@@ -106,29 +110,14 @@ describe("useClickHabit", () => {
     })
     const queryClient = new QueryClient()
     queryClient.setQueryData(["habits", { userId: 1 }], [habit(1)])
-    const invalidate = vi.spyOn(queryClient, "invalidateQueries")
-    const { result } = renderHook(
-      () => ({ create: useCreateHabit(), click: useClickHabit() }),
-      { wrapper: makeWrapper(queryClient) }
-    )
 
-    act(() => {
-      result.current.create.mutate({ title: "new habit" })
-    })
-    await waitFor(() => expect(result.current.create.isPending).toBe(true))
-    act(() => {
-      result.current.click.mutate({
-        id: 1,
-        direction: "positive",
-        clientEventId: "eid-1",
-      })
-    })
-    await waitFor(() => expect(result.current.click.isSuccess).toBe(true))
-
-    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["habits"] })
-
-    await act(async () => {
-      resolveCreate(habit(2))
+    await expectSettleResync({
+      queryClient,
+      useMutations: () => ({ hold: useCreateHabit(), settle: useClickHabit() }),
+      holdVars: { title: "new habit" },
+      settleVars: { id: 1, direction: "positive", clientEventId: "eid-1" },
+      listQueryKey: "habits",
+      releaseHold: () => created.resolve(habit(2)),
     })
   })
 })

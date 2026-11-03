@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import { Check, Palette, Save } from "lucide-react"
 import { Card } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
@@ -14,6 +15,8 @@ import {
 } from "@/components/ui/select"
 import { useAuth } from "@/contexts/AuthContext"
 import { useGameProfile, useUpdateAvatarConfig } from "@/hooks/useGameProfile"
+import { useGear, useToggleGearCostume } from "@/hooks/useGameCharacter"
+import { AvatarGearOverlay } from "@/components/avatar-gear-overlay"
 import {
   DEFAULT_AVATAR_STYLE,
   PIXEL_ART_COLORS,
@@ -93,6 +96,8 @@ export function AvatarCard() {
   const { user } = useAuth()
   const { data: profile, isLoading, isError } = useGameProfile()
   const updateAvatar = useUpdateAvatarConfig()
+  const { data: gear } = useGear()
+  const toggleCostume = useToggleGearCostume()
   // null draft = untouched; edits build a whole-config candidate so Save can
   // compare it against the saved blob and disable on revert.
   const [draft, setDraft] = useState<AvatarConfig | null>(null)
@@ -119,6 +124,8 @@ export function AvatarCard() {
     seed: debouncedSeed || fallbackSeed,
   })
   const showImg = previewUrl !== null && previewUrl !== failedUrl
+  // Owned rows only — the worn-gear section toggles their costume flags.
+  const ownedGear = (gear ?? []).filter((item) => item.owned)
 
   const edit = (patch: Partial<AvatarConfig>) =>
     setDraft({ ...effective, ...patch })
@@ -172,17 +179,20 @@ export function AvatarCard() {
       {body ?? (
         <form onSubmit={handleSave} className="space-y-8">
           <div className="flex flex-col items-center gap-3">
-            <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-tr from-primary to-accent text-4xl font-black text-primary-foreground">
-              {showImg ? (
-                <img
-                  src={previewUrl}
-                  alt="Avatar preview"
-                  onError={() => setFailedUrl(previewUrl)}
-                  className="h-full w-full [image-rendering:pixelated]"
-                />
-              ) : (
-                fallbackSeed[0]?.toUpperCase() || "U"
-              )}
+            <div className="relative">
+              <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-tr from-primary to-accent text-4xl font-black text-primary-foreground">
+                {showImg ? (
+                  <img
+                    src={previewUrl}
+                    alt="Avatar preview"
+                    onError={() => setFailedUrl(previewUrl)}
+                    className="h-full w-full [image-rendering:pixelated]"
+                  />
+                ) : (
+                  fallbackSeed[0]?.toUpperCase() || "U"
+                )}
+              </div>
+              <AvatarGearOverlay items={gear ?? []} config={effective} />
             </div>
             <div className="w-full max-w-xs space-y-2">
               <Label
@@ -285,6 +295,50 @@ export function AvatarCard() {
                 })}
               </div>
             </>
+          )}
+
+          {/* Costume flags live on owned gear, not the config blob — toggles
+              POST straight to /game/gear/costume (no Save needed) and the
+              overlay on the preview reflects the response cache. Pixel-art
+              gated like the pickers: other styles never show the overlay. */}
+          {effective.style === "pixel-art" && ownedGear.length > 0 && (
+            <fieldset className="space-y-2">
+              <legend className="ml-1 text-sm font-semibold">Worn gear</legend>
+              <p className="ml-1 text-xs text-muted-foreground">
+                Equipped gear shows on the avatar; a checked piece wears as a
+                costume over its slot instead — the two flags are independent.
+              </p>
+              <ul className="space-y-1">
+                {ownedGear.map((item) => (
+                  <li
+                    key={item.key}
+                    className="flex items-center gap-3 rounded-xl px-3 py-1.5"
+                  >
+                    <Checkbox
+                      id={`costume-${item.key}`}
+                      checked={item.costume === true}
+                      disabled={toggleCostume.isPending}
+                      onCheckedChange={(checked) =>
+                        toggleCostume.mutate({
+                          key: item.key,
+                          costume: checked === true,
+                        })
+                      }
+                      aria-label={`Use ${item.name} as costume`}
+                    />
+                    <Label
+                      htmlFor={`costume-${item.key}`}
+                      className="text-sm font-semibold"
+                    >
+                      {item.name}
+                      <span className="ml-2 text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+                        {item.slot}
+                      </span>
+                    </Label>
+                  </li>
+                ))}
+              </ul>
+            </fieldset>
           )}
 
           <div className="flex items-center gap-3">

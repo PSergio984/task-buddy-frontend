@@ -1,9 +1,18 @@
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react"
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeAll,
+  beforeEach,
+  afterEach,
+} from "vitest"
 import { AvatarCard } from "./avatar-picker"
-import type { GameProfile } from "@/lib/api"
+import type { GameProfile, GearItem } from "@/lib/api"
 
 const mutate = vi.fn()
+const costumeMutate = vi.fn()
 
 const PROFILE: GameProfile = {
   level: 3,
@@ -34,8 +43,51 @@ const PROFILE: GameProfile = {
   retention: "forever",
 }
 
+const GEAR: GearItem[] = [
+  {
+    key: "warrior-weapon-1",
+    name: "Training Sword",
+    slot: "weapon",
+    klass: "warrior",
+    tier: 1,
+    stats: { str: 3 },
+    cost: 100,
+    losable: true,
+    owned: true,
+    equipped: true,
+    costume: false,
+  },
+  {
+    key: "all-shield-1",
+    name: "Wooden Shield",
+    slot: "shield",
+    klass: "all",
+    tier: 1,
+    stats: { con: 1 },
+    cost: 50,
+    losable: true,
+    owned: true,
+    equipped: false,
+    costume: true,
+  },
+  {
+    key: "warrior-weapon-2",
+    name: "Broad Sword",
+    slot: "weapon",
+    klass: "warrior",
+    tier: 2,
+    stats: { str: 6 },
+    cost: 250,
+    losable: true,
+    owned: false,
+    equipped: false,
+    costume: false,
+  },
+]
+
 let mockProfile: GameProfile | undefined = PROFILE
 let mockPending = false
+let mockGear: GearItem[] = []
 
 vi.mock("@/contexts/AuthContext", () => ({
   useAuth: () => ({ user: { id: "u1", username: "kiki" } }),
@@ -50,11 +102,30 @@ vi.mock("@/hooks/useGameProfile", () => ({
   useUpdateAvatarConfig: () => ({ mutate, isPending: mockPending }),
 }))
 
+vi.mock("@/hooks/useGameCharacter", () => ({
+  useGear: () => ({ data: mockGear }),
+  useToggleGearCostume: () => ({ mutate: costumeMutate, isPending: false }),
+}))
+
 describe("AvatarCard", () => {
+  beforeAll(() => {
+    // jsdom lacks ResizeObserver — a checked Radix Checkbox mounts its
+    // bubble indicator, which sizes itself with one.
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      }
+    )
+  })
+
   beforeEach(() => {
     vi.clearAllMocks()
     mockProfile = PROFILE
     mockPending = false
+    mockGear = []
     mutate.mockImplementation((_config, options) => options?.onSuccess?.())
   })
 
@@ -227,5 +298,25 @@ describe("AvatarCard", () => {
         expect.anything()
       )
     )
+  })
+
+  it("lists owned gear with costume toggles that fire the mutation", () => {
+    mockGear = GEAR
+    render(<AvatarCard />)
+    // Unowned catalog rows stay out of the worn-gear list.
+    expect(screen.queryByText("Broad Sword")).not.toBeInTheDocument()
+    expect(
+      screen.getByRole("checkbox", { name: /use wooden shield as costume/i })
+    ).toBeChecked()
+    expect(
+      screen.getByRole("checkbox", { name: /use training sword as costume/i })
+    ).not.toBeChecked()
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: /use training sword as costume/i })
+    )
+    expect(costumeMutate).toHaveBeenCalledWith({
+      key: "warrior-weapon-1",
+      costume: true,
+    })
   })
 })

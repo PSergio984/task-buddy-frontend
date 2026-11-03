@@ -2,13 +2,15 @@ import { useState } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useGame } from "@/contexts/GameContext"
 import { useGameProfile } from "@/hooks/useGameProfile"
+import { useGear } from "@/hooks/useGameCharacter"
+import { AvatarGearOverlay } from "@/components/avatar-gear-overlay"
 import { cn } from "@/lib/utils"
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { avatarConfigToUrl } from "@/lib/avatar"
+import { avatarConfigToUrl, DEFAULT_AVATAR_STYLE } from "@/lib/avatar"
 
 interface GameHudProps {
   readonly isCollapsed?: boolean
@@ -47,6 +49,15 @@ function StatBar({
 export function GameHud({ isCollapsed = false }: GameHudProps) {
   const { user } = useAuth()
   const { data: profile, isLoading, isError } = useGameProfile()
+  // The gear overlay renders for pixel-art only — another resolved style
+  // would discard the rows, so the catalog fetch waits for a profile that
+  // uses them (absent style means the pixel-art default, same as below).
+  const avatarStyle = profile?.avatar_config.style
+  const { data: gear } = useGear(
+    profile !== undefined &&
+      (typeof avatarStyle === "string" ? avatarStyle : DEFAULT_AVATAR_STYLE) ===
+        "pixel-art"
+  )
   const { pendingEventCount } = useGame()
   // Remember which seed failed — a new avatar_config resets the fallback.
   const [failedUrl, setFailedUrl] = useState<string | null>(null)
@@ -101,17 +112,20 @@ export function GameHud({ isCollapsed = false }: GameHudProps) {
   const statsLine = `STR ${profile.str_stat} · INT ${profile.int_stat} · CON ${profile.con_stat} · PER ${profile.per_stat}`
 
   const avatar = (
-    <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-gradient-to-tr from-primary to-accent text-lg font-black text-primary-foreground shadow-lg">
-      {showImg ? (
-        <img
-          src={url}
-          alt={`${name}'s avatar`}
-          onError={() => setFailedUrl(url)}
-          className="h-full w-full [image-rendering:pixelated]"
-        />
-      ) : (
-        initial
-      )}
+    <div className="relative shrink-0">
+      <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-gradient-to-tr from-primary to-accent text-lg font-black text-primary-foreground shadow-lg">
+        {showImg ? (
+          <img
+            src={url}
+            alt={`${name}'s avatar`}
+            onError={() => setFailedUrl(url)}
+            className="h-full w-full [image-rendering:pixelated]"
+          />
+        ) : (
+          initial
+        )}
+      </div>
+      <AvatarGearOverlay items={gear ?? []} config={profile.avatar_config} />
     </div>
   )
 

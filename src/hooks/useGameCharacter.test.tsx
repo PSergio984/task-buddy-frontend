@@ -2,7 +2,13 @@ import { renderHook, act, waitFor } from "@testing-library/react"
 import { QueryClient } from "@tanstack/react-query"
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { AxiosError } from "axios"
-import { makeWrapper, profile, SERVER_TIME } from "./game-hook-test-utils"
+import {
+  deferred,
+  expectSettleResync,
+  makeWrapper,
+  profile,
+  SERVER_TIME,
+} from "./game-hook-test-utils"
 import {
   useActivityGrid,
   useActivityStats,
@@ -10,6 +16,7 @@ import {
   useBuyGear,
   useEquipGear,
   useSelectClass,
+  useToggleGearCostume,
 } from "./useGameCharacter"
 import {
   activityApi,
@@ -24,7 +31,12 @@ vi.mock("@/lib/api", async (importOriginal) => {
   const mod = await importOriginal<typeof import("@/lib/api")>()
   return {
     ...mod,
-    gearApi: { ...mod.gearApi, buy: vi.fn(), equip: vi.fn() },
+    gearApi: {
+      ...mod.gearApi,
+      buy: vi.fn(),
+      equip: vi.fn(),
+      toggleCostume: vi.fn(),
+    },
     activityApi: { ...mod.activityApi, grid: vi.fn(), stats: vi.fn() },
     characterApi: {
       ...mod.characterApi,
@@ -161,8 +173,8 @@ describe("useBuyGear", () => {
     expect(invalidate).toHaveBeenCalledWith({
       queryKey: ["game-achievements"],
     })
-    // No other write in flight — the settle-time resync must not fire.
-    expect(invalidate).not.toHaveBeenCalledWith({ queryKey: ["game-gear"] })
+    // The settle-time gear resync is unconditional.
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["game-gear"] })
   })
 
   it("resyncs the gear cache when a buy fails", async () => {
@@ -213,6 +225,74 @@ describe("useBuyGear", () => {
 
     await act(async () => {
       resolveEquip({ items: [gear()], profile: stampedProfile })
+    })
+  })
+})
+
+describe("useToggleGearCostume", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it("writes the response catalog into the gear cache and syncs the profile", async () => {
+    const res: GearListResponse = {
+      items: [gear({ costume: true })],
+      profile: { ...stampedProfile, gold: 42 },
+    }
+    vi.mocked(gearApi.toggleCostume).mockResolvedValue(res)
+    const queryClient = new QueryClient()
+    queryClient.setQueryData(["game-gear", { userId: 1 }], [gear()])
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries")
+    const { result } = renderHook(() => useToggleGearCostume(), {
+      wrapper: makeWrapper(queryClient),
+    })
+
+    act(() => {
+      result.current.mutate({ key: "warrior-weapon-1", costume: true })
+    })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(gearApi.toggleCostume).toHaveBeenCalledWith({
+      key: "warrior-weapon-1",
+      costume: true,
+    })
+    expect(
+      queryClient.getQueryData<GearItem[]>(["game-gear", { userId: 1 }])
+    ).toEqual(res.items)
+    expect(setGameProfileCache).toHaveBeenCalledWith(
+      res.profile,
+      1,
+      SERVER_TIME
+    )
+    // The settle-time gear resync is unconditional.
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["game-gear"] })
+  })
+
+  it("resyncs the list when a toggle settles while another write is in flight", async () => {
+    // The settled toggle's success path cancels the list refetch the other
+    // write's own invalidation kicked off — the settle-time guard must
+    // restart it or that write's rows never appear.
+    const res: GearListResponse = {
+      items: [gear({ costume: true })],
+      profile: { ...stampedProfile, gold: 42 },
+    }
+    const held = deferred<GearListResponse>()
+    vi.mocked(gearApi.toggleCostume)
+      .mockImplementationOnce(() => held.promise)
+      .mockResolvedValue(res)
+    const queryClient = new QueryClient()
+    queryClient.setQueryData(["game-gear", { userId: 1 }], [gear()])
+
+    await expectSettleResync({
+      queryClient,
+      useMutations: () => ({
+        hold: useToggleGearCostume(),
+        settle: useToggleGearCostume(),
+      }),
+      holdVars: { key: "warrior-weapon-1", costume: true },
+      settleVars: { key: "warrior-weapon-1", costume: false },
+      listQueryKey: "game-gear",
+      releaseHold: () => held.resolve(res),
     })
   })
 })

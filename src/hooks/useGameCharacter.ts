@@ -1,10 +1,16 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from "@tanstack/react-query"
 import {
   activityApi,
   achievementsApi,
   characterApi,
   gearApi,
   type GameClass,
+  type GearListResponse,
   type StatKey,
 } from "@/lib/api"
 import { useAuth } from "@/contexts/AuthContext"
@@ -18,17 +24,49 @@ export const GEAR_BUY_MUTATION_KEY = ["gear-buy"] as const
 export const GEAR_EQUIP_MUTATION_KEY = ["gear-equip"] as const
 
 /**
+ * Settle-time resync shared by every gear-affecting write. Unconditional:
+ * a stale fold can cancel a fresher write's spawned refetch even when that
+ * write already settled — the isMutating()>1 guard missed that interleave.
+ * The catalog is small, so re-pulling on every settle is cheap insurance.
+ */
+const resyncGear = (queryClient: QueryClient) => () =>
+  void queryClient.invalidateQueries({ queryKey: ["game-gear"] })
+
+/**
+ * Shared success path for the three catalog writes (buy, equip, costume
+ * toggle) — fold the merged GearListResponse into the gear + profile
+ * caches instead of a refetch. The cancelQueries ordering guard stops a
+ * racing list GET from folding a stale response over the newer rows.
+ */
+function useFoldGearResponse() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+  return async (res: GearListResponse) => {
+    const userId = user?.id
+    try {
+      await queryClient.cancelQueries({ queryKey: ["game-gear", { userId }] })
+    } catch {
+      // Cancellation is best-effort — the write below still lands.
+    }
+    if (userId !== undefined) {
+      queryClient.setQueryData(["game-gear", { userId }], res.items)
+      await setGameProfileCache(res.profile, userId, res.profile.server_time)
+    }
+  }
+}
+
+/**
  * Character-sheet queries/mutations (gear, achievements, stat/class writes).
  * Same convention as the habits/dailies domain — writes go straight to the
  * API (no offline queue: the server owns gold/stat arithmetic) and a failed
  * write resyncs + toasts; reads render the persisted cache offline.
  */
-export function useGear() {
+export function useGear(enabled = true) {
   const { user } = useAuth()
   return useQuery({
     queryKey: ["game-gear", { userId: user?.id }],
     queryFn: gearApi.list,
-    enabled: !!user,
+    enabled: !!user && enabled,
   })
 }
 
@@ -63,29 +101,14 @@ export function useActivityStats() {
 }
 
 export function useBuyGear() {
-  const { user } = useAuth()
   const { toast } = useToast()
   const queryClient = useQueryClient()
+  const foldGear = useFoldGearResponse()
   return useMutation({
     mutationKey: GEAR_BUY_MUTATION_KEY,
     mutationFn: (key: string) => gearApi.buy(key),
     onSuccess: async (res) => {
-      // GearListResponse carries the post-buy catalog plus authoritative
-      // totals — fold both into their caches instead of a refetch. Same
-      // ordering guard as the habit click: cancel a racing list GET so it
-      // can't fold a stale response over the newer rows.
-      const userId = user?.id
-      try {
-        await queryClient.cancelQueries({
-          queryKey: ["game-gear", { userId }],
-        })
-      } catch {
-        // Cancellation is best-effort — the write below still lands.
-      }
-      if (userId !== undefined) {
-        queryClient.setQueryData(["game-gear", { userId }], res.items)
-        await setGameProfileCache(res.profile, userId, res.profile.server_time)
-      }
+      await foldGear(res)
       // 'first-gear' can grant on the buy — resync the badge list.
       void queryClient.invalidateQueries({ queryKey: ["game-achievements"] })
     },
@@ -97,39 +120,44 @@ export function useBuyGear() {
         variant: "destructive",
       })
     },
-    onSettled: () => {
-      // Settling while another write is still running means the success
-      // path above cancelled the gear refetch that write relies on — the
-      // stripped/updated rows would never appear. Resync in that case
-      // only; isMutating counts this still-running mutation, hence > 1.
-      if (queryClient.isMutating() > 1)
-        void queryClient.invalidateQueries({ queryKey: ["game-gear"] })
+    onSettled: resyncGear(queryClient),
+  })
+}
+
+/**
+ * Toggle one owned item's costume flag (#65). The response carries the
+ * merged catalog plus authoritative profile totals — fold both into their
+ * caches instead of refetching, same write convention as the equip.
+ */
+export function useToggleGearCostume() {
+  const { toast } = useToast()
+  const queryClient = useQueryClient()
+  const foldGear = useFoldGearResponse()
+  return useMutation({
+    mutationFn: (input: { key: string; costume: boolean }) =>
+      gearApi.toggleCostume(input),
+    onSuccess: foldGear,
+    onError: (err) => {
+      void queryClient.invalidateQueries({ queryKey: ["game-gear"] })
+      toast({
+        title: "Couldn't update worn gear",
+        description: getErrorMessage(err),
+        variant: "destructive",
+      })
     },
+    onSettled: resyncGear(queryClient),
   })
 }
 
 export function useEquipGear() {
-  const { user } = useAuth()
   const { toast } = useToast()
   const queryClient = useQueryClient()
+  const foldGear = useFoldGearResponse()
   return useMutation({
     mutationKey: GEAR_EQUIP_MUTATION_KEY,
     mutationFn: ({ key, equipped }: { key: string; equipped: boolean }) =>
       gearApi.equip(key, equipped),
-    onSuccess: async (res) => {
-      const userId = user?.id
-      try {
-        await queryClient.cancelQueries({
-          queryKey: ["game-gear", { userId }],
-        })
-      } catch {
-        // Cancellation is best-effort — the write below still lands.
-      }
-      if (userId !== undefined) {
-        queryClient.setQueryData(["game-gear", { userId }], res.items)
-        await setGameProfileCache(res.profile, userId, res.profile.server_time)
-      }
-    },
+    onSuccess: foldGear,
     onError: (err) => {
       void queryClient.invalidateQueries({ queryKey: ["game-gear"] })
       toast({
@@ -138,14 +166,7 @@ export function useEquipGear() {
         variant: "destructive",
       })
     },
-    onSettled: () => {
-      // Settling while another write is still running means the success
-      // path above cancelled the gear refetch that write relies on — the
-      // stripped/updated rows would never appear. Resync in that case
-      // only; isMutating counts this still-running mutation, hence > 1.
-      if (queryClient.isMutating() > 1)
-        void queryClient.invalidateQueries({ queryKey: ["game-gear"] })
-    },
+    onSettled: resyncGear(queryClient),
   })
 }
 
@@ -221,12 +242,7 @@ export function useSelectClass() {
         variant: "destructive",
       })
     },
-    onSettled: () => {
-      // Same settle-reconcile as the gear writes above — this mutation
-      // also touches the gear cache.
-      if (queryClient.isMutating() > 1)
-        void queryClient.invalidateQueries({ queryKey: ["game-gear"] })
-    },
+    onSettled: resyncGear(queryClient),
   })
 }
 
@@ -249,11 +265,6 @@ export function useRespec() {
         variant: "destructive",
       })
     },
-    onSettled: () => {
-      // Same settle-reconcile as the gear writes above — this mutation
-      // also touches the gear cache.
-      if (queryClient.isMutating() > 1)
-        void queryClient.invalidateQueries({ queryKey: ["game-gear"] })
-    },
+    onSettled: resyncGear(queryClient),
   })
 }
