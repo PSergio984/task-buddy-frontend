@@ -120,8 +120,12 @@ describe("useCheckDaily", () => {
     ).toEqual([checked, daily(2)])
     expect(setGameProfileCache).toHaveBeenCalledWith(profile, 1, SERVER_TIME)
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["timeline"] })
-    // No other write in flight — the settle-time resync must not fire.
-    expect(invalidate).not.toHaveBeenCalledWith({ queryKey: ["dailies"] })
+    // A scored write re-runs achievement evaluation server-side.
+    expect(invalidate).toHaveBeenCalledWith({
+      queryKey: ["game-achievements"],
+    })
+    // The settle-time resync is unconditional — same contract as gear.
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["dailies"] })
   })
 
   it("resyncs the dailies cache when a check fails", async () => {

@@ -73,8 +73,12 @@ describe("useClickHabit", () => {
     ).toEqual([scored, habit(2)])
     expect(setGameProfileCache).toHaveBeenCalledWith(profile, 1, SERVER_TIME)
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["timeline"] })
-    // No other write in flight — the settle-time resync must not fire.
-    expect(invalidate).not.toHaveBeenCalledWith({ queryKey: ["habits"] })
+    // A scored write re-runs achievement evaluation server-side.
+    expect(invalidate).toHaveBeenCalledWith({
+      queryKey: ["game-achievements"],
+    })
+    // The settle-time resync is unconditional — same contract as gear.
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["habits"] })
   })
 
   it("resyncs the habits cache when a click fails", async () => {

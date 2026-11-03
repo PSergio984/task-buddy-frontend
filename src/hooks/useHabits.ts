@@ -121,6 +121,9 @@ export function useClickHabit() {
       if (userId !== undefined)
         await setGameProfileCache(res.profile, userId, res.server_time)
       void queryClient.invalidateQueries({ queryKey: ["timeline"] })
+      // Every scored write runs the server's achievement evaluation — the
+      // badge list is as stale as the totals after a click.
+      void queryClient.invalidateQueries({ queryKey: ["game-achievements"] })
     },
     onError: (err) => {
       // Resync on failure — a rejected click (e.g. direction PATCHed
@@ -133,12 +136,10 @@ export function useClickHabit() {
       })
     },
     onSettled: () => {
-      // Settling while another write is still running means the success
-      // path above cancelled the list refetch that write relies on — a
-      // created/edited row would never appear. Resync in that case only;
-      // isMutating counts this still-callback-running mutation, hence > 1.
-      if (queryClient.isMutating() > 1)
-        void queryClient.invalidateQueries({ queryKey: ["habits"] })
+      // Unconditional, same as the gear resync — a stale fold can cancel a
+      // fresher write's spawned refetch even when that write already
+      // settled, and the isMutating()>1 guard missed that interleave.
+      void queryClient.invalidateQueries({ queryKey: ["habits"] })
     },
   })
 }

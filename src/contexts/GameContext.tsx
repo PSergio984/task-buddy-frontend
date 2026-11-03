@@ -86,6 +86,11 @@ export function GameProvider({
         // A flushed focus_phase_completed may have run server-side
         // bind_focus auto-clicks — the habits list cache is stale too.
         void queryClient.invalidateQueries({ queryKey: ["habits"] })
+        // Flushed events are scored writes — the server re-evaluated
+        // achievements on them, so the badge list needs a pull.
+        void queryClient.invalidateQueries({
+          queryKey: ["game-achievements"],
+        })
       }
     } catch (error) {
       // The queue is authoritative — a failed flush just retries later.
