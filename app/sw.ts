@@ -23,14 +23,11 @@ serwist.addEventListeners()
 
 // Only these NotificationOptions may come from a push payload — everything
 // else (`data`, `image`, `requireInteraction`, arbitrary junk) stays ours so
-// a payload can't clobber the click target or fetch cross-origin (#68).
-const NOTIFICATION_OPTION_KEYS = [
-  "tag",
-  "badge",
-  "renotify",
-  "silent",
-  "vibrate",
-] as const
+// a payload can't clobber the click target (#68). `renotify`/`vibrate` are
+// deliberately excluded: `renotify` throws without a non-empty `tag`, and
+// `vibrate` throws alongside `silent` (which we set for focused windows) or
+// a non-iterable value — either TypeError swallows the whole notification.
+const NOTIFICATION_OPTION_KEYS = ["tag", "badge", "silent"] as const
 
 self.addEventListener("push", (event) => {
   if (!event.data) return
@@ -49,9 +46,12 @@ self.addEventListener("push", (event) => {
     // Relay to window clients — a focused page plays an in-app cue; the OS
     // notification covers everything else (#68). Silence the OS copy only
     // when a focused window exists to cue instead: a merely visible page
-    // plays no cue, so its notification must keep the OS sound. The relay
-    // is best-effort: a failed matchAll still shows the notification (with
-    // sound — the page can't cue what it never heard about).
+    // plays no cue, so its notification must keep the OS sound. Rare
+    // zero-audio edges remain — focus lost between matchAll and delivery,
+    // or an autoplay-blocked AudioContext — accepted: the notification
+    // still displays. The relay is best-effort: a failed matchAll still
+    // shows the notification (with sound — the page can't cue what it
+    // never heard about).
     const anyFocused = self.clients
       .matchAll({ type: "window" })
       .then((clientList) => {
