@@ -7,6 +7,13 @@ import {
   Info,
   Check,
   Trash2,
+  Flame,
+  Heart,
+  Skull,
+  Zap,
+  Star,
+  Trophy,
+  Award,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -24,6 +31,18 @@ const iconMap: Record<NotificationType, { icon: LucideIcon; color: string }> = {
   REMINDER_OVERDUE: { icon: AlertTriangle, color: "text-red-500" },
   TASK_OVERDUE: { icon: AlertTriangle, color: "text-red-500" },
   SYSTEM: { icon: Info, color: "text-indigo-500" },
+  // Game kinds (#68) — reminders read like REMINDER_*, warnings like
+  // *_OVERDUE, celebrations get their own colors.
+  HABIT_REMINDER: { icon: Clock, color: "text-blue-500" },
+  DAILY_REMINDER: { icon: Clock, color: "text-blue-500" },
+  STREAK_RISK: { icon: Flame, color: "text-amber-500" },
+  LOW_HP: { icon: Heart, color: "text-red-500" },
+  DAILY_MISSED: { icon: AlertTriangle, color: "text-red-500" },
+  DEATH: { icon: Skull, color: "text-red-500" },
+  PHASE_END: { icon: Zap, color: "text-amber-500" },
+  LEVEL_UP: { icon: Star, color: "text-yellow-500" },
+  ACHIEVEMENT: { icon: Trophy, color: "text-amber-500" },
+  RECORD: { icon: Award, color: "text-indigo-500" },
 }
 
 export function NotificationItem({ notification }: NotificationItemProps) {

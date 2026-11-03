@@ -39,6 +39,7 @@ import { AvatarCard } from "@/components/avatar-picker"
 import { cn } from "@/lib/utils"
 import axios from "axios"
 import { useRegisterPush, useVapidKey } from "@/hooks/useNotifications"
+import { NotificationPrefsCard } from "@/components/notification-prefs-card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useUserPreferences } from "@/hooks/useUserPreferences"
 import { CharacterCounter } from "@/components/ui/character-counter"
@@ -103,6 +104,7 @@ export function ProfilePage() {
           <UsernameCard />
           <AvatarCard />
           <PreferencesCard />
+          <NotificationPrefsCard />
           <ConfirmationPreferencesCard />
           <SecurityCard />
         </div>

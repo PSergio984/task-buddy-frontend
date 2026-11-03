@@ -29,12 +29,21 @@ self.addEventListener("push", (event) => {
     const { title, body, icon, action_url, ...rest } = data
 
     event.waitUntil(
-      self.registration.showNotification(title || "Task Buddy", {
-        body: body || "",
-        icon: icon || "/task-buddy-icon.svg",
-        data: { action_url },
-        ...rest,
-      })
+      Promise.all([
+        self.registration.showNotification(title || "Task Buddy", {
+          body: body || "",
+          icon: icon || "/task-buddy-icon.svg",
+          data: { action_url },
+          ...rest,
+        }),
+        // Relay to window clients — a visible page plays an in-app cue; the
+        // OS notification above covers hidden/closed tabs (#68).
+        self.clients.matchAll({ type: "window" }).then((clientList) => {
+          for (const client of clientList) {
+            client.postMessage({ type: "tb:push-received" })
+          }
+        }),
+      ])
     )
   } catch (err) {
     console.error("Push event error:", err)

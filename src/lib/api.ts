@@ -164,6 +164,18 @@ export type NotificationType =
   | "REMINDER_DUE"
   | "REMINDER_OVERDUE"
   | "SYSTEM"
+  // Game notification kinds (#68) — the notificationtype enum grows
+  // server-side alongside the per-kind channel prefs below.
+  | "HABIT_REMINDER"
+  | "DAILY_REMINDER"
+  | "STREAK_RISK"
+  | "LOW_HP"
+  | "DAILY_MISSED"
+  | "DEATH"
+  | "PHASE_END"
+  | "LEVEL_UP"
+  | "ACHIEVEMENT"
+  | "RECORD"
 
 export interface Notification {
   id: number
@@ -1203,5 +1215,64 @@ export const notificationsApi = {
     auth: string
   }) => {
     await api.post("/api/v1/notifications/push-subscription", subscription)
+  },
+  // Expo/mobile push tokens (#68) — no web UI; here for client completeness.
+  registerDeviceToken: async (input: { platform: string; token: string }) => {
+    await api.post("/api/v1/game/device-tokens", input)
+  },
+  removeDeviceToken: async (token: string) => {
+    await api.delete(`/api/v1/game/device-tokens/${encodeURIComponent(token)}`)
+  },
+}
+
+/** The ten notification kinds the channel matrix covers (#68). */
+export type GameNotificationKind =
+  | "habit_reminder"
+  | "daily_reminder"
+  | "streak_risk"
+  | "low_hp"
+  | "daily_missed"
+  | "death"
+  | "phase_end"
+  | "level_up"
+  | "achievement"
+  | "record"
+
+export type NotificationChannelPrefs = {
+  in_app: boolean
+  push: boolean
+  email: boolean
+}
+
+/**
+ * Whole-object notification prefs — GET returns the server's row, PUT
+ * replaces it verbatim and returns the saved copy. Kinds absent from `prefs`
+ * use the client defaults at render time.
+ */
+export type NotificationPrefs = {
+  prefs: Partial<Record<GameNotificationKind, NotificationChannelPrefs>>
+  quiet_hours: {
+    /** "HH:MM" 24h, local to `timezone`. */
+    start: string
+    /** "HH:MM" 24h, local to `timezone`. May wrap past midnight. */
+    end: string
+    /** IANA timezone name. */
+    timezone: string
+  }
+}
+
+export const notificationPrefsApi = {
+  get: async () => {
+    const response = await api.get<NotificationPrefs>(
+      "/api/v1/game/notification-prefs"
+    )
+    return response.data
+  },
+  put: async (prefs: NotificationPrefs) => {
+    const response = await api.put<NotificationPrefs>(
+      "/api/v1/game/notification-prefs",
+      prefs
+    )
+    return response.data
   },
 }
