@@ -104,6 +104,7 @@ export function useDeleteDiaryEntry() {
 export function useUpdateRetention() {
   const { user } = useAuth()
   const { toast } = useToast()
+  const queryClient = useQueryClient()
   const invalidate = useDiaryInvalidate()
   return useMutation({
     mutationFn: (retention: RetentionPreference) =>
@@ -124,7 +125,10 @@ export function useUpdateRetention() {
     },
     onError: (err) => {
       // Resync on failure too — a timeout after commit leaves the horizon
-      // changed server-side while the day views render the old cutoff.
+      // changed server-side while the day views render the old cutoff. The
+      // profile holds the cutoff itself — the beyondHorizon gate reads it,
+      // so it must refetch or the widened horizon stays hidden.
+      void queryClient.invalidateQueries({ queryKey: ["game-profile"] })
       invalidate()
       toast({
         title: "Couldn't update retention",
