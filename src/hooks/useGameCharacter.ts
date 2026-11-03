@@ -22,6 +22,8 @@ import { getErrorMessage } from "@/lib/errors"
 /** Lets `useMutationState` find in-flight buys/equips for pending-key sets. */
 export const GEAR_BUY_MUTATION_KEY = ["gear-buy"] as const
 export const GEAR_EQUIP_MUTATION_KEY = ["gear-equip"] as const
+/** Same convention — no pending-key consumer yet, kept for consistency. */
+export const GEAR_COSTUME_MUTATION_KEY = ["gear-costume"] as const
 
 /**
  * Settle-time resync shared by every gear-affecting write. Unconditional:
@@ -143,6 +145,7 @@ export function useToggleGearCostume() {
   const queryClient = useQueryClient()
   const { foldGear, stampOwner } = useFoldGearResponse()
   return useMutation({
+    mutationKey: GEAR_COSTUME_MUTATION_KEY,
     mutationFn: (input: { key: string; costume: boolean }) =>
       gearApi.toggleCostume(input),
     onMutate: stampOwner,
