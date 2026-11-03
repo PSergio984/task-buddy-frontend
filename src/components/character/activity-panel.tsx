@@ -54,10 +54,10 @@ function StatChip({ label, value }: { label: string; value: string }) {
 
 /** Arrow-key deltas over the flat day list — weeks are 7-day columns. */
 const ARROW_DELTAS: Record<string, number> = {
-  ArrowLeft: -1,
-  ArrowRight: 1,
-  ArrowUp: -7,
-  ArrowDown: 7,
+  ArrowLeft: -7,
+  ArrowRight: 7,
+  ArrowUp: -1,
+  ArrowDown: 1,
 }
 
 function DayCell({
@@ -180,8 +180,8 @@ export function ActivityPanel({
 }: ActivityPanelProps) {
   const weeks = grid !== undefined ? buildWeeks(grid.days) : []
   // Roving tabindex over the flat (chronological) day list — exactly one
-  // cell is tabbable and arrows walk it: Left/Right an adjacent day,
-  // Up/Down the same weekday a week over. Weeks are column-major and
+  // cell is tabbable and arrows walk it: Up/Down an adjacent day,
+  // Left/Right the same weekday a week over. Weeks are column-major and
   // each column is exactly 7 slots, so ±7 always lands on the same
   // weekday of the adjacent week (out-of-range = that day isn't in the
   // window → stay put).

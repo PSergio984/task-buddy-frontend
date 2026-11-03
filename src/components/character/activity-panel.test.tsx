@@ -105,7 +105,8 @@ describe("ActivityPanel", () => {
   })
 
   it("keeps one tabbable cell and roves it with the arrow keys", async () => {
-    // Two full Mon–Sun weeks — Up/Down jump a whole week column.
+    // Two full Mon–Sun week columns — Left/Right jump a whole week
+    // column, Up/Down step to the adjacent day down/up the column.
     const days = Array.from({ length: 14 }, (_, i) =>
       day(`2025-11-${String(3 + i).padStart(2, "0")}`, { score: i })
     )
@@ -115,26 +116,26 @@ describe("ActivityPanel", () => {
     expect(cells.filter((c) => c.tabIndex === 0)).toHaveLength(1)
     expect(cells[0].tabIndex).toBe(0)
 
-    // Right → adjacent day; focus opens that day's tooltip.
+    // Right → same weekday next week (flat index +7); focus opens the tooltip.
     fireEvent.keyDown(cells[0], { key: "ArrowRight" })
-    expect(document.activeElement).toBe(cells[1])
+    expect(document.activeElement).toBe(cells[7])
     expect(cells[0].tabIndex).toBe(-1)
-    expect(cells[1].tabIndex).toBe(0)
+    expect(cells[7].tabIndex).toBe(0)
     const tooltip = await screen.findByRole("tooltip")
-    expect(tooltip).toHaveTextContent("Tue, Nov 4 — 1 pts")
+    expect(tooltip).toHaveTextContent("Mon, Nov 10 — 7 pts")
 
-    // Down → same weekday next week (flat index +7).
-    fireEvent.keyDown(cells[1], { key: "ArrowDown" })
+    // Down → adjacent day (flat index +1).
+    fireEvent.keyDown(cells[7], { key: "ArrowDown" })
     expect(document.activeElement).toBe(cells[8])
     expect(cells[8].tabIndex).toBe(0)
 
     // No third week — the roving cell stays at the window edge.
-    fireEvent.keyDown(cells[8], { key: "ArrowDown" })
+    fireEvent.keyDown(cells[8], { key: "ArrowRight" })
     expect(document.activeElement).toBe(cells[8])
 
     fireEvent.keyDown(cells[8], { key: "ArrowUp" })
-    expect(document.activeElement).toBe(cells[1])
-    fireEvent.keyDown(cells[1], { key: "ArrowLeft" })
+    expect(document.activeElement).toBe(cells[7])
+    fireEvent.keyDown(cells[7], { key: "ArrowLeft" })
     expect(document.activeElement).toBe(cells[0])
     fireEvent.keyDown(cells[0], { key: "ArrowLeft" })
     expect(document.activeElement).toBe(cells[0])
