@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from "@tanstack/react-query"
 import {
   activityApi,
   achievementsApi,
@@ -16,6 +21,15 @@ import { getErrorMessage } from "@/lib/errors"
 /** Lets `useMutationState` find in-flight buys/equips for pending-key sets. */
 export const GEAR_BUY_MUTATION_KEY = ["gear-buy"] as const
 export const GEAR_EQUIP_MUTATION_KEY = ["gear-equip"] as const
+
+/**
+ * Settle-time resync shared by every gear-affecting write. Unconditional:
+ * a stale fold can cancel a fresher write's spawned refetch even when that
+ * write already settled — the isMutating()>1 guard missed that interleave.
+ * The catalog is small, so re-pulling on every settle is cheap insurance.
+ */
+const resyncGear = (queryClient: QueryClient) => () =>
+  void queryClient.invalidateQueries({ queryKey: ["game-gear"] })
 
 /**
  * Character-sheet queries/mutations (gear, achievements, stat/class writes).
@@ -97,12 +111,7 @@ export function useBuyGear() {
         variant: "destructive",
       })
     },
-    onSettled: () => {
-      // Always resync: a stale fold can cancel a fresher write's spawned
-      // refetch even when that write already settled (isMutating==1 misses
-      // the interleave). Cheap endpoint — re-pull after every gear write.
-      void queryClient.invalidateQueries({ queryKey: ["game-gear"] })
-    },
+    onSettled: resyncGear(queryClient),
   })
 }
 
@@ -142,9 +151,7 @@ export function useToggleGearCostume() {
         variant: "destructive",
       })
     },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ["game-gear"] })
-    },
+    onSettled: resyncGear(queryClient),
   })
 }
 
@@ -178,9 +185,7 @@ export function useEquipGear() {
         variant: "destructive",
       })
     },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ["game-gear"] })
-    },
+    onSettled: resyncGear(queryClient),
   })
 }
 
@@ -256,9 +261,7 @@ export function useSelectClass() {
         variant: "destructive",
       })
     },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ["game-gear"] })
-    },
+    onSettled: resyncGear(queryClient),
   })
 }
 
@@ -281,10 +284,6 @@ export function useRespec() {
         variant: "destructive",
       })
     },
-    onSettled: () => {
-      // Same unconditional resync as the gear writes above — this
-      // mutation also touches the gear cache.
-      void queryClient.invalidateQueries({ queryKey: ["game-gear"] })
-    },
+    onSettled: resyncGear(queryClient),
   })
 }
