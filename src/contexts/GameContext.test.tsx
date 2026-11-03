@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import { render, act } from "@testing-library/react"
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { GameProvider, useGame } from "./GameContext"
@@ -18,7 +19,7 @@ vi.mock("@/lib/focus-probe-gate", () => ({
   probeGate: vi.fn(() => Promise.resolve()),
 }))
 
-const invalidateSpy = vi.fn(() => Promise.resolve())
+const invalidateSpy = vi.fn((..._args: unknown[]) => Promise.resolve())
 vi.mock("@/lib/query-client", () => ({
   queryClient: {
     invalidateQueries: (...args: unknown[]) => invalidateSpy(...args),
@@ -39,7 +40,12 @@ vi.mock("@/lib/api", async (importOriginal) => {
 
 let ctx: ReturnType<typeof useGame> | null = null
 function Probe() {
-  ctx = useGame()
+  const value = useGame()
+  // Module-scope capture must run in an effect — a render-phase write is a
+  // react-hooks/globals violation.
+  useEffect(() => {
+    ctx = value
+  }, [value])
   return null
 }
 
