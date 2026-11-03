@@ -9,7 +9,7 @@ import {
 import type { ActivityDay, ActivityGrid, ActivityStats } from "@/lib/api"
 import { utcDayLabel } from "@/lib/diary"
 import { cardClass } from "@/lib/game-columns"
-import { activityTier, buildWeeks } from "@/lib/game-profile"
+import { buildWeeks } from "@/lib/game-profile"
 import { cn } from "@/lib/utils"
 
 interface ActivityPanelProps {
@@ -62,20 +62,19 @@ const ARROW_DELTAS: Record<string, number> = {
 
 function DayCell({
   day,
-  tierThresholds,
   tabIndex,
   onFocus,
   onKeyDown,
   cellRef,
 }: {
   day: ActivityDay
-  tierThresholds: number[]
   tabIndex: number
   onFocus: () => void
   onKeyDown: (e: KeyboardEvent<HTMLButtonElement>) => void
   cellRef: (el: HTMLButtonElement | null) => void
 }) {
-  const tier = activityTier(day.score, tierThresholds)
+  // Server-computed intensity bucket — no client mirror of tier_for.
+  const tier = day.tier
   const date = utcDayLabel(day.date)
   const eventEntries = Object.entries(day.events)
   return (
@@ -278,7 +277,6 @@ export function ActivityPanel({
                       <DayCell
                         key={day.date}
                         day={day}
-                        tierThresholds={grid.tier_thresholds}
                         tabIndex={
                           dayIndex.get(day.date) === rovingIndex ? 0 : -1
                         }

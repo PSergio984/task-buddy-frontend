@@ -122,7 +122,7 @@ export function StatsPanel({
                 <button
                   aria-label={`Add ${label} point`}
                   onClick={() => onAllocate?.(key)}
-                  disabled={busy || unspent === 0 || capReached}
+                  disabled={busy || unspent <= 0 || capReached}
                   className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-emerald-400/20 bg-emerald-400/10 text-emerald-400 transition-all hover:bg-emerald-400/20 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <Plus className="h-4 w-4" />

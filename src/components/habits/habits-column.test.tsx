@@ -136,6 +136,36 @@ describe("HabitsColumn", () => {
     ).toBeInTheDocument()
   })
 
+  it("keeps an open edit draft when the connection drops mid-edit", () => {
+    const { rerender } = render(
+      <HabitsColumn
+        habits={[habit(1)]}
+        isPending={false}
+        isError={false}
+        isOnline
+        onRetry={vi.fn()}
+      />
+    )
+    fireEvent.click(screen.getByLabelText("Edit habit 1"))
+    fireEvent.change(screen.getByLabelText("Habit"), {
+      target: { value: "draft title" },
+    })
+
+    rerender(
+      <HabitsColumn
+        habits={[habit(1)]}
+        isPending={false}
+        isError={false}
+        isOnline={false}
+        writesDisabled
+        onRetry={vi.fn()}
+      />
+    )
+    // The form stays mounted with the draft — only the submit blocks.
+    expect(screen.getByLabelText("Habit")).toHaveValue("draft title")
+    expect(screen.getByRole("button", { name: "Save habit" })).toBeDisabled()
+  })
+
   it("disables clicks while offline instead of pretending to queue them", () => {
     render(
       <HabitsColumn

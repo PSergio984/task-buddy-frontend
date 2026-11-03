@@ -92,10 +92,8 @@ describe("setGameProfileCache", () => {
     resolveGet?.({ ...PROFILE, xp: 777 })
     await fetching
     expect(
-      queryClient.getQueryData<GameProfile>([
-        "game-profile",
-        { userId: "u2" },
-      ])?.xp
+      queryClient.getQueryData<GameProfile>(["game-profile", { userId: "u2" }])
+        ?.xp
     ).toBe(777)
   })
 })

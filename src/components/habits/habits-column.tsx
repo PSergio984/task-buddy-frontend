@@ -396,11 +396,13 @@ export function HabitsColumn({
               key={habit.id}
               className="rounded-2xl border border-white/5 bg-white/5 p-3"
             >
-              {editingId === habit.id && canWrite ? (
+              {editingId === habit.id ? (
                 <HabitForm
                   initial={habit}
                   submitLabel="Save habit"
-                  busy={busy}
+                  // A dropped connection keeps the draft open — the form
+                  // stays mounted with the submit blocked, not discarded.
+                  busy={busy || !canWrite}
                   onSubmit={(input) =>
                     submitUpdate(habit.id, {
                       title: input.title,

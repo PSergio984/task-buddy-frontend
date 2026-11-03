@@ -1,11 +1,6 @@
 import { describe, it, expect } from "vitest"
 import type { ActivityDay, GameProfile, GearItem } from "@/lib/api"
-import {
-  activityTier,
-  buildWeeks,
-  buyBlock,
-  classChoiceOpen,
-} from "@/lib/game-profile"
+import { buildWeeks, buyBlock, classChoiceOpen } from "@/lib/game-profile"
 
 const profile: GameProfile = {
   level: 1,
@@ -47,26 +42,6 @@ function gear(overrides: Partial<GearItem> = {}): GearItem {
 function day(date: string, score = 0): ActivityDay {
   return { date, score, focus_minutes: 0, events: {}, tier: 0 }
 }
-
-describe("activityTier", () => {
-  const thresholds = [1, 15, 35, 60]
-
-  it("counts the cutoffs the score reaches — mirrors tracking.tier_for", () => {
-    expect(activityTier(0, thresholds)).toBe(0)
-    expect(activityTier(0.9, thresholds)).toBe(0)
-    expect(activityTier(1, thresholds)).toBe(1) // cutoff is inclusive
-    expect(activityTier(14.9, thresholds)).toBe(1)
-    expect(activityTier(15, thresholds)).toBe(2)
-    expect(activityTier(35, thresholds)).toBe(3)
-    expect(activityTier(60, thresholds)).toBe(4)
-    expect(activityTier(600, thresholds)).toBe(4)
-  })
-
-  it("handles a shorter ladder without inventing tiers", () => {
-    expect(activityTier(10, [5])).toBe(1)
-    expect(activityTier(10, [])).toBe(0)
-  })
-})
 
 describe("buildWeeks", () => {
   it("columns start on Monday, padding the first week's leading slots", () => {

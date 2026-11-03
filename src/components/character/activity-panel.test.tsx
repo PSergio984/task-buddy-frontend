@@ -73,13 +73,16 @@ function renderPanel(
 }
 
 describe("ActivityPanel", () => {
-  it("colors cells by the tier the score reaches via tier_thresholds", () => {
+  it("colors cells by the server-computed day tier", () => {
     const { container } = renderPanel(
-      grid([day("2025-11-01", { score: 0 }), day("2025-11-02", { score: 40 })]),
+      grid([
+        day("2025-11-01", { score: 0, tier: 0 }),
+        day("2025-11-02", { score: 40, tier: 3 }),
+      ]),
       undefined
     )
     const cells = container.querySelectorAll("button.h-3\\.5")
-    // tier 0 → muted swatch; score 40 ≥ 35 → tier 3 → emerald-600.
+    // tier 0 → muted swatch; tier 3 → emerald-600.
     expect(cells[0].className).toContain("bg-white/5")
     expect(cells[1].className).toContain("bg-emerald-600")
   })

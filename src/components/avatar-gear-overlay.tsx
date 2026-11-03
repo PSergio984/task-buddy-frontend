@@ -42,6 +42,10 @@ const SLOT_POSITION: Record<string, CSSProperties> = {
   body: { left: "78%", top: "94%" },
 }
 
+/** A catalog slot the map doesn't know anchors bottom-center — a new slot
+    still shows its badge instead of rendering at the origin. */
+const FALLBACK_POSITION: CSSProperties = { left: "50%", top: "96%" }
+
 /** Tier tint: iron → stone, steel+ → amber. */
 const TIER_TINT: Record<number, string> = {
   1: "text-stone-400",
@@ -88,7 +92,7 @@ export function AvatarGearOverlay({
             role="img"
             aria-label={item.name}
             title={item.name}
-            style={SLOT_POSITION[item.slot]}
+            style={SLOT_POSITION[item.slot] ?? FALLBACK_POSITION}
             className={cn(
               "absolute flex aspect-square w-[24%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-background/80 shadow",
               TIER_TINT[item.tier] ?? "text-amber-300"

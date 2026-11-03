@@ -113,6 +113,14 @@ export function EquipmentPanel({
                     ? BLOCK_HINT.class
                     : null
               const pending = pendingKeys?.has(item.key) ?? false
+              // Cost joins a non-empty stats line with " · " — an item
+              // with no stats must not orphan the separator.
+              const meta = [
+                statsLabel(item.stats),
+                item.owned ? "" : `${item.cost}g`,
+              ]
+                .filter((part) => part !== "")
+                .join(" · ")
               return (
                 <div
                   key={item.key}
@@ -158,10 +166,12 @@ export function EquipmentPanel({
                       )}
                     </div>
                     <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-                      {statsLabel(item.stats)}
-                      {!item.owned && ` · ${item.cost}g`}
+                      {meta}
                       {hint !== null && (
-                        <span className="text-amber-400"> · {hint}</span>
+                        <span className="text-amber-400">
+                          {meta === "" ? "" : " · "}
+                          {hint}
+                        </span>
                       )}
                     </p>
                   </div>

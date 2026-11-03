@@ -41,8 +41,15 @@ const resyncGear = (queryClient: QueryClient) => () =>
 function useFoldGearResponse() {
   const { user } = useAuth()
   const queryClient = useQueryClient()
-  return async (res: GearListResponse) => {
-    const userId = user?.id
+  // The write's owner — onMutate returns it as per-mutation context, so a
+  // logout→login mid-flight still folds under the account that fired the
+  // write (the onSuccess closure would otherwise see the new user). Same
+  // guard as GameContext's userIdRef.
+  const stampOwner = () => user?.id
+  const foldGear = async (
+    res: GearListResponse,
+    userId: string | undefined
+  ) => {
     try {
       await queryClient.cancelQueries({ queryKey: ["game-gear", { userId }] })
     } catch {
@@ -53,6 +60,7 @@ function useFoldGearResponse() {
       await setGameProfileCache(res.profile, userId, res.profile.server_time)
     }
   }
+  return { foldGear, stampOwner }
 }
 
 /**
@@ -103,12 +111,13 @@ export function useActivityStats() {
 export function useBuyGear() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
-  const foldGear = useFoldGearResponse()
+  const { foldGear, stampOwner } = useFoldGearResponse()
   return useMutation({
     mutationKey: GEAR_BUY_MUTATION_KEY,
     mutationFn: (key: string) => gearApi.buy(key),
-    onSuccess: async (res) => {
-      await foldGear(res)
+    onMutate: stampOwner,
+    onSuccess: async (res, _key, userId) => {
+      await foldGear(res, userId)
       // 'first-gear' can grant on the buy — resync the badge list.
       void queryClient.invalidateQueries({ queryKey: ["game-achievements"] })
     },
@@ -132,11 +141,12 @@ export function useBuyGear() {
 export function useToggleGearCostume() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
-  const foldGear = useFoldGearResponse()
+  const { foldGear, stampOwner } = useFoldGearResponse()
   return useMutation({
     mutationFn: (input: { key: string; costume: boolean }) =>
       gearApi.toggleCostume(input),
-    onSuccess: foldGear,
+    onMutate: stampOwner,
+    onSuccess: (res, _input, userId) => foldGear(res, userId),
     onError: (err) => {
       void queryClient.invalidateQueries({ queryKey: ["game-gear"] })
       toast({
@@ -152,12 +162,13 @@ export function useToggleGearCostume() {
 export function useEquipGear() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
-  const foldGear = useFoldGearResponse()
+  const { foldGear, stampOwner } = useFoldGearResponse()
   return useMutation({
     mutationKey: GEAR_EQUIP_MUTATION_KEY,
     mutationFn: ({ key, equipped }: { key: string; equipped: boolean }) =>
       gearApi.equip(key, equipped),
-    onSuccess: foldGear,
+    onMutate: stampOwner,
+    onSuccess: (res, _vars, userId) => foldGear(res, userId),
     onError: (err) => {
       void queryClient.invalidateQueries({ queryKey: ["game-gear"] })
       toast({
@@ -176,20 +187,28 @@ export function useEquipGear() {
  */
 function useProfileCacheWrite() {
   const { user } = useAuth()
-  return async (profile: Parameters<typeof setGameProfileCache>[0]) => {
-    if (user?.id !== undefined)
-      await setGameProfileCache(profile, user.id, profile.server_time)
+  // Same cross-account guard as the gear fold — the profile cache key is
+  // user-scoped too.
+  const stampOwner = () => user?.id
+  const applyProfile = async (
+    profile: Parameters<typeof setGameProfileCache>[0],
+    userId: string | undefined
+  ) => {
+    if (userId !== undefined)
+      await setGameProfileCache(profile, userId, profile.server_time)
   }
+  return { applyProfile, stampOwner }
 }
 
 export function useAllocateStats() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
-  const applyProfile = useProfileCacheWrite()
+  const { applyProfile, stampOwner } = useProfileCacheWrite()
   return useMutation({
     mutationFn: (points: Partial<Record<StatKey, number>>) =>
       characterApi.allocate(points),
-    onSuccess: applyProfile,
+    onMutate: stampOwner,
+    onSuccess: (profile, _points, userId) => applyProfile(profile, userId),
     onError: (err) => {
       // Resync on failure — the cached profile keeps stale totals
       // otherwise (same contract as the habit click).
@@ -206,10 +225,11 @@ export function useAllocateStats() {
 export function useUpdateCharacter() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
-  const applyProfile = useProfileCacheWrite()
+  const { applyProfile, stampOwner } = useProfileCacheWrite()
   return useMutation({
     mutationFn: (autoAllocate: boolean) => characterApi.update(autoAllocate),
-    onSuccess: applyProfile,
+    onMutate: stampOwner,
+    onSuccess: (profile, _enabled, userId) => applyProfile(profile, userId),
     onError: (err) => {
       void queryClient.invalidateQueries({ queryKey: ["game-profile"] })
       toast({
@@ -224,11 +244,12 @@ export function useUpdateCharacter() {
 export function useSelectClass() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
-  const applyProfile = useProfileCacheWrite()
+  const { applyProfile, stampOwner } = useProfileCacheWrite()
   return useMutation({
     mutationFn: (gameClass: GameClass) => characterApi.selectClass(gameClass),
-    onSuccess: async (profile) => {
-      await applyProfile(profile)
+    onMutate: stampOwner,
+    onSuccess: async (profile, _gameClass, userId) => {
+      await applyProfile(profile, userId)
       // The pick runs achievements.evaluate ('class-picked') and strips
       // equipped cross-class gear — resync both beside the HUD totals.
       void queryClient.invalidateQueries({ queryKey: ["game-achievements"] })
@@ -249,11 +270,12 @@ export function useSelectClass() {
 export function useRespec() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
-  const applyProfile = useProfileCacheWrite()
+  const { applyProfile, stampOwner } = useProfileCacheWrite()
   return useMutation({
     mutationFn: () => characterApi.respec(),
-    onSuccess: async (profile) => {
-      await applyProfile(profile)
+    onMutate: stampOwner,
+    onSuccess: async (profile, _vars, userId) => {
+      await applyProfile(profile, userId)
       // Respec strips every equipped class piece (unequip_mismatched).
       void queryClient.invalidateQueries({ queryKey: ["game-gear"] })
     },
