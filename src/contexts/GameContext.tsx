@@ -95,6 +95,12 @@ export function GameProvider({
     } catch (error) {
       // The queue is authoritative — a failed flush just retries later.
       console.error("Game event flush failed; queue retained.", error)
+      // Earlier chunks may already have applied and dequeued before this
+      // failure — refresh what those landed writes affected.
+      void queryClient.invalidateQueries({ queryKey: ["habits"] })
+      void queryClient.invalidateQueries({
+        queryKey: ["game-achievements"],
+      })
     } finally {
       flushingRef.current = false
       // Count the CURRENT user's queue — a switch mid-flush leaves the old
