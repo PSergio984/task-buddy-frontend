@@ -173,6 +173,62 @@ describe("DiaryDayPanel gated states", () => {
     expect(screen.queryByTestId("freeform-form")).not.toBeInTheDocument()
   })
 
+  it("keeps an open stand-up draft when the connection drops mid-create", () => {
+    const { rerender } = render(
+      <DiaryDayPanel entries={[]} onCreateStandup={vi.fn()} />
+    )
+    fireEvent.change(screen.getByLabelText("Went well"), {
+      target: { value: "draft good" },
+    })
+
+    rerender(
+      <DiaryDayPanel entries={[]} writesDisabled onCreateStandup={vi.fn()} />
+    )
+    // Same rule as the columns — the form stays mounted, submit blocks.
+    expect(screen.getByLabelText("Went well")).toHaveValue("draft good")
+    expect(
+      screen.getByRole("button", { name: /save stand-up/i })
+    ).toBeDisabled()
+  })
+
+  it("keeps an open freeform draft when the connection drops mid-create", () => {
+    const { rerender } = render(
+      <DiaryDayPanel entries={[]} onCreateFreeform={vi.fn()} />
+    )
+    fireEvent.change(screen.getByLabelText("New diary entry"), {
+      target: { value: "draft note" },
+    })
+
+    rerender(
+      <DiaryDayPanel entries={[]} writesDisabled onCreateFreeform={vi.fn()} />
+    )
+    expect(screen.getByLabelText("New diary entry")).toHaveValue("draft note")
+    expect(screen.getByRole("button", { name: /add entry/i })).toBeDisabled()
+  })
+
+  it("keeps an open edit draft when the connection drops mid-edit", () => {
+    const { rerender } = render(
+      <DiaryDayPanel
+        entries={[entry({ id: 7, freeform: "old text" })]}
+        onUpdateEntry={vi.fn()}
+      />
+    )
+    fireEvent.click(screen.getByRole("button", { name: /edit entry/i }))
+    fireEvent.change(screen.getByLabelText("Edit diary entry"), {
+      target: { value: "new text" },
+    })
+
+    rerender(
+      <DiaryDayPanel
+        entries={[entry({ id: 7, freeform: "old text" })]}
+        writesDisabled
+        onUpdateEntry={vi.fn()}
+      />
+    )
+    expect(screen.getByLabelText("Edit diary entry")).toHaveValue("new text")
+    expect(screen.getByRole("button", { name: /^save$/i })).toBeDisabled()
+  })
+
   it("readOnly renders entries with no forms or row actions (merged day view)", () => {
     render(<DiaryDayPanel entries={[standup(), entry({ id: 2 })]} readOnly />)
     expect(screen.getByText("shipped the fix")).toBeInTheDocument()

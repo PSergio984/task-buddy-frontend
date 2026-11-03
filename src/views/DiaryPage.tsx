@@ -93,7 +93,12 @@ export function DiaryPage() {
           <RetentionSelector
             value={retention}
             onChange={(v) => updateRetention.mutate(v)}
-            disabled={updateRetention.isPending || profile === undefined}
+            // Offline the PATCH would park invisibly (mutations are
+            // networkMode online) and commit on reconnect while the page
+            // reads as writes-disabled — same gate as the day panel.
+            disabled={
+              updateRetention.isPending || profile === undefined || !isOnline
+            }
           />
         </div>
       </div>

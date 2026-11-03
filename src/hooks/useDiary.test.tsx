@@ -3,22 +3,22 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { AxiosError } from "axios"
 import type { ReactNode } from "react"
-import { profile, SERVER_TIME } from "./game-hook-test-utils"
+// AuthContext/useToast/useGameProfile mocks come from the shared utils —
+// a local vi.mock for them would be dead (the imported mocks win), and the
+// swap test needs the mutable authUser those register.
+import {
+  authUser,
+  deferred,
+  profile,
+  SERVER_TIME,
+} from "./game-hook-test-utils"
 import {
   useCreateDiaryEntry,
   useDiaryEntries,
   useUpdateRetention,
 } from "./useDiary"
-import { diaryApi, gameApi } from "@/lib/api"
+import { diaryApi, gameApi, type GameProfile } from "@/lib/api"
 import { setGameProfileCache } from "@/hooks/useGameProfile"
-
-vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({ user: { id: 1 } }),
-}))
-
-vi.mock("@/hooks/use-toast", () => ({
-  useToast: () => ({ toast: vi.fn() }),
-}))
 
 vi.mock("@/lib/api", async (importOriginal) => {
   const mod = await importOriginal<typeof import("@/lib/api")>()
@@ -119,6 +119,48 @@ describe("useUpdateRetention", () => {
     expect(setGameProfileCache).toHaveBeenCalledWith(updated, 1, SERVER_TIME)
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["diary"] })
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["timeline"] })
+  })
+
+  it("folds under the account that fired the write when auth swaps mid-flight", async () => {
+    // React Query swaps a pending mutation's options onto the latest render,
+    // so the success path sees the NEW user — the owner must come from the
+    // onMutate context captured at mutate() time.
+    const held = deferred<GameProfile>()
+    vi.mocked(gameApi.updateRetention).mockImplementation(() => held.promise)
+    const queryClient = new QueryClient()
+    const { result, rerender } = renderHook(() => useUpdateRetention(), {
+      wrapper: makeWrapper(queryClient),
+    })
+
+    act(() => {
+      result.current.mutate("90d")
+    })
+    await waitFor(() => expect(result.current.isPending).toBe(true))
+
+    try {
+      // Logout → login as another account while the write is in flight.
+      authUser.id = 2
+      rerender()
+      const updated = {
+        ...profile,
+        retention: "90d" as const,
+        server_time: SERVER_TIME,
+      }
+      await act(async () => {
+        held.resolve(updated)
+      })
+      await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+      // The profile cache write lands under the account that fired it.
+      expect(setGameProfileCache).toHaveBeenCalledWith(updated, 1, SERVER_TIME)
+      expect(setGameProfileCache).not.toHaveBeenCalledWith(
+        updated,
+        2,
+        SERVER_TIME
+      )
+    } finally {
+      authUser.id = 1
+    }
   })
 
   it("resyncs the day views when the write fails", async () => {

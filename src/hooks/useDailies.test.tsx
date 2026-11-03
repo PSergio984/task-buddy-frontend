@@ -3,6 +3,7 @@ import { QueryClient } from "@tanstack/react-query"
 import { afterEach, describe, it, expect, vi, beforeEach } from "vitest"
 import { AxiosError } from "axios"
 import {
+  authUser,
   deferred,
   expectSettleResync,
   makeWrapper,
@@ -10,7 +11,7 @@ import {
   SERVER_TIME,
 } from "./game-hook-test-utils"
 import { useCheckDaily, useCreateDaily, useDailies } from "./useDailies"
-import { dailiesApi, type Daily } from "@/lib/api"
+import { dailiesApi, type Daily, type DailyCheckResponse } from "@/lib/api"
 import { setGameProfileCache } from "@/hooks/useGameProfile"
 
 vi.mock("@/lib/api", async (importOriginal) => {
@@ -126,6 +127,54 @@ describe("useCheckDaily", () => {
     })
     // The settle-time resync is unconditional — same contract as gear.
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["dailies"] })
+  })
+
+  it("folds under the account that fired the write when auth swaps mid-flight", async () => {
+    // React Query swaps a pending mutation's options onto the latest render,
+    // so the success path sees the NEW user — the owner must come from the
+    // onMutate context captured at mutate() time.
+    const held = deferred<DailyCheckResponse>()
+    vi.mocked(dailiesApi.check).mockImplementation(() => held.promise)
+    const queryClient = new QueryClient()
+    queryClient.setQueryData(["dailies", { userId: 1 }], [daily(1)])
+    const { result, rerender } = renderHook(() => useCheckDaily(), {
+      wrapper: makeWrapper(queryClient),
+    })
+
+    act(() => {
+      result.current.mutate({
+        id: 1,
+        input: { done: true },
+        clientEventId: "eid-1",
+      })
+    })
+    await waitFor(() => expect(result.current.isPending).toBe(true))
+
+    try {
+      // Logout → login as another account while the write is in flight.
+      authUser.id = 2
+      rerender()
+      const checked = daily(1, { completed_today: true })
+      await act(async () => {
+        held.resolve({
+          daily: checked,
+          profile,
+          status: "applied",
+          server_time: SERVER_TIME,
+        })
+      })
+      await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+      expect(
+        queryClient.getQueryData<Daily[]>(["dailies", { userId: 1 }])
+      ).toEqual([checked])
+      expect(
+        queryClient.getQueryData(["dailies", { userId: 2 }])
+      ).toBeUndefined()
+      expect(setGameProfileCache).toHaveBeenCalledWith(profile, 1, SERVER_TIME)
+    } finally {
+      authUser.id = 1
+    }
   })
 
   it("resyncs the dailies cache when a check fails", async () => {

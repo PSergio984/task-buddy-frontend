@@ -52,6 +52,12 @@ export function useScoredListWrite<
         // Cancellation is best-effort — the write below still lands.
       }
       const row = pickRow(res)
+      // No userId guard needed on this fold: a list query only exists while
+      // a user is logged in (enabled: !!user), so an undefined owner leaves
+      // `old` undefined — and setQueryData bails when the updater returns
+      // undefined, so nothing lands under a phantom key. The profile fold
+      // below still needs its guard because setGameProfileCache writes
+      // unconditionally.
       queryClient.setQueryData<Row[]>([listKey, { userId }], (old) =>
         old?.map((r) => (r.id === row.id ? row : r))
       )
