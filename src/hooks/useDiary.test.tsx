@@ -177,6 +177,9 @@ describe("useUpdateRetention", () => {
       result.current.mutate("1y")
     })
     await waitFor(() => expect(result.current.isError).toBe(true))
+    // The beyondHorizon gate reads the cutoff from the profile cache —
+    // the widened horizon stays hidden unless it refetches too.
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["game-profile"] })
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["diary"] })
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["timeline"] })
   })
