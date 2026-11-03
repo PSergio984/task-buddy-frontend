@@ -33,21 +33,16 @@ const maxServerTime = new Map<string, number>()
  * write always wins the ordering.
  *
  * `serverTime` orders competing writes: a response stamped older than the
- * newest applied write is dropped. Callers without a server_time in their
- * response leave it undefined — absent means always-apply.
+ * newest applied write is dropped — BEFORE the cancel, so a stale write
+ * can't kill a fresher in-flight GET and then drop its own write.
+ * Callers without a server_time in their response leave it undefined —
+ * absent means always-apply.
  */
 export async function setGameProfileCache(
   profile: GameProfile,
   userId: string,
   serverTime?: string
 ): Promise<void> {
-  try {
-    await queryClient.cancelQueries({
-      queryKey: ["game-profile", { userId }],
-    })
-  } catch {
-    // Cancellation is best-effort — the write below still lands.
-  }
   if (serverTime !== undefined) {
     const at = ms(serverTime)
     if (at !== null && Number.isFinite(at)) {
@@ -55,6 +50,13 @@ export async function setGameProfileCache(
       if (seen !== undefined && at < seen) return
       maxServerTime.set(userId, at)
     }
+  }
+  try {
+    await queryClient.cancelQueries({
+      queryKey: ["game-profile", { userId }],
+    })
+  } catch {
+    // Cancellation is best-effort — the write below still lands.
   }
   queryClient.setQueriesData<GameProfile>(
     { queryKey: ["game-profile", { userId }] },

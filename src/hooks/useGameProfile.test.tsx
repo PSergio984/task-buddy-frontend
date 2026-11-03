@@ -50,6 +50,56 @@ const PROFILE: GameProfile = {
 const cached = () =>
   queryClient.getQueryData<GameProfile>(["game-profile", { userId: "u1" }])
 
+describe("setGameProfileCache", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    queryClient.clear()
+    // setQueriesData only touches existing entries — materialize u2's.
+    queryClient.setQueryData(["game-profile", { userId: "u2" }], PROFILE)
+  })
+
+  it("drops a stale-stamped write without cancelling a fresher in-flight GET", async () => {
+    // A newer stamped write already owns the cache + the high-water mark.
+    await setGameProfileCache(
+      { ...PROFILE, xp: 999 },
+      "u2",
+      "2025-12-01T00:00:00Z"
+    )
+
+    // Park a profile GET in flight — its snapshot is fresher than the
+    // stale-stamped response arriving next.
+    let resolveGet: ((p: GameProfile) => void) | undefined
+    const fetching = queryClient.fetchQuery({
+      queryKey: ["game-profile", { userId: "u2" }],
+      queryFn: () =>
+        new Promise<GameProfile>((resolve) => (resolveGet = resolve)),
+      // The shared client's 5-min staleTime would skip this fetch — the
+      // just-seeded cache looks fresh.
+      staleTime: 0,
+    })
+    // The retryer invokes the queryFn on a later tick — wait for it.
+    await waitFor(() => expect(resolveGet).toBeDefined())
+    const cancel = vi.spyOn(queryClient, "cancelQueries")
+
+    await setGameProfileCache(
+      { ...PROFILE, xp: 1 },
+      "u2",
+      "2025-01-01T10:00:00Z"
+    )
+
+    // The dropped write must not kill the GET — its fresher snapshot lands.
+    expect(cancel).not.toHaveBeenCalled()
+    resolveGet?.({ ...PROFILE, xp: 777 })
+    await fetching
+    expect(
+      queryClient.getQueryData<GameProfile>([
+        "game-profile",
+        { userId: "u2" },
+      ])?.xp
+    ).toBe(777)
+  })
+})
+
 describe("useUpdateAvatarConfig", () => {
   beforeEach(() => {
     vi.clearAllMocks()
