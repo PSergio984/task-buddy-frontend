@@ -63,11 +63,19 @@ export function useUpdateNotificationPrefs() {
       })
     },
     // Settle-time resync is unconditional — a rapid second PUT can land an
-    // older response over a newer optimistic state.
+    // older response over a newer optimistic state. No stamped owner (the
+    // onMutate context is missing) means the partial key can't hit the real
+    // entry, so resync broadly like onError does.
     onSettled: (_data, _err, _next, context) => {
-      void queryClient.invalidateQueries({
-        queryKey: ["notification-prefs", { userId: context?.userId }],
-      })
+      if (context?.userId !== undefined) {
+        void queryClient.invalidateQueries({
+          queryKey: ["notification-prefs", { userId: context.userId }],
+        })
+      } else {
+        void queryClient.invalidateQueries({
+          queryKey: ["notification-prefs"],
+        })
+      }
     },
   })
 }

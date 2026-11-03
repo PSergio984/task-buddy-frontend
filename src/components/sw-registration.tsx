@@ -11,12 +11,14 @@ export function SwRegistration() {
       console.error("Service worker registration failed:", err)
     })
 
-    // The SW relays each push to its window clients — a visible page plays a
-    // short cue; hidden tabs are covered by the OS notification (#68).
+    // The SW relays each push to its window clients — the focused page
+    // plays a short cue; unfocused/hidden tabs are covered by the OS
+    // notification, and only the focused one cues so two visible windows
+    // can't double it (#68).
     const onMessage = (event: MessageEvent) => {
       if (
         (event.data as { type?: string } | null)?.type === "tb:push-received" &&
-        document.visibilityState === "visible"
+        document.hasFocus()
       ) {
         playNotificationCue()
       }

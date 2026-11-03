@@ -1,4 +1,5 @@
-import { Bell, Moon } from "lucide-react"
+import { useMemo } from "react"
+import { Bell, Moon, RefreshCw, WifiOff } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -101,6 +102,43 @@ const fieldClass =
   "rounded-2xl border-white/10 bg-white/5 text-sm focus-visible:ring-primary/30"
 
 /**
+ * A quiet-hours time field — native time controls fire `change` per spinner
+ * tick, so the PUT waits for blur and only fires when the value actually
+ * changed. `key` remounts the input when the stored value lands (optimistic
+ * write, rollback, refetch), keeping the draft in sync with the cache (#68).
+ */
+function QuietTimeInput({
+  id,
+  stored,
+  disabled,
+  onCommit,
+}: Readonly<{
+  id: string
+  stored: string
+  disabled: boolean
+  onCommit: (value: string) => void
+}>) {
+  return (
+    <Input
+      id={id}
+      key={stored}
+      type="time"
+      defaultValue={stored}
+      disabled={disabled}
+      onBlur={(e) => {
+        if (e.target.value && e.target.value !== stored) {
+          onCommit(e.target.value)
+        } else {
+          // Restore the stored value over a cleared or partial draft.
+          e.target.value = stored
+        }
+      }}
+      className={fieldClass}
+    />
+  )
+}
+
+/**
  * Kind x channel matrix plus the global quiet-hours window — the web half of
  * the notification prefs contract (#68). Every edit PUTs the whole object;
  * writes stay online-only like the rest of the game surfaces.
@@ -120,6 +158,15 @@ export function NotificationPrefsCard() {
       timezone: quietHours?.timezone || localTimeZone(),
     },
   }
+
+  // supportedValuesOf returns ~400 zones — build once per stored zone, and
+  // append a stored zone the ICU list lacks (aliases like US/Central) so
+  // the Select can't render blank while the value persists invisibly (#68).
+  const zoneOptions = useMemo(() => {
+    const zones = timeZoneOptions()
+    const stored = effectivePrefs.quiet_hours.timezone
+    return zones.includes(stored) ? zones : [stored, ...zones]
+  }, [effectivePrefs.quiet_hours.timezone])
 
   const channelPrefs = (kind: GameNotificationKind): NotificationChannelPrefs =>
     effectivePrefs.prefs[kind] ?? DEFAULT_CHANNEL_PREFS
@@ -168,21 +215,28 @@ export function NotificationPrefsCard() {
         </p>
       )}
 
-      {prefsQuery.isPending ? (
+      {/* A paused fetch stays isPending — offline with no cached prefs that
+          means Loading… forever, so the uncached-offline case joins the
+          error branch's explanation like the other game columns (#68). */}
+      {prefsQuery.isPending && isOnline ? (
         <p className="text-sm text-muted-foreground">
           Loading notification preferences…
         </p>
-      ) : prefsQuery.isError ? (
-        <div className="flex items-center gap-4">
-          <p className="text-sm text-destructive">
-            Couldn't load notification preferences.
+      ) : (prefsQuery.isError || !isOnline) && prefsQuery.data === undefined ? (
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
+          {!isOnline && <WifiOff className="h-6 w-6 text-amber-400" />}
+          <p className="text-sm text-muted-foreground">
+            {isOnline
+              ? "Couldn't load notification preferences."
+              : "You're offline and your notification preferences aren't in the local cache."}
           </p>
           <Button
-            variant="ghost"
+            variant="outline"
             onClick={() => void prefsQuery.refetch()}
-            className="rounded-xl"
+            disabled={!isOnline}
+            className="h-9 gap-2 rounded-2xl border-white/15 px-4 text-xs font-bold"
           >
-            Retry
+            <RefreshCw className="h-3.5 w-3.5" /> Retry
           </Button>
         </div>
       ) : (
@@ -252,15 +306,11 @@ export function NotificationPrefsCard() {
                 >
                   From
                 </Label>
-                <Input
+                <QuietTimeInput
                   id="quiet-hours-start"
-                  type="time"
-                  value={effectivePrefs.quiet_hours.start}
+                  stored={effectivePrefs.quiet_hours.start}
                   disabled={writesDisabled}
-                  onChange={(e) => {
-                    if (e.target.value) setQuietHours({ start: e.target.value })
-                  }}
-                  className={fieldClass}
+                  onCommit={(start) => setQuietHours({ start })}
                 />
               </div>
               <div className="space-y-1.5">
@@ -270,15 +320,11 @@ export function NotificationPrefsCard() {
                 >
                   Until
                 </Label>
-                <Input
+                <QuietTimeInput
                   id="quiet-hours-end"
-                  type="time"
-                  value={effectivePrefs.quiet_hours.end}
+                  stored={effectivePrefs.quiet_hours.end}
                   disabled={writesDisabled}
-                  onChange={(e) => {
-                    if (e.target.value) setQuietHours({ end: e.target.value })
-                  }}
-                  className={fieldClass}
+                  onCommit={(end) => setQuietHours({ end })}
                 />
               </div>
             </div>
@@ -299,7 +345,7 @@ export function NotificationPrefsCard() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {timeZoneOptions().map((zone) => (
+                  {zoneOptions.map((zone) => (
                     <SelectItem key={zone} value={zone}>
                       {zone}
                     </SelectItem>
