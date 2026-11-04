@@ -41,8 +41,9 @@ vi.mock("@/contexts/GameContext", () => ({
   }),
 }))
 
+const toastMock = vi.fn()
 vi.mock("@/hooks/use-toast", () => ({
-  useToast: () => ({ toast: vi.fn() }),
+  useToast: () => ({ toast: toastMock }),
 }))
 
 vi.mock("@/lib/query-client", () => ({
@@ -65,6 +66,7 @@ vi.mock("@/lib/api", async (importOriginal) => {
       resume: vi.fn(),
       advance: vi.fn(),
       stop: vi.fn(),
+      done: vi.fn(),
     },
   }
 })
@@ -137,6 +139,48 @@ const serverSession = (
         paused_seconds: 0,
         pause_started_at: null,
         started_at: null,
+        ended_at: null,
+      },
+    ],
+  },
+  profile: null,
+  server_time: iso(T0),
+})
+
+/** Server-shaped speedrun session (#69) — one kind:"speedrun" leg. */
+const speedrunServerSession = (
+  id: number,
+  startedAt: number,
+  budgetSeconds = 600,
+  speedrunOverrides: Record<string, unknown> = {}
+): SessionActionResponse => ({
+  session: {
+    id,
+    mode: "speedrun",
+    status: "active",
+    task_id: null,
+    activity_label: "Deep work",
+    preset: null,
+    pause_budget_count: 0,
+    pause_budget_seconds: 0,
+    started_at: iso(startedAt),
+    ended_at: null,
+    speedrun: {
+      type: "time_boxed",
+      budget_seconds: budgetSeconds,
+      ...speedrunOverrides,
+    },
+    phases: [
+      {
+        seq: 0,
+        kind: "speedrun",
+        status: "active",
+        planned_seconds: budgetSeconds,
+        actual_seconds: null,
+        pause_count: 0,
+        paused_seconds: 0,
+        pause_started_at: null,
+        started_at: iso(startedAt),
         ended_at: null,
       },
     ],
@@ -524,5 +568,58 @@ describe("useFocusSessionRuntime", () => {
     expect(enqueueMock).not.toHaveBeenCalled()
     expect(storage.has("focus-local-session:u1")).toBe(false)
     expect(await listGameEvents("u1")).toEqual([])
+  })
+
+  it("done() is a server verb — applies the judged response", async () => {
+    vi.mocked(focusSessionsApi.getActive).mockResolvedValue(
+      speedrunServerSession(9, T0)
+    )
+    const { result } = renderHook(() => useFocusSessionRuntime())
+    await settle()
+    expect(result.current.session?.id).toBe(9)
+
+    const judged = speedrunServerSession(9, T0)
+    judged.session = {
+      ...judged.session,
+      status: "ended",
+      ended_at: iso(T0 + 300_000),
+      speedrun: {
+        type: "time_boxed",
+        budget_seconds: 600,
+        result: "win",
+        elapsed_seconds: 300,
+        margin_seconds: 300,
+      },
+    }
+    vi.mocked(focusSessionsApi.done).mockResolvedValue(judged)
+    await act(async () => {
+      await result.current.done()
+    })
+    expect(focusSessionsApi.done).toHaveBeenCalledWith(9)
+    expect(result.current.session?.status).toBe("ended")
+    expect(result.current.session?.speedrun?.result).toBe("win")
+  })
+
+  it("a failed speedrun start does NOT fall back to a local run", async () => {
+    vi.mocked(focusSessionsApi.getActive).mockResolvedValue(null)
+    const { result } = renderHook(() => useFocusSessionRuntime())
+    await settle()
+
+    vi.mocked(focusSessionsApi.start).mockRejectedValue(networkDown())
+    await act(async () => {
+      await result.current.start({
+        mode: "speedrun",
+        speedrun: { kind: "beat_best" },
+        activity_label: "Deep work",
+      })
+    })
+    // The record compare is server-side — an offline run couldn't resolve
+    // honestly, so start refuses instead of minting a local session.
+    expect(result.current.session).toBeNull()
+    expect(result.current.isLocal).toBe(false)
+    expect(storage.has("focus-local-session:u1")).toBe(false)
+    expect(toastMock).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Speedruns need a connection" })
+    )
   })
 })

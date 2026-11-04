@@ -88,7 +88,7 @@ describe("activity day-boundary resync", () => {
       longest_streak: 0,
       best_day: null,
       weekly_total: 0,
-      speedrun_pbs: null,
+      speedrun_pbs: [],
       server_time: SERVER_TIME,
     })
   })

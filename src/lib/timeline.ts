@@ -92,7 +92,9 @@ export function markerLabel(type: string): string {
 
 function blockLabel(mode: string, activityLabel: string | null): string {
   if (activityLabel !== null && activityLabel !== "") return activityLabel
-  return mode === "stopwatch" ? "Stopwatch session" : "Focus session"
+  if (mode === "stopwatch") return "Stopwatch session"
+  if (mode === "speedrun") return "Speedrun session"
+  return "Focus session"
 }
 
 function durationLabel(seconds: number): string {

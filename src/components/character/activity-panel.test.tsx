@@ -43,7 +43,7 @@ function stats(overrides: Partial<ActivityStats> = {}): ActivityStats {
     longest_streak: 9,
     best_day: { date: "2025-11-05", score: 80 },
     weekly_total: 42,
-    speedrun_pbs: null,
+    speedrun_pbs: [],
     server_time: "2025-11-08T10:00:00Z",
     ...overrides,
   }
@@ -157,6 +157,40 @@ describe("ActivityPanel", () => {
     expect(screen.getByText("9d")).toBeInTheDocument()
     expect(screen.getByText(/Nov 5 · 80/)).toBeInTheDocument()
     expect(screen.getByText("42 pts")).toBeInTheDocument()
+  })
+
+  it("renders the personal-bests rows from speedrun_pbs (#69)", () => {
+    renderPanel(
+      grid([day("2025-11-01")]),
+      stats({
+        speedrun_pbs: [
+          {
+            activity_label: "Deep work",
+            best_seconds: 1500,
+            attempts: 4,
+            set_at: "2025-11-04T09:00:00Z",
+          },
+          {
+            activity_label: "Inbox zero",
+            best_seconds: 320,
+            attempts: 1,
+            set_at: "2025-11-06T09:00:00Z",
+          },
+        ],
+      })
+    )
+    expect(screen.getByText("Personal bests")).toBeInTheDocument()
+    expect(screen.getByText("Deep work")).toBeInTheDocument()
+    expect(screen.getByText("25:00")).toBeInTheDocument()
+    expect(screen.getByText(/4 attempts · set Tue, Nov 4/)).toBeInTheDocument()
+    expect(screen.getByText("Inbox zero")).toBeInTheDocument()
+    expect(screen.getByText("5:20")).toBeInTheDocument()
+    expect(screen.getByText(/1 attempt · set Thu, Nov 6/)).toBeInTheDocument()
+  })
+
+  it("hides the personal-bests section when no records exist", () => {
+    renderPanel(grid([day("2025-11-01")]), stats())
+    expect(screen.queryByText("Personal bests")).not.toBeInTheDocument()
   })
 
   it("keeps the grid visible and retries only the failed stats section", () => {

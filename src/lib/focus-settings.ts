@@ -29,6 +29,21 @@ export function loadFocusSettings(): FocusSettings {
         presetId: presetValid
           ? (parsed.presetId as FocusPresetId)
           : DEFAULT_FOCUS_SETTINGS.presetId,
+        // Same bogus-blob guard as presetId — a stray kind would 422 the start.
+        speedrunKind:
+          parsed.speedrunKind === "time_boxed" ||
+          parsed.speedrunKind === "beat_best"
+            ? parsed.speedrunKind
+            : DEFAULT_FOCUS_SETTINGS.speedrunKind,
+        speedrunBudgetMin:
+          typeof parsed.speedrunBudgetMin === "number" &&
+          Number.isFinite(parsed.speedrunBudgetMin)
+            ? parsed.speedrunBudgetMin
+            : DEFAULT_FOCUS_SETTINGS.speedrunBudgetMin,
+        activityLabel:
+          typeof parsed.activityLabel === "string"
+            ? parsed.activityLabel
+            : DEFAULT_FOCUS_SETTINGS.activityLabel,
         taskId: null,
         tagId: null,
       }
