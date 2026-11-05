@@ -33,7 +33,13 @@ import {
   type SessionView,
 } from "@/lib/focus-session"
 
-export type SessionAction = "start" | "pause" | "resume" | "advance" | "stop"
+export type SessionAction =
+  | "start"
+  | "pause"
+  | "resume"
+  | "advance"
+  | "stop"
+  | "done"
 
 const TICK_MS = 500
 /** Floor between deadline-triggered server re-evaluations (offline / 5xx). */
@@ -66,6 +72,8 @@ export interface FocusSessionRuntime {
   resume: () => Promise<void>
   advance: () => Promise<void>
   stop: () => Promise<void>
+  /** Speedrun "I'm done" (#69) — server-only: the run verdict lives there. */
+  done: () => Promise<void>
   /** Clear a finished session back to the setup panel. */
   dismissEnded: () => Promise<void>
   /**
@@ -147,6 +155,14 @@ export function useFocusSessionRuntime(): FocusSessionRuntime {
         // A scored response may have run server-side bind_focus auto-clicks
         // — the habits list cache is stale alongside the profile.
         void queryClient.invalidateQueries({ queryKey: ["habits"] })
+      }
+      if (res.session.speedrun?.result !== undefined) {
+        // A judged speedrun may have written a per-label PB row (#69) —
+        // resync the stats cache beside the profile (remounts already
+        // refetchOnMount; this covers the same mount).
+        void queryClient.invalidateQueries({
+          queryKey: ["game-activity-stats"],
+        })
       }
       applySession(res.session)
     },
@@ -400,33 +416,45 @@ export function useFocusSessionRuntime(): FocusSessionRuntime {
           // Probe failed too — fall through to the original error's path.
         }
         if (isNetworkError(error) && userId !== null) {
-          // Offline-first: run the whole session client-side; completed
-          // focus phases queue their scoring events for the ledger.
-          const local = createLocalSession(
-            {
-              mode: input.mode ?? "timer",
-              phases: input.phases ?? [],
-              task_id: input.task_id ?? null,
-              tag_id: input.tag_id ?? null,
-              difficulty: input.difficulty ?? "easy",
-              auto_start_breaks: input.auto_start_breaks ?? true,
-              auto_start_focus: input.auto_start_focus ?? false,
-              pause_budget_count: input.pause_budget_count ?? 3,
-              pause_budget_seconds: input.pause_budget_seconds ?? 300,
-            },
-            Date.now()
-          )
-          localRef.current = local
-          await saveLocalSession(userId, local)
-          applySession({ ...local.session })
-          toast({
-            title: "Offline session",
-            description:
-              (input.mode ?? "timer") === "stopwatch"
-                ? "No connection — the stopwatch runs, but milestone XP needs an online session."
-                : "No connection — this run scores and syncs when you're back online.",
-            variant: "info",
-          })
+          if (input.mode === "speedrun") {
+            // Speedrun is server-only (#69): the record compare and the
+            // win/miss verdict can't resolve honestly offline, so there is
+            // no local-fallback run like timer/stopwatch get.
+            toast({
+              title: "Speedruns need a connection",
+              description:
+                "Records and the run verdict live on the server — reconnect and retry.",
+              variant: "warning",
+            })
+          } else {
+            // Offline-first: run the whole session client-side; completed
+            // focus phases queue their scoring events for the ledger.
+            const local = createLocalSession(
+              {
+                mode: input.mode ?? "timer",
+                phases: input.phases ?? [],
+                task_id: input.task_id ?? null,
+                tag_id: input.tag_id ?? null,
+                difficulty: input.difficulty ?? "easy",
+                auto_start_breaks: input.auto_start_breaks ?? true,
+                auto_start_focus: input.auto_start_focus ?? false,
+                pause_budget_count: input.pause_budget_count ?? 3,
+                pause_budget_seconds: input.pause_budget_seconds ?? 300,
+              },
+              Date.now()
+            )
+            localRef.current = local
+            await saveLocalSession(userId, local)
+            applySession({ ...local.session })
+            toast({
+              title: "Offline session",
+              description:
+                (input.mode ?? "timer") === "stopwatch"
+                  ? "No connection — the stopwatch runs, but milestone XP needs an online session."
+                  : "No connection — this run scores and syncs when you're back online.",
+              variant: "info",
+            })
+          }
         } else {
           toast({
             title: "Couldn't start session",
@@ -534,6 +562,12 @@ export function useFocusSessionRuntime(): FocusSessionRuntime {
     await serverVerb("stop", focusSessionsApi.stop)
   }, [localVerb, serverVerb])
 
+  // No localVerb path: speedrun legs never exist in a client-run session, so
+  // a "done" can only ever be the server verb (#69).
+  const done = useCallback(async () => {
+    await serverVerb("done", focusSessionsApi.done)
+  }, [serverVerb])
+
   const dismissEnded = useCallback(async () => {
     localRef.current = null
     // Clear the view first — a rejected idb delete must not strand a dead
@@ -583,6 +617,7 @@ export function useFocusSessionRuntime(): FocusSessionRuntime {
     resume,
     advance,
     stop,
+    done,
     dismissEnded,
     mirrored,
     alertSettings,

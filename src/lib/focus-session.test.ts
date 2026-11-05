@@ -9,6 +9,7 @@ import {
   advanceLocal,
   stopLocal,
   deriveSessionView,
+  describePlan,
   formatClock,
   remainingSeconds,
   stopwatchElapsedSeconds,
@@ -17,9 +18,14 @@ import {
   saveLocalSession,
   loadLocalSession,
   clearLocalSession,
+  sessionStartFromSettings,
+  speedrunEndReason,
+  speedrunVerdictCopy,
+  DEFAULT_FOCUS_SETTINGS,
   GRACE_SECONDS,
   ms,
 } from "./focus-session"
+import { speedrunSession } from "./focus-session-test-utils"
 
 const T0 = Date.parse("2026-11-01T10:00:00Z")
 const at = (seconds: number) => T0 + seconds * 1000
@@ -459,5 +465,215 @@ describe("local session persistence", () => {
     expect(restored?.session.phases[0].status).toBe("completed")
     await clearLocalSession("u1")
     expect(await loadLocalSession("u1")).toBeNull()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Speedrun (#69) — server-run sessions only; one kind:"speedrun" leg whose
+// clock is pure wall-time (pauses never bank).
+
+const iso = (epoch: number) => new Date(epoch).toISOString()
+
+describe("sessionStartFromSettings speedrun", () => {
+  it("emits the time-boxed contract — no phases, no pause budget", () => {
+    const req = sessionStartFromSettings({
+      ...DEFAULT_FOCUS_SETTINGS,
+      mode: "speedrun",
+      speedrunKind: "time_boxed",
+      speedrunBudgetMin: 10,
+    })
+    expect(req.mode).toBe("speedrun")
+    expect(req.speedrun).toEqual({ kind: "time_boxed", budget_minutes: 10 })
+    expect(req.phases).toBeUndefined()
+    expect(req.activity_label).toBeUndefined()
+    expect(req.pause_budget_count).toBeUndefined()
+    expect(req.pause_budget_seconds).toBeUndefined()
+  })
+
+  it("emits beat-best with the trimmed activity label", () => {
+    const req = sessionStartFromSettings({
+      ...DEFAULT_FOCUS_SETTINGS,
+      mode: "speedrun",
+      speedrunKind: "beat_best",
+      activityLabel: "  Deep work  ",
+    })
+    expect(req.speedrun).toEqual({ kind: "beat_best" })
+    expect(req.activity_label).toBe("Deep work")
+    expect(req.phases).toBeUndefined()
+  })
+
+  it("clamps a bogus budget into the 1–600 range", () => {
+    const req = sessionStartFromSettings({
+      ...DEFAULT_FOCUS_SETTINGS,
+      mode: "speedrun",
+      speedrunKind: "time_boxed",
+      speedrunBudgetMin: Number.NaN,
+    })
+    expect(req.speedrun).toEqual({ kind: "time_boxed", budget_minutes: 1 })
+  })
+})
+
+describe("describePlan speedrun copy", () => {
+  it("summarizes both variants", () => {
+    expect(
+      describePlan({
+        ...DEFAULT_FOCUS_SETTINGS,
+        mode: "speedrun",
+        speedrunKind: "time_boxed",
+        speedrunBudgetMin: 20,
+      })
+    ).toBe("Speedrun · 20 min · beat the clock")
+    expect(
+      describePlan({
+        ...DEFAULT_FOCUS_SETTINGS,
+        mode: "speedrun",
+        speedrunKind: "beat_best",
+        activityLabel: "Deep work",
+      })
+    ).toBe("Speedrun · beat your best · Deep work")
+  })
+})
+
+describe("deriveSessionView speedrun", () => {
+  it("counts down the wall clock — a paused run still burns budget", () => {
+    const s = speedrunSession({
+      phase: {
+        status: "paused",
+        pause_started_at: iso(at(30)),
+        paused_seconds: 45,
+      },
+    })
+    const view = deriveSessionView(s, at(90))
+    // 600s budget − 90s wall elapsed; the banked 45s pause buys nothing.
+    expect(view.status).toBe("paused")
+    expect(view.clockSeconds).toBe(510)
+    expect(view.kindLabel).toBe("Speedrun · beat the clock")
+    expect(view.pausesLeft).toBeNull()
+    expect(view.progress).toBeCloseTo(90 / 600)
+  })
+
+  it("beat-best elapsed ignores the banked pause too", () => {
+    const s = speedrunSession({
+      phase: {
+        planned_seconds: 0,
+        status: "paused",
+        pause_started_at: iso(at(50)),
+        paused_seconds: 60,
+      },
+      session: { speedrun: { type: "beat_best", target_seconds: 300 } },
+    })
+    const view = deriveSessionView(s, at(100))
+    expect(view.clockSeconds).toBe(100)
+    expect(view.kindLabel).toBe("Speedrun · beat 5:00")
+    expect(view.progress).toBeCloseTo(100 / 300)
+  })
+
+  it("a first beat-best run has no record to chase", () => {
+    const s = speedrunSession({
+      phase: { planned_seconds: 0 },
+      session: { speedrun: { type: "beat_best", target_seconds: null } },
+    })
+    const view = deriveSessionView(s, at(12))
+    expect(view.clockSeconds).toBe(12)
+    expect(view.kindLabel).toBe("Speedrun · set the record")
+    expect(view.progress).toBe(0)
+  })
+
+  it("nextDeadlineMs is the wall deadline — even paused; null for beat-best", () => {
+    const boxed = speedrunSession({
+      phase: { status: "paused", pause_started_at: iso(at(30)) },
+    })
+    expect(nextDeadlineMs(boxed)).toBe(at(600))
+    const open = speedrunSession({
+      phase: { planned_seconds: 0 },
+      session: { speedrun: { type: "beat_best" } },
+    })
+    expect(nextDeadlineMs(open)).toBeNull()
+  })
+
+  it("evaluateLocal never auto-completes a speedrun leg (mirror safety)", () => {
+    // The offline display mirror replays this evaluator on server sessions —
+    // a past-deadline leg clamps at 0 until the server judges the run.
+    const local = { client_id: "mirror", session: speedrunSession() }
+    const events = evaluateLocal(local, at(700))
+    expect(events).toEqual([])
+    expect(local.session.phases[0].status).toBe("active")
+    expect(local.session.status).toBe("active")
+    expect(deriveSessionView(local.session, at(700)).clockSeconds).toBe(0)
+  })
+})
+
+describe("speedrunEndReason", () => {
+  it("trusts the judged reason/result over the clock", () => {
+    expect(
+      speedrunEndReason(
+        { type: "time_boxed", result: "miss", reason: "abandon" },
+        600
+      )
+    ).toBe("abandon")
+    expect(
+      speedrunEndReason({ type: "time_boxed", result: "abandoned" }, 600)
+    ).toBe("abandon")
+    expect(
+      speedrunEndReason({ type: "time_boxed", result: "win" }, 600)
+    ).toBeNull()
+  })
+
+  it("falls back to the clock on a reason-less miss", () => {
+    expect(
+      speedrunEndReason(
+        { type: "time_boxed", result: "miss", elapsed_seconds: 120 },
+        600
+      )
+    ).toBe("abandon")
+    expect(
+      speedrunEndReason(
+        { type: "time_boxed", result: "miss", elapsed_seconds: 600 },
+        600
+      )
+    ).toBe("timeout")
+  })
+
+  it("an open-ended leg can't time out — a reason-less miss is a give-up", () => {
+    // beat_best legs run planned_seconds 0: before the guard, the
+    // `budget > 0` check failed and every miss read as "timeout".
+    expect(
+      speedrunEndReason(
+        { type: "beat_best", result: "miss", elapsed_seconds: 120 },
+        0
+      )
+    ).toBe("abandon")
+    // The blob's own budget_seconds fills in when no leg budget is passed.
+    expect(
+      speedrunEndReason({
+        type: "beat_best",
+        result: "miss",
+        budget_seconds: 0,
+      })
+    ).toBe("abandon")
+  })
+
+  it("an unjudgable miss on a timed leg keeps the legacy timeout default", () => {
+    expect(speedrunEndReason({ type: "time_boxed", result: "miss" }, 600)).toBe(
+      "timeout"
+    )
+    // No budget at all (undefined) still falls to the legacy default.
+    expect(speedrunEndReason({ type: "time_boxed", result: "miss" })).toBe(
+      "timeout"
+    )
+  })
+})
+
+describe("speedrunVerdictCopy (#69)", () => {
+  it("an absent or unrecognized result is neutral — never an HP claim", () => {
+    for (const verdict of [
+      speedrunVerdictCopy(null),
+      speedrunVerdictCopy(undefined),
+      speedrunVerdictCopy({ type: "time_boxed" }),
+      speedrunVerdictCopy({ type: "time_boxed", result: "future" } as never),
+    ]) {
+      expect(verdict.title).toBe("Run ended")
+      expect(verdict.body).not.toMatch(/HP lost/)
+    }
   })
 })

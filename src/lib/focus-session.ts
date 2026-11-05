@@ -7,7 +7,9 @@
  * verb functions, which mirror the backend's app/game/session_engine.py rules —
  * same statuses, same pause budget, same 5-minute absence grace.
  * mirror-drift: GRACE_SECONDS, the pause budget and transition rules below
- * duplicate session_engine.py — a backend change must be mirrored here.
+ * duplicate session_engine.py — a backend change must be mirrored here. The
+ * speedrun branches (elapsed counts through pauses; a paused run still has
+ * its wall-clock deadline) mirror the engine's speedrun leg (#69).
  *
  * Scoring is server-authoritative: a local run can only emit client-claimable
  * events (`focus_phase_completed`, `damage`) — session/phase lifecycle types
@@ -23,6 +25,8 @@ import type {
   SessionPhaseIn,
   SessionPhaseOut,
   SessionStartRequest,
+  SpeedrunKind,
+  SpeedrunState,
 } from "@/lib/api"
 import { createUuid } from "@/lib/utils"
 import type { UserId } from "@/lib/sync-queue"
@@ -91,6 +95,12 @@ export interface FocusSettings {
   pauseSeconds: number
   taskId: number | null
   tagId: number | null
+  /** Speedrun variant (#69) — used when mode is "speedrun". */
+  speedrunKind: SpeedrunKind
+  /** Minutes on the clock for a time-boxed run. */
+  speedrunBudgetMin: number
+  /** Record key for a beat-your-best run (top-level activity_label). */
+  activityLabel: string
 }
 
 export const DEFAULT_FOCUS_SETTINGS: FocusSettings = {
@@ -110,12 +120,36 @@ export const DEFAULT_FOCUS_SETTINGS: FocusSettings = {
   pauseSeconds: 300,
   taskId: null,
   tagId: null,
+  speedrunKind: "time_boxed",
+  speedrunBudgetMin: 25,
+  activityLabel: "",
 }
 
 /** Translate UI settings into the SessionStartIn contract. */
 export function sessionStartFromSettings(
   s: FocusSettings
 ): SessionStartRequest {
+  if (s.mode === "speedrun") {
+    // Speedrun (#69): one server-side leg — no phases, no pause budget
+    // (pauses are unlimited and never bank time; neither is in the contract).
+    return {
+      mode: "speedrun",
+      speedrun:
+        s.speedrunKind === "time_boxed"
+          ? {
+              kind: "time_boxed",
+              budget_minutes: clampInt(s.speedrunBudgetMin, 1, 600),
+            }
+          : { kind: "beat_best" },
+      // beat_best resolves against the per-label record — the key is required.
+      ...(s.speedrunKind === "beat_best"
+        ? { activity_label: s.activityLabel.trim() }
+        : {}),
+      task_id: s.taskId,
+      tag_id: s.tagId,
+      difficulty: s.difficulty,
+    }
+  }
   const resolved =
     s.presetId === "custom"
       ? { focus: s.customFocus, short: s.customBreak, long: s.customLongBreak }
@@ -145,6 +179,11 @@ export function sessionStartFromSettings(
 /** One-line plan summary under the setup controls ("Classic · 25/5/15 ×4"). */
 export function describePlan(s: FocusSettings): string {
   if (s.mode === "stopwatch") return "Stopwatch · open-ended · milestone XP"
+  if (s.mode === "speedrun") {
+    return s.speedrunKind === "time_boxed"
+      ? `Speedrun · ${clampInt(s.speedrunBudgetMin, 1, 600)} min · beat the clock`
+      : `Speedrun · beat your best${s.activityLabel.trim() !== "" ? ` · ${s.activityLabel.trim()}` : ""}`
+  }
   const r =
     s.presetId === "custom"
       ? {
@@ -198,6 +237,91 @@ export function phaseEndMs(phase: SessionPhaseOut): number | null {
   return start + (phase.planned_seconds + (phase.paused_seconds || 0)) * 1000
 }
 
+/**
+ * Why a failed speedrun ended (#69): the judged blob's `reason` is
+ * authoritative, but older backends omit it — a "miss" then falls back to
+ * the clock (elapsed >= the leg's planned seconds ⇒ the deadline hit; less
+ * ⇒ the user gave up early). Null for non-failure results. An unjudgable
+ * miss reads as a timeout, the legacy semantics — except on an open-ended
+ * leg (budget 0), which can't time out: a miss there is always a give-up.
+ */
+export function speedrunEndReason(
+  run: SpeedrunState | null | undefined,
+  plannedSeconds?: number | null
+): "timeout" | "abandon" | null {
+  if (run?.reason === "timeout" || run?.reason === "abandon") return run.reason
+  if (run?.result === "abandoned") return "abandon"
+  if (run?.result !== "miss") return null
+  const budget = plannedSeconds ?? run.budget_seconds
+  if (budget === 0) return "abandon"
+  if (
+    typeof run.elapsed_seconds === "number" &&
+    typeof budget === "number" &&
+    budget > 0
+  ) {
+    return run.elapsed_seconds >= budget ? "timeout" : "abandon"
+  }
+  return "timeout"
+}
+
+/** The verdict card/notification shared shape — `body` is the default text. */
+export interface SpeedrunVerdict {
+  /** True for win/record/finished — success styling vs the failure variant. */
+  ok: boolean
+  title: string
+  body: string
+}
+
+/**
+ * The ONE result→copy map for a judged speedrun (#69): FocusPage's end card
+ * and the boundary-alert notification both read it, so a verdict can't read
+ * differently by channel. Bodies are the number-free defaults — the page
+ * overrides win/record/finished when the blob's figures are present. An
+ * absent or unrecognized result stays deliberately neutral ("Run ended"):
+ * a verdict-less leg must not claim HP loss.
+ */
+export function speedrunVerdictCopy(
+  run: SpeedrunState | null | undefined,
+  plannedSeconds?: number | null
+): SpeedrunVerdict {
+  switch (run?.result) {
+    case "win":
+      return {
+        ok: true,
+        title: "Speedrun cleared",
+        body: "Done before the clock ran out.",
+      }
+    case "miss":
+      return speedrunEndReason(run, plannedSeconds) === "abandon"
+        ? {
+            ok: false,
+            title: "Run abandoned",
+            body: "HP lost — start a new run to win it back.",
+          }
+        : {
+            ok: false,
+            title: "Out of time",
+            body: "The clock hit zero — HP lost.",
+          }
+    case "record":
+      return {
+        ok: true,
+        title: "New personal best!",
+        body: "Fastest run yet for this activity.",
+      }
+    case "finished":
+      return { ok: true, title: "Run complete", body: "Time logged." }
+    case "abandoned":
+      return {
+        ok: false,
+        title: "Run abandoned",
+        body: "HP lost — start a new run to win it back.",
+      }
+    default:
+      return { ok: false, title: "Run ended", body: "Check your stats." }
+  }
+}
+
 /** Seconds left on a timed phase; freezes while paused. */
 export function remainingSeconds(
   phase: SessionPhaseOut,
@@ -231,6 +355,36 @@ export function stopwatchElapsedSeconds(
   )
 }
 
+/**
+ * Wall-clock seconds a speedrun leg has burned — elapsed counts through
+ * pauses, so `paused_seconds`/`pause_started_at` are never subtracted
+ * (engine parity: the speedrun leg ignores its own pause fields).
+ */
+export function speedrunElapsedSeconds(
+  phase: SessionPhaseOut,
+  nowMs: number
+): number {
+  const start = ms(phase.started_at)
+  if (start === null) return 0
+  return Math.max(0, Math.trunc((nowMs - start) / 1000))
+}
+
+/**
+ * Countdown left on a time-boxed leg — `planned_seconds - wall elapsed`.
+ * A paused run still has its deadline, so no pause anchoring either.
+ */
+export function speedrunRemainingSeconds(
+  phase: SessionPhaseOut,
+  nowMs: number
+): number {
+  const start = ms(phase.started_at)
+  if (start === null) return phase.planned_seconds
+  return Math.max(
+    0,
+    Math.ceil((start + phase.planned_seconds * 1000 - nowMs) / 1000)
+  )
+}
+
 /** Total paused seconds on a phase, including the still-open pause. */
 export function pauseUsedSeconds(
   phase: SessionPhaseOut,
@@ -249,7 +403,13 @@ function pauseOverflowMs(
   session: FocusSession,
   phase: SessionPhaseOut
 ): number | null {
-  if (phase.status !== "paused" || phase.kind === "stopwatch") return null
+  // Speedrun has no pause budget — its deadline is the wall clock instead.
+  if (
+    phase.status !== "paused" ||
+    phase.kind === "stopwatch" ||
+    phase.kind === "speedrun"
+  )
+    return null
   const start = ms(phase.pause_started_at)
   if (start === null) return null
   const remaining = session.pause_budget_seconds - (phase.paused_seconds || 0)
@@ -280,6 +440,13 @@ export function nextDeadlineMs(session: FocusSession): number | null {
   const live = livePhase(session)
   if (live === null) return graceDeadlineMs(session)
   if (live.kind === "stopwatch") return null
+  if (live.kind === "speedrun") {
+    // Time-boxed deadline is wall-clock — it applies even while paused
+    // (open-ended beat-best legs have no self-transition).
+    if (live.planned_seconds <= 0) return null
+    const start = ms(live.started_at)
+    return start === null ? null : start + live.planned_seconds * 1000
+  }
   if (live.status === "paused") return pauseOverflowMs(session, live)
   return phaseEndMs(live)
 }
@@ -485,7 +652,11 @@ export function evaluateLocal(
       events.push(...resolveNoLive(local, nowMs))
       return events
     }
-    if (cur.kind === "stopwatch") return events
+    // Speedrun legs are server-only, but the offline display mirror still
+    // replays this evaluator on a server session — a wall-deadline leg must
+    // NOT auto-complete here: the server judges win/miss/record, so the leg
+    // just clamps at 0 until its verdict arrives.
+    if (cur.kind === "stopwatch" || cur.kind === "speedrun") return events
     if (cur.status === "paused") {
       events.push(...checkPauseOverflow(local, cur, nowMs))
       return events
@@ -674,6 +845,7 @@ const KIND_LABEL: Record<string, string> = {
   focus: "Focus",
   break: "Break",
   stopwatch: "Stopwatch",
+  speedrun: "Speedrun",
 }
 
 export function deriveSessionView(
@@ -719,6 +891,30 @@ export function deriveSessionView(
       kindLabel: label,
       graceEndsInSec:
         grace === null ? null : Math.max(0, Math.ceil((grace - nowMs) / 1000)),
+    }
+  }
+  if (live.kind === "speedrun") {
+    // Speedrun (#69): one leg judged on wall-clock — elapsed counts through
+    // pauses, so the countdown and the elapsed clock both ignore banked
+    // pause fields. planned_seconds>0 is a budget; 0 is open-ended.
+    const elapsed = speedrunElapsedSeconds(live, nowMs)
+    const boxed = live.planned_seconds > 0
+    const target = session.speedrun?.target_seconds ?? null
+    return {
+      ...base,
+      status: live.status === "paused" ? "paused" : "running",
+      clockSeconds: boxed ? speedrunRemainingSeconds(live, nowMs) : elapsed,
+      progress: boxed
+        ? Math.min(1, elapsed / live.planned_seconds)
+        : target !== null && target > 0
+          ? Math.min(1, elapsed / target)
+          : 0,
+      kindLabel: boxed
+        ? "Speedrun · beat the clock"
+        : target !== null
+          ? `Speedrun · beat ${formatClock(target)}`
+          : "Speedrun · set the record",
+      pausesLeft: null, // speedrun pauses are unlimited — and never bank time
     }
   }
   const isStopwatch = live.kind === "stopwatch"

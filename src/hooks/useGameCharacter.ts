@@ -100,13 +100,13 @@ export function useActivityGrid() {
   })
 }
 
-export function useActivityStats() {
+export function useActivityStats(enabled = true) {
   const { user } = useAuth()
   useUtcDayRollover("game-activity-stats")
   return useQuery({
     queryKey: ["game-activity-stats", { userId: user?.id }],
     queryFn: () => activityApi.stats(),
-    enabled: !!user,
+    enabled: !!user && enabled,
   })
 }
 

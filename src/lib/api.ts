@@ -542,8 +542,36 @@ export const tagsApi = {
 }
 
 // Gamified focus layer — mirrors app/schemas/game.py on the backend.
-export type SessionMode = "timer" | "stopwatch"
+export type SessionMode = "timer" | "stopwatch" | "speedrun"
 export type SessionDifficulty = "trivial" | "easy" | "medium" | "hard"
+
+/** Speedrun variant (#69): countdown vs a budget, or open clock vs a record. */
+export type SpeedrunKind = "time_boxed" | "beat_best"
+
+/** SessionStartIn.speedrun — budget_minutes required for time_boxed only. */
+export interface SpeedrunStartIn {
+  kind: SpeedrunKind
+  budget_minutes?: number
+}
+
+/**
+ * FocusSessionOut.speedrun — live/final run state. `type` picks the variant;
+ * beat_best carries the record to beat in `target_seconds` (null on a first
+ * run) and, once judged, `result` plus the numbers the copy needs.
+ */
+export interface SpeedrunState {
+  type: SpeedrunKind
+  budget_seconds?: number
+  target_seconds?: number | null
+  result?: "win" | "miss" | "record" | "finished" | "abandoned"
+  elapsed_seconds?: number
+  /** Time-boxed win only — seconds left on the clock at Done. */
+  margin_seconds?: number | null
+  /** Beat-best record/finished — the record the run chased; null on first run. */
+  old_record_seconds?: number | null
+  /** miss/abandoned only — "timeout" the clock hit zero, "abandon" gave up. */
+  reason?: "timeout" | "abandon"
+}
 
 export interface GameProfile {
   level: number
@@ -597,6 +625,8 @@ export interface SessionPhaseIn {
 export interface SessionStartRequest {
   mode?: SessionMode
   phases?: SessionPhaseIn[]
+  /** Present iff mode is "speedrun" (speedruns send no phases). */
+  speedrun?: SpeedrunStartIn
   task_id?: number | null
   tag_id?: number | null
   activity_label?: string | null
@@ -637,6 +667,8 @@ export interface FocusSession {
   started_at: string
   ended_at: string | null
   phases: SessionPhaseOut[]
+  /** Non-null on speedrun sessions (#69); absent → treat as a normal run. */
+  speedrun?: SpeedrunState | null
 }
 
 export interface SessionActionResponse {
@@ -748,9 +780,22 @@ export interface ActivityStats {
   best_day: { date: string; score: number } | null
   /** Score sum over the 7 days ending at server-today, clipped to the window. */
   weekly_total: number
-  /** Reserved (#69 speedrun records) — always null until the PB table exists. */
-  speedrun_pbs: Record<string, unknown>[] | null
+  /** Per-activity-label speedrun personal bests (#69). */
+  speedrun_pbs: SpeedrunPB[]
   server_time: string
+}
+
+/** One beat-your-best record row — speedrun_pbs[] in ActivityStats (#69). */
+export interface SpeedrunPB {
+  activity_label: string
+  best_seconds: number
+  attempts: number
+  set_at: string
+  /**
+   * Last 5 judged completions, newest first — sub-60s runs don't make the
+   * board. Absent on backends predating the field — consumers tolerate `?? []`.
+   */
+  recent_attempts?: { seconds: number; ended_at: string }[]
 }
 
 export const characterApi = {
@@ -1001,6 +1046,15 @@ export const focusSessionsApi = {
   stop: async (sessionId: number) => {
     const response = await api.post<SessionActionResponse>(
       `/api/v1/game/sessions/${sessionId}/stop`,
+      {},
+      { skipRateLimitToast: true }
+    )
+    return response.data
+  },
+  /** Speedrun "I'm done" (#69) — the win/finish path; stop stays the abandon. */
+  done: async (sessionId: number) => {
+    const response = await api.post<SessionActionResponse>(
+      `/api/v1/game/sessions/${sessionId}/done`,
       {},
       { skipRateLimitToast: true }
     )

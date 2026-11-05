@@ -8,6 +8,8 @@
  * (a fresh context per beep leaks and hits the browser's context limit).
  * Best-effort throughout: a blocked context must not break the timer.
  */
+import { speedrunVerdictCopy } from "@/lib/focus-session"
+import type { SpeedrunState } from "@/lib/api"
 
 let sharedCtx: AudioContext | null = null
 
@@ -76,19 +78,31 @@ function tone(
   osc.stop(t + endOffset + 0.05)
 }
 
-export function playPhaseAlert(kind: "focus" | "break", volume = 0.8): void {
+export function playPhaseAlert(
+  kind: "focus" | "break" | "speedrun-win" | "speedrun-miss",
+  volume = 0.8
+): void {
   try {
     const ctx = audioContext()
     if (ctx === null) return
     void ctx.resume().catch(() => {})
     const level = Math.min(1, Math.max(0, volume))
     const t = ctx.currentTime
-    // Focus end = high double ping; break end = low single tone.
+    // Focus end = high double ping; break end = low single tone. Speedrun
+    // resolves to a verdict: an ascending triple for a win, a low falling
+    // pair for a miss/abandon — neither may sound like "next phase ready".
     if (kind === "focus") {
       tone(ctx, t, level, 880, 0, 0.2, 0.5)
       tone(ctx, t, level, 1174, 0.15, 0.15, 0.6)
-    } else {
+    } else if (kind === "break") {
       tone(ctx, t, level, 520, 0, 0.2, 0.5)
+    } else if (kind === "speedrun-win") {
+      tone(ctx, t, level, 880, 0, 0.15, 0.5)
+      tone(ctx, t, level, 1174, 0.1, 0.15, 0.6)
+      tone(ctx, t, level, 1568, 0.2, 0.2, 0.75)
+    } else {
+      tone(ctx, t, level, 440, 0, 0.2, 0.5)
+      tone(ctx, t, level, 294, 0.15, 0.25, 0.65)
     }
   } catch {
     // Audio is best-effort — a blocked context must not break the timer.
@@ -114,35 +128,51 @@ export function playNotificationCue(volume = 0.5): void {
   }
 }
 
+/** A judged speedrun's verdict → win tone vs miss tone. */
+const speedrunWon = (run: SpeedrunState | null | undefined): boolean =>
+  run?.result === "win" ||
+  run?.result === "record" ||
+  run?.result === "finished"
+
 /**
  * Fire the phase-boundary alert through the best available channel: a system
  * Notification when the tab is hidden and permission was granted, else the
- * in-tab WebAudio tone.
+ * in-tab WebAudio tone. A "speedrun" boundary carries the judged blob — the
+ * leg is the whole run, so the copy is the verdict, not "next phase ready".
  */
 export function alertPhaseBoundary(
-  kind: "focus" | "break",
-  volume = 0.8
+  kind: "focus" | "break" | "speedrun",
+  volume = 0.8,
+  run?: SpeedrunState | null,
+  plannedSeconds?: number
 ): void {
+  const won = kind === "speedrun" && speedrunWon(run)
+  const copy =
+    kind === "speedrun"
+      ? speedrunVerdictCopy(run, plannedSeconds)
+      : kind === "focus"
+        ? {
+            title: "Focus phase complete",
+            body: "Nice sprint — your next phase is ready.",
+          }
+        : { title: "Break over", body: "Break ended — time to get back to it." }
   try {
     if (
       document.hidden &&
       typeof Notification !== "undefined" &&
       Notification.permission === "granted"
     ) {
-      new Notification(
-        kind === "focus" ? "Focus phase complete" : "Break over",
-        {
-          body:
-            kind === "focus"
-              ? "Nice sprint — your next phase is ready."
-              : "Break ended — time to get back to it.",
-          tag: "tb-focus-phase",
-        }
-      )
+      new Notification(copy.title, {
+        body: copy.body,
+        tag: "tb-focus-phase",
+      })
       return
     }
   } catch {
     // Fall through to the in-tab tone.
   }
-  playPhaseAlert(kind, volume)
+  playPhaseAlert(
+    kind === "speedrun" ? (won ? "speedrun-win" : "speedrun-miss") : kind,
+    volume
+  )
 }

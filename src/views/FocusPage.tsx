@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { motion } from "framer-motion"
 import {
   CheckCircle2,
+  Flag,
   Maximize2,
   Minimize2,
   Pause,
@@ -26,6 +27,7 @@ import type { FocusSession } from "@/lib/api"
 import {
   formatClock,
   sessionStartFromSettings,
+  speedrunVerdictCopy,
   type FocusSettings,
   type SessionView,
 } from "@/lib/focus-session"
@@ -37,6 +39,10 @@ function ringTone(view: SessionView): "focus" | "break" | "stopwatch" | "idle" {
   if (phase === null) return "idle"
   if (phase.kind === "break") return "break"
   if (phase.kind === "stopwatch") return "stopwatch"
+  // Speedrun: time-boxed counts down like a timer; beat-best is an open clock.
+  if (phase.kind === "speedrun") {
+    return phase.planned_seconds > 0 ? "focus" : "stopwatch"
+  }
   return "focus"
 }
 
@@ -73,6 +79,51 @@ function CycleDots({ session }: Readonly<{ session: FocusSession }>) {
   )
 }
 
+/**
+ * Result-keyed copy for a finished speedrun (#69) — null for normal modes.
+ * Titles and the default bodies come from speedrunVerdictCopy (shared with
+ * the boundary alert); this wrapper only upgrades the description where the
+ * judged blob carries the figures the page has room to show.
+ */
+function speedrunEndCopy(session: FocusSession): {
+  ok: boolean
+  title: string
+  description: string
+} | null {
+  const run = session.speedrun
+  if (session.mode !== "speedrun") return null
+  const leg = session.phases.find((p) => p.kind === "speedrun")
+  const { ok, title, body } = speedrunVerdictCopy(run, leg?.planned_seconds)
+  const clock = (v: number | null | undefined) =>
+    typeof v === "number" ? formatClock(v) : null
+  let description = body
+  if (run?.result === "win") {
+    // margin_seconds is the judged spare; backends without it derive the
+    // same number off the leg's budget minus the run's elapsed.
+    const spare =
+      run.margin_seconds ??
+      (typeof run.elapsed_seconds === "number" && leg !== undefined
+        ? Math.max(0, leg.planned_seconds - run.elapsed_seconds)
+        : null)
+    const margin = clock(spare)
+    if (margin !== null) description = `Done with ${margin} to spare.`
+  } else if (run?.result === "record") {
+    // old_record_seconds lands once judged; the start-time target_seconds
+    // is the same record snapshot on backends that omit it.
+    const oldBest = clock(run.old_record_seconds ?? run.target_seconds)
+    const newBest = clock(run.elapsed_seconds)
+    if (oldBest !== null && newBest !== null) {
+      description = `${oldBest} → ${newBest} for this activity.`
+    }
+  } else if (run?.result === "finished") {
+    const record = clock(run.old_record_seconds ?? run.target_seconds)
+    if (record !== null) {
+      description = `Time logged — the record stands at ${record}.`
+    }
+  }
+  return { ok, title, description }
+}
+
 function SessionControls({
   view,
   busy,
@@ -81,6 +132,7 @@ function SessionControls({
   onResume,
   onAdvance,
   onStop,
+  onDone,
 }: Readonly<{
   view: SessionView
   busy: boolean
@@ -89,13 +141,20 @@ function SessionControls({
   onResume: () => void
   onAdvance: () => void
   onStop: () => void
+  onDone: () => void
 }>) {
   const live = view.live
   const isStopwatch = live?.kind === "stopwatch"
+  const isSpeedrun = live?.kind === "speedrun"
   // A stopwatch stop never owes HP — only a timer with zero completed focus
-  // phases abandons, and gets the destructive copy/variant.
-  const isAbandon = !isStopwatch && view.focusDone === 0
-  const stopLabel = isAbandon ? "Stop → abandon (−HP)" : "End session"
+  // phases abandons, and gets the destructive copy/variant. A speedrun stop
+  // is ALWAYS the abandon path (#69: give up → HP loss).
+  const isAbandon = isSpeedrun || (!isStopwatch && view.focusDone === 0)
+  const stopLabel = isSpeedrun
+    ? "Give up (−HP)"
+    : isAbandon
+      ? "Stop → abandon (−HP)"
+      : "End session"
   const stopButton = (
     <Button
       variant="outline"
@@ -138,6 +197,52 @@ function SessionControls({
   }
 
   if (view.status !== "running" && view.status !== "paused") return null
+
+  // Speedrun (#69): Done is the win/finish path, give-up abandons for HP
+  // loss, and pauses never bank time — the clock keeps counting.
+  if (isSpeedrun) {
+    return (
+      <div className="flex flex-col items-center gap-2">
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <Button
+            onClick={onDone}
+            disabled={busy}
+            className="h-12 gap-2 rounded-2xl bg-primary px-6 font-bold text-primary-foreground shadow-lg shadow-primary/20"
+          >
+            <Flag className="h-4 w-4" />
+            Done
+          </Button>
+          {view.status === "paused" ? (
+            <Button
+              variant="outline"
+              onClick={onResume}
+              disabled={busy}
+              className="h-12 gap-2 rounded-2xl border-white/15 px-5 font-bold text-muted-foreground hover:bg-white/5 hover:text-foreground"
+            >
+              <Play className="h-4 w-4" />
+              Resume
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              onClick={onPause}
+              disabled={busy}
+              className="h-12 gap-2 rounded-2xl border-white/15 px-5 font-bold text-muted-foreground hover:bg-white/5 hover:text-foreground"
+            >
+              <Pause className="h-4 w-4" />
+              Pause
+            </Button>
+          )}
+          {!compact && stopButton}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {view.status === "paused"
+            ? "Paused — the clock keeps running."
+            : "Pauses don't stop the clock."}
+        </p>
+      </div>
+    )
+  }
 
   const isBreak = live?.kind === "break"
   const pauseLabel = isStopwatch
@@ -326,10 +431,31 @@ export function FocusPage() {
     </div>
   )
 
+  const speedrunEnd =
+    running && (view.status === "ended" || view.status === "abandoned")
+      ? speedrunEndCopy(session)
+      : null
+
   const endedBlock = running &&
     (view.status === "ended" || view.status === "abandoned") && (
       <div className="flex flex-col items-center gap-4 rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
-        {view.status === "ended" ? (
+        {speedrunEnd !== null ? (
+          <>
+            {speedrunEnd.ok ? (
+              <CheckCircle2 className="h-10 w-10 text-emerald-400" />
+            ) : (
+              <XCircle className="h-10 w-10 text-destructive" />
+            )}
+            <div>
+              <p className="text-lg font-black tracking-tight">
+                {speedrunEnd.title}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {speedrunEnd.description}
+              </p>
+            </div>
+          </>
+        ) : view.status === "ended" ? (
           <>
             <CheckCircle2 className="h-10 w-10 text-emerald-400" />
             <div>
@@ -340,12 +466,6 @@ export function FocusPage() {
                 Finished phases already scored — totals updated.
               </p>
             </div>
-            {/* Skippable end-of-session note (issue #67) — only a real
-                server session can carry one; local runs have no row.
-                Keyed on the id so the next ended run re-opens it. */}
-            {session.id !== 0 && (
-              <SessionNotePrompt key={session.id} sessionId={session.id} />
-            )}
           </>
         ) : (
           <>
@@ -360,12 +480,18 @@ export function FocusPage() {
             </div>
           </>
         )}
+        {/* Skippable end-of-session note (issue #67) — only a real
+            server session can carry one; local runs have no row.
+            Keyed on the id so the next ended run re-opens it. */}
+        {view.status === "ended" && session.id !== 0 && (
+          <SessionNotePrompt key={session.id} sessionId={session.id} />
+        )}
         <Button
           onClick={() => void runtime.dismissEnded()}
           disabled={mirrored}
           className="h-11 rounded-2xl bg-primary px-8 font-bold text-primary-foreground"
         >
-          {mirrored ? "Reconnect to dismiss" : "Done"}
+          {mirrored ? "Reconnect to dismiss" : "Close"}
         </Button>
       </div>
     )
@@ -380,6 +506,7 @@ export function FocusPage() {
         onResume={() => void runtime.resume()}
         onAdvance={() => void runtime.advance()}
         onStop={() => setStopConfirmOpen(true)}
+        onDone={() => void runtime.done()}
       />
     )
 
@@ -390,24 +517,36 @@ export function FocusPage() {
         onOpenChange={setStopConfirmOpen}
         onConfirm={handleStop}
         title={
-          view && view.focusDone === 0 && session?.mode !== "stopwatch"
-            ? "Abandon session?"
-            : "End session?"
+          session?.mode === "speedrun"
+            ? "Give up the run?"
+            : view && view.focusDone === 0 && session?.mode !== "stopwatch"
+              ? "Abandon session?"
+              : "End session?"
         }
         description={
-          view && view.focusDone === 0 && session?.mode !== "stopwatch"
-            ? "No focus phase completed yet — stopping now costs HP."
-            : session?.mode === "stopwatch"
-              ? "The stopwatch ends here — no HP cost."
-              : "Completed focus phases keep their earned XP and gold."
+          session?.mode === "speedrun"
+            ? // Only a beat-best run chases a record — time-boxed has none.
+              session.speedrun?.type === "beat_best"
+              ? "Giving up counts as an abandon — HP is lost and the record stands."
+              : "Giving up counts as an abandon — HP is lost."
+            : view && view.focusDone === 0 && session?.mode !== "stopwatch"
+              ? "No focus phase completed yet — stopping now costs HP."
+              : session?.mode === "stopwatch"
+                ? "The stopwatch ends here — no HP cost."
+                : "Completed focus phases keep their earned XP and gold."
         }
         confirmText={
-          view && view.focusDone === 0 && session?.mode !== "stopwatch"
-            ? "Abandon (−HP)"
-            : "End session"
+          session?.mode === "speedrun"
+            ? "Give up (−HP)"
+            : view && view.focusDone === 0 && session?.mode !== "stopwatch"
+              ? "Abandon (−HP)"
+              : "End session"
         }
         variant={
-          view && view.focusDone === 0 && session?.mode !== "stopwatch"
+          session?.mode === "speedrun" ||
+          (view !== null &&
+            view.focusDone === 0 &&
+            session?.mode !== "stopwatch")
             ? "destructive"
             : "default"
         }
@@ -437,6 +576,7 @@ export function FocusPage() {
               onResume={() => void runtime.resume()}
               onAdvance={() => void runtime.advance()}
               onStop={() => setStopConfirmOpen(true)}
+              onDone={() => void runtime.done()}
             />
             <button
               onClick={exitImmersive}

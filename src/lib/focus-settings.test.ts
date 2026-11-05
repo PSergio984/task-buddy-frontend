@@ -51,6 +51,36 @@ describe("loadFocusSettings", () => {
     expect(loadFocusSettings().presetId).toBe("custom")
   })
 
+  it("falls back to defaults for bogus persisted speedrun fields", () => {
+    globalThis.localStorage.setItem(
+      FOCUS_SETTINGS_KEY,
+      JSON.stringify({
+        speedrunKind: "bogus",
+        speedrunBudgetMin: "fast",
+        activityLabel: 42,
+      })
+    )
+    const s = loadFocusSettings()
+    expect(s.speedrunKind).toBe(DEFAULT_FOCUS_SETTINGS.speedrunKind)
+    expect(s.speedrunBudgetMin).toBe(DEFAULT_FOCUS_SETTINGS.speedrunBudgetMin)
+    expect(s.activityLabel).toBe(DEFAULT_FOCUS_SETTINGS.activityLabel)
+  })
+
+  it("keeps valid persisted speedrun fields", () => {
+    globalThis.localStorage.setItem(
+      FOCUS_SETTINGS_KEY,
+      JSON.stringify({
+        speedrunKind: "beat_best",
+        speedrunBudgetMin: 45,
+        activityLabel: "Deep work",
+      })
+    )
+    const s = loadFocusSettings()
+    expect(s.speedrunKind).toBe("beat_best")
+    expect(s.speedrunBudgetMin).toBe(45)
+    expect(s.activityLabel).toBe("Deep work")
+  })
+
   it("never persists taskId/tagId through a reload", () => {
     globalThis.localStorage.setItem(
       FOCUS_SETTINGS_KEY,

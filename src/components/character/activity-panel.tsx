@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/tooltip"
 import type { ActivityDay, ActivityGrid, ActivityStats } from "@/lib/api"
 import { utcDayLabel } from "@/lib/diary"
+import { formatClock } from "@/lib/focus-session"
 import { cardClass } from "@/lib/game-columns"
 import { buildWeeks } from "@/lib/game-profile"
 import { cn } from "@/lib/utils"
@@ -178,6 +179,8 @@ export function ActivityPanel({
   onStatsRetry,
 }: ActivityPanelProps) {
   const weeks = grid !== undefined ? buildWeeks(grid.days) : []
+  // `?? []` tolerates a pre-#69 backend still answering speedrun_pbs: null.
+  const pbs = stats?.speedrun_pbs ?? []
   // Roving tabindex over the flat (chronological) day list — exactly one
   // cell is tabbable and arrows walk it: Up/Down an adjacent day,
   // Left/Right the same weekday a week over. Weeks are column-major and
@@ -246,6 +249,45 @@ export function ActivityPanel({
           skeletonClass="h-20"
           onRetry={onStatsRetry}
         />
+      )}
+
+      {/* Speedrun records (#69) — one row per activity label with a PB. */}
+      {stats !== undefined && pbs.length > 0 && (
+        <section className={cardClass} aria-labelledby="speedrun-pbs-heading">
+          <h2
+            id="speedrun-pbs-heading"
+            className="mb-4 text-[10px] font-black tracking-[0.3em] text-primary uppercase"
+          >
+            Personal bests
+          </h2>
+          <ul className="space-y-2">
+            {pbs.map((pb) => {
+              // Newest judged completion — absent until the backend lands it.
+              const last = (pb.recent_attempts ?? [])[0]
+              return (
+                <li
+                  key={pb.activity_label}
+                  className="flex items-center justify-between gap-3 rounded-2xl border border-white/5 bg-white/5 px-4 py-3"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-black text-foreground">
+                      {pb.activity_label}
+                    </p>
+                    <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+                      {pb.attempts} {pb.attempts === 1 ? "attempt" : "attempts"}{" "}
+                      · set {utcDayLabel(pb.set_at.slice(0, 10))}
+                      {last !== undefined &&
+                        ` · last ${formatClock(last.seconds)}`}
+                    </p>
+                  </div>
+                  <p className="shrink-0 font-mono text-sm font-black text-primary tabular-nums">
+                    {formatClock(pb.best_seconds)}
+                  </p>
+                </li>
+              )
+            })}
+          </ul>
+        </section>
       )}
 
       {grid !== undefined ? (

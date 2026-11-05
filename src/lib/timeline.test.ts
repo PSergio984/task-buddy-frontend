@@ -83,6 +83,12 @@ describe("buildDayTimeline", () => {
     expect(buildDayTimeline(res).blocks[0].label).toBe("Deep work")
   })
 
+  it("labels a speedrun block when no activity_label is set (#69)", () => {
+    const res = baseResponse()
+    res.sessions.push(session({ mode: "speedrun" }))
+    expect(buildDayTimeline(res).blocks[0].label).toBe("Speedrun session")
+  })
+
   it("closes a still-running block on server_time", () => {
     const res = baseResponse()
     res.sessions.push(
