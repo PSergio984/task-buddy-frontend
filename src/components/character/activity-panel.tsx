@@ -261,25 +261,31 @@ export function ActivityPanel({
             Personal bests
           </h2>
           <ul className="space-y-2">
-            {pbs.map((pb) => (
-              <li
-                key={pb.activity_label}
-                className="flex items-center justify-between gap-3 rounded-2xl border border-white/5 bg-white/5 px-4 py-3"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-black text-foreground">
-                    {pb.activity_label}
+            {pbs.map((pb) => {
+              // Newest judged completion — absent until the backend lands it.
+              const last = (pb.recent_attempts ?? [])[0]
+              return (
+                <li
+                  key={pb.activity_label}
+                  className="flex items-center justify-between gap-3 rounded-2xl border border-white/5 bg-white/5 px-4 py-3"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-black text-foreground">
+                      {pb.activity_label}
+                    </p>
+                    <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+                      {pb.attempts} {pb.attempts === 1 ? "attempt" : "attempts"}{" "}
+                      · set {utcDayLabel(pb.set_at.slice(0, 10))}
+                      {last !== undefined &&
+                        ` · last ${formatClock(last.seconds)}`}
+                    </p>
+                  </div>
+                  <p className="shrink-0 font-mono text-sm font-black text-primary tabular-nums">
+                    {formatClock(pb.best_seconds)}
                   </p>
-                  <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-                    {pb.attempts} {pb.attempts === 1 ? "attempt" : "attempts"} ·
-                    set {utcDayLabel(pb.set_at.slice(0, 10))}
-                  </p>
-                </div>
-                <p className="shrink-0 font-mono text-sm font-black text-primary tabular-nums">
-                  {formatClock(pb.best_seconds)}
-                </p>
-              </li>
-            ))}
+                </li>
+              )
+            })}
           </ul>
         </section>
       )}

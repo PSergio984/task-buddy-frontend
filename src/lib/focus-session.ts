@@ -242,7 +242,8 @@ export function phaseEndMs(phase: SessionPhaseOut): number | null {
  * authoritative, but older backends omit it — a "miss" then falls back to
  * the clock (elapsed >= the leg's planned seconds ⇒ the deadline hit; less
  * ⇒ the user gave up early). Null for non-failure results. An unjudgable
- * miss reads as a timeout, the legacy semantics.
+ * miss reads as a timeout, the legacy semantics — except on an open-ended
+ * leg (budget 0), which can't time out: a miss there is always a give-up.
  */
 export function speedrunEndReason(
   run: SpeedrunState | null | undefined,
@@ -252,6 +253,7 @@ export function speedrunEndReason(
   if (run?.result === "abandoned") return "abandon"
   if (run?.result !== "miss") return null
   const budget = plannedSeconds ?? run.budget_seconds
+  if (budget === 0) return "abandon"
   if (
     typeof run.elapsed_seconds === "number" &&
     typeof budget === "number" &&
@@ -260,6 +262,64 @@ export function speedrunEndReason(
     return run.elapsed_seconds >= budget ? "timeout" : "abandon"
   }
   return "timeout"
+}
+
+/** The verdict card/notification shared shape — `body` is the default text. */
+export interface SpeedrunVerdict {
+  /** True for win/record/finished — success styling vs the failure variant. */
+  ok: boolean
+  title: string
+  body: string
+}
+
+/**
+ * The ONE result→copy map for a judged speedrun (#69): FocusPage's end card
+ * and the boundary-alert notification both read it, so a verdict can't read
+ * differently by channel. Bodies are the number-free defaults — the page
+ * overrides win/record/finished when the blob's figures are present. An
+ * absent or unrecognized result stays deliberately neutral ("Run ended"):
+ * a verdict-less leg must not claim HP loss.
+ */
+export function speedrunVerdictCopy(
+  run: SpeedrunState | null | undefined,
+  plannedSeconds?: number | null
+): SpeedrunVerdict {
+  switch (run?.result) {
+    case "win":
+      return {
+        ok: true,
+        title: "Speedrun cleared",
+        body: "Done before the clock ran out.",
+      }
+    case "miss":
+      return speedrunEndReason(run, plannedSeconds) === "abandon"
+        ? {
+            ok: false,
+            title: "Run abandoned",
+            body: "HP lost — start a new run to win it back.",
+          }
+        : {
+            ok: false,
+            title: "Out of time",
+            body: "The clock hit zero — HP lost.",
+          }
+    case "record":
+      return {
+        ok: true,
+        title: "New personal best!",
+        body: "Fastest run yet for this activity.",
+      }
+    case "finished":
+      return { ok: true, title: "Run complete", body: "Time logged." }
+    case "abandoned":
+      return {
+        ok: false,
+        title: "Run abandoned",
+        body: "HP lost — start a new run to win it back.",
+      }
+    default:
+      return { ok: false, title: "Run ended", body: "Check your stats." }
+  }
 }
 
 /** Seconds left on a timed phase; freezes while paused. */

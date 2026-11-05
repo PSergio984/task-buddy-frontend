@@ -27,7 +27,7 @@ import type { FocusSession } from "@/lib/api"
 import {
   formatClock,
   sessionStartFromSettings,
-  speedrunEndReason,
+  speedrunVerdictCopy,
   type FocusSettings,
   type SessionView,
 } from "@/lib/focus-session"
@@ -79,84 +79,49 @@ function CycleDots({ session }: Readonly<{ session: FocusSession }>) {
   )
 }
 
-/** Result-keyed copy for a finished speedrun (#69) — null for normal modes. */
+/**
+ * Result-keyed copy for a finished speedrun (#69) — null for normal modes.
+ * Titles and the default bodies come from speedrunVerdictCopy (shared with
+ * the boundary alert); this wrapper only upgrades the description where the
+ * judged blob carries the figures the page has room to show.
+ */
 function speedrunEndCopy(session: FocusSession): {
   ok: boolean
   title: string
   description: string
 } | null {
   const run = session.speedrun
-  if (session.mode !== "speedrun" || run?.result === undefined) return null
+  if (session.mode !== "speedrun") return null
   const leg = session.phases.find((p) => p.kind === "speedrun")
+  const { ok, title, body } = speedrunVerdictCopy(run, leg?.planned_seconds)
   const clock = (v: number | null | undefined) =>
     typeof v === "number" ? formatClock(v) : null
-  switch (run.result) {
-    case "win": {
-      // margin_seconds is the judged spare; backends without it derive the
-      // same number off the leg's budget minus the run's elapsed.
-      const spare =
-        run.margin_seconds ??
-        (typeof run.elapsed_seconds === "number" && leg !== undefined
-          ? Math.max(0, leg.planned_seconds - run.elapsed_seconds)
-          : null)
-      const margin = clock(spare)
-      return {
-        ok: true,
-        title: "Speedrun cleared",
-        description:
-          margin !== null
-            ? `Done with ${margin} to spare.`
-            : "Done before the clock ran out.",
-      }
+  let description = body
+  if (run?.result === "win") {
+    // margin_seconds is the judged spare; backends without it derive the
+    // same number off the leg's budget minus the run's elapsed.
+    const spare =
+      run.margin_seconds ??
+      (typeof run.elapsed_seconds === "number" && leg !== undefined
+        ? Math.max(0, leg.planned_seconds - run.elapsed_seconds)
+        : null)
+    const margin = clock(spare)
+    if (margin !== null) description = `Done with ${margin} to spare.`
+  } else if (run?.result === "record") {
+    // old_record_seconds lands once judged; the start-time target_seconds
+    // is the same record snapshot on backends that omit it.
+    const oldBest = clock(run.old_record_seconds ?? run.target_seconds)
+    const newBest = clock(run.elapsed_seconds)
+    if (oldBest !== null && newBest !== null) {
+      description = `${oldBest} → ${newBest} for this activity.`
     }
-    case "miss":
-      // An early give-up judges as a miss too — `reason` (or the clock
-      // fallback) keeps the copy honest about which one it was.
-      return speedrunEndReason(run, leg?.planned_seconds) === "abandon"
-        ? {
-            ok: false,
-            title: "Run abandoned",
-            description: "HP lost — start a new run to win it back.",
-          }
-        : {
-            ok: false,
-            title: "Out of time",
-            description: "The clock hit zero — HP lost.",
-          }
-    case "record": {
-      // old_record_seconds lands once judged; the start-time target_seconds
-      // is the same record snapshot on backends that omit it.
-      const oldBest = clock(run.old_record_seconds ?? run.target_seconds)
-      const newBest = clock(run.elapsed_seconds)
-      return {
-        ok: true,
-        title: "New personal best!",
-        description:
-          oldBest !== null && newBest !== null
-            ? `${oldBest} → ${newBest} for this activity.`
-            : "Fastest run yet for this activity.",
-      }
+  } else if (run?.result === "finished") {
+    const record = clock(run.old_record_seconds ?? run.target_seconds)
+    if (record !== null) {
+      description = `Time logged — the record stands at ${record}.`
     }
-    case "finished": {
-      const record = clock(run.old_record_seconds ?? run.target_seconds)
-      return {
-        ok: true,
-        title: "Run complete",
-        description:
-          record !== null
-            ? `Time logged — the record stands at ${record}.`
-            : "Time logged — the record stands.",
-      }
-    }
-    case "abandoned":
-      return {
-        ok: false,
-        title: "Run abandoned",
-        description: "HP lost — start a new run to win it back.",
-      }
-    default:
-      return null
   }
+  return { ok, title, description }
 }
 
 function SessionControls({
@@ -526,7 +491,7 @@ export function FocusPage() {
           disabled={mirrored}
           className="h-11 rounded-2xl bg-primary px-8 font-bold text-primary-foreground"
         >
-          {mirrored ? "Reconnect to dismiss" : "Done"}
+          {mirrored ? "Reconnect to dismiss" : "Close"}
         </Button>
       </div>
     )
@@ -560,7 +525,10 @@ export function FocusPage() {
         }
         description={
           session?.mode === "speedrun"
-            ? "Giving up counts as an abandon — HP is lost and the record stands."
+            ? // Only a beat-best run chases a record — time-boxed has none.
+              session.speedrun?.type === "beat_best"
+              ? "Giving up counts as an abandon — HP is lost and the record stands."
+              : "Giving up counts as an abandon — HP is lost."
             : view && view.focusDone === 0 && session?.mode !== "stopwatch"
               ? "No focus phase completed yet — stopping now costs HP."
               : session?.mode === "stopwatch"

@@ -1,9 +1,7 @@
 import { render, screen, fireEvent, within } from "@testing-library/react"
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { FocusPage } from "./FocusPage"
-import { deriveSessionView } from "@/lib/focus-session"
-import { speedrunSession } from "@/lib/focus-session-test-utils"
-import type { FocusSession } from "@/lib/api"
+import { makeRuntime, speedrunSession } from "@/lib/focus-session-test-utils"
 import type { FocusSessionRuntime } from "@/hooks/useFocusSession"
 
 const T0 = Date.parse("2026-11-01T10:00:00Z")
@@ -23,27 +21,6 @@ vi.mock("@/lib/focus-audio", () => ({
   requestAlertPermission: vi.fn(),
   alertPhaseBoundary: vi.fn(),
 }))
-
-function makeRuntime(session: FocusSession | null): FocusSessionRuntime {
-  return {
-    session,
-    isLocal: false,
-    isLoading: false,
-    busy: null,
-    nowMs: T0,
-    view: session === null ? null : deriveSessionView(session, T0),
-    start: vi.fn(async () => {}),
-    pause: vi.fn(async () => {}),
-    resume: vi.fn(async () => {}),
-    advance: vi.fn(async () => {}),
-    stop: vi.fn(async () => {}),
-    done: vi.fn(async () => {}),
-    dismissEnded: vi.fn(async () => {}),
-    mirrored: false,
-    alertSettings: { alerts: false, alertVolume: 80 },
-    setAlertSettings: vi.fn(),
-  }
-}
 
 describe("FocusPage speedrun (#69)", () => {
   beforeEach(() => {
@@ -102,6 +79,28 @@ describe("FocusPage speedrun (#69)", () => {
       within(dialog).getByRole("button", { name: /Give up \(−HP\)/ })
     )
     expect(runtime.stop).toHaveBeenCalled()
+  })
+
+  it("time-boxed give-up drops the record clause — there is no record", async () => {
+    runtime = makeRuntime(speedrunSession())
+    render(<FocusPage />)
+    fireEvent.click(screen.getByRole("button", { name: /Give up \(−HP\)/ }))
+    const dialog = await screen.findByRole("alertdialog")
+    expect(dialog).toHaveTextContent(/HP is lost\./)
+    expect(dialog).not.toHaveTextContent(/record stands/)
+  })
+
+  it("beat-best give-up keeps the record clause", async () => {
+    runtime = makeRuntime(
+      speedrunSession({
+        session: { speedrun: { type: "beat_best", target_seconds: 300 } },
+        phase: { planned_seconds: 0 },
+      })
+    )
+    render(<FocusPage />)
+    fireEvent.click(screen.getByRole("button", { name: /Give up \(−HP\)/ }))
+    const dialog = await screen.findByRole("alertdialog")
+    expect(dialog).toHaveTextContent(/HP is lost and the record stands/)
   })
 
   it.each([
@@ -214,5 +213,40 @@ describe("FocusPage speedrun (#69)", () => {
   it("a reason-less miss at the deadline reads as the timeout", () => {
     judgedMiss({ result: "miss", elapsed_seconds: 600 })
     expect(screen.getByText("Out of time")).toBeInTheDocument()
+  })
+
+  it("a reason-less miss on an open clock is a give-up — beat-best can't time out", () => {
+    // beat_best legs run planned_seconds 0: an unjudgable miss must read
+    // "abandon", never "Out of time".
+    runtime = makeRuntime(
+      speedrunSession({
+        session: {
+          status: "abandoned",
+          ended_at: iso(T0 + 120_000),
+          speedrun: { type: "beat_best", result: "miss", elapsed_seconds: 120 },
+        },
+        phase: { status: "abandoned", planned_seconds: 0 },
+      })
+    )
+    render(<FocusPage />)
+    expect(screen.getByText("Run abandoned")).toBeInTheDocument()
+    expect(screen.queryByText("Out of time")).not.toBeInTheDocument()
+  })
+
+  it("an unjudged end shows neutral copy — no HP claim without a verdict", () => {
+    runtime = makeRuntime(
+      speedrunSession({
+        session: {
+          status: "ended",
+          ended_at: iso(T0 + 300_000),
+          speedrun: { type: "time_boxed" },
+        },
+        phase: { status: "completed" },
+      })
+    )
+    render(<FocusPage />)
+    expect(screen.getByText("Run ended")).toBeInTheDocument()
+    expect(screen.queryByText(/HP lost/)).not.toBeInTheDocument()
+    expect(screen.queryByText("Session abandoned")).not.toBeInTheDocument()
   })
 })

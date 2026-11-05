@@ -191,49 +191,55 @@ export function SessionSettingsSheet({
             />
           )}
 
-          <div className="space-y-3">
-            <p className="text-[10px] font-black tracking-widest text-primary uppercase">
-              Auto-start
-            </p>
-            <ToggleRow
-              id="focus-auto-breaks"
-              label="Auto-start breaks"
-              hint="Breaks begin the moment a focus phase ends."
-              checked={settings.autoBreaks}
-              onChange={(v) => set("autoBreaks", v)}
-            />
-            <ToggleRow
-              id="focus-auto-focus"
-              label="Auto-start next focus"
-              hint="Off: tap to begin each leg (5-min grace before the session ends)."
-              checked={settings.autoFocus}
-              onChange={(v) => set("autoFocus", v)}
-            />
-          </div>
+          {/* Speedrun has no phases and no pause budget — the start request
+              drops both fields, so the controls would be dead (#69). */}
+          {settings.mode !== "speedrun" && (
+            <>
+              <div className="space-y-3">
+                <p className="text-[10px] font-black tracking-widest text-primary uppercase">
+                  Auto-start
+                </p>
+                <ToggleRow
+                  id="focus-auto-breaks"
+                  label="Auto-start breaks"
+                  hint="Breaks begin the moment a focus phase ends."
+                  checked={settings.autoBreaks}
+                  onChange={(v) => set("autoBreaks", v)}
+                />
+                <ToggleRow
+                  id="focus-auto-focus"
+                  label="Auto-start next focus"
+                  hint="Off: tap to begin each leg (5-min grace before the session ends)."
+                  checked={settings.autoFocus}
+                  onChange={(v) => set("autoFocus", v)}
+                />
+              </div>
 
-          <div className="space-y-3">
-            <p className="text-[10px] font-black tracking-widest text-primary uppercase">
-              Pause budget (per phase)
-            </p>
-            <div className="grid grid-cols-2 gap-3">
-              <NumberField
-                id="focus-pause-count"
-                label="Pauses"
-                min={0}
-                max={20}
-                value={settings.pauseCount}
-                onChange={(v) => set("pauseCount", v)}
-              />
-              <NumberField
-                id="focus-pause-seconds"
-                label="Total seconds"
-                min={60}
-                max={3600}
-                value={settings.pauseSeconds}
-                onChange={(v) => set("pauseSeconds", v)}
-              />
-            </div>
-          </div>
+              <div className="space-y-3">
+                <p className="text-[10px] font-black tracking-widest text-primary uppercase">
+                  Pause budget (per phase)
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <NumberField
+                    id="focus-pause-count"
+                    label="Pauses"
+                    min={0}
+                    max={20}
+                    value={settings.pauseCount}
+                    onChange={(v) => set("pauseCount", v)}
+                  />
+                  <NumberField
+                    id="focus-pause-seconds"
+                    label="Total seconds"
+                    min={60}
+                    max={3600}
+                    value={settings.pauseSeconds}
+                    onChange={(v) => set("pauseSeconds", v)}
+                  />
+                </div>
+              </div>
+            </>
+          )}
 
           <div className="space-y-1.5">
             <Label
@@ -279,7 +285,7 @@ export function SessionSettingsSheet({
             <ToggleRow
               id="focus-alerts"
               label="Phase-end alert sounds"
-              hint="Distinct tones for work-end and break-end — browser notifications fire while you're in another tab."
+              hint="Distinct tones for work-end, break-end and speedrun verdicts — browser notifications fire while you're in another tab."
               checked={settings.alerts}
               onChange={(v) => set("alerts", v)}
             />

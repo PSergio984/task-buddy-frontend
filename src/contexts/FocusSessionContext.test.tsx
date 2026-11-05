@@ -2,8 +2,7 @@ import { render } from "@testing-library/react"
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { FocusSessionProvider } from "./FocusSessionContext"
 import { alertPhaseBoundary } from "@/lib/focus-audio"
-import { deriveSessionView } from "@/lib/focus-session"
-import { speedrunSession } from "@/lib/focus-session-test-utils"
+import { makeRuntime, speedrunSession } from "@/lib/focus-session-test-utils"
 import type { FocusSession } from "@/lib/api"
 import type { FocusSessionRuntime } from "@/hooks/useFocusSession"
 
@@ -18,24 +17,10 @@ vi.mock("@/lib/focus-audio", () => ({
 const T0 = Date.parse("2026-11-01T10:00:00Z")
 const iso = (epoch: number) => new Date(epoch).toISOString()
 
-const makeRuntime = (session: FocusSession | null): FocusSessionRuntime => ({
-  session,
-  isLocal: false,
-  isLoading: false,
-  busy: null,
-  nowMs: T0,
-  view: session === null ? null : deriveSessionView(session, T0),
-  start: vi.fn(async () => {}),
-  pause: vi.fn(async () => {}),
-  resume: vi.fn(async () => {}),
-  advance: vi.fn(async () => {}),
-  stop: vi.fn(async () => {}),
-  done: vi.fn(async () => {}),
-  dismissEnded: vi.fn(async () => {}),
-  mirrored: false,
-  alertSettings: { alerts: true, alertVolume: 80 },
-  setAlertSettings: vi.fn(),
-})
+// Boundary alerts only fire when the live prefs say so — the shared stub
+// defaults them off.
+const makeAlertRuntime = (session: FocusSession | null) =>
+  makeRuntime(session, { alerts: true })
 
 // A fresh element per render — an identical JSX object lets React bail out
 // of the provider's render pass, so the mocked runtime would never swap.
@@ -51,10 +36,10 @@ describe("FocusSessionProvider speedrun boundary alerts (#69)", () => {
   })
 
   it("a judged timeout fires the speedrun arm — the leg's terminal is 'abandoned'", () => {
-    runtime = makeRuntime(speedrunSession())
+    runtime = makeAlertRuntime(speedrunSession())
     const { rerender } = render(tree())
 
-    runtime = makeRuntime(
+    runtime = makeAlertRuntime(
       speedrunSession({
         session: {
           status: "abandoned",
@@ -82,10 +67,10 @@ describe("FocusSessionProvider speedrun boundary alerts (#69)", () => {
   })
 
   it("a judged win fires the speedrun arm — never the 'next phase' focus tone", () => {
-    runtime = makeRuntime(speedrunSession())
+    runtime = makeAlertRuntime(speedrunSession())
     const { rerender } = render(tree())
 
-    runtime = makeRuntime(
+    runtime = makeAlertRuntime(
       speedrunSession({
         session: {
           status: "ended",
@@ -117,7 +102,7 @@ describe("FocusSessionProvider speedrun boundary alerts (#69)", () => {
   })
 
   it("an abandoned non-speedrun leg still fires nothing", () => {
-    runtime = makeRuntime(
+    runtime = makeAlertRuntime(
       speedrunSession({
         session: { mode: "timer", speedrun: null },
         phase: { kind: "focus", planned_seconds: 1500 },
@@ -125,7 +110,7 @@ describe("FocusSessionProvider speedrun boundary alerts (#69)", () => {
     )
     const { rerender } = render(tree())
 
-    runtime = makeRuntime(
+    runtime = makeAlertRuntime(
       speedrunSession({
         session: {
           mode: "timer",
@@ -147,7 +132,7 @@ describe("FocusSessionProvider speedrun boundary alerts (#69)", () => {
   })
 
   it("a completed focus leg still fires the focus arm", () => {
-    runtime = makeRuntime(
+    runtime = makeAlertRuntime(
       speedrunSession({
         session: { mode: "timer", speedrun: null },
         phase: { kind: "focus", planned_seconds: 1500 },
@@ -155,7 +140,7 @@ describe("FocusSessionProvider speedrun boundary alerts (#69)", () => {
     )
     const { rerender } = render(tree())
 
-    runtime = makeRuntime(
+    runtime = makeAlertRuntime(
       speedrunSession({
         session: { mode: "timer", speedrun: null },
         phase: {

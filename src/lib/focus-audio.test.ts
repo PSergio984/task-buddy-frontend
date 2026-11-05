@@ -80,6 +80,27 @@ describe("alertPhaseBoundary speedrun arm (#69)", () => {
     expect(last().title).toBe("Out of time")
   })
 
+  it("a reason-less miss on an open clock is a give-up, never a timeout", () => {
+    // beat_best legs pass plannedSeconds 0 — an open-ended run can't be
+    // "Out of time".
+    alertPhaseBoundary(
+      "speedrun",
+      0.8,
+      { type: "beat_best", result: "miss", elapsed_seconds: 120 },
+      0
+    )
+    expect(last().title).toBe("Run abandoned")
+    expect(last().body).toMatch(/HP lost/)
+  })
+
+  it("an unjudged end alerts neutral — no HP claim without a verdict", () => {
+    alertPhaseBoundary("speedrun", 0.8, { type: "time_boxed" }, 600)
+    expect(last().title).toBe("Run ended")
+    expect(last().body).not.toMatch(/HP lost/)
+    alertPhaseBoundary("speedrun", 0.8, null, 600)
+    expect(last().title).toBe("Run ended")
+  })
+
   it("a speedrun win fires the cleared copy — never the focus copy", () => {
     alertPhaseBoundary(
       "speedrun",

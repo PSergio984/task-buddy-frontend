@@ -19,6 +19,8 @@ import {
   loadLocalSession,
   clearLocalSession,
   sessionStartFromSettings,
+  speedrunEndReason,
+  speedrunVerdictCopy,
   DEFAULT_FOCUS_SETTINGS,
   GRACE_SECONDS,
   ms,
@@ -598,5 +600,80 @@ describe("deriveSessionView speedrun", () => {
     expect(local.session.phases[0].status).toBe("active")
     expect(local.session.status).toBe("active")
     expect(deriveSessionView(local.session, at(700)).clockSeconds).toBe(0)
+  })
+})
+
+describe("speedrunEndReason", () => {
+  it("trusts the judged reason/result over the clock", () => {
+    expect(
+      speedrunEndReason(
+        { type: "time_boxed", result: "miss", reason: "abandon" },
+        600
+      )
+    ).toBe("abandon")
+    expect(
+      speedrunEndReason({ type: "time_boxed", result: "abandoned" }, 600)
+    ).toBe("abandon")
+    expect(
+      speedrunEndReason({ type: "time_boxed", result: "win" }, 600)
+    ).toBeNull()
+  })
+
+  it("falls back to the clock on a reason-less miss", () => {
+    expect(
+      speedrunEndReason(
+        { type: "time_boxed", result: "miss", elapsed_seconds: 120 },
+        600
+      )
+    ).toBe("abandon")
+    expect(
+      speedrunEndReason(
+        { type: "time_boxed", result: "miss", elapsed_seconds: 600 },
+        600
+      )
+    ).toBe("timeout")
+  })
+
+  it("an open-ended leg can't time out — a reason-less miss is a give-up", () => {
+    // beat_best legs run planned_seconds 0: before the guard, the
+    // `budget > 0` check failed and every miss read as "timeout".
+    expect(
+      speedrunEndReason(
+        { type: "beat_best", result: "miss", elapsed_seconds: 120 },
+        0
+      )
+    ).toBe("abandon")
+    // The blob's own budget_seconds fills in when no leg budget is passed.
+    expect(
+      speedrunEndReason({
+        type: "beat_best",
+        result: "miss",
+        budget_seconds: 0,
+      })
+    ).toBe("abandon")
+  })
+
+  it("an unjudgable miss on a timed leg keeps the legacy timeout default", () => {
+    expect(speedrunEndReason({ type: "time_boxed", result: "miss" }, 600)).toBe(
+      "timeout"
+    )
+    // No budget at all (undefined) still falls to the legacy default.
+    expect(speedrunEndReason({ type: "time_boxed", result: "miss" })).toBe(
+      "timeout"
+    )
+  })
+})
+
+describe("speedrunVerdictCopy (#69)", () => {
+  it("an absent or unrecognized result is neutral — never an HP claim", () => {
+    for (const verdict of [
+      speedrunVerdictCopy(null),
+      speedrunVerdictCopy(undefined),
+      speedrunVerdictCopy({ type: "time_boxed" }),
+      speedrunVerdictCopy({ type: "time_boxed", result: "future" } as never),
+    ]) {
+      expect(verdict.title).toBe("Run ended")
+      expect(verdict.body).not.toMatch(/HP lost/)
+    }
   })
 })

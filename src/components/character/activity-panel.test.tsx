@@ -193,6 +193,29 @@ describe("ActivityPanel", () => {
     expect(screen.queryByText("Personal bests")).not.toBeInTheDocument()
   })
 
+  it("shows the newest attempt when recent_attempts lands (#69)", () => {
+    renderPanel(
+      grid([day("2025-11-01")]),
+      stats({
+        speedrun_pbs: [
+          {
+            activity_label: "Deep work",
+            best_seconds: 1500,
+            attempts: 4,
+            set_at: "2025-11-04T09:00:00Z",
+            recent_attempts: [
+              { seconds: 1560, ended_at: "2025-11-07T09:00:00Z" },
+              { seconds: 1500, ended_at: "2025-11-04T09:00:00Z" },
+            ],
+          },
+        ],
+      })
+    )
+    expect(
+      screen.getByText(/4 attempts · set Tue, Nov 4 · last 26:00/)
+    ).toBeInTheDocument()
+  })
+
   it("keeps the grid visible and retries only the failed stats section", () => {
     const onStatsRetry = vi.fn()
     renderPanel(grid([day("2025-11-01")]), undefined, {

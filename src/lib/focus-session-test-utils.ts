@@ -1,4 +1,7 @@
+import { vi } from "vitest"
 import type { FocusSession } from "@/lib/api"
+import type { FocusSessionRuntime } from "@/hooks/useFocusSession"
+import { deriveSessionView } from "@/lib/focus-session"
 
 /**
  * Shared fixture builders for the focus-session suites (same convention as
@@ -7,7 +10,7 @@ import type { FocusSession } from "@/lib/api"
  */
 
 /** The suites' shared epoch (each keeps its own T0/at()/iso() helpers). */
-export const SESSION_T0 = Date.parse("2026-11-01T10:00:00Z")
+const SESSION_T0 = Date.parse("2026-11-01T10:00:00Z")
 
 const iso = (epoch: number) => new Date(epoch).toISOString()
 
@@ -57,4 +60,33 @@ export function speedrunSession({
     ],
     ...session,
   } as FocusSession
+}
+
+/**
+ * The FocusSessionRuntime stub both component suites drive — view derived
+ * like the real hook, every verb a vi.fn. `alerts` flips the live prefs the
+ * provider's boundary-alert effect reads.
+ */
+export function makeRuntime(
+  session: FocusSession | null,
+  { alerts = false }: { alerts?: boolean } = {}
+): FocusSessionRuntime {
+  return {
+    session,
+    isLocal: false,
+    isLoading: false,
+    busy: null,
+    nowMs: SESSION_T0,
+    view: session === null ? null : deriveSessionView(session, SESSION_T0),
+    start: vi.fn(async () => {}),
+    pause: vi.fn(async () => {}),
+    resume: vi.fn(async () => {}),
+    advance: vi.fn(async () => {}),
+    stop: vi.fn(async () => {}),
+    done: vi.fn(async () => {}),
+    dismissEnded: vi.fn(async () => {}),
+    mirrored: false,
+    alertSettings: { alerts, alertVolume: 80 },
+    setAlertSettings: vi.fn(),
+  }
 }

@@ -67,18 +67,27 @@ export function SessionSetup({
   const { data: tags = [] } = useTags()
   // Speedruns are server-only (#69): the record table and the win/miss
   // verdict live there, so the card can't work offline. The PB table only
-  // feeds the speedrun sub-panel — don't fetch it for timer/stopwatch.
+  // feeds the beat-best sub-panel (record lookup + label datalist) — don't
+  // fetch it for time-boxed, timer or stopwatch.
   const isOnline = useIsOnline()
-  const { data: activityStats } = useActivityStats(settings.mode === "speedrun")
+  const {
+    data: activityStats,
+    isPending: statsPending,
+    isError: statsError,
+  } = useActivityStats(
+    settings.mode === "speedrun" && settings.speedrunKind === "beat_best"
+  )
   const set = <K extends keyof FocusSettings>(
     key: K,
     value: FocusSettings[K]
   ) => onChange({ ...settings, [key]: value })
 
   const speedrunLabel = settings.activityLabel.trim()
-  const recordToBeat = (activityStats?.speedrun_pbs ?? []).find(
-    (pb) => pb.activity_label === speedrunLabel
-  )
+  const pbs = activityStats?.speedrun_pbs ?? []
+  const recordToBeat = pbs.find((pb) => pb.activity_label === speedrunLabel)
+  // The label is the exact-match PB key — offer the known labels so a typo
+  // can't silently start a new board.
+  const pbLabels = [...new Set(pbs.map((pb) => pb.activity_label))]
   const speedrunReady =
     settings.speedrunKind === "time_boxed"
       ? Number.isFinite(settings.speedrunBudgetMin) &&
@@ -106,6 +115,8 @@ export function SessionSetup({
                 onClick={() => set("mode", m.value)}
                 className={cn(
                   "rounded-2xl border p-4 text-left transition-all",
+                  // 3 cards in a 2-col grid — the odd one out spans the row.
+                  m.value === "speedrun" && "col-span-2 sm:col-span-1",
                   settings.mode === m.value
                     ? "border-primary/30 bg-primary/10"
                     : "border-white/5 bg-white/5 hover:bg-white/10",
@@ -205,20 +216,37 @@ export function SessionSetup({
               <Input
                 aria-labelledby="speedrun-label-label"
                 type="text"
+                list="speedrun-label-options"
                 value={settings.activityLabel}
                 onChange={(e) => set("activityLabel", e.target.value)}
                 maxLength={200}
                 placeholder='e.g. "Deep work"'
                 className="h-11 rounded-xl bg-white/5"
               />
-              <p className="text-xs text-muted-foreground">
-                {speedrunLabel === ""
-                  ? "Names the record this run attacks."
-                  : activityStats === undefined
-                    ? "Checking your record…"
-                    : recordToBeat !== undefined
-                      ? `Record to beat: ${formatClock(recordToBeat.best_seconds)} · ${recordToBeat.attempts} ${recordToBeat.attempts === 1 ? "attempt" : "attempts"}`
-                      : "First run sets the record."}
+              <datalist id="speedrun-label-options">
+                {pbLabels.map((label) => (
+                  <option key={label} value={label} />
+                ))}
+              </datalist>
+              <p role="status" className="text-xs text-muted-foreground">
+                {speedrunLabel === "" ? (
+                  "Names the record this run attacks."
+                ) : statsPending ? (
+                  "Checking your record…"
+                ) : statsError ? (
+                  "Couldn't load your record — the run still counts."
+                ) : recordToBeat !== undefined ? (
+                  <>
+                    Record to beat:{" "}
+                    <span className="font-mono tabular-nums">
+                      {formatClock(recordToBeat.best_seconds)}
+                    </span>{" "}
+                    · {recordToBeat.attempts}{" "}
+                    {recordToBeat.attempts === 1 ? "attempt" : "attempts"}
+                  </>
+                ) : (
+                  "First run sets the record."
+                )}
               </p>
             </div>
           )}
@@ -347,9 +375,17 @@ export function SessionSetup({
         </Button>
       </div>
 
-      <p className="text-center text-xs font-bold tracking-wide text-muted-foreground">
-        {describePlan(settings)}
-      </p>
+      {/* A blank/invalid time-boxed budget parses to NaN — describePlan
+          would clamp it to 1 and describe a plan the field doesn't hold,
+          so the summary stays hidden until the value is real. */}
+      {(settings.mode !== "speedrun" ||
+        settings.speedrunKind !== "time_boxed" ||
+        (Number.isFinite(settings.speedrunBudgetMin) &&
+          settings.speedrunBudgetMin >= 1)) && (
+        <p className="text-center text-xs font-bold tracking-wide text-muted-foreground">
+          {describePlan(settings)}
+        </p>
+      )}
     </div>
   )
 }

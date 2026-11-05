@@ -12,11 +12,16 @@ vi.mock("@/hooks/useIsOnline", () => ({ useIsOnline: () => online }))
 
 let pbs: SpeedrunPB[] = []
 let statsLoaded = true
+let statsFailed = false
 let statsEnabledArg: boolean | undefined
 vi.mock("@/hooks/useGameCharacter", () => ({
   useActivityStats: (enabled?: boolean) => {
     statsEnabledArg = enabled
-    return { data: statsLoaded ? { speedrun_pbs: pbs } : undefined }
+    return {
+      data: statsLoaded ? { speedrun_pbs: pbs } : undefined,
+      isPending: !statsLoaded && !statsFailed,
+      isError: statsFailed,
+    }
   },
 }))
 
@@ -49,6 +54,7 @@ describe("SessionSetup speedrun (#69)", () => {
     online = true
     pbs = []
     statsLoaded = true
+    statsFailed = false
     statsEnabledArg = undefined
     vi.clearAllMocks()
   })
@@ -107,7 +113,8 @@ describe("SessionSetup speedrun (#69)", () => {
     const start = screen.getByRole("button", { name: /Start session/ })
     expect(start).toBeDisabled()
 
-    const input = screen.getByRole("textbox", { name: /Activity label/ })
+    // A text input with a datalist is ARIA-combobox, not textbox.
+    const input = screen.getByRole("combobox", { name: /Activity label/ })
     fireEvent.change(input, { target: { value: "Deep work" } })
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({ activityLabel: "Deep work" })
@@ -128,11 +135,15 @@ describe("SessionSetup speedrun (#69)", () => {
     expect(screen.getByRole("button", { name: /Start session/ })).toBeEnabled()
   })
 
-  it("fetches the PB table only in speedrun mode", () => {
+  it("fetches the PB table only for a beat-best run", () => {
     renderSetup({ ...DEFAULT_FOCUS_SETTINGS })
     expect(statsEnabledArg).toBe(false)
 
-    renderSetup(speedrunSettings())
+    // Time-boxed never reads the record table — no record to chase.
+    renderSetup(speedrunSettings({ speedrunKind: "time_boxed" }))
+    expect(statsEnabledArg).toBe(false)
+
+    renderSetup(speedrunSettings({ speedrunKind: "beat_best" }))
     expect(statsEnabledArg).toBe(true)
   })
 
@@ -161,7 +172,7 @@ describe("SessionSetup speedrun (#69)", () => {
   it("caps the activity label at the backend's 200 chars", () => {
     renderSetup(speedrunSettings({ speedrunKind: "beat_best" }))
     expect(
-      screen.getByRole("textbox", { name: /Activity label/ })
+      screen.getByRole("combobox", { name: /Activity label/ })
     ).toHaveAttribute("maxLength", "200")
   })
 
@@ -179,6 +190,47 @@ describe("SessionSetup speedrun (#69)", () => {
     ).not.toBeInTheDocument()
   })
 
+  it("a failed record lookup says so without blocking the run", () => {
+    statsLoaded = false
+    statsFailed = true
+    renderSetup(
+      speedrunSettings({
+        speedrunKind: "beat_best",
+        activityLabel: "Deep work",
+      })
+    )
+    expect(
+      screen.getByText(/Couldn't load your record — the run still counts/)
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/Checking your record/)).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /Start session/ })).toBeEnabled()
+  })
+
+  it("offers the known PB labels as datalist options", () => {
+    pbs = [
+      {
+        activity_label: "Deep work",
+        best_seconds: 300,
+        attempts: 3,
+        set_at: "2025-11-01T09:00:00Z",
+      },
+      {
+        activity_label: "Inbox zero",
+        best_seconds: 320,
+        attempts: 1,
+        set_at: "2025-11-02T09:00:00Z",
+      },
+    ]
+    renderSetup(speedrunSettings({ speedrunKind: "beat_best" }))
+    const input = screen.getByRole("combobox", { name: /Activity label/ })
+    expect(input).toHaveAttribute("list", "speedrun-label-options")
+    const options = document
+      .getElementById("speedrun-label-options")
+      ?.querySelectorAll("option")
+    expect(options).toHaveLength(2)
+    expect(options?.[0]).toHaveAttribute("value", "Deep work")
+  })
+
   it("shows the record to beat for a known label, else the first-run copy", () => {
     pbs = [
       {
@@ -194,9 +246,12 @@ describe("SessionSetup speedrun (#69)", () => {
         activityLabel: "Deep work",
       })
     )
-    expect(
-      screen.getByText(/Record to beat: 5:00 · 3 attempts/)
-    ).toBeInTheDocument()
+    // The seconds render in their own mono span — assert the whole line's
+    // textContent, and the tabular styling on the number.
+    expect(screen.getByRole("status").textContent).toBe(
+      "Record to beat: 5:00 · 3 attempts"
+    )
+    expect(screen.getByText("5:00")).toHaveClass("font-mono", "tabular-nums")
 
     rerender(
       <SessionSetup

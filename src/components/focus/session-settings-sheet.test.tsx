@@ -5,12 +5,15 @@ import { DEFAULT_FOCUS_SETTINGS, type FocusSettings } from "@/lib/focus-session"
 
 const settings = { ...DEFAULT_FOCUS_SETTINGS }
 
-function renderSheet(onChange: (s: FocusSettings) => void) {
+function renderSheet(
+  onChange: (s: FocusSettings) => void,
+  overrides: Partial<FocusSettings> = {}
+) {
   return render(
     <SessionSettingsSheet
       open
       onOpenChange={() => {}}
-      settings={settings}
+      settings={{ ...settings, ...overrides }}
       onChange={onChange}
     />
   )
@@ -57,5 +60,19 @@ describe("SessionSettingsSheet NumberField", () => {
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({ pauseSeconds: 3600 })
     )
+  })
+})
+
+describe("SessionSettingsSheet mode gating (#69)", () => {
+  it("hides auto-start and pause budget in speedrun mode — the start request drops them", () => {
+    renderSheet(vi.fn(), { mode: "speedrun" })
+    expect(screen.queryByText("Auto-start")).not.toBeInTheDocument()
+    expect(screen.queryByText(/Pause budget/)).not.toBeInTheDocument()
+  })
+
+  it("keeps both sections for the modes that send them", () => {
+    renderSheet(vi.fn(), { mode: "stopwatch" })
+    expect(screen.getByText("Auto-start")).toBeInTheDocument()
+    expect(screen.getByText(/Pause budget/)).toBeInTheDocument()
   })
 })

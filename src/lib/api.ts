@@ -791,6 +791,11 @@ export interface SpeedrunPB {
   best_seconds: number
   attempts: number
   set_at: string
+  /**
+   * Last 5 judged completions, newest first — sub-60s runs don't make the
+   * board. Absent on backends predating the field — consumers tolerate `?? []`.
+   */
+  recent_attempts?: { seconds: number; ended_at: string }[]
 }
 
 export const characterApi = {

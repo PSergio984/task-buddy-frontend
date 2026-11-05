@@ -8,7 +8,7 @@
  * (a fresh context per beep leaks and hits the browser's context limit).
  * Best-effort throughout: a blocked context must not break the timer.
  */
-import { speedrunEndReason } from "@/lib/focus-session"
+import { speedrunVerdictCopy } from "@/lib/focus-session"
 import type { SpeedrunState } from "@/lib/api"
 
 let sharedCtx: AudioContext | null = null
@@ -134,42 +134,6 @@ const speedrunWon = (run: SpeedrunState | null | undefined): boolean =>
   run?.result === "record" ||
   run?.result === "finished"
 
-/** Notification copy for a judged run — keyed on result/reason (#69). */
-function speedrunAlertCopy(
-  run: SpeedrunState | null | undefined,
-  plannedSeconds?: number
-): {
-  title: string
-  body: string
-} {
-  switch (run?.result) {
-    case "win":
-      return {
-        title: "Speedrun cleared",
-        body: "Done before the clock ran out.",
-      }
-    case "record":
-      return {
-        title: "New personal best!",
-        body: "Fastest run yet for this activity.",
-      }
-    case "finished":
-      return { title: "Run complete", body: "Time logged." }
-    case "miss":
-      return speedrunEndReason(run, plannedSeconds) === "abandon"
-        ? {
-            title: "Run abandoned",
-            body: "HP lost — start a new run to win it back.",
-          }
-        : { title: "Out of time", body: "The clock hit zero — HP lost." }
-    default:
-      return {
-        title: "Run abandoned",
-        body: "HP lost — start a new run to win it back.",
-      }
-  }
-}
-
 /**
  * Fire the phase-boundary alert through the best available channel: a system
  * Notification when the tab is hidden and permission was granted, else the
@@ -185,7 +149,7 @@ export function alertPhaseBoundary(
   const won = kind === "speedrun" && speedrunWon(run)
   const copy =
     kind === "speedrun"
-      ? speedrunAlertCopy(run, plannedSeconds)
+      ? speedrunVerdictCopy(run, plannedSeconds)
       : kind === "focus"
         ? {
             title: "Focus phase complete",
