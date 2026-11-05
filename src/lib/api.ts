@@ -565,8 +565,12 @@ export interface SpeedrunState {
   target_seconds?: number | null
   result?: "win" | "miss" | "record" | "finished" | "abandoned"
   elapsed_seconds?: number
-  margin_seconds?: number
-  record_seconds?: number
+  /** Time-boxed win only — seconds left on the clock at Done. */
+  margin_seconds?: number | null
+  /** Beat-best record/finished — the record the run chased; null on first run. */
+  old_record_seconds?: number | null
+  /** miss/abandoned only — "timeout" the clock hit zero, "abandon" gave up. */
+  reason?: "timeout" | "abandon"
 }
 
 export interface GameProfile {

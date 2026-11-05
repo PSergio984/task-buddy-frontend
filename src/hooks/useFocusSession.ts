@@ -156,6 +156,14 @@ export function useFocusSessionRuntime(): FocusSessionRuntime {
         // — the habits list cache is stale alongside the profile.
         void queryClient.invalidateQueries({ queryKey: ["habits"] })
       }
+      if (res.session.speedrun?.result !== undefined) {
+        // A judged speedrun may have written a per-label PB row (#69) —
+        // resync the stats cache beside the profile (remounts already
+        // refetchOnMount; this covers the same mount).
+        void queryClient.invalidateQueries({
+          queryKey: ["game-activity-stats"],
+        })
+      }
       applySession(res.session)
     },
     [applySession, userId]

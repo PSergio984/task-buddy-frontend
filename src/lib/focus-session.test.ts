@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
-import type { FocusSession, SessionPhaseIn, SessionPhaseOut } from "@/lib/api"
+import type { SessionPhaseIn } from "@/lib/api"
 import {
   buildPhasePlan,
   createLocalSession,
@@ -23,6 +23,7 @@ import {
   GRACE_SECONDS,
   ms,
 } from "./focus-session"
+import { speedrunSession } from "./focus-session-test-utils"
 
 const T0 = Date.parse("2026-11-01T10:00:00Z")
 const at = (seconds: number) => T0 + seconds * 1000
@@ -471,40 +472,6 @@ describe("local session persistence", () => {
 
 const iso = (epoch: number) => new Date(epoch).toISOString()
 
-/** A server-shaped speedrun session (created via POST, never createLocalSession). */
-const speedrunSession = (
-  phase: Record<string, unknown> = {},
-  session: Record<string, unknown> = {}
-): FocusSession => ({
-  id: 7,
-  mode: "speedrun",
-  status: "active",
-  task_id: null,
-  activity_label: null,
-  preset: null,
-  pause_budget_count: 0,
-  pause_budget_seconds: 0,
-  started_at: iso(T0),
-  ended_at: null,
-  speedrun: { type: "time_boxed", budget_seconds: 600 },
-  phases: [
-    {
-      seq: 0,
-      kind: "speedrun",
-      status: "active",
-      planned_seconds: 600,
-      actual_seconds: null,
-      pause_count: 0,
-      paused_seconds: 0,
-      pause_started_at: null,
-      started_at: iso(T0),
-      ended_at: null,
-      ...phase,
-    } as SessionPhaseOut,
-  ],
-  ...session,
-})
-
 describe("sessionStartFromSettings speedrun", () => {
   it("emits the time-boxed contract — no phases, no pause budget", () => {
     const req = sessionStartFromSettings({
@@ -568,9 +535,11 @@ describe("describePlan speedrun copy", () => {
 describe("deriveSessionView speedrun", () => {
   it("counts down the wall clock — a paused run still burns budget", () => {
     const s = speedrunSession({
-      status: "paused",
-      pause_started_at: iso(at(30)),
-      paused_seconds: 45,
+      phase: {
+        status: "paused",
+        pause_started_at: iso(at(30)),
+        paused_seconds: 45,
+      },
     })
     const view = deriveSessionView(s, at(90))
     // 600s budget − 90s wall elapsed; the banked 45s pause buys nothing.
@@ -582,15 +551,15 @@ describe("deriveSessionView speedrun", () => {
   })
 
   it("beat-best elapsed ignores the banked pause too", () => {
-    const s = speedrunSession(
-      {
+    const s = speedrunSession({
+      phase: {
         planned_seconds: 0,
         status: "paused",
         pause_started_at: iso(at(50)),
         paused_seconds: 60,
       },
-      { speedrun: { type: "beat_best", target_seconds: 300 } }
-    )
+      session: { speedrun: { type: "beat_best", target_seconds: 300 } },
+    })
     const view = deriveSessionView(s, at(100))
     expect(view.clockSeconds).toBe(100)
     expect(view.kindLabel).toBe("Speedrun · beat 5:00")
@@ -598,10 +567,10 @@ describe("deriveSessionView speedrun", () => {
   })
 
   it("a first beat-best run has no record to chase", () => {
-    const s = speedrunSession(
-      { planned_seconds: 0 },
-      { speedrun: { type: "beat_best", target_seconds: null } }
-    )
+    const s = speedrunSession({
+      phase: { planned_seconds: 0 },
+      session: { speedrun: { type: "beat_best", target_seconds: null } },
+    })
     const view = deriveSessionView(s, at(12))
     expect(view.clockSeconds).toBe(12)
     expect(view.kindLabel).toBe("Speedrun · set the record")
@@ -610,14 +579,13 @@ describe("deriveSessionView speedrun", () => {
 
   it("nextDeadlineMs is the wall deadline — even paused; null for beat-best", () => {
     const boxed = speedrunSession({
-      status: "paused",
-      pause_started_at: iso(at(30)),
+      phase: { status: "paused", pause_started_at: iso(at(30)) },
     })
     expect(nextDeadlineMs(boxed)).toBe(at(600))
-    const open = speedrunSession(
-      { planned_seconds: 0 },
-      { speedrun: { type: "beat_best" } }
-    )
+    const open = speedrunSession({
+      phase: { planned_seconds: 0 },
+      session: { speedrun: { type: "beat_best" } },
+    })
     expect(nextDeadlineMs(open)).toBeNull()
   })
 

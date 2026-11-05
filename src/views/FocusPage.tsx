@@ -27,6 +27,7 @@ import type { FocusSession } from "@/lib/api"
 import {
   formatClock,
   sessionStartFromSettings,
+  speedrunEndReason,
   type FocusSettings,
   type SessionView,
 } from "@/lib/focus-session"
@@ -86,11 +87,19 @@ function speedrunEndCopy(session: FocusSession): {
 } | null {
   const run = session.speedrun
   if (session.mode !== "speedrun" || run?.result === undefined) return null
+  const leg = session.phases.find((p) => p.kind === "speedrun")
   const clock = (v: number | null | undefined) =>
     typeof v === "number" ? formatClock(v) : null
   switch (run.result) {
     case "win": {
-      const margin = clock(run.margin_seconds)
+      // margin_seconds is the judged spare; backends without it derive the
+      // same number off the leg's budget minus the run's elapsed.
+      const spare =
+        run.margin_seconds ??
+        (typeof run.elapsed_seconds === "number" && leg !== undefined
+          ? Math.max(0, leg.planned_seconds - run.elapsed_seconds)
+          : null)
+      const margin = clock(spare)
       return {
         ok: true,
         title: "Speedrun cleared",
@@ -101,14 +110,24 @@ function speedrunEndCopy(session: FocusSession): {
       }
     }
     case "miss":
-      return {
-        ok: false,
-        title: "Out of time",
-        description: "The clock hit zero — HP lost.",
-      }
+      // An early give-up judges as a miss too — `reason` (or the clock
+      // fallback) keeps the copy honest about which one it was.
+      return speedrunEndReason(run, leg?.planned_seconds) === "abandon"
+        ? {
+            ok: false,
+            title: "Run abandoned",
+            description: "HP lost — start a new run to win it back.",
+          }
+        : {
+            ok: false,
+            title: "Out of time",
+            description: "The clock hit zero — HP lost.",
+          }
     case "record": {
-      const oldBest = clock(run.target_seconds)
-      const newBest = clock(run.record_seconds ?? run.elapsed_seconds)
+      // old_record_seconds lands once judged; the start-time target_seconds
+      // is the same record snapshot on backends that omit it.
+      const oldBest = clock(run.old_record_seconds ?? run.target_seconds)
+      const newBest = clock(run.elapsed_seconds)
       return {
         ok: true,
         title: "New personal best!",
@@ -119,7 +138,7 @@ function speedrunEndCopy(session: FocusSession): {
       }
     }
     case "finished": {
-      const record = clock(run.record_seconds)
+      const record = clock(run.old_record_seconds ?? run.target_seconds)
       return {
         ok: true,
         title: "Run complete",

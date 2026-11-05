@@ -2,6 +2,7 @@ import { render, screen, fireEvent, within } from "@testing-library/react"
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { FocusPage } from "./FocusPage"
 import { deriveSessionView } from "@/lib/focus-session"
+import { speedrunSession } from "@/lib/focus-session-test-utils"
 import type { FocusSession } from "@/lib/api"
 import type { FocusSessionRuntime } from "@/hooks/useFocusSession"
 
@@ -22,42 +23,6 @@ vi.mock("@/lib/focus-audio", () => ({
   requestAlertPermission: vi.fn(),
   alertPhaseBoundary: vi.fn(),
 }))
-
-/** Server-shaped speedrun session (#69): one kind:"speedrun" leg. */
-function speedrunSession(
-  session: Record<string, unknown> = {},
-  phase: Record<string, unknown> = {}
-): FocusSession {
-  return {
-    id: 7,
-    mode: "speedrun",
-    status: "active",
-    task_id: null,
-    activity_label: "Deep work",
-    preset: null,
-    pause_budget_count: 0,
-    pause_budget_seconds: 0,
-    started_at: iso(T0),
-    ended_at: null,
-    speedrun: { type: "time_boxed", budget_seconds: 600 },
-    phases: [
-      {
-        seq: 0,
-        kind: "speedrun",
-        status: "active",
-        planned_seconds: 600,
-        actual_seconds: null,
-        pause_count: 0,
-        paused_seconds: 0,
-        pause_started_at: null,
-        started_at: iso(T0),
-        ended_at: null,
-        ...phase,
-      },
-    ],
-    ...session,
-  } as FocusSession
-}
 
 function makeRuntime(session: FocusSession | null): FocusSessionRuntime {
   return {
@@ -104,10 +69,9 @@ describe("FocusPage speedrun (#69)", () => {
 
   it("paused run: the clock-keeps-running warning shows", () => {
     runtime = makeRuntime(
-      speedrunSession(
-        {},
-        { status: "paused", pause_started_at: iso(T0 - 30_000) }
-      )
+      speedrunSession({
+        phase: { status: "paused", pause_started_at: iso(T0 - 30_000) },
+      })
     )
     render(<FocusPage />)
     expect(
@@ -118,10 +82,10 @@ describe("FocusPage speedrun (#69)", () => {
 
   it("beat-best shows the record it's chasing", () => {
     runtime = makeRuntime(
-      speedrunSession(
-        { speedrun: { type: "beat_best", target_seconds: 300 } },
-        { planned_seconds: 0 }
-      )
+      speedrunSession({
+        session: { speedrun: { type: "beat_best", target_seconds: 300 } },
+        phase: { planned_seconds: 0 },
+      })
     )
     render(<FocusPage />)
     expect(screen.getByText(/Speedrun · beat 5:00/)).toBeInTheDocument()
@@ -155,25 +119,100 @@ describe("FocusPage speedrun (#69)", () => {
               type: "beat_best",
               result,
               target_seconds: 300,
-              record_seconds: 270,
+              old_record_seconds: 300,
               elapsed_seconds: 270,
             }
           : result === "finished"
-            ? { type: "beat_best", result, record_seconds: 300 }
+            ? { type: "beat_best", result, old_record_seconds: 300 }
             : { type: "time_boxed", result }
     const terminal = result === "miss" || result === "abandoned"
     runtime = makeRuntime(
-      speedrunSession(
-        {
+      speedrunSession({
+        session: {
           status: terminal ? "abandoned" : "ended",
           ended_at: iso(T0 + 300_000),
           speedrun,
         },
-        { status: terminal ? "abandoned" : "completed" }
-      )
+        phase: { status: terminal ? "abandoned" : "completed" },
+      })
     )
     render(<FocusPage />)
     expect(screen.getByText(title)).toBeInTheDocument()
     expect(screen.getByText(description)).toBeInTheDocument()
+  })
+
+  it("a win without margin_seconds derives the spare off the leg's budget", () => {
+    runtime = makeRuntime(
+      speedrunSession({
+        session: {
+          status: "ended",
+          ended_at: iso(T0 + 300_000),
+          speedrun: { type: "time_boxed", result: "win", elapsed_seconds: 300 },
+        },
+        phase: { status: "completed" },
+      })
+    )
+    render(<FocusPage />)
+    expect(screen.getByText("Speedrun cleared")).toBeInTheDocument()
+    expect(screen.getByText(/Done with 5:00 to spare/)).toBeInTheDocument()
+  })
+
+  it("a record without old_record_seconds falls back to the start-time target", () => {
+    runtime = makeRuntime(
+      speedrunSession({
+        session: {
+          status: "ended",
+          ended_at: iso(T0 + 270_000),
+          speedrun: {
+            type: "beat_best",
+            result: "record",
+            target_seconds: 300,
+            elapsed_seconds: 270,
+          },
+        },
+        phase: { status: "completed", planned_seconds: 0 },
+      })
+    )
+    render(<FocusPage />)
+    expect(screen.getByText("New personal best!")).toBeInTheDocument()
+    expect(screen.getByText(/5:00 → 4:30/)).toBeInTheDocument()
+  })
+
+  const judgedMiss = (speedrun: Record<string, unknown>) => {
+    runtime = makeRuntime(
+      speedrunSession({
+        session: {
+          status: "abandoned",
+          ended_at: iso(T0 + 120_000),
+          speedrun: { type: "time_boxed", ...speedrun },
+        },
+        phase: { status: "abandoned" },
+      })
+    )
+    render(<FocusPage />)
+  }
+
+  it("a give-up miss reads as abandoned, not out-of-time (reason: abandon)", () => {
+    judgedMiss({ result: "miss", reason: "abandon", elapsed_seconds: 120 })
+    expect(screen.getByText("Run abandoned")).toBeInTheDocument()
+    expect(screen.getByText(/HP lost/)).toBeInTheDocument()
+    expect(screen.queryByText("Out of time")).not.toBeInTheDocument()
+  })
+
+  it("a timeout miss keeps the out-of-time copy (reason: timeout)", () => {
+    judgedMiss({ result: "miss", reason: "timeout", elapsed_seconds: 600 })
+    expect(screen.getByText("Out of time")).toBeInTheDocument()
+    expect(screen.getByText(/clock hit zero/)).toBeInTheDocument()
+    expect(screen.queryByText("Run abandoned")).not.toBeInTheDocument()
+  })
+
+  it("a reason-less miss falls back to the clock — early elapsed means give-up", () => {
+    judgedMiss({ result: "miss", elapsed_seconds: 120 })
+    expect(screen.getByText("Run abandoned")).toBeInTheDocument()
+  })
+
+  it("a reason-less miss at the deadline reads as the timeout", () => {
+    judgedMiss({ result: "miss", elapsed_seconds: 600 })
+    expect(screen.getByText("Out of time")).toBeInTheDocument()
   })
 })

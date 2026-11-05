@@ -11,8 +11,13 @@ let online = true
 vi.mock("@/hooks/useIsOnline", () => ({ useIsOnline: () => online }))
 
 let pbs: SpeedrunPB[] = []
+let statsLoaded = true
+let statsEnabledArg: boolean | undefined
 vi.mock("@/hooks/useGameCharacter", () => ({
-  useActivityStats: () => ({ data: { speedrun_pbs: pbs } }),
+  useActivityStats: (enabled?: boolean) => {
+    statsEnabledArg = enabled
+    return { data: statsLoaded ? { speedrun_pbs: pbs } : undefined }
+  },
 }))
 
 const speedrunSettings = (
@@ -43,6 +48,8 @@ describe("SessionSetup speedrun (#69)", () => {
   beforeEach(() => {
     online = true
     pbs = []
+    statsLoaded = true
+    statsEnabledArg = undefined
     vi.clearAllMocks()
   })
 
@@ -119,6 +126,57 @@ describe("SessionSetup speedrun (#69)", () => {
       />
     )
     expect(screen.getByRole("button", { name: /Start session/ })).toBeEnabled()
+  })
+
+  it("fetches the PB table only in speedrun mode", () => {
+    renderSetup({ ...DEFAULT_FOCUS_SETTINGS })
+    expect(statsEnabledArg).toBe(false)
+
+    renderSetup(speedrunSettings())
+    expect(statsEnabledArg).toBe(true)
+  })
+
+  it.each([
+    [9999, 600],
+    [0, 1],
+  ])(
+    "a blurred out-of-range budget (%i) writes back clamped (NumberField precedent)",
+    (typed, clamped) => {
+      const onChange = vi.fn()
+      renderSetup(speedrunSettings({ speedrunBudgetMin: typed }), onChange)
+      fireEvent.blur(screen.getByRole("spinbutton", { name: /Budget/ }))
+      expect(onChange).toHaveBeenLastCalledWith(
+        expect.objectContaining({ speedrunBudgetMin: clamped })
+      )
+    }
+  )
+
+  it("an empty blurred budget stays untouched (revert, not clamp-to-min)", () => {
+    const onChange = vi.fn()
+    renderSetup(speedrunSettings({ speedrunBudgetMin: Number.NaN }), onChange)
+    fireEvent.blur(screen.getByRole("spinbutton", { name: /Budget/ }))
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it("caps the activity label at the backend's 200 chars", () => {
+    renderSetup(speedrunSettings({ speedrunKind: "beat_best" }))
+    expect(
+      screen.getByRole("textbox", { name: /Activity label/ })
+    ).toHaveAttribute("maxLength", "200")
+  })
+
+  it("shows a neutral line while the record table is still loading", () => {
+    statsLoaded = false
+    renderSetup(
+      speedrunSettings({
+        speedrunKind: "beat_best",
+        activityLabel: "Deep work",
+      })
+    )
+    expect(screen.getByText(/Checking your record/)).toBeInTheDocument()
+    expect(
+      screen.queryByText(/First run sets the record/)
+    ).not.toBeInTheDocument()
   })
 
   it("shows the record to beat for a known label, else the first-run copy", () => {

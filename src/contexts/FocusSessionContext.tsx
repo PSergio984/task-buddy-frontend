@@ -40,18 +40,32 @@ export function FocusSessionProvider({
     for (const phase of session.phases) {
       const prev = prevPhaseStatus.current.get(phase.seq)
       prevPhaseStatus.current.set(phase.seq, phase.status)
+      // A speedrun leg's judged terminal can land as "abandoned" (a timeout
+      // or a give-up) — still the boundary the alert owes (#69); for every
+      // other kind, abandoned stays silent as before.
+      const terminal =
+        phase.status === "completed" ||
+        phase.status === "skipped" ||
+        (phase.kind === "speedrun" && phase.status === "abandoned")
       const finished =
-        (phase.status === "completed" || phase.status === "skipped") &&
+        terminal &&
         prev !== "completed" &&
         prev !== "skipped" &&
+        prev !== "abandoned" &&
         prev !== undefined
       const boundaryKey = `${phase.seq}:${phase.status}`
       if (finished && !firedBoundaries.current.has(boundaryKey)) {
         firedBoundaries.current.add(boundaryKey)
         if (alerts) {
           alertPhaseBoundary(
-            phase.kind === "break" ? "break" : "focus",
-            alertVolume / 100
+            phase.kind === "break"
+              ? "break"
+              : phase.kind === "speedrun"
+                ? "speedrun"
+                : "focus",
+            alertVolume / 100,
+            session.speedrun,
+            phase.planned_seconds
           )
         }
       }
@@ -77,13 +91,18 @@ export function FocusSessionProvider({
         const { alerts, alertVolume } = alertSettings
         if (alerts) {
           alertPhaseBoundary(
-            prev.kind === "break" ? "break" : "focus",
-            alertVolume / 100
+            prev.kind === "break"
+              ? "break"
+              : prev.kind === "speedrun"
+                ? "speedrun"
+                : "focus",
+            alertVolume / 100,
+            session?.speedrun
           )
         }
       }
     }
-  }, [mirrored, view, alertSettings])
+  }, [mirrored, view, alertSettings, session])
 
   return (
     <FocusSessionContext.Provider value={runtime}>

@@ -66,9 +66,10 @@ export function SessionSetup({
   const { data: tasks = [] } = useTasks()
   const { data: tags = [] } = useTags()
   // Speedruns are server-only (#69): the record table and the win/miss
-  // verdict live there, so the card can't work offline.
+  // verdict live there, so the card can't work offline. The PB table only
+  // feeds the speedrun sub-panel — don't fetch it for timer/stopwatch.
   const isOnline = useIsOnline()
-  const { data: activityStats } = useActivityStats()
+  const { data: activityStats } = useActivityStats(settings.mode === "speedrun")
   const set = <K extends keyof FocusSettings>(
     key: K,
     value: FocusSettings[K]
@@ -175,6 +176,18 @@ export function SessionSetup({
                 onChange={(e) =>
                   set("speedrunBudgetMin", e.target.valueAsNumber)
                 }
+                onBlur={(e) => {
+                  // NumberField precedent: HTML min/max don't enforce — a
+                  // blurred out-of-range value writes back clamped; an
+                  // empty/NaN blur keeps the last value ("" field).
+                  const v = e.target.valueAsNumber
+                  if (Number.isFinite(v)) {
+                    set(
+                      "speedrunBudgetMin",
+                      Math.min(600, Math.max(1, Math.round(v)))
+                    )
+                  }
+                }}
                 className="h-11 rounded-xl bg-white/5"
               />
               <p className="text-xs text-muted-foreground">
@@ -194,15 +207,18 @@ export function SessionSetup({
                 type="text"
                 value={settings.activityLabel}
                 onChange={(e) => set("activityLabel", e.target.value)}
+                maxLength={200}
                 placeholder='e.g. "Deep work"'
                 className="h-11 rounded-xl bg-white/5"
               />
               <p className="text-xs text-muted-foreground">
                 {speedrunLabel === ""
                   ? "Names the record this run attacks."
-                  : recordToBeat !== undefined
-                    ? `Record to beat: ${formatClock(recordToBeat.best_seconds)} · ${recordToBeat.attempts} ${recordToBeat.attempts === 1 ? "attempt" : "attempts"}`
-                    : "First run sets the record."}
+                  : activityStats === undefined
+                    ? "Checking your record…"
+                    : recordToBeat !== undefined
+                      ? `Record to beat: ${formatClock(recordToBeat.best_seconds)} · ${recordToBeat.attempts} ${recordToBeat.attempts === 1 ? "attempt" : "attempts"}`
+                      : "First run sets the record."}
               </p>
             </div>
           )}

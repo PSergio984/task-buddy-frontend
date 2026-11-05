@@ -26,6 +26,7 @@ import type {
   SessionPhaseOut,
   SessionStartRequest,
   SpeedrunKind,
+  SpeedrunState,
 } from "@/lib/api"
 import { createUuid } from "@/lib/utils"
 import type { UserId } from "@/lib/sync-queue"
@@ -234,6 +235,31 @@ export function phaseEndMs(phase: SessionPhaseOut): number | null {
   const start = ms(phase.started_at)
   if (start === null) return null
   return start + (phase.planned_seconds + (phase.paused_seconds || 0)) * 1000
+}
+
+/**
+ * Why a failed speedrun ended (#69): the judged blob's `reason` is
+ * authoritative, but older backends omit it — a "miss" then falls back to
+ * the clock (elapsed >= the leg's planned seconds ⇒ the deadline hit; less
+ * ⇒ the user gave up early). Null for non-failure results. An unjudgable
+ * miss reads as a timeout, the legacy semantics.
+ */
+export function speedrunEndReason(
+  run: SpeedrunState | null | undefined,
+  plannedSeconds?: number | null
+): "timeout" | "abandon" | null {
+  if (run?.reason === "timeout" || run?.reason === "abandon") return run.reason
+  if (run?.result === "abandoned") return "abandon"
+  if (run?.result !== "miss") return null
+  const budget = plannedSeconds ?? run.budget_seconds
+  if (
+    typeof run.elapsed_seconds === "number" &&
+    typeof budget === "number" &&
+    budget > 0
+  ) {
+    return run.elapsed_seconds >= budget ? "timeout" : "abandon"
+  }
+  return "timeout"
 }
 
 /** Seconds left on a timed phase; freezes while paused. */

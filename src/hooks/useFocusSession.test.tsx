@@ -8,6 +8,7 @@ import {
   saveLocalSession,
   loadLocalSession,
 } from "@/lib/focus-session"
+import { speedrunSession } from "@/lib/focus-session-test-utils"
 import { enqueueGameEvent, listGameEvents } from "@/lib/game-event-queue"
 import { probeGate } from "@/lib/focus-probe-gate"
 import { focusSessionsApi } from "@/lib/api"
@@ -147,44 +148,14 @@ const serverSession = (
   server_time: iso(T0),
 })
 
-/** Server-shaped speedrun session (#69) — one kind:"speedrun" leg. */
+/** Server-shaped speedrun response (#69) — one kind:"speedrun" leg. */
 const speedrunServerSession = (
   id: number,
   startedAt: number,
-  budgetSeconds = 600,
-  speedrunOverrides: Record<string, unknown> = {}
+  session: Record<string, unknown> = {},
+  phase: Record<string, unknown> = {}
 ): SessionActionResponse => ({
-  session: {
-    id,
-    mode: "speedrun",
-    status: "active",
-    task_id: null,
-    activity_label: "Deep work",
-    preset: null,
-    pause_budget_count: 0,
-    pause_budget_seconds: 0,
-    started_at: iso(startedAt),
-    ended_at: null,
-    speedrun: {
-      type: "time_boxed",
-      budget_seconds: budgetSeconds,
-      ...speedrunOverrides,
-    },
-    phases: [
-      {
-        seq: 0,
-        kind: "speedrun",
-        status: "active",
-        planned_seconds: budgetSeconds,
-        actual_seconds: null,
-        pause_count: 0,
-        paused_seconds: 0,
-        pause_started_at: null,
-        started_at: iso(startedAt),
-        ended_at: null,
-      },
-    ],
-  },
+  session: speedrunSession({ id, startedAt, session, phase }),
   profile: null,
   server_time: iso(T0),
 })
