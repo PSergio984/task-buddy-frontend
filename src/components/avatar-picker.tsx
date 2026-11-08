@@ -13,7 +13,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { useAuth } from "@/contexts/AuthContext"
 import { useGameProfile, useUpdateAvatarConfig } from "@/hooks/useGameProfile"
 import { useGear, useToggleGearCostume } from "@/hooks/useGameCharacter"
 import { AvatarGearOverlay } from "@/components/avatar-gear-overlay"
@@ -94,7 +93,6 @@ function stableStringify(value: unknown): string {
 }
 
 export function AvatarCard() {
-  const { user } = useAuth()
   const { data: profile, isLoading, isError } = useGameProfile()
   const updateAvatar = useUpdateAvatarConfig()
   const toggleCostume = useToggleGearCostume()
@@ -105,8 +103,9 @@ export function AvatarCard() {
   // initials instead of a broken image; a changed URL resets the fallback.
   const [failedUrl, setFailedUrl] = useState<string | null>(null)
 
-  const fallbackSeed =
-    user?.username || user?.email?.split("@")[0] || "taskbuddy"
+  // The empty-seed fallback is the literal the mobile app persists — a
+  // never-customized avatar must save "taskbuddy", not the username.
+  const fallbackSeed = "taskbuddy"
   const saved = normalizeConfig(profile?.avatar_config)
   // No stored seed → preview and Save both use the fallback seed, so what the
   // preview shows is exactly what Save writes (and Save is enabled for it).
@@ -142,9 +141,10 @@ export function AvatarCard() {
   const handleSave = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!hasChanged) return
-    // A cleared seed saves the same fallback the preview shows.
+    // A cleared seed saves the same fallback the preview shows; trim like
+    // mobile so a whitespace seed can't persist a meaningless seed.
     updateAvatar.mutate(
-      { ...effective, seed: effective.seed || fallbackSeed },
+      { ...effective, seed: effective.seed.trim() || fallbackSeed },
       {
         onSuccess: () => setDraft(null),
       }
@@ -192,7 +192,7 @@ export function AvatarCard() {
                     className="h-full w-full [image-rendering:pixelated]"
                   />
                 ) : (
-                  fallbackSeed[0]?.toUpperCase() || "U"
+                  (effective.seed || fallbackSeed)[0]?.toUpperCase() || "U"
                 )}
               </div>
               <AvatarGearOverlay items={gear ?? []} config={effective} />
