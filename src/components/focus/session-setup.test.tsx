@@ -186,7 +186,7 @@ describe("SessionSetup speedrun (#69)", () => {
     )
     expect(screen.getByText(/Checking your record/)).toBeInTheDocument()
     expect(
-      screen.queryByText(/First run sets the record/)
+      screen.queryByText(/First run sets the record — runs under 1:00/)
     ).not.toBeInTheDocument()
   })
 
@@ -265,7 +265,9 @@ describe("SessionSetup speedrun (#69)", () => {
         busy={false}
       />
     )
-    expect(screen.getByText(/First run sets the record/)).toBeInTheDocument()
+    expect(
+      screen.getByText(/First run sets the record — runs under 1:00/)
+    ).toBeInTheDocument()
   })
 
   it("disables the speedrun card while offline — records are server state", () => {
