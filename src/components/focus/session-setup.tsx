@@ -245,7 +245,7 @@ export function SessionSetup({
                     {recordToBeat.attempts === 1 ? "attempt" : "attempts"}
                   </>
                 ) : (
-                  "First run sets the record — runs under 1:00 don't enter the board."
+                  "No record yet — runs under 1:00 don't enter the board."
                 )}
               </p>
             </div>

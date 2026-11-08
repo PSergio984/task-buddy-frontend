@@ -198,6 +198,28 @@ describe("AvatarCard", () => {
     )
   })
 
+  it("normalizes a whitespace stored seed — Save stays enabled and writes taskbuddy", async () => {
+    mockProfile = {
+      ...PROFILE,
+      avatar_config: { ...PROFILE.avatar_config, seed: " " },
+    }
+    render(<AvatarCard />)
+    // Preview and save resolve to the same seed — no preview/save mismatch.
+    expect(screen.getByAltText("Avatar preview")).toHaveAttribute(
+      "src",
+      expect.stringContaining("seed=taskbuddy")
+    )
+    const save = screen.getByRole("button", { name: /save avatar/i })
+    expect(save).toBeEnabled()
+    fireEvent.click(save)
+    await waitFor(() =>
+      expect(mutate).toHaveBeenCalledWith(
+        expect.objectContaining({ seed: "taskbuddy" }),
+        expect.anything()
+      )
+    )
+  })
+
   it("disables save until the draft differs from the saved config", () => {
     render(<AvatarCard />)
     const save = screen.getByRole("button", { name: /save avatar/i })

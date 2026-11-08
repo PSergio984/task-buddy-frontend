@@ -112,4 +112,22 @@ describe("api response interceptor — idempotent 409", () => {
     ).rejects.toMatchObject({ response: { status: 409 } })
     expect(calls).toBe(1)
   })
+
+  it("does not retry a keyed non-POST — the middleware only dedupes creates", async () => {
+    let calls = 0
+    await expect(
+      api.put(
+        "/api/v1/tasks/1",
+        {},
+        {
+          headers: { "X-Idempotency-Key": "keyed-put" },
+          adapter: async (config) => {
+            calls++
+            throw inProgress409(config)
+          },
+        }
+      )
+    ).rejects.toMatchObject({ response: { status: 409 } })
+    expect(calls).toBe(1)
+  })
 })

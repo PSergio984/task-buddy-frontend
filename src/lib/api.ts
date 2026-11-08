@@ -99,12 +99,15 @@ api.interceptors.response.use(
     // "Already in progress" means the original request carrying this
     // idempotency key is still running server-side — replaying the config
     // returns its cached response instead of a bogus failure. Exactly once,
-    // and only when a key was actually sent — a keyed 409 can't come from
-    // anywhere else, so the header check fences off domain 409s.
+    // only for POSTs (the middleware only dedupes creates — a manually keyed
+    // PUT/PATCH/DELETE must not get a delayed second execution), and only
+    // when a key was actually sent — a keyed 409 can't come from anywhere
+    // else, so the header check fences off domain 409s.
     const detail = error.response?.data?.detail
     if (
       error.response?.status === 409 &&
       error.config &&
+      error.config.method?.toLowerCase() === "post" &&
       !error.config.retried409 &&
       error.config.headers?.["X-Idempotency-Key"] &&
       typeof detail === "string" &&

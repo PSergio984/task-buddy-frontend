@@ -110,10 +110,17 @@ export function AvatarCard() {
   // No stored seed → preview and Save both use the fallback seed, so what the
   // preview shows is exactly what Save writes (and Save is enabled for it).
   const effective = draft ?? { ...saved, seed: saved.seed || fallbackSeed }
+  // One trimmed seed for preview/initials/save/dirty — a padded or
+  // whitespace-only entry can't preview one avatar and save another, and a
+  // stored whitespace seed stays normalizable because the payload (not the
+  // raw draft) is what the dirty check compares.
+  const normalizedSeed = effective.seed.trim() || fallbackSeed
   // The catalog only feeds the pixel-art overlay/fieldset — other resolved
   // styles never show it, so don't pull it (same gate as the HUD).
   const { data: gear } = useGear(effective.style === "pixel-art")
-  const hasChanged = stableStringify(effective) !== stableStringify(saved)
+  const hasChanged =
+    stableStringify({ ...effective, seed: normalizedSeed }) !==
+    stableStringify(saved)
 
   // Debounce the seed so typing doesn't fire a DiceBear fetch per keystroke.
   const [debouncedSeed, setDebouncedSeed] = useState(effective.seed)
@@ -123,7 +130,7 @@ export function AvatarCard() {
   }, [effective.seed])
   const previewUrl = avatarConfigToUrl({
     ...effective,
-    seed: debouncedSeed || fallbackSeed,
+    seed: debouncedSeed.trim() || fallbackSeed,
   })
   const showImg = previewUrl !== null && previewUrl !== failedUrl
   // Owned rows only — the worn-gear section toggles their costume flags.
@@ -144,7 +151,7 @@ export function AvatarCard() {
     // A cleared seed saves the same fallback the preview shows; trim like
     // mobile so a whitespace seed can't persist a meaningless seed.
     updateAvatar.mutate(
-      { ...effective, seed: effective.seed.trim() || fallbackSeed },
+      { ...effective, seed: normalizedSeed },
       {
         onSuccess: () => setDraft(null),
       }
@@ -192,7 +199,7 @@ export function AvatarCard() {
                     className="h-full w-full [image-rendering:pixelated]"
                   />
                 ) : (
-                  (effective.seed || fallbackSeed)[0]?.toUpperCase() || "U"
+                  normalizedSeed.charAt(0).toUpperCase()
                 )}
               </div>
               <AvatarGearOverlay items={gear ?? []} config={effective} />
