@@ -495,6 +495,7 @@ function ImportCardView({
             <NumberChip number={card.number} />
             <Select
               value={card.priority}
+              disabled={disabled}
               onValueChange={(value: TaskPriority) =>
                 edit((prev) => ({ ...prev, priority: value }))
               }
@@ -519,6 +520,7 @@ function ImportCardView({
             </Select>
             <Select
               value={card.projectId != null ? String(card.projectId) : "none"}
+              disabled={disabled}
               onValueChange={(value) =>
                 edit((prev) => ({
                   ...prev,
@@ -569,6 +571,7 @@ function ImportCardView({
           </div>
           <Input
             value={card.title}
+            disabled={disabled}
             aria-label={`Task ${card.number} title`}
             onChange={(event) =>
               edit((prev) => ({
@@ -580,6 +583,7 @@ function ImportCardView({
           />
           <Textarea
             value={card.description}
+            disabled={disabled}
             aria-label={`Task ${card.number} description`}
             placeholder="Add a description…"
             onChange={(event) =>
@@ -593,6 +597,7 @@ function ImportCardView({
           <Input
             type="date"
             value={card.deadline ?? ""}
+            disabled={disabled}
             aria-label={`Task ${card.number} deadline`}
             onChange={(event) =>
               edit((prev) => ({
@@ -606,6 +611,7 @@ function ImportCardView({
           <SubtaskListEditor
             cardNumber={card.number}
             subtasks={card.subtasks}
+            disabled={disabled}
             onToggle={(index, accepted) =>
               edit(
                 updateSubtaskAt<ImportDraftCard>(index, (item) => ({

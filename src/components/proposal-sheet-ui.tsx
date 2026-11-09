@@ -133,6 +133,7 @@ export function CreatedCardRow({
 export function SubtaskListEditor({
   cardNumber,
   subtasks,
+  disabled = false,
   onToggle,
   onEditTitle,
   onRemove,
@@ -140,6 +141,7 @@ export function SubtaskListEditor({
 }: Readonly<{
   cardNumber: number
   subtasks: SubtaskItem[]
+  disabled?: boolean
   onToggle: (index: number, accepted: boolean) => void
   onEditTitle: (index: number, title: string) => void
   onRemove: (index: number) => void
@@ -151,11 +153,13 @@ export function SubtaskListEditor({
         <div key={index} className="flex items-center gap-2">
           <Checkbox
             checked={sub.accepted}
+            disabled={disabled}
             aria-label={`Include subtask ${index + 1} of task ${cardNumber}`}
             onCheckedChange={(checked) => onToggle(index, checked === true)}
           />
           <Input
             value={sub.title}
+            disabled={disabled}
             aria-label={`Task ${cardNumber} subtask ${index + 1}`}
             onChange={(event) => onEditTitle(index, event.target.value)}
             className="h-8 flex-1 border-transparent bg-transparent px-1 text-sm shadow-none focus-visible:border-input focus-visible:bg-background"
@@ -163,8 +167,9 @@ export function SubtaskListEditor({
           <button
             type="button"
             aria-label={`Remove subtask ${index + 1}`}
+            disabled={disabled}
             onClick={() => onRemove(index)}
-            className="text-muted-foreground/60 hover:text-destructive"
+            className="text-muted-foreground/60 hover:text-destructive disabled:opacity-50"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
@@ -172,8 +177,9 @@ export function SubtaskListEditor({
       ))}
       <button
         type="button"
+        disabled={disabled}
         onClick={onAdd}
-        className="flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+        className="flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
       >
         <Plus className="h-3 w-3" />
         Add subtask

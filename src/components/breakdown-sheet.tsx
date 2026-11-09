@@ -478,6 +478,7 @@ function DraftCardView({
           </div>
           <Input
             value={card.title}
+            disabled={disabled}
             aria-label={`Task ${card.number} title`}
             onChange={(event) =>
               onChange(card.number, (prev) => ({
@@ -491,6 +492,7 @@ function DraftCardView({
           <SubtaskListEditor
             cardNumber={card.number}
             subtasks={card.subtasks}
+            disabled={disabled}
             onToggle={(index, accepted) =>
               onChange(
                 card.number,
