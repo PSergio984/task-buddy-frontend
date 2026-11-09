@@ -254,7 +254,11 @@ export function BreakdownSheet({
   }
 
   const committableCount = committableCards(cards).length
-  const hasFailed = cards.some((c) => c.status === "failed" && c.accepted)
+  // Mirrors committableCards — a blank-titled failure isn't retryable, so
+  // it must not keep "Retry failed" enabled for a zero-target commit.
+  const hasFailed = cards.some(
+    (c) => c.status === "failed" && c.accepted && c.title.trim() !== ""
+  )
   const isCreating = cards.some((c) => c.status === "creating")
   const acceptedSubtaskCount = committableCards(cards).reduce(
     (sum, card) =>
