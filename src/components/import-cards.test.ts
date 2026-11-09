@@ -4,6 +4,7 @@ import {
   IMPORT_TEXT_LIMIT,
   committableCards,
   commitImportCards,
+  editImportCard,
   isAcceptedImportFile,
   isoToDateInput,
   readImportFile,
@@ -138,6 +139,32 @@ describe("committableCards", () => {
       { ...toImportDraftCard(proposal("D"), 4), title: "   " },
     ]
     expect(committableCards(cards).map((c) => c.title)).toEqual(["B"])
+  })
+})
+
+describe("editImportCard", () => {
+  const keyed = () => ({
+    ...toImportDraftCard(proposal("A"), 1),
+    idempotencyKey: "3f6f2a3e-0f6c-4d2a-9c2f-6a3f1a1e4d2b",
+  })
+
+  it("clears the persisted key when a payload field changes", () => {
+    const card = editImportCard(keyed(), (c) => ({ ...c, title: "Renamed" }))
+    expect(card.title).toBe("Renamed")
+    expect(card.idempotencyKey).toBeUndefined()
+  })
+
+  it("keeps the key for payload-neutral changes", () => {
+    const card = editImportCard(keyed(), (c) => ({ ...c, included: false }))
+    expect(card.idempotencyKey).toBe("3f6f2a3e-0f6c-4d2a-9c2f-6a3f1a1e4d2b")
+  })
+
+  it("clears the key when subtasks change", () => {
+    const card = editImportCard(keyed(), (c) => ({
+      ...c,
+      subtasks: [...c.subtasks, { title: "new", accepted: true }],
+    }))
+    expect(card.idempotencyKey).toBeUndefined()
   })
 })
 

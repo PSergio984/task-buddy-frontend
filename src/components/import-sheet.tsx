@@ -38,6 +38,7 @@ import {
   type ImportDraftCard,
   committableCards,
   commitImportCards,
+  editImportCard,
   readImportFile,
   toImportDraftCard,
   validateImportText,
@@ -209,10 +210,20 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
     )
     setIsCommitting(false)
     if (failed === 0) {
-      const total = committable.length
+      // Cumulative — a retry batch must report all created tasks, not just
+      // the ones it retried.
+      const alreadyCreated = cards.filter((c) => c.status === "created")
+      const total = alreadyCreated.length + created
+      const subtasks =
+        alreadyCreated.reduce(
+          (sum, card) =>
+            sum +
+            card.subtasks.filter((s) => s.accepted && s.title.trim()).length,
+          0
+        ) + acceptedSubtaskCount
       toast({
         title: "Tasks imported",
-        description: `Added ${total} task${total === 1 ? "" : "s"} · ${acceptedSubtaskCount} subtask${acceptedSubtaskCount === 1 ? "" : "s"}.`,
+        description: `Added ${total} task${total === 1 ? "" : "s"} · ${subtasks} subtask${subtasks === 1 ? "" : "s"}.`,
         variant: "success",
       })
       // Back to a clean input — reopening shouldn't show stale "created" cards.
@@ -454,6 +465,11 @@ function ImportCardView({
 
   const isExcluded = !card.included
 
+  // Every edit goes through editImportCard — payload changes invalidate the
+  // card's persisted key so a retry sends edited content, not a stale replay.
+  const edit = (updater: (card: ImportDraftCard) => ImportDraftCard) =>
+    onChange(card.number, (prev) => editImportCard(prev, updater))
+
   return (
     <div
       className={cn(
@@ -467,7 +483,7 @@ function ImportCardView({
           disabled={disabled}
           aria-label={`Include task ${card.number}`}
           onCheckedChange={(checked) =>
-            onChange(card.number, (prev) => ({
+            edit((prev) => ({
               ...prev,
               included: checked === true,
             }))
@@ -480,7 +496,7 @@ function ImportCardView({
             <Select
               value={card.priority}
               onValueChange={(value: TaskPriority) =>
-                onChange(card.number, (prev) => ({ ...prev, priority: value }))
+                edit((prev) => ({ ...prev, priority: value }))
               }
             >
               <SelectTrigger
@@ -504,7 +520,7 @@ function ImportCardView({
             <Select
               value={card.projectId != null ? String(card.projectId) : "none"}
               onValueChange={(value) =>
-                onChange(card.number, (prev) => ({
+                edit((prev) => ({
                   ...prev,
                   projectId:
                     value === "none" ? null : Number.parseInt(value, 10),
@@ -555,7 +571,7 @@ function ImportCardView({
             value={card.title}
             aria-label={`Task ${card.number} title`}
             onChange={(event) =>
-              onChange(card.number, (prev) => ({
+              edit((prev) => ({
                 ...prev,
                 title: event.target.value,
               }))
@@ -567,7 +583,7 @@ function ImportCardView({
             aria-label={`Task ${card.number} description`}
             placeholder="Add a description…"
             onChange={(event) =>
-              onChange(card.number, (prev) => ({
+              edit((prev) => ({
                 ...prev,
                 description: event.target.value,
               }))
@@ -579,7 +595,7 @@ function ImportCardView({
             value={card.deadline ?? ""}
             aria-label={`Task ${card.number} deadline`}
             onChange={(event) =>
-              onChange(card.number, (prev) => ({
+              edit((prev) => ({
                 ...prev,
                 deadline: event.target.value || null,
               }))
@@ -591,8 +607,7 @@ function ImportCardView({
             cardNumber={card.number}
             subtasks={card.subtasks}
             onToggle={(index, accepted) =>
-              onChange(
-                card.number,
+              edit(
                 updateSubtaskAt<ImportDraftCard>(index, (item) => ({
                   ...item,
                   accepted,
@@ -600,8 +615,7 @@ function ImportCardView({
               )
             }
             onEditTitle={(index, title) =>
-              onChange(
-                card.number,
+              edit(
                 updateSubtaskAt<ImportDraftCard>(index, (item) => ({
                   ...item,
                   title,
@@ -609,7 +623,7 @@ function ImportCardView({
               )
             }
             onRemove={(index) =>
-              onChange(card.number, (prev) => ({
+              edit((prev) => ({
                 ...prev,
                 subtasks: prev.subtasks.filter(
                   (_, itemIndex) => itemIndex !== index
@@ -617,7 +631,7 @@ function ImportCardView({
               }))
             }
             onAdd={() =>
-              onChange(card.number, (prev) => ({
+              edit((prev) => ({
                 ...prev,
                 subtasks: [...prev.subtasks, { title: "", accepted: true }],
               }))

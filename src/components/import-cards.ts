@@ -111,6 +111,29 @@ export function toImportDraftCard(
   }
 }
 
+/**
+ * Applies an edit to a card. Any change to a payload field invalidates the
+ * card's persisted idempotency key — a retry must send the edited payload
+ * under a fresh key, not replay the response cached under the old one.
+ */
+export function editImportCard(
+  card: ImportDraftCard,
+  updater: (card: ImportDraftCard) => ImportDraftCard
+): ImportDraftCard {
+  const next = updater(card)
+  if (
+    next.title !== card.title ||
+    next.description !== card.description ||
+    next.deadline !== card.deadline ||
+    next.priority !== card.priority ||
+    next.projectId !== card.projectId ||
+    next.subtasks !== card.subtasks
+  ) {
+    return { ...next, idempotencyKey: undefined }
+  }
+  return next
+}
+
 /** Cards still eligible for creation: included, titled, not yet created. */
 export function committableCards(cards: ImportDraftCard[]): ImportDraftCard[] {
   return cards.filter(

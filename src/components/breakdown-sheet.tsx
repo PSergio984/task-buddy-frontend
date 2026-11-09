@@ -224,9 +224,20 @@ export function BreakdownSheet({
     setIsCommitting(false)
     const failed = targets.length - created
     if (failed === 0) {
+      // Cumulative — a retry batch must report all created tasks, not just
+      // the ones it retried.
+      const alreadyCreated = cards.filter((c) => c.status === "created")
+      const total = alreadyCreated.length + created
+      const subtasks =
+        alreadyCreated.reduce(
+          (sum, card) =>
+            sum +
+            card.subtasks.filter((s) => s.accepted && s.title.trim()).length,
+          0
+        ) + targetSubtaskCount
       toast({
         title: "Tasks added",
-        description: `Added ${targets.length} task${targets.length === 1 ? "" : "s"} · ${targetSubtaskCount} subtask${targetSubtaskCount === 1 ? "" : "s"}.`,
+        description: `Added ${total} task${total === 1 ? "" : "s"} · ${subtasks} subtask${subtasks === 1 ? "" : "s"}.`,
         variant: "success",
       })
       onClose()
@@ -312,7 +323,7 @@ export function BreakdownSheet({
             <RefineInput
               value={refineText}
               setValue={setRefineText}
-              disabled={!isOnline}
+              disabled={!isOnline || isCommitting}
               onSubmit={handleRefineSubmit}
             />
             {/* Commit stays visible while anything is committable; after a
