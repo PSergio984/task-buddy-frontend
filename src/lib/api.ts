@@ -8,6 +8,8 @@ declare module "axios" {
   export interface AxiosRequestConfig {
     /** Suppress the global 429 toast for requests that handle their own rate-limit UX. */
     skipRateLimitToast?: boolean
+    /** Set by the response interceptor — an idempotent 409 is replayed once. */
+    retried409?: boolean
   }
 }
 
@@ -71,10 +73,10 @@ api.interceptors.request.use(async (config) => {
   return config
 })
 
-// Add a response interceptor to handle 401 and 429 errors
+// Add a response interceptor to handle 401, 409 and 429 errors
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     // Prevent infinite loop: don't trigger logout if the request that failed was already a logout request
     const isLogoutRequest = error.config?.url?.endsWith("/api/v1/users/logout")
 
@@ -94,7 +96,32 @@ api.interceptors.response.use(
       })
     }
 
-    return Promise.reject(error)
+    // "Already in progress" means the original request carrying this
+    // idempotency key is still running server-side — replaying the config
+    // returns its cached response instead of a bogus failure. Exactly once,
+    // only for POSTs (the middleware only dedupes creates — a manually keyed
+    // PUT/PATCH/DELETE must not get a delayed second execution), and only
+    // when a key was actually sent — a keyed 409 can't come from anywhere
+    // else, so the header check fences off domain 409s.
+    const detail = error.response?.data?.detail
+    if (
+      error.response?.status === 409 &&
+      error.config &&
+      error.config.method?.toLowerCase() === "post" &&
+      !error.config.retried409 &&
+      error.config.headers?.["X-Idempotency-Key"] &&
+      typeof detail === "string" &&
+      detail.includes("already in progress")
+    ) {
+      error.config.retried409 = true
+      // 400ms lets a fast original finish + cache; a still-running one
+      // (LLM endpoints — the lock lives 120s) can re-409 and surfaces to
+      // the caller as before.
+      await new Promise((resolve) => setTimeout(resolve, 400))
+      return api(error.config)
+    }
+
+    throw error
   }
 )
 

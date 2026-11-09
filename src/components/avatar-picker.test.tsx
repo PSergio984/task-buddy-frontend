@@ -91,10 +91,6 @@ let mockProfile: GameProfile | undefined = PROFILE
 let mockPending = false
 let mockGear: GearItem[] = []
 
-vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({ user: { id: "u1", username: "kiki" } }),
-}))
-
 vi.mock("@/hooks/useGameProfile", () => ({
   useGameProfile: () => ({
     data: mockProfile,
@@ -196,7 +192,29 @@ describe("AvatarCard", () => {
     fireEvent.click(screen.getByRole("button", { name: /save avatar/i }))
     await waitFor(() =>
       expect(mutate).toHaveBeenCalledWith(
-        expect.objectContaining({ seed: "kiki" }),
+        expect.objectContaining({ seed: "taskbuddy" }),
+        expect.anything()
+      )
+    )
+  })
+
+  it("normalizes a whitespace stored seed — Save stays enabled and writes taskbuddy", async () => {
+    mockProfile = {
+      ...PROFILE,
+      avatar_config: { ...PROFILE.avatar_config, seed: " " },
+    }
+    render(<AvatarCard />)
+    // Preview and save resolve to the same seed — no preview/save mismatch.
+    expect(screen.getByAltText("Avatar preview")).toHaveAttribute(
+      "src",
+      expect.stringContaining("seed=taskbuddy")
+    )
+    const save = screen.getByRole("button", { name: /save avatar/i })
+    expect(save).toBeEnabled()
+    fireEvent.click(save)
+    await waitFor(() =>
+      expect(mutate).toHaveBeenCalledWith(
+        expect.objectContaining({ seed: "taskbuddy" }),
         expect.anything()
       )
     )
@@ -217,14 +235,14 @@ describe("AvatarCard", () => {
     render(<AvatarCard />)
     expect(screen.getByAltText("Avatar preview")).toHaveAttribute(
       "src",
-      "https://api.dicebear.com/9.x/pixel-art/svg?seed=kiki"
+      "https://api.dicebear.com/9.x/pixel-art/svg?seed=taskbuddy"
     )
     const save = screen.getByRole("button", { name: /save avatar/i })
     expect(save).toBeEnabled()
     fireEvent.click(save)
     await waitFor(() =>
       expect(mutate).toHaveBeenCalledWith(
-        expect.objectContaining({ seed: "kiki", style: "pixel-art" }),
+        expect.objectContaining({ seed: "taskbuddy", style: "pixel-art" }),
         expect.anything()
       )
     )

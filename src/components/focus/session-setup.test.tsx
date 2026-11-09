@@ -231,7 +231,7 @@ describe("SessionSetup speedrun (#69)", () => {
     expect(options?.[0]).toHaveAttribute("value", "Deep work")
   })
 
-  it("shows the record to beat for a known label, else the first-run copy", () => {
+  it("shows the record to beat for a known label, else the no-record copy", () => {
     pbs = [
       {
         activity_label: "Deep work",
@@ -265,7 +265,9 @@ describe("SessionSetup speedrun (#69)", () => {
         busy={false}
       />
     )
-    expect(screen.getByText(/First run sets the record/)).toBeInTheDocument()
+    expect(
+      screen.getByText(/No record yet — runs under 1:00/)
+    ).toBeInTheDocument()
   })
 
   it("disables the speedrun card while offline — records are server state", () => {
