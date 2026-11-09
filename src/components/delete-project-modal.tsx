@@ -119,6 +119,7 @@ export function DeleteProjectModal({
                     {/* Option B: Keep Tasks (Safe default) */}
                     <button
                       type="button"
+                      aria-pressed={!deleteTasks}
                       onClick={() => setDeleteTasks(false)}
                       className={`relative flex w-full cursor-pointer items-start gap-4 overflow-hidden rounded-3xl border p-5 text-left transition-all duration-300 ${
                         !deleteTasks
@@ -126,32 +127,33 @@ export function DeleteProjectModal({
                           : "border-zinc-200 bg-transparent hover:border-zinc-300 dark:border-zinc-800 dark:hover:border-zinc-700"
                       }`}
                     >
-                      <div
+                      <span
                         className={`mt-1 rounded-xl p-2 transition-colors ${!deleteTasks ? "bg-primary/20 text-primary" : "bg-zinc-100 text-zinc-400 dark:bg-zinc-900"}`}
                       >
                         <Inbox className="h-5 w-5" />
-                      </div>
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <h4 className="text-sm font-bold text-foreground">
+                      </span>
+                      <span className="flex-1 space-y-1">
+                        <span className="flex items-center gap-2">
+                          <span className="text-sm font-bold text-foreground">
                             Keep tasks and move to Inbox
-                          </h4>
+                          </span>
                           {!deleteTasks && (
                             <span className="rounded-full bg-primary/20 px-2 py-0.5 text-[9px] font-black tracking-widest text-primary uppercase">
                               Recommended
                             </span>
                           )}
-                        </div>
-                        <p className="text-xs leading-relaxed text-muted-foreground">
+                        </span>
+                        <span className="block text-xs leading-relaxed text-muted-foreground">
                           Tasks will become unassigned and remain safe in your
                           personal space.
-                        </p>
-                      </div>
+                        </span>
+                      </span>
                     </button>
 
                     {/* Option A: Delete Tasks */}
                     <button
                       type="button"
+                      aria-pressed={deleteTasks}
                       onClick={() => setDeleteTasks(true)}
                       className={`relative flex w-full cursor-pointer items-start gap-4 overflow-hidden rounded-3xl border p-5 text-left transition-all duration-300 ${
                         deleteTasks
@@ -159,21 +161,21 @@ export function DeleteProjectModal({
                           : "border-zinc-200 bg-transparent hover:border-zinc-300 dark:border-zinc-800 dark:hover:border-zinc-700"
                       }`}
                     >
-                      <div
+                      <span
                         className={`mt-1 rounded-xl p-2 transition-colors ${deleteTasks ? "bg-destructive/20 text-destructive" : "bg-zinc-100 text-zinc-400 dark:bg-zinc-900"}`}
                       >
                         <Trash2 className="h-5 w-5" />
-                      </div>
-                      <div className="flex-1 space-y-1">
-                        <h4 className="text-sm font-bold text-foreground">
+                      </span>
+                      <span className="flex-1 space-y-1">
+                        <span className="text-sm font-bold text-foreground">
                           Delete all {taskCount} task
                           {taskCount === 1 ? "" : "s"}
-                        </h4>
-                        <p className="text-xs leading-relaxed text-muted-foreground">
+                        </span>
+                        <span className="block text-xs leading-relaxed text-muted-foreground">
                           All tasks will be permanently removed. There is no way
                           to recover them.
-                        </p>
-                      </div>
+                        </span>
+                      </span>
                     </button>
                   </motion.div>
                 ) : (

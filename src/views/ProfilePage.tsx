@@ -258,7 +258,8 @@ function PreferencesCard() {
         }
       }
     }
-    void checkPermission()
+    // A push-API failure degrades to disabled, not a global rejection.
+    void checkPermission().catch(() => setPushEnabled(false))
   }, [])
 
   const handleTogglePush = async (enabled: boolean) => {
