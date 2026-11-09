@@ -1,24 +1,20 @@
 import { useEffect, useRef, useState } from "react"
 import type { DragEvent, RefObject } from "react"
+import { Check, FileUp, Loader2, Sparkles, Trash2, X } from "lucide-react"
+import { Sheet, SheetContent } from "@/components/ui/sheet"
 import {
-  AlertTriangle,
-  Check,
-  FileUp,
-  Loader2,
-  Plus,
-  RefreshCw,
-  RotateCcw,
-  Sparkles,
-  Trash2,
-  WifiOff,
-  X,
-} from "lucide-react"
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet"
+  BudgetBanner,
+  CreatedCardRow,
+  ErrorBanner,
+  LoadingSkeleton,
+  NumberChip,
+  OfflineBanner,
+  RetryFailedButton,
+  SheetHeaderBlock,
+  StartOverButton,
+  SubtaskListEditor,
+} from "@/components/proposal-sheet-ui"
+import { updateSubtaskAt } from "@/components/proposal-cards"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
@@ -235,20 +231,14 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
         side="right"
         className="flex w-full flex-col gap-0 sm:max-w-xl"
       >
-        <SheetHeader className="border-b border-white/5 px-6 py-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-              <FileUp className="h-4 w-4 text-primary" />
-            </div>
-            <SheetTitle className="text-sm font-black tracking-[0.2em] uppercase">
-              Import Notes
-            </SheetTitle>
-          </div>
-        </SheetHeader>
+        <SheetHeaderBlock
+          icon={<FileUp className="h-4 w-4 text-primary" />}
+          title="Import Notes"
+        />
 
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-4">
           {!isOnline ? (
-            <OfflineBanner />
+            <OfflineBanner message="You're offline — importing notes needs a connection." />
           ) : budgetExhausted ? (
             <BudgetBanner />
           ) : error ? (
@@ -278,18 +268,13 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
             />
           ) : null}
 
-          {phase === "loading" ? <LoadingSkeleton /> : null}
+          {phase === "loading" ? (
+            <LoadingSkeleton label="Extracting tasks from your notes…" />
+          ) : null}
 
           {phase === "review" ? (
             <>
-              <button
-                type="button"
-                onClick={reset}
-                className="mb-3 flex w-fit items-center gap-1 self-end text-xs text-muted-foreground hover:text-foreground"
-              >
-                <RotateCcw className="h-3 w-3" />
-                Start over
-              </button>
+              <StartOverButton onClick={reset} />
               <div className="flex flex-col gap-3">
                 {cards.map((card) => (
                   <ImportCardView
@@ -329,70 +314,15 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
                 subtask{acceptedSubtaskCount === 1 ? "" : "s"}
               </Button>
             ) : null}
-            {hasFailed && !isCommitting ? (
-              <Button
-                variant="destructive"
-                className={cn("w-full", committable.length > 0 ? "mt-2" : "")}
-                onClick={() => void commit()}
-              >
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Retry failed
-              </Button>
-            ) : null}
+            <RetryFailedButton
+              show={hasFailed && !isCommitting}
+              hasCommittable={committable.length > 0}
+              onClick={() => void commit()}
+            />
           </div>
         ) : null}
       </SheetContent>
     </Sheet>
-  )
-}
-
-function OfflineBanner() {
-  return (
-    <p className="mb-3 flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-      <WifiOff className="h-4 w-4 shrink-0" />
-      You're offline — importing notes needs a connection.
-    </p>
-  )
-}
-
-function BudgetBanner() {
-  return (
-    <p className="mb-3 flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-600 dark:text-amber-400">
-      <AlertTriangle className="h-4 w-4 shrink-0" />
-      Daily AI usage limit reached. Your budget resets tomorrow.
-    </p>
-  )
-}
-
-function ErrorBanner({
-  message,
-  onRetry,
-}: Readonly<{ message: string; onRetry: () => void }>) {
-  return (
-    <div className="mb-3 flex items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-      <span className="flex items-center gap-2">
-        <AlertTriangle className="h-4 w-4 shrink-0" />
-        {message}
-      </span>
-      <Button variant="outline" size="sm" onClick={onRetry}>
-        <RefreshCw className="mr-1 h-3.5 w-3.5" />
-        Retry
-      </Button>
-    </div>
-  )
-}
-
-function LoadingSkeleton() {
-  return (
-    <div className="flex flex-col gap-3">
-      <p className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        Extracting tasks from your notes…
-      </p>
-      {[1, 2, 3].map((row) => (
-        <div key={row} className="h-20 animate-pulse rounded-xl bg-muted/60" />
-      ))}
-    </div>
   )
 }
 
@@ -507,30 +437,10 @@ function ImportCardView({
   onRemove: (number: number) => void
 }>) {
   if (card.status === "created") {
-    return (
-      <div className="rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-muted-foreground">
-        <span className="font-semibold text-primary">#{card.number}</span>{" "}
-        {card.title} — created ✓
-      </div>
-    )
+    return <CreatedCardRow number={card.number} title={card.title} />
   }
 
   const isExcluded = !card.included
-
-  const mapSubtasks =
-    (
-      index: number,
-      transform: (item: { title: string; accepted: boolean }) => {
-        title: string
-        accepted: boolean
-      }
-    ) =>
-    (prev: ImportDraftCard): ImportDraftCard => ({
-      ...prev,
-      subtasks: prev.subtasks.map((item, itemIndex) =>
-        itemIndex === index ? transform(item) : item
-      ),
-    })
 
   return (
     <div
@@ -553,9 +463,7 @@ function ImportCardView({
         />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs font-bold text-muted-foreground">
-              #{card.number}
-            </span>
+            <NumberChip number={card.number} />
             <Select
               value={card.priority}
               onValueChange={(value: TaskPriority) =>
@@ -665,71 +573,42 @@ function ImportCardView({
             className="mt-1 h-8 w-40 border-transparent bg-muted/60 px-2 text-xs shadow-none"
           />
 
-          {card.subtasks.length > 0 ? (
-            <div className="mt-2 flex flex-col gap-1.5 pl-2">
-              {card.subtasks.map((sub, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <Checkbox
-                    checked={sub.accepted}
-                    aria-label={`Include subtask ${index + 1} of task ${card.number}`}
-                    onCheckedChange={(checked) =>
-                      onChange(
-                        card.number,
-                        mapSubtasks(index, (item) => ({
-                          ...item,
-                          accepted: checked === true,
-                        }))
-                      )
-                    }
-                  />
-                  <Input
-                    value={sub.title}
-                    aria-label={`Task ${card.number} subtask ${index + 1}`}
-                    onChange={(event) =>
-                      onChange(
-                        card.number,
-                        mapSubtasks(index, (item) => ({
-                          ...item,
-                          title: event.target.value,
-                        }))
-                      )
-                    }
-                    className="h-8 flex-1 border-transparent bg-transparent px-1 text-sm shadow-none focus-visible:border-input focus-visible:bg-background"
-                  />
-                  <button
-                    type="button"
-                    aria-label={`Remove subtask ${index + 1}`}
-                    onClick={() =>
-                      onChange(card.number, (prev) => ({
-                        ...prev,
-                        subtasks: prev.subtasks.filter(
-                          (_, itemIndex) => itemIndex !== index
-                        ),
-                      }))
-                    }
-                    className="text-muted-foreground/60 hover:text-destructive"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          ) : null}
-          <div className="mt-1.5 pl-2">
-            <button
-              type="button"
-              onClick={() =>
-                onChange(card.number, (prev) => ({
-                  ...prev,
-                  subtasks: [...prev.subtasks, { title: "", accepted: true }],
+          <SubtaskListEditor
+            cardNumber={card.number}
+            subtasks={card.subtasks}
+            onToggle={(index, accepted) =>
+              onChange(
+                card.number,
+                updateSubtaskAt<ImportDraftCard>(index, (item) => ({
+                  ...item,
+                  accepted,
                 }))
-              }
-              className="flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-            >
-              <Plus className="h-3 w-3" />
-              Add subtask
-            </button>
-          </div>
+              )
+            }
+            onEditTitle={(index, title) =>
+              onChange(
+                card.number,
+                updateSubtaskAt<ImportDraftCard>(index, (item) => ({
+                  ...item,
+                  title,
+                }))
+              )
+            }
+            onRemove={(index) =>
+              onChange(card.number, (prev) => ({
+                ...prev,
+                subtasks: prev.subtasks.filter(
+                  (_, itemIndex) => itemIndex !== index
+                ),
+              }))
+            }
+            onAdd={() =>
+              onChange(card.number, (prev) => ({
+                ...prev,
+                subtasks: [...prev.subtasks, { title: "", accepted: true }],
+              }))
+            }
+          />
         </div>
         {card.status === "failed" ? (
           <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-destructive">
