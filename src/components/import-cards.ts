@@ -1,5 +1,4 @@
 import {
-  createIdempotencyKey,
   type ImportTaskProposal,
   type TaskCreateData,
   type TaskPriority,
@@ -8,6 +7,7 @@ import {
   SUBTASK_TITLE_LIMIT,
   TASK_DESCRIPTION_LIMIT,
   TASK_TITLE_LIMIT,
+  commitProposalCards,
 } from "./proposal-cards"
 
 /** Client-side cap mirroring the backend's 1..10_000-char body limit. */
@@ -173,12 +173,12 @@ export interface ImportCommitResult {
 }
 
 /**
- * Creates one task per committable card, sequentially (same cadence as the
- * breakdown commit). Each card gets its own uuid-v4 key on first attempt via
+ * Creates one task per committable card via the shared `commitProposalCards`
+ * loop: each card gets its own uuid-v4 key on first attempt via
  * `onKeyAssigned`; the caller persists it on the card so a retried commit
  * reuses it — the backend then replays instead of double-creating.
  */
-export async function commitImportCards(
+export function commitImportCards(
   cards: ImportDraftCard[],
   createTask: (
     data: TaskCreateData,
@@ -187,41 +187,11 @@ export async function commitImportCards(
   onStatus?: (cardNumber: number, status: ImportCardStatus) => void,
   onKeyAssigned?: (cardNumber: number, key: string) => void
 ): Promise<ImportCommitResult> {
-  const targets = committableCards(cards)
-  let created = 0
-  for (const card of targets) {
-    const key = card.idempotencyKey ?? createIdempotencyKey()
-    if (card.idempotencyKey === undefined) onKeyAssigned?.(card.number, key)
-    onStatus?.(card.number, "creating")
-    try {
-      await createTask(toTaskCreateData(card), key)
-      onStatus?.(card.number, "created")
-      created += 1
-    } catch (err) {
-      // Same key + a different body means the first POST DID land — the
-      // user edited the card after a create that succeeded server-side but
-      // failed client-side (lost response). The task exists with its
-      // earlier payload; mark it created instead of failing every retry.
-      const status = (err as { response?: { status?: number } }).response
-        ?.status
-      const detail = (err as { response?: { data?: { detail?: unknown } } })
-        .response?.data?.detail
-      const message =
-        typeof detail === "string"
-          ? detail
-          : err instanceof Error
-            ? err.message
-            : ""
-      if (
-        status === 422 &&
-        /idempotency|different request body/i.test(message)
-      ) {
-        onStatus?.(card.number, "created")
-        created += 1
-      } else {
-        onStatus?.(card.number, "failed")
-      }
-    }
-  }
-  return { created, failed: targets.length - created }
+  return commitProposalCards(
+    committableCards(cards),
+    createTask,
+    toTaskCreateData,
+    onStatus,
+    onKeyAssigned
+  )
 }

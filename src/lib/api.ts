@@ -425,9 +425,11 @@ export const breakdownApi = {
       contextTaskId?: number
       focusTaskNumber?: number
       focusTaskTitle?: string
+      idempotencyKey?: string
     }
   ) => {
-    const { contextTaskId, focusTaskNumber, focusTaskTitle } = options ?? {}
+    const { contextTaskId, focusTaskNumber, focusTaskTitle, idempotencyKey } =
+      options ?? {}
     const response = await api.post<BreakdownResponse>(
       "/api/v1/breakdown",
       {
@@ -438,7 +440,18 @@ export const breakdownApi = {
           : {}),
         ...(focusTaskTitle != null ? { focus_task_title: focusTaskTitle } : {}),
       },
-      { skipRateLimitToast: true }
+      {
+        skipRateLimitToast: true,
+        // Outlast the backend's 120s per-key LLM lock — a shorter timeout
+        // aborts while the server still holds the key, and the retry 409s.
+        timeout: 130_000,
+        // Explicit key (the interceptor keeps a header that's already set):
+        // a retry of the SAME request replays the cached response instead of
+        // billing a second breakdown.
+        ...(idempotencyKey
+          ? { headers: { "X-Idempotency-Key": idempotencyKey } }
+          : {}),
+      }
     )
     return response.data
   },
