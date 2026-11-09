@@ -161,9 +161,15 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
         .response?.data?.detail
       // A definitive error response means the server-side call is done and
       // non-2xx responses aren't cached — the key is spent; a retry mints a
-      // fresh one. Keep it for transport loss (undefined) and 409, where the
-      // original may still be in-flight and only the same key can attach.
-      if (status !== undefined && status !== 409) {
+      // fresh one. Keep it for transport loss (undefined), 409, and gateway
+      // 502/504, where the original may still be in-flight and only the same
+      // key can attach — a fresh key there re-bills the extraction.
+      if (
+        status !== undefined &&
+        status !== 409 &&
+        status !== 502 &&
+        status !== 504
+      ) {
         extractKeyRef.current = null
       }
       if (status === 429) {
@@ -253,7 +259,9 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
 
   const committable = committableCards(cards)
   // Only included failures count — an unchecked failed card isn't a target.
-  const hasFailed = cards.some((c) => c.status === "failed" && c.included)
+  const hasFailed = cards.some(
+    (c) => c.status === "failed" && c.included && c.title.trim() !== ""
+  )
   const isCreating = cards.some((c) => c.status === "creating")
   const acceptedSubtaskCount = committable.reduce(
     (sum, card) =>

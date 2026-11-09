@@ -13,7 +13,10 @@ import {
   StartOverButton,
   SubtaskListEditor,
 } from "@/components/proposal-sheet-ui"
-import { updateSubtaskAt } from "@/components/proposal-cards"
+import {
+  classifyProposeError,
+  updateSubtaskAt,
+} from "@/components/proposal-cards"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
@@ -39,41 +42,6 @@ import {
 const INPUT_CHAR_LIMIT = 10_000
 
 type Phase = "input" | "loading" | "review"
-
-/**
- * Maps a propose() failure to the sheet's banners. Two different 429s: the
- * daily AI budget (backend detail) dead-ends until tomorrow; slowapi's
- * per-minute RATE_LIMIT_BREAKDOWN is a retryable "slow down" — same status,
- * very different meaning.
- */
-function classifyProposeError(err: unknown): {
-  budgetExhausted: boolean
-  message: string | null
-} {
-  const status = (err as { response?: { status?: number } }).response?.status
-  const detail = (err as { response?: { data?: { detail?: unknown } } })
-    .response?.data?.detail
-  if (
-    status === 429 &&
-    typeof detail === "string" &&
-    /daily ai usage limit/i.test(detail)
-  ) {
-    return { budgetExhausted: true, message: null }
-  }
-  if (status === 429) {
-    return {
-      budgetExhausted: false,
-      message: "Too many attempts — wait a moment, then try again.",
-    }
-  }
-  return {
-    budgetExhausted: false,
-    message:
-      status === 503
-        ? "The AI service isn't available right now. Try again later."
-        : "Something went wrong. Please try again.",
-  }
-}
 
 interface BreakdownSheetProps {
   readonly isOpen: boolean

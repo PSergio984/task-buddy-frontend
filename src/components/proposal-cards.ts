@@ -47,6 +47,41 @@ export interface ProposalCommitResult {
 }
 
 /**
+ * Maps a propose()/extract() failure to the sheet's banners. Two different
+ * 429s: the daily AI budget (backend detail) dead-ends until tomorrow;
+ * slowapi's per-minute rate limit is a retryable "slow down" — same status,
+ * very different meaning.
+ */
+export function classifyProposeError(err: unknown): {
+  budgetExhausted: boolean
+  message: string | null
+} {
+  const status = (err as { response?: { status?: number } }).response?.status
+  const detail = (err as { response?: { data?: { detail?: unknown } } })
+    .response?.data?.detail
+  if (
+    status === 429 &&
+    typeof detail === "string" &&
+    /daily ai usage limit/i.test(detail)
+  ) {
+    return { budgetExhausted: true, message: null }
+  }
+  if (status === 429) {
+    return {
+      budgetExhausted: false,
+      message: "Too many attempts — wait a moment, then try again.",
+    }
+  }
+  return {
+    budgetExhausted: false,
+    message:
+      status === 503
+        ? "The AI service isn't available right now. Try again later."
+        : "Something went wrong. Please try again.",
+  }
+}
+
+/**
  * A same-key/different-body 422 means the first POST DID land — the user
  * edited the card after a create that succeeded server-side but failed
  * client-side (lost response). The task exists with its earlier payload;

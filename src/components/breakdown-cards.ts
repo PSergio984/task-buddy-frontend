@@ -41,7 +41,10 @@ export function toDraftCard(
   }
 }
 
-/** Replace the card at `targetNumber` (stable chip id), regardless of title. */
+/** Replace the card at `targetNumber` (stable chip id), regardless of title.
+ *  Note: replacements arrive keyless — refining a FAILED card whose create
+ *  actually landed server-side (lost response) orphans that task; a retry of
+ *  the same card is the safe recovery, refine is a new proposal. */
 export function replaceCard(
   prev: DraftCard[],
   targetNumber: number,
