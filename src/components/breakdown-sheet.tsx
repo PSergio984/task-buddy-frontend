@@ -176,16 +176,7 @@ export function BreakdownSheet({
       // cached result.
       proposeKeyRef.current = null
 
-      if (response.tasks.length === 0) {
-        if (response.reason) {
-          // Parse/infra degrade — retryable, distinct from "no tasks found".
-          setError("The breakdown failed. Please try again.")
-        } else {
-          setEmptyNotice(
-            "I couldn't find any tasks in that. Try pasting your to-dos."
-          )
-        }
-      } else {
+      if (response.tasks.length > 0) {
         const newCards: DraftCard[] = response.tasks.map((task) =>
           toDraftCard(task, cardNumberRef.current++)
         )
@@ -196,6 +187,14 @@ export function BreakdownSheet({
         )
         setPhase("review")
         return
+      }
+      if (response.reason) {
+        // Parse/infra degrade — retryable, distinct from "no tasks found".
+        setError("The breakdown failed. Please try again.")
+      } else {
+        setEmptyNotice(
+          "I couldn't find any tasks in that. Try pasting your to-dos."
+        )
       }
     } catch (err) {
       const status = (err as { response?: { status?: number } }).response
