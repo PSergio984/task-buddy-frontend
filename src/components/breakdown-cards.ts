@@ -67,13 +67,25 @@ export function toBreakdownTaskCreateData(
   projectId?: number
 ): TaskCreateData {
   return {
-    title: card.title,
+    // Values are clipped to the backend limits — the title input has no
+    // maxLength, so an edit can exceed what intake clipped and 422 the create.
+    title: card.title.trim().slice(0, TASK_TITLE_LIMIT),
     estimated_effort_minutes: card.effortMinutes ?? undefined,
     project_id: projectId,
     subtasks: card.subtasks
       .filter((sub) => sub.accepted && sub.title.trim())
-      .map((sub) => ({ title: sub.title })),
+      .map((sub) => ({
+        title: sub.title.trim().slice(0, SUBTASK_TITLE_LIMIT),
+      })),
   }
+}
+
+/** Cards still eligible for creation: accepted, titled, not yet created. */
+export function committableCards(cards: DraftCard[]): DraftCard[] {
+  return cards.filter(
+    (card) =>
+      card.accepted && card.status !== "created" && card.title.trim() !== ""
+  )
 }
 
 export interface BreakdownCommitResult {
@@ -98,7 +110,7 @@ export function commitBreakdownCards(
   projectId?: number
 ): Promise<BreakdownCommitResult> {
   return commitProposalCards(
-    cards.filter((card) => card.accepted && card.status !== "created"),
+    committableCards(cards),
     createTask,
     (card) => toBreakdownTaskCreateData(card, projectId),
     onStatus,

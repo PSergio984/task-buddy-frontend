@@ -58,7 +58,9 @@ function isAlreadyCreatedError(err: unknown): boolean {
     .response?.data?.detail
   let message = err instanceof Error ? err.message : ""
   if (typeof detail === "string") message = detail
-  return status === 422 && /idempotency|different request body/i.test(message)
+  // The middleware's exact same-key/different-body 422 — a looser match
+  // could mark a card created on an unrelated idempotency validation error.
+  return status === 422 && /different request body/i.test(message)
 }
 
 /**

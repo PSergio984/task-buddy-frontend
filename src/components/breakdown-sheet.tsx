@@ -31,6 +31,7 @@ import {
 import {
   type DraftCard,
   commitBreakdownCards,
+  committableCards,
   replaceCard,
   toDraftCard,
 } from "./breakdown-cards"
@@ -201,9 +202,15 @@ export function BreakdownSheet({
         ?.status
       // A definitive error response means the server-side call is done and
       // non-2xx responses aren't cached — the key is spent; a retry mints a
-      // fresh one. Keep it for transport loss (undefined) and 409, where the
-      // original may still be in-flight and only the same key can attach.
-      if (status !== undefined && status !== 409) {
+      // fresh one. Keep it for transport loss (undefined), 409, and gateway
+      // 502/504 — the original may still be in-flight behind the proxy and
+      // only the same key can attach to it.
+      if (
+        status !== undefined &&
+        status !== 409 &&
+        status !== 502 &&
+        status !== 504
+      ) {
         proposeKeyRef.current = null
       }
       const failure = classifyProposeError(err)
@@ -246,18 +253,12 @@ export function BreakdownSheet({
     )
   }
 
-  // Cards still eligible for creation: accepted and not yet created.
-  const committableCount = cards.filter(
-    (c) => c.accepted && c.status !== "created"
-  ).length
+  const committableCount = committableCards(cards).length
   const hasFailed = cards.some((c) => c.status === "failed" && c.accepted)
   const isCreating = cards.some((c) => c.status === "creating")
-  const acceptedSubtaskCount = cards.reduce(
+  const acceptedSubtaskCount = committableCards(cards).reduce(
     (sum, card) =>
-      sum +
-      (card.accepted && card.status !== "created"
-        ? card.subtasks.filter((s) => s.accepted && s.title.trim()).length
-        : 0),
+      sum + card.subtasks.filter((s) => s.accepted && s.title.trim()).length,
     0
   )
 
@@ -290,6 +291,8 @@ export function BreakdownSheet({
           description: `Added ${total} task${total === 1 ? "" : "s"} · ${subtasks} subtask${subtasks === 1 ? "" : "s"}.`,
           variant: "success",
         })
+        // Back to a clean input — reopening shouldn't show stale "created" cards.
+        reset()
         onClose()
       } else if (created > 0) {
         toast({
@@ -377,7 +380,7 @@ export function BreakdownSheet({
             <RefineInput
               value={refineText}
               setValue={setRefineText}
-              disabled={!isOnline || isCommitting}
+              disabled={!isOnline || isCommitting || budgetExhausted}
               onSubmit={handleRefineSubmit}
             />
             {/* Commit stays visible while anything is committable; after a

@@ -1,12 +1,14 @@
 import { describe, expect, it, vi } from "vitest"
 import {
   commitBreakdownCards,
+  committableCards,
   replaceCard,
   toBreakdownTaskCreateData,
   toDraftCard,
   type DraftCard,
 } from "./breakdown-cards"
 import type { BreakdownTaskProposal, TaskCreateData } from "@/lib/api"
+import { SUBTASK_TITLE_LIMIT, TASK_TITLE_LIMIT } from "./proposal-cards"
 
 const proposal = (
   title: string,
@@ -78,6 +80,29 @@ describe("toDraftCard", () => {
     })
     expect(card.subtasks).toEqual([{ title: "sub", accepted: true }])
   })
+
+  it("clips over-limit titles at intake so oversized model output can't 422", () => {
+    const card = toDraftCard(
+      proposal("t".repeat(TASK_TITLE_LIMIT + 20), [
+        "s".repeat(SUBTASK_TITLE_LIMIT + 20),
+      ]),
+      1
+    )
+    expect(card.title).toHaveLength(TASK_TITLE_LIMIT)
+    expect(card.subtasks[0].title).toHaveLength(SUBTASK_TITLE_LIMIT)
+  })
+})
+
+describe("committableCards", () => {
+  it("excludes unchecked, blank-titled and already-created cards", () => {
+    const cards = [
+      { ...toDraftCard(proposal("A"), 1), accepted: false },
+      toDraftCard(proposal("B"), 2),
+      { ...toDraftCard(proposal("C"), 3), status: "created" as const },
+      { ...toDraftCard(proposal("D"), 4), title: "   " },
+    ]
+    expect(committableCards(cards).map((c) => c.title)).toEqual(["B"])
+  })
 })
 
 describe("toBreakdownTaskCreateData", () => {
@@ -95,6 +120,19 @@ describe("toBreakdownTaskCreateData", () => {
     expect(data.estimated_effort_minutes).toBe(25)
     expect(data.project_id).toBe(4)
     expect(data.subtasks).toEqual([{ title: "data" }])
+  })
+
+  it("clips edited fields to the backend limits — the inputs cap typing, not edits", () => {
+    const card: DraftCard = {
+      ...toDraftCard(proposal("A"), 1),
+      title: "t".repeat(TASK_TITLE_LIMIT + 20),
+      subtasks: [
+        { title: "s".repeat(SUBTASK_TITLE_LIMIT + 20), accepted: true },
+      ],
+    }
+    const data = toBreakdownTaskCreateData(card, 4)
+    expect(data.title).toHaveLength(TASK_TITLE_LIMIT)
+    expect(data.subtasks?.[0].title).toHaveLength(SUBTASK_TITLE_LIMIT)
   })
 })
 
