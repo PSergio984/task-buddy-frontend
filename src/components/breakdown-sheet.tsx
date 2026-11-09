@@ -28,7 +28,12 @@ import {
   createIdempotencyKey,
   tasksApi,
 } from "@/lib/api"
-import { type DraftCard, replaceCard, toDraftCard } from "./breakdown-cards"
+import {
+  type DraftCard,
+  commitBreakdownCards,
+  replaceCard,
+  toDraftCard,
+} from "./breakdown-cards"
 
 const INPUT_CHAR_LIMIT = 10_000
 
@@ -69,10 +74,26 @@ export function BreakdownSheet({
     focus?: { number: number; title?: string }
   } | null>(null)
   const cardNumberRef = useRef(1)
+  // Idempotency key per request signature — a retry of the SAME request
+  // replays the backend's cached response instead of billing a second LLM
+  // call; a different request mints a fresh one (same key + different
+  // body → 422).
+  const proposeKeyRef = useRef<{ source: string; key: string } | null>(null)
 
   useEffect(() => {
     if (isOpen) cardNumberRef.current = 1
   }, [isOpen])
+
+  // The sheet stays mounted (MainLayout), so a 429 flag must not dead-end
+  // a reopened sheet — clear it on the closed→open transition (render-time
+  // reset; a fresh attempt re-checks the backend anyway).
+  const [wasOpen, setWasOpen] = useState(isOpen)
+  if (wasOpen !== isOpen) {
+    setWasOpen(isOpen)
+    if (isOpen) {
+      setBudgetExhausted(false)
+    }
+  }
 
   const reset = () => {
     setPhase("input")
@@ -84,6 +105,7 @@ export function BreakdownSheet({
     setEmptyNotice(null)
     originalTextRef.current = ""
     lastRequestRef.current = null
+    proposeKeyRef.current = null
   }
 
   async function requestBreakdown(
@@ -96,13 +118,28 @@ export function BreakdownSheet({
     setEmptyNotice(null)
     lastRequestRef.current = { text: requestText, focus }
 
+    const contextTaskId =
+      focus === undefined && contextTask ? contextTask.id : undefined
+    const source = JSON.stringify({ requestText, contextTaskId, focus })
+    const key =
+      proposeKeyRef.current?.source === source
+        ? proposeKeyRef.current.key
+        : createIdempotencyKey()
+    proposeKeyRef.current = { source, key }
+
     try {
       const response = await breakdownApi.propose(requestText, {
-        contextTaskId:
-          focus === undefined && contextTask ? contextTask.id : undefined,
+        contextTaskId,
         focusTaskNumber: focus?.number,
         focusTaskTitle: focus?.title,
+        idempotencyKey: key,
       })
+
+      // A 2xx response is cached under this key server-side — the response
+      // arrived, so the key has done its job. Clear it: a later retry must
+      // mint a fresh key to actually re-run the breakdown, not replay this
+      // cached result.
+      proposeKeyRef.current = null
 
       if (response.tasks.length === 0) {
         if (response.reason) {
@@ -128,8 +165,27 @@ export function BreakdownSheet({
     } catch (err) {
       const status = (err as { response?: { status?: number } }).response
         ?.status
+      const detail = (err as { response?: { data?: { detail?: unknown } } })
+        .response?.data?.detail
+      // A definitive error response means the server-side call is done and
+      // non-2xx responses aren't cached — the key is spent; a retry mints a
+      // fresh one. Keep it for transport loss (undefined) and 409, where the
+      // original may still be in-flight and only the same key can attach.
+      if (status !== undefined && status !== 409) {
+        proposeKeyRef.current = null
+      }
       if (status === 429) {
-        setBudgetExhausted(true)
+        // Two different 429s: the daily AI budget (backend detail) dead-ends
+        // until tomorrow; slowapi's per-minute RATE_LIMIT_BREAKDOWN is a
+        // retryable "slow down" — same status, very different meaning.
+        if (
+          typeof detail === "string" &&
+          /daily ai usage limit/i.test(detail)
+        ) {
+          setBudgetExhausted(true)
+        } else {
+          setError("Too many attempts — wait a moment, then try again.")
+        }
       } else {
         setError(
           status === 503
@@ -171,10 +227,6 @@ export function BreakdownSheet({
     )
   }
 
-  const setCardStatus = (number: number, status: DraftCard["status"]) => {
-    updateCard(number, (card) => ({ ...card, status }))
-  }
-
   // Cards still eligible for creation: accepted and not yet created.
   const committableCount = cards.filter(
     (c) => c.accepted && c.status !== "created"
@@ -192,61 +244,44 @@ export function BreakdownSheet({
 
   async function commit() {
     setIsCommitting(true)
-    const targets = cards.filter(
-      (card) => card.accepted && card.status !== "created"
-    )
-    const targetSubtaskCount = targets.reduce(
-      (sum, card) =>
-        sum + card.subtasks.filter((s) => s.accepted && s.title.trim()).length,
-      0
-    )
-    let created = 0
-    for (const card of targets) {
-      setCardStatus(card.number, "creating")
-      try {
-        await tasksApi.create(
-          {
-            title: card.title,
-            estimated_effort_minutes: card.effortMinutes ?? undefined,
-            project_id: contextTask?.project_id ?? projectId ?? undefined,
-            subtasks: card.subtasks
-              .filter((sub) => sub.accepted && sub.title.trim())
-              .map((sub) => ({ title: sub.title })),
-          },
-          { idempotencyKey: createIdempotencyKey() }
-        )
-        setCardStatus(card.number, "created")
-        created += 1
-      } catch {
-        setCardStatus(card.number, "failed")
+    try {
+      const { created, failed } = await commitBreakdownCards(
+        cards,
+        (data, idempotencyKey) => tasksApi.create(data, { idempotencyKey }),
+        (number, status) => updateCard(number, (card) => ({ ...card, status })),
+        // Persist the card's key so a retried commit replays, not re-creates.
+        (number, idempotencyKey) =>
+          updateCard(number, (card) => ({ ...card, idempotencyKey })),
+        contextTask?.project_id ?? projectId
+      )
+      // Cumulative — a retry batch must report all created tasks, not just
+      // the ones it retried.
+      const alreadyCreated = cards.filter((c) => c.status === "created")
+      const total = alreadyCreated.length + created
+      if (failed === 0) {
+        const subtasks =
+          alreadyCreated.reduce(
+            (sum, card) =>
+              sum +
+              card.subtasks.filter((s) => s.accepted && s.title.trim()).length,
+            0
+          ) + acceptedSubtaskCount
+        toast({
+          title: "Tasks added",
+          description: `Added ${total} task${total === 1 ? "" : "s"} · ${subtasks} subtask${subtasks === 1 ? "" : "s"}.`,
+          variant: "success",
+        })
+        onClose()
+      } else if (created > 0) {
+        toast({
+          title: `${total} task${total === 1 ? "" : "s"} added`,
+          description: `${failed} failed. Use "Retry failed" below.`,
+          variant: "destructive",
+        })
       }
-    }
-    setIsCommitting(false)
-    const failed = targets.length - created
-    // Cumulative — a retry batch must report all created tasks, not just
-    // the ones it retried.
-    const alreadyCreated = cards.filter((c) => c.status === "created")
-    const total = alreadyCreated.length + created
-    if (failed === 0) {
-      const subtasks =
-        alreadyCreated.reduce(
-          (sum, card) =>
-            sum +
-            card.subtasks.filter((s) => s.accepted && s.title.trim()).length,
-          0
-        ) + targetSubtaskCount
-      toast({
-        title: "Tasks added",
-        description: `Added ${total} task${total === 1 ? "" : "s"} · ${subtasks} subtask${subtasks === 1 ? "" : "s"}.`,
-        variant: "success",
-      })
-      onClose()
-    } else if (created > 0) {
-      toast({
-        title: `${total} task${total === 1 ? "" : "s"} added`,
-        description: `${failed} failed. Use "Retry failed" below.`,
-        variant: "destructive",
-      })
+    } finally {
+      // An unexpected throw must not wedge the commit + Start Over buttons.
+      setIsCommitting(false)
     }
   }
 
