@@ -286,6 +286,25 @@ export interface BreakdownResponse {
   reason: string | null
 }
 
+export interface ImportSubtaskProposal {
+  title: string
+}
+
+export interface ImportTaskProposal {
+  title: string
+  description: string | null
+  /** ISO date/datetime, or null when the notes carry no deadline. */
+  proposed_deadline: string | null
+  priority: TaskPriority
+  suggested_project_id: number | null
+  subtasks: ImportSubtaskProposal[]
+}
+
+export interface ImportExtractResponse {
+  proposals: ImportTaskProposal[]
+  reason: string | null
+}
+
 export interface PlanTaskRow {
   task_id: number
   reason: string
@@ -420,6 +439,26 @@ export const breakdownApi = {
         ...(focusTaskTitle != null ? { focus_task_title: focusTaskTitle } : {}),
       },
       { skipRateLimitToast: true }
+    )
+    return response.data
+  },
+}
+
+export const importApi = {
+  extract: async (text: string, idempotencyKey: string) => {
+    const response = await api.post<ImportExtractResponse>(
+      "/api/v1/import/extract",
+      { text },
+      {
+        skipRateLimitToast: true,
+        // Outlast the backend's 120s per-key LLM lock — a shorter timeout
+        // aborts while the server still holds the key, and the retry 409s.
+        timeout: 130_000,
+        // Explicit key (the interceptor keeps a header that's already set):
+        // a retry of the SAME text replays the cached response instead of
+        // billing a second extraction.
+        headers: { "X-Idempotency-Key": idempotencyKey },
+      }
     )
     return response.data
   },

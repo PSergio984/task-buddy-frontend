@@ -4,6 +4,7 @@ import { Sidebar } from "@/components/sidebar"
 import { TopNav } from "@/components/topnav"
 import { TaskDetailDrawer } from "@/components/task-detail-drawer"
 import { BreakdownSheet } from "@/components/breakdown-sheet"
+import { ImportSheet } from "@/components/import-sheet"
 import { MobileNav } from "./mobile-nav"
 import { MobileDrawer } from "./mobile-drawer"
 import { FocusMiniBar } from "./focus-mini-bar"
@@ -20,12 +21,13 @@ export function MainLayout() {
   const [activeTask, setActiveTask] = useState<Task | null>(null)
   const [drawerMode, setDrawerMode] = useState<"view" | "create">("view")
   const [isBreakdownOpen, setIsBreakdownOpen] = useState(false)
+  const [isImportOpen, setIsImportOpen] = useState(false)
   const [breakdownContextTask, setBreakdownContextTask] = useState<Task | null>(
     null
   )
   // Current UI project context (sidebar "project:<id>" filter) for commits.
   const { activeSidebarFilter } = useFilters()
-  const breakdownProjectId = activeSidebarFilter.startsWith("project:")
+  const activeProjectId = activeSidebarFilter.startsWith("project:")
     ? Number.parseInt(activeSidebarFilter.split(":")[1], 10) || undefined
     : undefined
 
@@ -80,6 +82,7 @@ export function MainLayout() {
         <TopNav
           onNewTask={handleOpenNewTask}
           onBreakdown={() => handleOpenBreakdown()}
+          onImport={() => setIsImportOpen(true)}
         />
 
         {/* Scrollable Main Content */}
@@ -140,7 +143,14 @@ export function MainLayout() {
           setBreakdownContextTask(null)
         }}
         contextTask={breakdownContextTask}
-        projectId={breakdownProjectId}
+        projectId={activeProjectId}
+      />
+
+      {/* Global Notes Import Sheet */}
+      <ImportSheet
+        isOpen={isImportOpen}
+        onClose={() => setIsImportOpen(false)}
+        projectId={activeProjectId}
       />
     </div>
   )

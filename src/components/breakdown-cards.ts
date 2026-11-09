@@ -1,4 +1,5 @@
 import type { BreakdownTaskProposal } from "@/lib/api"
+import { SUBTASK_TITLE_LIMIT, TASK_TITLE_LIMIT } from "./proposal-cards"
 
 /** One editable draft card in the proposal list. */
 export interface DraftCard {
@@ -17,10 +18,12 @@ export function toDraftCard(
   return {
     number,
     accepted: true,
-    title: task.title,
+    // maxLength only caps typed input — clip model output at intake so an
+    // over-limit proposal can't 422 the create.
+    title: task.title.trim().slice(0, TASK_TITLE_LIMIT),
     effortMinutes: task.estimated_effort_minutes ?? null,
     subtasks: task.subtasks.map((sub) => ({
-      title: sub.title,
+      title: sub.title.trim().slice(0, SUBTASK_TITLE_LIMIT),
       accepted: true,
     })),
     status: "draft",

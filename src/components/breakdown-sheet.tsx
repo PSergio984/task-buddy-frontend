@@ -1,23 +1,19 @@
 import { useEffect, useRef, useState } from "react"
+import { Check, ListTree, Loader2, Sparkles, X } from "lucide-react"
+import { Sheet, SheetContent } from "@/components/ui/sheet"
 import {
-  AlertTriangle,
-  Check,
-  ListTree,
-  Loader2,
-  Plus,
-  RefreshCw,
-  RotateCcw,
-  Sparkles,
-  Trash2,
-  WifiOff,
-  X,
-} from "lucide-react"
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet"
+  BudgetBanner,
+  CreatedCardRow,
+  ErrorBanner,
+  LoadingSkeleton,
+  NumberChip,
+  OfflineBanner,
+  RetryFailedButton,
+  SheetHeaderBlock,
+  StartOverButton,
+  SubtaskListEditor,
+} from "@/components/proposal-sheet-ui"
+import { updateSubtaskAt } from "@/components/proposal-cards"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
@@ -183,13 +179,13 @@ export function BreakdownSheet({
   const committableCount = cards.filter(
     (c) => c.accepted && c.status !== "created"
   ).length
-  const hasFailed = cards.some((c) => c.status === "failed")
+  const hasFailed = cards.some((c) => c.status === "failed" && c.accepted)
   const isCreating = cards.some((c) => c.status === "creating")
   const acceptedSubtaskCount = cards.reduce(
     (sum, card) =>
       sum +
       (card.accepted && card.status !== "created"
-        ? card.subtasks.filter((s) => s.accepted).length
+        ? card.subtasks.filter((s) => s.accepted && s.title.trim()).length
         : 0),
     0
   )
@@ -200,7 +196,8 @@ export function BreakdownSheet({
       (card) => card.accepted && card.status !== "created"
     )
     const targetSubtaskCount = targets.reduce(
-      (sum, card) => sum + card.subtasks.filter((s) => s.accepted).length,
+      (sum, card) =>
+        sum + card.subtasks.filter((s) => s.accepted && s.title.trim()).length,
       0
     )
     let created = 0
@@ -226,16 +223,27 @@ export function BreakdownSheet({
     }
     setIsCommitting(false)
     const failed = targets.length - created
+    // Cumulative — a retry batch must report all created tasks, not just
+    // the ones it retried.
+    const alreadyCreated = cards.filter((c) => c.status === "created")
+    const total = alreadyCreated.length + created
     if (failed === 0) {
+      const subtasks =
+        alreadyCreated.reduce(
+          (sum, card) =>
+            sum +
+            card.subtasks.filter((s) => s.accepted && s.title.trim()).length,
+          0
+        ) + targetSubtaskCount
       toast({
         title: "Tasks added",
-        description: `Added ${targets.length} task${targets.length === 1 ? "" : "s"} · ${targetSubtaskCount} subtask${targetSubtaskCount === 1 ? "" : "s"}.`,
+        description: `Added ${total} task${total === 1 ? "" : "s"} · ${subtasks} subtask${subtasks === 1 ? "" : "s"}.`,
         variant: "success",
       })
       onClose()
     } else if (created > 0) {
       toast({
-        title: `${created} task${created === 1 ? "" : "s"} added`,
+        title: `${total} task${total === 1 ? "" : "s"} added`,
         description: `${failed} failed. Use "Retry failed" below.`,
         variant: "destructive",
       })
@@ -256,27 +264,20 @@ export function BreakdownSheet({
         side="right"
         className="flex w-full flex-col gap-0 sm:max-w-xl"
       >
-        <SheetHeader className="border-b border-white/5 px-6 py-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-              <ListTree className="h-4 w-4 text-primary" />
-            </div>
-            <div>
-              <SheetTitle className="text-sm font-black tracking-[0.2em] uppercase">
-                Break Down
-              </SheetTitle>
-              {contextTask && phase !== "review" ? (
-                <p className="text-xs text-muted-foreground">
-                  Context: {contextTask.title}
-                </p>
-              ) : null}
-            </div>
-          </div>
-        </SheetHeader>
+        <SheetHeaderBlock
+          icon={<ListTree className="h-4 w-4 text-primary" />}
+          title="Break Down"
+        >
+          {contextTask && phase !== "review" ? (
+            <p className="text-xs text-muted-foreground">
+              Context: {contextTask.title}
+            </p>
+          ) : null}
+        </SheetHeaderBlock>
 
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-4">
           {!isOnline ? (
-            <OfflineBanner />
+            <OfflineBanner message="You're offline — the breakdown bot needs a connection." />
           ) : budgetExhausted ? (
             <BudgetBanner />
           ) : error ? (
@@ -296,23 +297,19 @@ export function BreakdownSheet({
             />
           ) : null}
 
-          {phase === "loading" ? <LoadingSkeleton /> : null}
+          {phase === "loading" ? (
+            <LoadingSkeleton label="Breaking down your text…" />
+          ) : null}
 
           {phase === "review" ? (
             <>
-              <button
-                type="button"
-                onClick={reset}
-                className="mb-3 flex w-fit items-center gap-1 self-end text-xs text-muted-foreground hover:text-foreground"
-              >
-                <RotateCcw className="h-3 w-3" />
-                Start over
-              </button>
+              <StartOverButton onClick={reset} disabled={isCommitting} />
               <div className="flex flex-col gap-3">
                 {cards.map((card) => (
                   <DraftCardView
                     key={card.number}
                     card={card}
+                    disabled={isCommitting}
                     onChange={updateCard}
                   />
                 ))}
@@ -326,7 +323,7 @@ export function BreakdownSheet({
             <RefineInput
               value={refineText}
               setValue={setRefineText}
-              disabled={!isOnline}
+              disabled={!isOnline || isCommitting}
               onSubmit={handleRefineSubmit}
             />
             {/* Commit stays visible while anything is committable; after a
@@ -354,70 +351,16 @@ export function BreakdownSheet({
                 {acceptedSubtaskCount === 1 ? "" : "s"}
               </Button>
             ) : null}
-            {hasFailed && !isCommitting ? (
-              <Button
-                variant="destructive"
-                className={cn("w-full", committableCount > 0 ? "mt-2" : "mt-3")}
-                onClick={() => void commit()}
-              >
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Retry failed
-              </Button>
-            ) : null}
+            <RetryFailedButton
+              show={hasFailed && !isCommitting}
+              hasCommittable={committableCount > 0}
+              disabled={!isOnline}
+              onClick={() => void commit()}
+            />
           </div>
         ) : null}
       </SheetContent>
     </Sheet>
-  )
-}
-
-function OfflineBanner() {
-  return (
-    <p className="mb-3 flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-      <WifiOff className="h-4 w-4 shrink-0" />
-      You're offline — the breakdown bot needs a connection.
-    </p>
-  )
-}
-
-function BudgetBanner() {
-  return (
-    <p className="mb-3 flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-600 dark:text-amber-400">
-      <AlertTriangle className="h-4 w-4 shrink-0" />
-      Daily AI usage limit reached. Your budget resets tomorrow.
-    </p>
-  )
-}
-
-function ErrorBanner({
-  message,
-  onRetry,
-}: Readonly<{ message: string; onRetry: () => void }>) {
-  return (
-    <div className="mb-3 flex items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-      <span className="flex items-center gap-2">
-        <AlertTriangle className="h-4 w-4 shrink-0" />
-        {message}
-      </span>
-      <Button variant="outline" size="sm" onClick={onRetry}>
-        <RefreshCw className="mr-1 h-3.5 w-3.5" />
-        Retry
-      </Button>
-    </div>
-  )
-}
-
-function LoadingSkeleton() {
-  return (
-    <div className="flex flex-col gap-3">
-      <p className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        Breaking down your text…
-      </p>
-      {[1, 2, 3].map((row) => (
-        <div key={row} className="h-20 animate-pulse rounded-xl bg-muted/60" />
-      ))}
-    </div>
   )
 }
 
@@ -491,36 +434,19 @@ function RefineInput({
 
 function DraftCardView({
   card,
+  disabled = false,
   onChange,
 }: Readonly<{
   card: DraftCard
+  /** Locks committability-changing controls while a commit runs. */
+  disabled?: boolean
   onChange: (number: number, updater: (card: DraftCard) => DraftCard) => void
 }>) {
   if (card.status === "created") {
-    return (
-      <div className="rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-muted-foreground">
-        <span className="font-semibold text-primary">#{card.number}</span>{" "}
-        {card.title} — created ✓
-      </div>
-    )
+    return <CreatedCardRow number={card.number} title={card.title} />
   }
 
   const isRejected = !card.accepted
-
-  const mapSubtasks =
-    (
-      index: number,
-      transform: (item: { title: string; accepted: boolean }) => {
-        title: string
-        accepted: boolean
-      }
-    ) =>
-    (prev: DraftCard): DraftCard => ({
-      ...prev,
-      subtasks: prev.subtasks.map((item, itemIndex) =>
-        itemIndex === index ? transform(item) : item
-      ),
-    })
 
   return (
     <div
@@ -532,6 +458,8 @@ function DraftCardView({
       <div className="flex items-start gap-3">
         <Checkbox
           checked={card.accepted}
+          disabled={disabled}
+          aria-label={`Include task ${card.number}`}
           onCheckedChange={(checked) =>
             onChange(card.number, (prev) => ({
               ...prev,
@@ -542,9 +470,7 @@ function DraftCardView({
         />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs font-bold text-muted-foreground">
-              #{card.number}
-            </span>
+            <NumberChip number={card.number} />
             {card.effortMinutes != null ? (
               <span className="text-xs text-muted-foreground">
                 ~{card.effortMinutes}m
@@ -553,6 +479,7 @@ function DraftCardView({
           </div>
           <Input
             value={card.title}
+            disabled={disabled}
             aria-label={`Task ${card.number} title`}
             onChange={(event) =>
               onChange(card.number, (prev) => ({
@@ -563,66 +490,43 @@ function DraftCardView({
             className="mt-1.5 border-transparent bg-transparent px-0 font-medium shadow-none focus-visible:border-input focus-visible:bg-background focus-visible:px-2"
           />
 
-          <div className="mt-2 flex flex-col gap-1.5 pl-2">
-            {card.subtasks.map((sub, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <Checkbox
-                  checked={sub.accepted}
-                  onCheckedChange={(checked) =>
-                    onChange(
-                      card.number,
-                      mapSubtasks(index, (item) => ({
-                        ...item,
-                        accepted: checked === true,
-                      }))
-                    )
-                  }
-                />
-                <Input
-                  value={sub.title}
-                  aria-label={`Task ${card.number} subtask ${index + 1}`}
-                  onChange={(event) =>
-                    onChange(
-                      card.number,
-                      mapSubtasks(index, (item) => ({
-                        ...item,
-                        title: event.target.value,
-                      }))
-                    )
-                  }
-                  className="h-8 flex-1 border-transparent bg-transparent px-1 text-sm shadow-none focus-visible:border-input focus-visible:bg-background"
-                />
-                <button
-                  type="button"
-                  aria-label={`Remove subtask ${index + 1}`}
-                  onClick={() =>
-                    onChange(card.number, (prev) => ({
-                      ...prev,
-                      subtasks: prev.subtasks.filter(
-                        (_, itemIndex) => itemIndex !== index
-                      ),
-                    }))
-                  }
-                  className="text-muted-foreground/60 hover:text-destructive"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            ))}
-            <button
-              type="button"
-              onClick={() =>
-                onChange(card.number, (prev) => ({
-                  ...prev,
-                  subtasks: [...prev.subtasks, { title: "", accepted: true }],
+          <SubtaskListEditor
+            cardNumber={card.number}
+            subtasks={card.subtasks}
+            disabled={disabled}
+            onToggle={(index, accepted) =>
+              onChange(
+                card.number,
+                updateSubtaskAt<DraftCard>(index, (item) => ({
+                  ...item,
+                  accepted,
                 }))
-              }
-              className="flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-            >
-              <Plus className="h-3 w-3" />
-              Add subtask
-            </button>
-          </div>
+              )
+            }
+            onEditTitle={(index, title) =>
+              onChange(
+                card.number,
+                updateSubtaskAt<DraftCard>(index, (item) => ({
+                  ...item,
+                  title,
+                }))
+              )
+            }
+            onRemove={(index) =>
+              onChange(card.number, (prev) => ({
+                ...prev,
+                subtasks: prev.subtasks.filter(
+                  (_, itemIndex) => itemIndex !== index
+                ),
+              }))
+            }
+            onAdd={() =>
+              onChange(card.number, (prev) => ({
+                ...prev,
+                subtasks: [...prev.subtasks, { title: "", accepted: true }],
+              }))
+            }
+          />
         </div>
         {card.status === "failed" ? (
           <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-destructive">
