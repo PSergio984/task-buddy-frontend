@@ -1,0 +1,745 @@
+import { useEffect, useRef, useState } from "react"
+import type { DragEvent, RefObject } from "react"
+import {
+  AlertTriangle,
+  Check,
+  FileUp,
+  Loader2,
+  Plus,
+  RefreshCw,
+  RotateCcw,
+  Sparkles,
+  Trash2,
+  WifiOff,
+  X,
+} from "lucide-react"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
+import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { CharacterCounter } from "@/components/ui/character-counter"
+import { useToast } from "@/hooks/use-toast"
+import { useIsOnline } from "@/hooks/useIsOnline"
+import { useProjects } from "@/hooks/useProjects"
+import { cn } from "@/lib/utils"
+import { type TaskPriority, importApi, tasksApi } from "@/lib/api"
+import {
+  IMPORT_TEXT_LIMIT,
+  type ImportDraftCard,
+  committableCards,
+  commitImportCards,
+  readImportFile,
+  toImportDraftCard,
+  validateImportText,
+} from "./import-cards"
+
+type Phase = "input" | "loading" | "review"
+
+interface ImportSheetProps {
+  readonly isOpen: boolean
+  readonly onClose: () => void
+  /** Fallback project for proposals with no suggestion (current UI project). */
+  readonly projectId?: number
+}
+
+export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
+  const { toast } = useToast()
+  const isOnline = useIsOnline()
+  const { data: projects = [] } = useProjects()
+
+  const [phase, setPhase] = useState<Phase>("input")
+  const [text, setText] = useState("")
+  const [cards, setCards] = useState<ImportDraftCard[]>([])
+  const [error, setError] = useState<string | null>(null)
+  const [inputError, setInputError] = useState<string | null>(null)
+  const [budgetExhausted, setBudgetExhausted] = useState(false)
+  const [emptyNotice, setEmptyNotice] = useState<string | null>(null)
+  const [isCommitting, setIsCommitting] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
+  const lastRequestRef = useRef<string | null>(null)
+  const cardNumberRef = useRef(1)
+  const dragDepthRef = useRef(0)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (isOpen) cardNumberRef.current = 1
+  }, [isOpen])
+
+  const reset = () => {
+    setPhase("input")
+    setText("")
+    setCards([])
+    setError(null)
+    setInputError(null)
+    setBudgetExhausted(false)
+    setEmptyNotice(null)
+    lastRequestRef.current = null
+    dragDepthRef.current = 0
+    setIsDragging(false)
+  }
+
+  async function requestExtract(requestText: string) {
+    setPhase("loading")
+    setError(null)
+    setBudgetExhausted(false)
+    setEmptyNotice(null)
+    lastRequestRef.current = requestText
+
+    try {
+      const response = await importApi.extract(requestText)
+
+      if (response.proposals.length === 0) {
+        if (response.reason) {
+          // Parse/infra degrade — retryable, distinct from "no tasks found".
+          setError("The import failed. Please try again.")
+        } else {
+          setEmptyNotice(
+            "I couldn't find any tasks in those notes. Try pasting your to-dos."
+          )
+        }
+      } else {
+        setCards(
+          response.proposals.map((proposal) =>
+            toImportDraftCard(proposal, cardNumberRef.current++, projectId)
+          )
+        )
+        setPhase("review")
+        return
+      }
+    } catch (err) {
+      const status = (err as { response?: { status?: number } }).response
+        ?.status
+      if (status === 429) {
+        setBudgetExhausted(true)
+      } else {
+        setError(
+          status === 503 || status === undefined
+            ? "The import service isn't available right now. Try again later."
+            : "Something went wrong. Please try again."
+        )
+      }
+    }
+    setPhase("input")
+  }
+
+  const handleExtractClick = () => {
+    const validationError = validateImportText(text)
+    if (validationError) {
+      setInputError(validationError)
+      return
+    }
+    void requestExtract(text.trim())
+  }
+
+  const handleFile = async (file: File | undefined) => {
+    if (!file) return
+    try {
+      const fileText = await readImportFile(file)
+      setText(fileText)
+      setInputError(null)
+      setError(null)
+      setEmptyNotice(null)
+    } catch (err) {
+      setInputError(
+        err instanceof Error ? err.message : "Couldn't read that file."
+      )
+    }
+  }
+
+  // Counter-depth tracking so the highlight doesn't flicker over children.
+  const handleDragEnter = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    dragDepthRef.current += 1
+    setIsDragging(true)
+  }
+  const handleDragLeave = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1)
+    if (dragDepthRef.current === 0) setIsDragging(false)
+  }
+  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    dragDepthRef.current = 0
+    setIsDragging(false)
+    void handleFile(event.dataTransfer.files[0])
+  }
+
+  const updateCard = (
+    number: number,
+    updater: (card: ImportDraftCard) => ImportDraftCard
+  ) => {
+    setCards((prev) =>
+      prev.map((card) => (card.number === number ? updater(card) : card))
+    )
+  }
+
+  const removeCard = (number: number) => {
+    setCards((prev) => prev.filter((card) => card.number !== number))
+  }
+
+  const committable = committableCards(cards)
+  const hasFailed = cards.some((c) => c.status === "failed")
+  const isCreating = cards.some((c) => c.status === "creating")
+  const acceptedSubtaskCount = committable.reduce(
+    (sum, card) => sum + card.subtasks.filter((s) => s.accepted).length,
+    0
+  )
+
+  async function commit() {
+    setIsCommitting(true)
+    const { created, failed } = await commitImportCards(
+      cards,
+      (data, idempotencyKey) => tasksApi.create(data, { idempotencyKey }),
+      (number, status) => updateCard(number, (card) => ({ ...card, status }))
+    )
+    setIsCommitting(false)
+    if (failed === 0) {
+      const total = committable.length
+      toast({
+        title: "Tasks imported",
+        description: `Added ${total} task${total === 1 ? "" : "s"} · ${acceptedSubtaskCount} subtask${acceptedSubtaskCount === 1 ? "" : "s"}.`,
+        variant: "success",
+      })
+      onClose()
+    } else if (created > 0) {
+      toast({
+        title: `${created} task${created === 1 ? "" : "s"} imported`,
+        description: `${failed} failed. Use "Retry failed" below.`,
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleRetryRequest = () => {
+    if (lastRequestRef.current === null) return
+    void requestExtract(lastRequestRef.current)
+  }
+
+  return (
+    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent
+        side="right"
+        className="flex w-full flex-col gap-0 sm:max-w-xl"
+      >
+        <SheetHeader className="border-b border-white/5 px-6 py-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+              <FileUp className="h-4 w-4 text-primary" />
+            </div>
+            <SheetTitle className="text-sm font-black tracking-[0.2em] uppercase">
+              Import Notes
+            </SheetTitle>
+          </div>
+        </SheetHeader>
+
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-4">
+          {!isOnline ? (
+            <OfflineBanner />
+          ) : budgetExhausted ? (
+            <BudgetBanner />
+          ) : error ? (
+            <ErrorBanner message={error} onRetry={handleRetryRequest} />
+          ) : emptyNotice ? (
+            <p className="rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+              {emptyNotice}
+            </p>
+          ) : null}
+
+          {phase === "input" ? (
+            <InputSection
+              text={text}
+              setText={(value) => {
+                setText(value)
+                if (inputError) setInputError(null)
+              }}
+              inputError={inputError}
+              disabled={!isOnline || budgetExhausted}
+              isDragging={isDragging}
+              fileInputRef={fileInputRef}
+              onFileChange={(file) => void handleFile(file)}
+              onDragEnter={handleDragEnter}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onSubmit={handleExtractClick}
+            />
+          ) : null}
+
+          {phase === "loading" ? <LoadingSkeleton /> : null}
+
+          {phase === "review" ? (
+            <>
+              <button
+                type="button"
+                onClick={reset}
+                className="mb-3 flex w-fit items-center gap-1 self-end text-xs text-muted-foreground hover:text-foreground"
+              >
+                <RotateCcw className="h-3 w-3" />
+                Start over
+              </button>
+              <div className="flex flex-col gap-3">
+                {cards.map((card) => (
+                  <ImportCardView
+                    key={card.number}
+                    card={card}
+                    projects={projects}
+                    onChange={updateCard}
+                    onRemove={removeCard}
+                  />
+                ))}
+              </div>
+            </>
+          ) : null}
+        </div>
+
+        {phase === "review" ? (
+          <div className="shrink-0 border-t border-white/5 px-6 py-4">
+            {committable.length > 0 || isCreating ? (
+              <Button
+                id="import-commit-btn"
+                className="w-full"
+                onClick={() => void commit()}
+                disabled={
+                  !isOnline ||
+                  isCommitting ||
+                  committable.length === 0 ||
+                  isCreating
+                }
+              >
+                {isCommitting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="mr-2 h-4 w-4" />
+                )}
+                Add {committable.length} task
+                {committable.length === 1 ? "" : "s"} · {acceptedSubtaskCount}{" "}
+                subtask{acceptedSubtaskCount === 1 ? "" : "s"}
+              </Button>
+            ) : null}
+            {hasFailed && !isCommitting ? (
+              <Button
+                variant="destructive"
+                className={cn("w-full", committable.length > 0 ? "mt-2" : "")}
+                onClick={() => void commit()}
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Retry failed
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
+      </SheetContent>
+    </Sheet>
+  )
+}
+
+function OfflineBanner() {
+  return (
+    <p className="mb-3 flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+      <WifiOff className="h-4 w-4 shrink-0" />
+      You're offline — importing notes needs a connection.
+    </p>
+  )
+}
+
+function BudgetBanner() {
+  return (
+    <p className="mb-3 flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-600 dark:text-amber-400">
+      <AlertTriangle className="h-4 w-4 shrink-0" />
+      Daily AI usage limit reached. Your budget resets tomorrow.
+    </p>
+  )
+}
+
+function ErrorBanner({
+  message,
+  onRetry,
+}: Readonly<{ message: string; onRetry: () => void }>) {
+  return (
+    <div className="mb-3 flex items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+      <span className="flex items-center gap-2">
+        <AlertTriangle className="h-4 w-4 shrink-0" />
+        {message}
+      </span>
+      <Button variant="outline" size="sm" onClick={onRetry}>
+        <RefreshCw className="mr-1 h-3.5 w-3.5" />
+        Retry
+      </Button>
+    </div>
+  )
+}
+
+function LoadingSkeleton() {
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        Extracting tasks from your notes…
+      </p>
+      {[1, 2, 3].map((row) => (
+        <div key={row} className="h-20 animate-pulse rounded-xl bg-muted/60" />
+      ))}
+    </div>
+  )
+}
+
+interface InputSectionProps {
+  readonly text: string
+  readonly setText: (value: string) => void
+  readonly inputError: string | null
+  readonly disabled: boolean
+  readonly isDragging: boolean
+  readonly fileInputRef: RefObject<HTMLInputElement | null>
+  readonly onFileChange: (file: File | undefined) => void
+  readonly onDragEnter: (event: DragEvent<HTMLDivElement>) => void
+  readonly onDragLeave: (event: DragEvent<HTMLDivElement>) => void
+  readonly onDrop: (event: DragEvent<HTMLDivElement>) => void
+  readonly onSubmit: () => void
+}
+
+function InputSection({
+  text,
+  setText,
+  inputError,
+  disabled,
+  isDragging,
+  fileInputRef,
+  onFileChange,
+  onDragEnter,
+  onDragLeave,
+  onDrop,
+  onSubmit,
+}: InputSectionProps) {
+  return (
+    <div className="flex flex-col gap-3">
+      <Label htmlFor="import-input" className="sr-only">
+        Notes to import
+      </Label>
+      <div
+        onDragEnter={onDragEnter}
+        onDragOver={(event) => event.preventDefault()}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
+        className={cn(
+          "rounded-xl transition-colors",
+          isDragging && "bg-primary/10 ring-2 ring-primary/40"
+        )}
+      >
+        <Textarea
+          id="import-input"
+          placeholder="Paste your notes — meeting minutes, a brain-dump, a markdown list…"
+          value={text}
+          maxLength={IMPORT_TEXT_LIMIT}
+          onChange={(event) => setText(event.target.value)}
+          className="min-h-40 resize-none"
+          disabled={disabled}
+        />
+      </div>
+      <div className="flex items-center justify-between gap-3">
+        <input
+          ref={fileInputRef}
+          id="import-file-input"
+          type="file"
+          accept=".md,.txt"
+          aria-label="Choose a notes file"
+          className="sr-only"
+          disabled={disabled}
+          onChange={(event) => {
+            onFileChange(event.target.files?.[0])
+            // Re-picking the same file must fire onChange again.
+            event.target.value = ""
+          }}
+        />
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={disabled}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <FileUp className="mr-2 h-4 w-4" />
+          Drop or pick a .md/.txt file
+        </Button>
+        <CharacterCounter current={text.length} limit={IMPORT_TEXT_LIMIT} />
+      </div>
+      {inputError ? (
+        <p role="alert" className="text-sm text-destructive">
+          {inputError}
+        </p>
+      ) : null}
+      <Button
+        id="import-submit-btn"
+        className="self-end"
+        onClick={onSubmit}
+        disabled={disabled || !text.trim()}
+      >
+        <Sparkles className="mr-2 h-4 w-4" />
+        Extract tasks
+      </Button>
+    </div>
+  )
+}
+
+function ImportCardView({
+  card,
+  projects,
+  onChange,
+  onRemove,
+}: Readonly<{
+  card: ImportDraftCard
+  projects: { id: number; name: string; color?: string }[]
+  onChange: (
+    number: number,
+    updater: (card: ImportDraftCard) => ImportDraftCard
+  ) => void
+  onRemove: (number: number) => void
+}>) {
+  if (card.status === "created") {
+    return (
+      <div className="rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-muted-foreground">
+        <span className="font-semibold text-primary">#{card.number}</span>{" "}
+        {card.title} — created ✓
+      </div>
+    )
+  }
+
+  const isExcluded = !card.included
+
+  const mapSubtasks =
+    (
+      index: number,
+      transform: (item: { title: string; accepted: boolean }) => {
+        title: string
+        accepted: boolean
+      }
+    ) =>
+    (prev: ImportDraftCard): ImportDraftCard => ({
+      ...prev,
+      subtasks: prev.subtasks.map((item, itemIndex) =>
+        itemIndex === index ? transform(item) : item
+      ),
+    })
+
+  return (
+    <div
+      className={cn(
+        "rounded-xl border border-border bg-card px-4 py-3 transition-opacity",
+        isExcluded && "opacity-50"
+      )}
+    >
+      <div className="flex items-start gap-3">
+        <Checkbox
+          checked={card.included}
+          aria-label={`Include task ${card.number}`}
+          onCheckedChange={(checked) =>
+            onChange(card.number, (prev) => ({
+              ...prev,
+              included: checked === true,
+            }))
+          }
+          className="mt-1"
+        />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs font-bold text-muted-foreground">
+              #{card.number}
+            </span>
+            <Select
+              value={card.priority}
+              onValueChange={(value: TaskPriority) =>
+                onChange(card.number, (prev) => ({ ...prev, priority: value }))
+              }
+            >
+              <SelectTrigger
+                aria-label={`Task ${card.number} priority`}
+                className="h-7 w-28 border-transparent bg-muted/60 px-2 text-xs shadow-none"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border-border bg-background shadow-2xl">
+                {(["LOW", "MEDIUM", "HIGH"] as const).map((priority) => (
+                  <SelectItem
+                    key={priority}
+                    value={priority}
+                    className="rounded-lg text-xs font-medium focus:bg-primary/10 focus:text-primary dark:focus:bg-primary/20"
+                  >
+                    {priority.charAt(0) + priority.slice(1).toLowerCase()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={card.projectId != null ? String(card.projectId) : "none"}
+              onValueChange={(value) =>
+                onChange(card.number, (prev) => ({
+                  ...prev,
+                  projectId:
+                    value === "none" ? null : Number.parseInt(value, 10),
+                }))
+              }
+            >
+              <SelectTrigger
+                aria-label={`Task ${card.number} project`}
+                className="h-7 min-w-0 flex-1 border-transparent bg-muted/60 px-2 text-xs shadow-none"
+              >
+                <SelectValue placeholder="No project" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border-border bg-background shadow-2xl">
+                <SelectItem
+                  value="none"
+                  className="rounded-lg text-xs font-medium focus:bg-primary/10 focus:text-primary dark:focus:bg-primary/20"
+                >
+                  No project
+                </SelectItem>
+                {projects.map((project) => (
+                  <SelectItem
+                    key={project.id}
+                    value={project.id.toString()}
+                    className="rounded-lg text-xs font-medium focus:bg-primary/10 focus:text-primary dark:focus:bg-primary/20"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span
+                        className="h-2 w-2 rounded-full"
+                        style={{ backgroundColor: project.color || "gray" }}
+                      />
+                      {project.name}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <button
+              type="button"
+              aria-label={`Remove task ${card.number}`}
+              onClick={() => onRemove(card.number)}
+              className="shrink-0 text-muted-foreground/60 hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+          <Input
+            value={card.title}
+            aria-label={`Task ${card.number} title`}
+            onChange={(event) =>
+              onChange(card.number, (prev) => ({
+                ...prev,
+                title: event.target.value,
+              }))
+            }
+            className="mt-1.5 border-transparent bg-transparent px-0 font-medium shadow-none focus-visible:border-input focus-visible:bg-background focus-visible:px-2"
+          />
+          <Textarea
+            value={card.description}
+            aria-label={`Task ${card.number} description`}
+            placeholder="Add a description…"
+            onChange={(event) =>
+              onChange(card.number, (prev) => ({
+                ...prev,
+                description: event.target.value,
+              }))
+            }
+            className="mt-1 min-h-14 resize-none border-transparent bg-transparent px-0 text-sm shadow-none focus-visible:border-input focus-visible:bg-background focus-visible:px-2"
+          />
+          <Input
+            type="date"
+            value={card.deadline ?? ""}
+            aria-label={`Task ${card.number} deadline`}
+            onChange={(event) =>
+              onChange(card.number, (prev) => ({
+                ...prev,
+                deadline: event.target.value || null,
+              }))
+            }
+            className="mt-1 h-8 w-40 border-transparent bg-muted/60 px-2 text-xs shadow-none"
+          />
+
+          {card.subtasks.length > 0 ? (
+            <div className="mt-2 flex flex-col gap-1.5 pl-2">
+              {card.subtasks.map((sub, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <Checkbox
+                    checked={sub.accepted}
+                    aria-label={`Include subtask ${index + 1} of task ${card.number}`}
+                    onCheckedChange={(checked) =>
+                      onChange(
+                        card.number,
+                        mapSubtasks(index, (item) => ({
+                          ...item,
+                          accepted: checked === true,
+                        }))
+                      )
+                    }
+                  />
+                  <Input
+                    value={sub.title}
+                    aria-label={`Task ${card.number} subtask ${index + 1}`}
+                    onChange={(event) =>
+                      onChange(
+                        card.number,
+                        mapSubtasks(index, (item) => ({
+                          ...item,
+                          title: event.target.value,
+                        }))
+                      )
+                    }
+                    className="h-8 flex-1 border-transparent bg-transparent px-1 text-sm shadow-none focus-visible:border-input focus-visible:bg-background"
+                  />
+                  <button
+                    type="button"
+                    aria-label={`Remove subtask ${index + 1}`}
+                    onClick={() =>
+                      onChange(card.number, (prev) => ({
+                        ...prev,
+                        subtasks: prev.subtasks.filter(
+                          (_, itemIndex) => itemIndex !== index
+                        ),
+                      }))
+                    }
+                    className="text-muted-foreground/60 hover:text-destructive"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : null}
+          <div className="mt-1.5 pl-2">
+            <button
+              type="button"
+              onClick={() =>
+                onChange(card.number, (prev) => ({
+                  ...prev,
+                  subtasks: [...prev.subtasks, { title: "", accepted: true }],
+                }))
+              }
+              className="flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <Plus className="h-3 w-3" />
+              Add subtask
+            </button>
+          </div>
+        </div>
+        {card.status === "failed" ? (
+          <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-destructive">
+            <X className="h-3.5 w-3.5" />
+            Failed
+          </span>
+        ) : card.status === "creating" ? (
+          <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />
+        ) : null}
+      </div>
+    </div>
+  )
+}

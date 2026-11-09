@@ -6,6 +6,7 @@ import {
   LogOut,
   ChevronDown,
   CheckSquare2,
+  FileUp,
   ListTree,
 } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
@@ -29,9 +30,14 @@ import {
 export interface TopNavProps {
   readonly onNewTask: () => void
   readonly onBreakdown?: () => void
+  readonly onImport?: () => void
 }
 
-export function TopNav({ onNewTask, onBreakdown }: Readonly<TopNavProps>) {
+export function TopNav({
+  onNewTask,
+  onBreakdown,
+  onImport,
+}: Readonly<TopNavProps>) {
   const { user, logout } = useAuth()
   const { toast } = useToast()
   const { data: stats } = useStats()
@@ -141,6 +147,17 @@ export function TopNav({ onNewTask, onBreakdown }: Readonly<TopNavProps>) {
               </Tooltip>
             ) : (
               <div className="flex items-center gap-3">
+                {onImport ? (
+                  <Button
+                    id="import-nav-btn"
+                    variant="outline"
+                    onClick={onImport}
+                    className="h-12 gap-2 rounded-2xl border-primary/20 px-5 font-bold tracking-tight shadow-lg transition-all hover:bg-primary/10"
+                  >
+                    <FileUp className="h-5 w-5" />
+                    <span>Import</span>
+                  </Button>
+                ) : null}
                 {onBreakdown ? (
                   <Button
                     id="breakdown-nav-btn"
