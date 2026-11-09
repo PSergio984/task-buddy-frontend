@@ -95,12 +95,14 @@ export function LoadingSkeleton({ label }: Readonly<{ label: string }>) {
 
 export function StartOverButton({
   onClick,
-}: Readonly<{ onClick: () => void }>) {
+  disabled = false,
+}: Readonly<{ onClick: () => void; disabled?: boolean }>) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="mb-3 flex w-fit items-center gap-1 self-end text-xs text-muted-foreground hover:text-foreground"
+      disabled={disabled}
+      className="mb-3 flex w-fit items-center gap-1 self-end text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
     >
       <RotateCcw className="h-3 w-3" />
       Start over
@@ -183,10 +185,12 @@ export function SubtaskListEditor({
 export function RetryFailedButton({
   show,
   hasCommittable,
+  disabled = false,
   onClick,
 }: Readonly<{
   show: boolean
   hasCommittable: boolean
+  disabled?: boolean
   onClick: () => void
 }>) {
   if (!show) return null
@@ -194,6 +198,7 @@ export function RetryFailedButton({
     <Button
       variant="destructive"
       className={cn("w-full", hasCommittable ? "mt-2" : "mt-3")}
+      disabled={disabled}
       onClick={onClick}
     >
       <RefreshCw className="mr-2 h-4 w-4" />

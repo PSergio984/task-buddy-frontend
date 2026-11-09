@@ -33,6 +33,16 @@ export function readImportFile(file: File): Promise<string> {
       reject(new Error("Only .md and .txt files can be imported."))
       return
     }
+    // Bail before loading: a UTF-8 file uses at most 3 bytes per UTF-16 unit,
+    // so anything over this bound can't fit the char limit anyway.
+    if (file.size > IMPORT_TEXT_LIMIT * 3) {
+      reject(
+        new Error(
+          `"${file.name}" is too large — the limit is ${IMPORT_TEXT_LIMIT.toLocaleString()} characters.`
+        )
+      )
+      return
+    }
     const reader = new FileReader()
     reader.onerror = () => reject(new Error("Couldn't read that file."))
     reader.onload = () => {
@@ -65,6 +75,12 @@ export interface ImportDraftCard {
   projectId: number | null
   subtasks: { title: string; accepted: boolean }[]
   status: ImportCardStatus
+  /**
+   * Assigned on the card's first commit attempt and reused on retries — a
+   * retry after a lost response replays the backend's cached result instead
+   * of double-creating.
+   */
+  idempotencyKey?: string
 }
 
 /** Extracts the yyyy-mm-dd prefix a date input needs from an ISO string. */
@@ -95,9 +111,12 @@ export function toImportDraftCard(
   }
 }
 
-/** Cards still eligible for creation: included and not yet created. */
+/** Cards still eligible for creation: included, titled, not yet created. */
 export function committableCards(cards: ImportDraftCard[]): ImportDraftCard[] {
-  return cards.filter((card) => card.included && card.status !== "created")
+  return cards.filter(
+    (card) =>
+      card.included && card.status !== "created" && card.title.trim() !== ""
+  )
 }
 
 export function toTaskCreateData(card: ImportDraftCard): TaskCreateData {
@@ -125,8 +144,9 @@ export interface ImportCommitResult {
 
 /**
  * Creates one task per committable card, sequentially (same cadence as the
- * breakdown commit). A fresh idempotency key is generated per card per call,
- * so a double-tapped/retried commit can't replay the same key into a create.
+ * breakdown commit). Each card gets its own uuid-v4 key on first attempt via
+ * `onKeyAssigned`; the caller persists it on the card so a retried commit
+ * reuses it — the backend then replays instead of double-creating.
  */
 export async function commitImportCards(
   cards: ImportDraftCard[],
@@ -134,14 +154,17 @@ export async function commitImportCards(
     data: TaskCreateData,
     idempotencyKey: string
   ) => Promise<unknown>,
-  onStatus?: (cardNumber: number, status: ImportCardStatus) => void
+  onStatus?: (cardNumber: number, status: ImportCardStatus) => void,
+  onKeyAssigned?: (cardNumber: number, key: string) => void
 ): Promise<ImportCommitResult> {
   const targets = committableCards(cards)
   let created = 0
   for (const card of targets) {
+    const key = card.idempotencyKey ?? createIdempotencyKey()
+    if (card.idempotencyKey === undefined) onKeyAssigned?.(card.number, key)
     onStatus?.(card.number, "creating")
     try {
-      await createTask(toTaskCreateData(card), createIdempotencyKey())
+      await createTask(toTaskCreateData(card), key)
       onStatus?.(card.number, "created")
       created += 1
     } catch {

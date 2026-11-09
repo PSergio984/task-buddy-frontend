@@ -179,13 +179,13 @@ export function BreakdownSheet({
   const committableCount = cards.filter(
     (c) => c.accepted && c.status !== "created"
   ).length
-  const hasFailed = cards.some((c) => c.status === "failed")
+  const hasFailed = cards.some((c) => c.status === "failed" && c.accepted)
   const isCreating = cards.some((c) => c.status === "creating")
   const acceptedSubtaskCount = cards.reduce(
     (sum, card) =>
       sum +
       (card.accepted && card.status !== "created"
-        ? card.subtasks.filter((s) => s.accepted).length
+        ? card.subtasks.filter((s) => s.accepted && s.title.trim()).length
         : 0),
     0
   )
@@ -196,7 +196,8 @@ export function BreakdownSheet({
       (card) => card.accepted && card.status !== "created"
     )
     const targetSubtaskCount = targets.reduce(
-      (sum, card) => sum + card.subtasks.filter((s) => s.accepted).length,
+      (sum, card) =>
+        sum + card.subtasks.filter((s) => s.accepted && s.title.trim()).length,
       0
     )
     let created = 0
@@ -291,12 +292,13 @@ export function BreakdownSheet({
 
           {phase === "review" ? (
             <>
-              <StartOverButton onClick={reset} />
+              <StartOverButton onClick={reset} disabled={isCommitting} />
               <div className="flex flex-col gap-3">
                 {cards.map((card) => (
                   <DraftCardView
                     key={card.number}
                     card={card}
+                    disabled={isCommitting}
                     onChange={updateCard}
                   />
                 ))}
@@ -341,6 +343,7 @@ export function BreakdownSheet({
             <RetryFailedButton
               show={hasFailed && !isCommitting}
               hasCommittable={committableCount > 0}
+              disabled={!isOnline}
               onClick={() => void commit()}
             />
           </div>
@@ -420,9 +423,12 @@ function RefineInput({
 
 function DraftCardView({
   card,
+  disabled = false,
   onChange,
 }: Readonly<{
   card: DraftCard
+  /** Locks committability-changing controls while a commit runs. */
+  disabled?: boolean
   onChange: (number: number, updater: (card: DraftCard) => DraftCard) => void
 }>) {
   if (card.status === "created") {
@@ -441,6 +447,7 @@ function DraftCardView({
       <div className="flex items-start gap-3">
         <Checkbox
           checked={card.accepted}
+          disabled={disabled}
           onCheckedChange={(checked) =>
             onChange(card.number, (prev) => ({
               ...prev,

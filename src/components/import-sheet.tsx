@@ -188,10 +188,12 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
   }
 
   const committable = committableCards(cards)
-  const hasFailed = cards.some((c) => c.status === "failed")
+  // Only included failures count — an unchecked failed card isn't a target.
+  const hasFailed = cards.some((c) => c.status === "failed" && c.included)
   const isCreating = cards.some((c) => c.status === "creating")
   const acceptedSubtaskCount = committable.reduce(
-    (sum, card) => sum + card.subtasks.filter((s) => s.accepted).length,
+    (sum, card) =>
+      sum + card.subtasks.filter((s) => s.accepted && s.title.trim()).length,
     0
   )
 
@@ -200,7 +202,10 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
     const { created, failed } = await commitImportCards(
       cards,
       (data, idempotencyKey) => tasksApi.create(data, { idempotencyKey }),
-      (number, status) => updateCard(number, (card) => ({ ...card, status }))
+      (number, status) => updateCard(number, (card) => ({ ...card, status })),
+      // Persist the card's key so a retried commit replays, not re-creates.
+      (number, idempotencyKey) =>
+        updateCard(number, (card) => ({ ...card, idempotencyKey }))
     )
     setIsCommitting(false)
     if (failed === 0) {
@@ -210,6 +215,8 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
         description: `Added ${total} task${total === 1 ? "" : "s"} · ${acceptedSubtaskCount} subtask${acceptedSubtaskCount === 1 ? "" : "s"}.`,
         variant: "success",
       })
+      // Back to a clean input — reopening shouldn't show stale "created" cards.
+      reset()
       onClose()
     } else if (created > 0) {
       toast({
@@ -274,13 +281,14 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
 
           {phase === "review" ? (
             <>
-              <StartOverButton onClick={reset} />
+              <StartOverButton onClick={reset} disabled={isCommitting} />
               <div className="flex flex-col gap-3">
                 {cards.map((card) => (
                   <ImportCardView
                     key={card.number}
                     card={card}
                     projects={projects}
+                    disabled={isCommitting}
                     onChange={updateCard}
                     onRemove={removeCard}
                   />
@@ -317,6 +325,7 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
             <RetryFailedButton
               show={hasFailed && !isCommitting}
               hasCommittable={committable.length > 0}
+              disabled={!isOnline}
               onClick={() => void commit()}
             />
           </div>
@@ -425,11 +434,14 @@ function InputSection({
 function ImportCardView({
   card,
   projects,
+  disabled = false,
   onChange,
   onRemove,
 }: Readonly<{
   card: ImportDraftCard
   projects: { id: number; name: string; color?: string }[]
+  /** Locks committability-changing controls while a commit runs. */
+  disabled?: boolean
   onChange: (
     number: number,
     updater: (card: ImportDraftCard) => ImportDraftCard
@@ -452,6 +464,7 @@ function ImportCardView({
       <div className="flex items-start gap-3">
         <Checkbox
           checked={card.included}
+          disabled={disabled}
           aria-label={`Include task ${card.number}`}
           onCheckedChange={(checked) =>
             onChange(card.number, (prev) => ({
@@ -531,8 +544,9 @@ function ImportCardView({
             <button
               type="button"
               aria-label={`Remove task ${card.number}`}
+              disabled={disabled}
               onClick={() => onRemove(card.number)}
-              className="shrink-0 text-muted-foreground/60 hover:text-destructive"
+              className="shrink-0 text-muted-foreground/60 hover:text-destructive disabled:opacity-50"
             >
               <Trash2 className="h-4 w-4" />
             </button>

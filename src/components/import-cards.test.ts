@@ -127,7 +127,7 @@ describe("toImportDraftCard", () => {
 })
 
 describe("committableCards", () => {
-  it("excludes unchecked and already-created cards", () => {
+  it("excludes unchecked, blank-titled and already-created cards", () => {
     const cards = [
       { ...toImportDraftCard(proposal("A"), 1), included: false },
       toImportDraftCard(proposal("B"), 2),
@@ -135,6 +135,7 @@ describe("committableCards", () => {
         ...toImportDraftCard(proposal("C"), 3),
         status: "created" as const,
       },
+      { ...toImportDraftCard(proposal("D"), 4), title: "   " },
     ]
     expect(committableCards(cards).map((c) => c.title)).toEqual(["B"])
   })
@@ -214,12 +215,52 @@ describe("commitImportCards", () => {
     ])
   })
 
+  it("assigns each card a key via onKeyAssigned on first attempt", async () => {
+    const cards = [
+      toImportDraftCard(proposal("A"), 1),
+      toImportDraftCard(proposal("B"), 2),
+    ]
+    const assigned: [number, string][] = []
+    const { calls, createTask } = collect()
+
+    await commitImportCards(cards, createTask, undefined, (n, key) =>
+      assigned.push([n, key])
+    )
+
+    expect(assigned).toEqual([
+      [1, calls[0].key],
+      [2, calls[1].key],
+    ])
+  })
+
+  it("reuses the card's persisted key on retry so a lost response replays", async () => {
+    const key = "3f6f2a3e-0f6c-4d2a-9c2f-6a3f1a1e4d2b"
+    const cards = [
+      {
+        ...toImportDraftCard(proposal("A"), 1),
+        status: "failed" as const,
+        idempotencyKey: key,
+      },
+    ]
+    const assigned: [number, string][] = []
+    const { calls, createTask } = collect()
+
+    await commitImportCards(cards, createTask, undefined, (n, k) =>
+      assigned.push([n, k])
+    )
+
+    expect(calls[0].key).toBe(key)
+    // A persisted key must NOT be re-assigned — it's the replay handle.
+    expect(assigned).toEqual([])
+  })
+
   it("marks failures and leaves them committable for a retry", async () => {
     const cards = [
       toImportDraftCard(proposal("A"), 1),
       toImportDraftCard(proposal("B"), 2),
     ]
     const statuses: [number, ImportCardStatus][] = []
+    const assignedKeys = new Map<number, string>()
     let calls = 0
     const createTask = vi.fn((_data: TaskCreateData, _key: string) => {
       calls += 1
@@ -228,8 +269,11 @@ describe("commitImportCards", () => {
         : Promise.reject(new Error("boom"))
     })
 
-    const result = await commitImportCards(cards, createTask, (n, s) =>
-      statuses.push([n, s])
+    const result = await commitImportCards(
+      cards,
+      createTask,
+      (n, s) => statuses.push([n, s]),
+      (n, k) => assignedKeys.set(n, k)
     )
 
     expect(result).toEqual({ created: 1, failed: 1 })
@@ -239,13 +283,16 @@ describe("commitImportCards", () => {
       [2, "creating"],
       [2, "failed"],
     ])
-    // A retry targets only the failed card — "created" never re-posts.
+    // A retry targets only the failed card — "created" never re-posts — and
+    // carries the SAME key the first attempt persisted.
     const retried = cards.map((c, i) => ({
       ...c,
       status: (i === 0 ? "created" : "failed") as ImportCardStatus,
+      idempotencyKey: assignedKeys.get(c.number),
     }))
     const { calls: retryCalls, createTask: retryCreate } = collect()
     await commitImportCards(retried, retryCreate)
     expect(retryCalls.map((c) => c.data.title)).toEqual(["B"])
+    expect(retryCalls[0].key).toBe(assignedKeys.get(2))
   })
 })
