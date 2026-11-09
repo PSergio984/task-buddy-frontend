@@ -258,7 +258,7 @@ function PreferencesCard() {
         }
       }
     }
-    checkPermission()
+    void checkPermission()
   }, [])
 
   const handleTogglePush = async (enabled: boolean) => {
