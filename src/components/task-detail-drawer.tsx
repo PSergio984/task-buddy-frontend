@@ -214,7 +214,7 @@ export function TaskDetailDrawer({
             handleUpdate={state.actions.handleConfirmUpdate}
             setShowDeleteConfirm={(v) => {
               if (v && state.preferences.skipTaskDeletionConfirm) {
-                state.actions.handleDelete()
+                void state.actions.handleDelete()
               } else {
                 state.setShowDeleteConfirm(v)
               }

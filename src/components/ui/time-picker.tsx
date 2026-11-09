@@ -28,7 +28,7 @@ export function TimePicker({
 
   // Internal state for segments
   const [hour, setHour] = React.useState(() => {
-    if (!value) return is12h ? "12" : "12" // Or "00" if 24h, but keeping "12"
+    if (!value) return "12" // Or "00" if 24h, but keeping "12"
     const h24 = Number(value.split(":")[0])
     if (is12h) {
       let h12 = h24 % 12
