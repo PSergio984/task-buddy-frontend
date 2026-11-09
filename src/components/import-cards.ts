@@ -104,13 +104,16 @@ export function toImportDraftCard(
   return {
     number,
     included: true,
-    title: proposal.title,
-    description: proposal.description ?? "",
+    // Clip at intake so the card shows exactly what `toTaskCreateData` will
+    // send — the create-side clip must not silently diverge from the preview.
+    title: proposal.title.trim().slice(0, TASK_TITLE_LIMIT),
+    description:
+      proposal.description?.trim().slice(0, TASK_DESCRIPTION_LIMIT) ?? "",
     deadline: isoToDateInput(proposal.proposed_deadline),
     priority: proposal.priority,
     projectId: proposal.suggested_project_id ?? fallbackProjectId ?? null,
     subtasks: proposal.subtasks.map((sub) => ({
-      title: sub.title,
+      title: sub.title.trim().slice(0, SUBTASK_TITLE_LIMIT),
       accepted: true,
     })),
     status: "draft",

@@ -122,6 +122,19 @@ describe("toImportDraftCard", () => {
     expect(card.subtasks).toEqual([{ title: "gather data", accepted: true }])
   })
 
+  it("clips over-limit fields at intake so the card shows what will save", () => {
+    const card = toImportDraftCard(
+      proposal("t".repeat(150), {
+        description: "d".repeat(3000),
+        subtasks: [{ title: "s".repeat(120) }],
+      }),
+      1
+    )
+    expect(card.title).toHaveLength(100)
+    expect(card.description).toHaveLength(2000)
+    expect(card.subtasks[0].title).toHaveLength(80)
+  })
+
   it("prefers the suggestion over the fallback project", () => {
     expect(
       toImportDraftCard(proposal("T", { suggested_project_id: 7 }), 1, 9)

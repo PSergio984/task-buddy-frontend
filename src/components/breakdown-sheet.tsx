@@ -223,11 +223,11 @@ export function BreakdownSheet({
     }
     setIsCommitting(false)
     const failed = targets.length - created
+    // Cumulative — a retry batch must report all created tasks, not just
+    // the ones it retried.
+    const alreadyCreated = cards.filter((c) => c.status === "created")
+    const total = alreadyCreated.length + created
     if (failed === 0) {
-      // Cumulative — a retry batch must report all created tasks, not just
-      // the ones it retried.
-      const alreadyCreated = cards.filter((c) => c.status === "created")
-      const total = alreadyCreated.length + created
       const subtasks =
         alreadyCreated.reduce(
           (sum, card) =>
@@ -243,7 +243,7 @@ export function BreakdownSheet({
       onClose()
     } else if (created > 0) {
       toast({
-        title: `${created} task${created === 1 ? "" : "s"} added`,
+        title: `${total} task${total === 1 ? "" : "s"} added`,
         description: `${failed} failed. Use "Retry failed" below.`,
         variant: "destructive",
       })

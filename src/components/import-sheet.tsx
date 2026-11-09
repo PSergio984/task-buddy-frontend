@@ -109,6 +109,7 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
     setFeatureDisabled(false)
     setEmptyNotice(null)
     lastRequestRef.current = null
+    extractKeyRef.current = null
     dragDepthRef.current = 0
     setIsDragging(false)
   }
@@ -130,6 +131,11 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
     try {
       const response = await importApi.extract(requestText, key)
 
+      // A 2xx response is cached under this key server-side — the response
+      // arrived, so the key has done its job. Clear it: a later retry must
+      // mint a fresh key to actually re-run extraction, not replay this
+      // cached result.
+      extractKeyRef.current = null
       if (response.proposals.length === 0) {
         if (response.reason) {
           // Parse/infra degrade — retryable, distinct from "no tasks found".
@@ -153,6 +159,13 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
         ?.status
       const detail = (err as { response?: { data?: { detail?: unknown } } })
         .response?.data?.detail
+      // A definitive error response means the server-side call is done and
+      // non-2xx responses aren't cached — the key is spent; a retry mints a
+      // fresh one. Keep it for transport loss (undefined) and 409, where the
+      // original may still be in-flight and only the same key can attach.
+      if (status !== undefined && status !== 409) {
+        extractKeyRef.current = null
+      }
       if (status === 429) {
         // Two different 429s: the daily AI budget (backend detail) dead-ends
         // until tomorrow; slowapi's per-minute RATE_LIMIT_IMPORT is a
@@ -317,7 +330,7 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
               disabled.
             </p>
           ) : budgetExhausted ? (
-            <BudgetBanner onRetry={handleRetryRequest} />
+            <BudgetBanner />
           ) : error ? (
             <ErrorBanner message={error} onRetry={handleRetryRequest} />
           ) : emptyNotice ? (
@@ -335,7 +348,7 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
               }}
               inputError={inputError}
               disabled={inputDisabled}
-              isDragging={isDragging}
+              isDragging={isDragging && !inputDisabled}
               fileInputRef={fileInputRef}
               onFileChange={(file) => void handleFile(file)}
               onDragEnter={handleDragEnter}

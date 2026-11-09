@@ -451,8 +451,9 @@ export const importApi = {
       { text },
       {
         skipRateLimitToast: true,
-        // LLM extraction can outlast axios's no-timeout default — bound it.
-        timeout: 90_000,
+        // Outlast the backend's 120s per-key LLM lock — a shorter timeout
+        // aborts while the server still holds the key, and the retry 409s.
+        timeout: 130_000,
         // Explicit key (the interceptor keeps a header that's already set):
         // a retry of the SAME text replays the cached response instead of
         // billing a second extraction.
