@@ -117,9 +117,10 @@ export function DeleteProjectModal({
                     </p>
 
                     {/* Option B: Keep Tasks (Safe default) */}
-                    <div
+                    <button
+                      type="button"
                       onClick={() => setDeleteTasks(false)}
-                      className={`relative flex cursor-pointer items-start gap-4 overflow-hidden rounded-3xl border p-5 transition-all duration-300 ${
+                      className={`relative flex w-full cursor-pointer items-start gap-4 overflow-hidden rounded-3xl border p-5 text-left transition-all duration-300 ${
                         !deleteTasks
                           ? "border-primary/50 bg-primary/5 shadow-lg shadow-primary/5 dark:bg-primary/10"
                           : "border-zinc-200 bg-transparent hover:border-zinc-300 dark:border-zinc-800 dark:hover:border-zinc-700"
@@ -146,12 +147,13 @@ export function DeleteProjectModal({
                           personal space.
                         </p>
                       </div>
-                    </div>
+                    </button>
 
                     {/* Option A: Delete Tasks */}
-                    <div
+                    <button
+                      type="button"
                       onClick={() => setDeleteTasks(true)}
-                      className={`relative flex cursor-pointer items-start gap-4 overflow-hidden rounded-3xl border p-5 transition-all duration-300 ${
+                      className={`relative flex w-full cursor-pointer items-start gap-4 overflow-hidden rounded-3xl border p-5 text-left transition-all duration-300 ${
                         deleteTasks
                           ? "border-destructive/50 bg-destructive/5 shadow-lg shadow-destructive/5 dark:bg-destructive/10"
                           : "border-zinc-200 bg-transparent hover:border-zinc-300 dark:border-zinc-800 dark:hover:border-zinc-700"
@@ -172,7 +174,7 @@ export function DeleteProjectModal({
                           to recover them.
                         </p>
                       </div>
-                    </div>
+                    </button>
                   </motion.div>
                 ) : (
                   <motion.div
