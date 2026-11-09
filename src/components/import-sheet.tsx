@@ -208,6 +208,7 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
   // Counter-depth tracking so the highlight doesn't flicker over children.
   const handleDragEnter = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault()
+    if (inputDisabled) return
     dragDepthRef.current += 1
     setIsDragging(true)
   }
