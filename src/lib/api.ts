@@ -445,11 +445,19 @@ export const breakdownApi = {
 }
 
 export const importApi = {
-  extract: async (text: string) => {
+  extract: async (text: string, idempotencyKey: string) => {
     const response = await api.post<ImportExtractResponse>(
       "/api/v1/import/extract",
       { text },
-      { skipRateLimitToast: true }
+      {
+        skipRateLimitToast: true,
+        // LLM extraction can outlast axios's no-timeout default — bound it.
+        timeout: 90_000,
+        // Explicit key (the interceptor keeps a header that's already set):
+        // a retry of the SAME text replays the cached response instead of
+        // billing a second extraction.
+        headers: { "X-Idempotency-Key": idempotencyKey },
+      }
     )
     return response.data
   },

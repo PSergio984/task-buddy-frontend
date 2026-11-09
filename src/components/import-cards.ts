@@ -4,6 +4,11 @@ import {
   type TaskCreateData,
   type TaskPriority,
 } from "@/lib/api"
+import {
+  SUBTASK_TITLE_LIMIT,
+  TASK_DESCRIPTION_LIMIT,
+  TASK_TITLE_LIMIT,
+} from "./proposal-cards"
 
 /** Client-side cap mirroring the backend's 1..10_000-char body limit. */
 export const IMPORT_TEXT_LIMIT = 10_000
@@ -78,7 +83,8 @@ export interface ImportDraftCard {
   /**
    * Assigned on the card's first commit attempt and reused on retries — a
    * retry after a lost response replays the backend's cached result instead
-   * of double-creating.
+   * of double-creating. Edits keep it (see `editImportCard`): a same-key
+   * different-body retry 422s and resolves as already-created.
    */
   idempotencyKey?: string
 }
@@ -112,26 +118,17 @@ export function toImportDraftCard(
 }
 
 /**
- * Applies an edit to a card. Any change to a payload field invalidates the
- * card's persisted idempotency key — a retry must send the edited payload
- * under a fresh key, not replay the response cached under the old one.
+ * Applies an edit to a card. The persisted idempotency key is NEVER cleared:
+ * keys only exist on failed cards, and a retry under the same key either
+ * replays the cached create (same body) or — when the edit changed the
+ * body — 422s, which `commitImportCards` resolves as already-created.
+ * Minting a fresh key there would double-create the task.
  */
 export function editImportCard(
   card: ImportDraftCard,
   updater: (card: ImportDraftCard) => ImportDraftCard
 ): ImportDraftCard {
-  const next = updater(card)
-  if (
-    next.title !== card.title ||
-    next.description !== card.description ||
-    next.deadline !== card.deadline ||
-    next.priority !== card.priority ||
-    next.projectId !== card.projectId ||
-    next.subtasks !== card.subtasks
-  ) {
-    return { ...next, idempotencyKey: undefined }
-  }
-  return next
+  return updater(card)
 }
 
 /** Cards still eligible for creation: included, titled, not yet created. */
@@ -144,9 +141,14 @@ export function committableCards(cards: ImportDraftCard[]): ImportDraftCard[] {
 
 export function toTaskCreateData(card: ImportDraftCard): TaskCreateData {
   return {
-    title: card.title.trim(),
+    // Values are clipped to the backend limits — an oversized AI proposal
+    // isn't fixable by typing (maxLength caps input, not initial values)
+    // and would 422 the create.
+    title: card.title.trim().slice(0, TASK_TITLE_LIMIT),
     ...(card.description.trim()
-      ? { description: card.description.trim() }
+      ? {
+          description: card.description.trim().slice(0, TASK_DESCRIPTION_LIMIT),
+        }
       : {}),
     priority: card.priority,
     ...(card.projectId != null ? { project_id: card.projectId } : {}),
@@ -156,7 +158,9 @@ export function toTaskCreateData(card: ImportDraftCard): TaskCreateData {
       : {}),
     subtasks: card.subtasks
       .filter((sub) => sub.accepted && sub.title.trim())
-      .map((sub) => ({ title: sub.title.trim() })),
+      .map((sub) => ({
+        title: sub.title.trim().slice(0, SUBTASK_TITLE_LIMIT),
+      })),
   }
 }
 
@@ -190,8 +194,30 @@ export async function commitImportCards(
       await createTask(toTaskCreateData(card), key)
       onStatus?.(card.number, "created")
       created += 1
-    } catch {
-      onStatus?.(card.number, "failed")
+    } catch (err) {
+      // Same key + a different body means the first POST DID land — the
+      // user edited the card after a create that succeeded server-side but
+      // failed client-side (lost response). The task exists with its
+      // earlier payload; mark it created instead of failing every retry.
+      const status = (err as { response?: { status?: number } }).response
+        ?.status
+      const detail = (err as { response?: { data?: { detail?: unknown } } })
+        .response?.data?.detail
+      const message =
+        typeof detail === "string"
+          ? detail
+          : err instanceof Error
+            ? err.message
+            : ""
+      if (
+        status === 422 &&
+        /idempotency|different request body/i.test(message)
+      ) {
+        onStatus?.(card.number, "created")
+        created += 1
+      } else {
+        onStatus?.(card.number, "failed")
+      }
     }
   }
   return { created, failed: targets.length - created }

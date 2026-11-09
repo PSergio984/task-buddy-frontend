@@ -459,6 +459,7 @@ function DraftCardView({
         <Checkbox
           checked={card.accepted}
           disabled={disabled}
+          aria-label={`Include task ${card.number}`}
           onCheckedChange={(checked) =>
             onChange(card.number, (prev) => ({
               ...prev,

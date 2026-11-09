@@ -3,6 +3,12 @@ export interface SubtaskItem {
   accepted: boolean
 }
 
+/** Backend field limits (app/schemas/task.py): TaskCreate.title,
+ *  TaskCreate.description and SubtaskCreate.title — oversized values 422. */
+export const TASK_TITLE_LIMIT = 100
+export const TASK_DESCRIPTION_LIMIT = 2_000
+export const SUBTASK_TITLE_LIMIT = 80
+
 /** Card-updater factory: transform the subtask at `index` in a card's list. */
 export function updateSubtaskAt<
   T extends { subtasks: { title: string; accepted: boolean }[] },

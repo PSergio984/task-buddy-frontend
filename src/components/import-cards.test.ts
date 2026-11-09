@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from "vitest"
 import type { ImportTaskProposal, TaskCreateData } from "@/lib/api"
 import {
+  SUBTASK_TITLE_LIMIT,
+  TASK_DESCRIPTION_LIMIT,
+  TASK_TITLE_LIMIT,
+} from "./proposal-cards"
+import {
   IMPORT_TEXT_LIMIT,
   committableCards,
   commitImportCards,
@@ -148,10 +153,12 @@ describe("editImportCard", () => {
     idempotencyKey: "3f6f2a3e-0f6c-4d2a-9c2f-6a3f1a1e4d2b",
   })
 
-  it("clears the persisted key when a payload field changes", () => {
+  it("keeps the persisted key when a payload field changes", () => {
+    // Clearing it would let a retry mint a fresh key and double-create the
+    // task when the first attempt landed server-side but failed client-side.
     const card = editImportCard(keyed(), (c) => ({ ...c, title: "Renamed" }))
     expect(card.title).toBe("Renamed")
-    expect(card.idempotencyKey).toBeUndefined()
+    expect(card.idempotencyKey).toBe("3f6f2a3e-0f6c-4d2a-9c2f-6a3f1a1e4d2b")
   })
 
   it("keeps the key for payload-neutral changes", () => {
@@ -159,12 +166,12 @@ describe("editImportCard", () => {
     expect(card.idempotencyKey).toBe("3f6f2a3e-0f6c-4d2a-9c2f-6a3f1a1e4d2b")
   })
 
-  it("clears the key when subtasks change", () => {
+  it("keeps the key when subtasks change", () => {
     const card = editImportCard(keyed(), (c) => ({
       ...c,
       subtasks: [...c.subtasks, { title: "new", accepted: true }],
     }))
-    expect(card.idempotencyKey).toBeUndefined()
+    expect(card.idempotencyKey).toBe("3f6f2a3e-0f6c-4d2a-9c2f-6a3f1a1e4d2b")
   })
 })
 
@@ -198,6 +205,20 @@ describe("toTaskCreateData", () => {
     expect(data).not.toHaveProperty("project_id")
     expect(data).not.toHaveProperty("due_date")
     expect(data.subtasks).toEqual([])
+  })
+
+  it("clips fields to the backend limits so oversized proposals don't 422", () => {
+    const card = toImportDraftCard(
+      proposal("t".repeat(TASK_TITLE_LIMIT + 20), {
+        description: "d".repeat(TASK_DESCRIPTION_LIMIT + 100),
+        subtasks: [{ title: "s".repeat(SUBTASK_TITLE_LIMIT + 20) }],
+      }),
+      1
+    )
+    const data = toTaskCreateData(card)
+    expect(data.title).toHaveLength(TASK_TITLE_LIMIT)
+    expect(data.description).toHaveLength(TASK_DESCRIPTION_LIMIT)
+    expect(data.subtasks?.[0].title).toHaveLength(SUBTASK_TITLE_LIMIT)
   })
 })
 
@@ -321,5 +342,69 @@ describe("commitImportCards", () => {
     await commitImportCards(retried, retryCreate)
     expect(retryCalls.map((c) => c.data.title)).toEqual(["B"])
     expect(retryCalls[0].key).toBe(assignedKeys.get(2))
+  })
+
+  it("resolves a same-key/different-body 422 as created — the first attempt landed", async () => {
+    const key = "3f6f2a3e-0f6c-4d2a-9c2f-6a3f1a1e4d2b"
+    // The dangerous path: a card whose POST landed server-side but read as
+    // failed client-side — the user edits it, then retries. The edit must
+    // keep the key (a fresh one would double-create), and the backend's
+    // 422 "key reused with a different body" proves the task exists.
+    const edited = editImportCard(
+      {
+        ...toImportDraftCard(proposal("A"), 1),
+        status: "failed" as const,
+        idempotencyKey: key,
+      },
+      (c) => ({ ...c, title: "Edited after failure" })
+    )
+    expect(edited.idempotencyKey).toBe(key)
+
+    const statuses: [number, ImportCardStatus][] = []
+    const createTask = vi.fn((_data: TaskCreateData, sentKey: string) => {
+      expect(sentKey).toBe(key)
+      return Promise.reject({
+        response: {
+          status: 422,
+          data: {
+            detail:
+              "Idempotency key was already used with a different request body.",
+          },
+        },
+      })
+    })
+
+    const result = await commitImportCards([edited], createTask, (n, s) =>
+      statuses.push([n, s])
+    )
+
+    expect(result).toEqual({ created: 1, failed: 0 })
+    expect(statuses).toEqual([
+      [1, "creating"],
+      [1, "created"],
+    ])
+  })
+
+  it("still marks an ordinary 422 as failed", async () => {
+    const cards = [toImportDraftCard(proposal("A"), 1)]
+    const statuses: [number, ImportCardStatus][] = []
+    const createTask = vi.fn(() =>
+      Promise.reject({
+        response: {
+          status: 422,
+          data: { detail: "title: String should have at least 1 character" },
+        },
+      })
+    )
+
+    const result = await commitImportCards(cards, createTask, (n, s) =>
+      statuses.push([n, s])
+    )
+
+    expect(result).toEqual({ created: 0, failed: 1 })
+    expect(statuses).toEqual([
+      [1, "creating"],
+      [1, "failed"],
+    ])
   })
 })

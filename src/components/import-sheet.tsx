@@ -32,7 +32,13 @@ import { useToast } from "@/hooks/use-toast"
 import { useIsOnline } from "@/hooks/useIsOnline"
 import { useProjects } from "@/hooks/useProjects"
 import { cn } from "@/lib/utils"
-import { type TaskPriority, importApi, tasksApi } from "@/lib/api"
+import {
+  createIdempotencyKey,
+  type TaskPriority,
+  importApi,
+  tasksApi,
+} from "@/lib/api"
+import { TASK_DESCRIPTION_LIMIT, TASK_TITLE_LIMIT } from "./proposal-cards"
 import {
   IMPORT_TEXT_LIMIT,
   type ImportDraftCard,
@@ -64,10 +70,15 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
   const [error, setError] = useState<string | null>(null)
   const [inputError, setInputError] = useState<string | null>(null)
   const [budgetExhausted, setBudgetExhausted] = useState(false)
+  const [featureDisabled, setFeatureDisabled] = useState(false)
   const [emptyNotice, setEmptyNotice] = useState<string | null>(null)
   const [isCommitting, setIsCommitting] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const lastRequestRef = useRef<string | null>(null)
+  // Idempotency key per extract source text — a retry of the SAME notes
+  // replays the backend's cached response instead of billing a second LLM
+  // call; changed text mints a fresh one (same key + different body → 422).
+  const extractKeyRef = useRef<{ source: string; key: string } | null>(null)
   const cardNumberRef = useRef(1)
   const dragDepthRef = useRef(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -76,6 +87,18 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
     if (isOpen) cardNumberRef.current = 1
   }, [isOpen])
 
+  // The sheet stays mounted (MainLayout), so a 429/404 flag must not
+  // dead-end a reopened sheet — clear it on the closed→open transition
+  // (render-time reset; a fresh attempt re-checks the backend anyway).
+  const [wasOpen, setWasOpen] = useState(isOpen)
+  if (wasOpen !== isOpen) {
+    setWasOpen(isOpen)
+    if (isOpen) {
+      setBudgetExhausted(false)
+      setFeatureDisabled(false)
+    }
+  }
+
   const reset = () => {
     setPhase("input")
     setText("")
@@ -83,6 +106,7 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
     setError(null)
     setInputError(null)
     setBudgetExhausted(false)
+    setFeatureDisabled(false)
     setEmptyNotice(null)
     lastRequestRef.current = null
     dragDepthRef.current = 0
@@ -93,11 +117,18 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
     setPhase("loading")
     setError(null)
     setBudgetExhausted(false)
+    setFeatureDisabled(false)
     setEmptyNotice(null)
     lastRequestRef.current = requestText
 
+    const key =
+      extractKeyRef.current?.source === requestText
+        ? extractKeyRef.current.key
+        : createIdempotencyKey()
+    extractKeyRef.current = { source: requestText, key }
+
     try {
-      const response = await importApi.extract(requestText)
+      const response = await importApi.extract(requestText, key)
 
       if (response.proposals.length === 0) {
         if (response.reason) {
@@ -120,8 +151,23 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
     } catch (err) {
       const status = (err as { response?: { status?: number } }).response
         ?.status
+      const detail = (err as { response?: { data?: { detail?: unknown } } })
+        .response?.data?.detail
       if (status === 429) {
-        setBudgetExhausted(true)
+        // Two different 429s: the daily AI budget (backend detail) dead-ends
+        // until tomorrow; slowapi's per-minute RATE_LIMIT_IMPORT is a
+        // retryable "slow down" — same status, very different meaning.
+        if (
+          typeof detail === "string" &&
+          /daily ai usage limit/i.test(detail)
+        ) {
+          setBudgetExhausted(true)
+        } else {
+          setError("Too many attempts — wait a moment, then try again.")
+        }
+      } else if (status === 404) {
+        // IMPORT_ENABLED=false — no retry can fix a disabled feature.
+        setFeatureDisabled(true)
       } else {
         setError(
           status === 503 || status === undefined
@@ -142,8 +188,10 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
     void requestExtract(text.trim())
   }
 
+  const inputDisabled = !isOnline || budgetExhausted || featureDisabled
+
   const handleFile = async (file: File | undefined) => {
-    if (!file) return
+    if (!file || inputDisabled) return
     try {
       const fileText = await readImportFile(file)
       setText(fileText)
@@ -172,6 +220,7 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
     event.preventDefault()
     dragDepthRef.current = 0
     setIsDragging(false)
+    if (inputDisabled) return
     void handleFile(event.dataTransfer.files[0])
   }
 
@@ -200,41 +249,45 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
 
   async function commit() {
     setIsCommitting(true)
-    const { created, failed } = await commitImportCards(
-      cards,
-      (data, idempotencyKey) => tasksApi.create(data, { idempotencyKey }),
-      (number, status) => updateCard(number, (card) => ({ ...card, status })),
-      // Persist the card's key so a retried commit replays, not re-creates.
-      (number, idempotencyKey) =>
-        updateCard(number, (card) => ({ ...card, idempotencyKey }))
-    )
-    setIsCommitting(false)
-    if (failed === 0) {
-      // Cumulative — a retry batch must report all created tasks, not just
-      // the ones it retried.
-      const alreadyCreated = cards.filter((c) => c.status === "created")
-      const total = alreadyCreated.length + created
-      const subtasks =
-        alreadyCreated.reduce(
-          (sum, card) =>
-            sum +
-            card.subtasks.filter((s) => s.accepted && s.title.trim()).length,
-          0
-        ) + acceptedSubtaskCount
-      toast({
-        title: "Tasks imported",
-        description: `Added ${total} task${total === 1 ? "" : "s"} · ${subtasks} subtask${subtasks === 1 ? "" : "s"}.`,
-        variant: "success",
-      })
-      // Back to a clean input — reopening shouldn't show stale "created" cards.
-      reset()
-      onClose()
-    } else if (created > 0) {
-      toast({
-        title: `${created} task${created === 1 ? "" : "s"} imported`,
-        description: `${failed} failed. Use "Retry failed" below.`,
-        variant: "destructive",
-      })
+    try {
+      const { created, failed } = await commitImportCards(
+        cards,
+        (data, idempotencyKey) => tasksApi.create(data, { idempotencyKey }),
+        (number, status) => updateCard(number, (card) => ({ ...card, status })),
+        // Persist the card's key so a retried commit replays, not re-creates.
+        (number, idempotencyKey) =>
+          updateCard(number, (card) => ({ ...card, idempotencyKey }))
+      )
+      if (failed === 0) {
+        // Cumulative — a retry batch must report all created tasks, not just
+        // the ones it retried.
+        const alreadyCreated = cards.filter((c) => c.status === "created")
+        const total = alreadyCreated.length + created
+        const subtasks =
+          alreadyCreated.reduce(
+            (sum, card) =>
+              sum +
+              card.subtasks.filter((s) => s.accepted && s.title.trim()).length,
+            0
+          ) + acceptedSubtaskCount
+        toast({
+          title: "Tasks imported",
+          description: `Added ${total} task${total === 1 ? "" : "s"} · ${subtasks} subtask${subtasks === 1 ? "" : "s"}.`,
+          variant: "success",
+        })
+        // Back to a clean input — reopening shouldn't show stale "created" cards.
+        reset()
+        onClose()
+      } else if (created > 0) {
+        toast({
+          title: `${created} task${created === 1 ? "" : "s"} imported`,
+          description: `${failed} failed. Use "Retry failed" below.`,
+          variant: "destructive",
+        })
+      }
+    } finally {
+      // An unexpected throw must not wedge the commit + Start Over buttons.
+      setIsCommitting(false)
     }
   }
 
@@ -257,8 +310,13 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-4">
           {!isOnline ? (
             <OfflineBanner message="You're offline — importing notes needs a connection." />
+          ) : featureDisabled ? (
+            <p className="mb-3 rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+              Notes import isn't available on this server — the feature may be
+              disabled.
+            </p>
           ) : budgetExhausted ? (
-            <BudgetBanner />
+            <BudgetBanner onRetry={handleRetryRequest} />
           ) : error ? (
             <ErrorBanner message={error} onRetry={handleRetryRequest} />
           ) : emptyNotice ? (
@@ -275,7 +333,7 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
                 if (inputError) setInputError(null)
               }}
               inputError={inputError}
-              disabled={!isOnline || budgetExhausted}
+              disabled={inputDisabled}
               isDragging={isDragging}
               fileInputRef={fileInputRef}
               onFileChange={(file) => void handleFile(file)}
@@ -392,7 +450,8 @@ function InputSection({
           id="import-input"
           placeholder="Paste your notes — meeting minutes, a brain-dump, a markdown list…"
           value={text}
-          maxLength={IMPORT_TEXT_LIMIT}
+          // No maxLength — a silent paste truncation loses extracted tasks;
+          // the counter + validateImportText report the over-limit instead.
           onChange={(event) => setText(event.target.value)}
           className="min-h-40 resize-none"
           disabled={disabled}
@@ -465,8 +524,8 @@ function ImportCardView({
 
   const isExcluded = !card.included
 
-  // Every edit goes through editImportCard — payload changes invalidate the
-  // card's persisted key so a retry sends edited content, not a stale replay.
+  // Every edit goes through editImportCard — it never clears the persisted
+  // key, so a retry can never mint a fresh one and double-create the task.
   const edit = (updater: (card: ImportDraftCard) => ImportDraftCard) =>
     onChange(card.number, (prev) => editImportCard(prev, updater))
 
@@ -572,6 +631,7 @@ function ImportCardView({
           <Input
             value={card.title}
             disabled={disabled}
+            maxLength={TASK_TITLE_LIMIT}
             aria-label={`Task ${card.number} title`}
             onChange={(event) =>
               edit((prev) => ({
@@ -584,6 +644,7 @@ function ImportCardView({
           <Textarea
             value={card.description}
             disabled={disabled}
+            maxLength={TASK_DESCRIPTION_LIMIT}
             aria-label={`Task ${card.number} description`}
             placeholder="Add a description…"
             onChange={(event) =>
