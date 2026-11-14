@@ -328,4 +328,86 @@ describe("ImportSheet per-card regenerate and refine control", () => {
       )
     })
   })
+
+  it("clears provenance when submitting different notes after zero-proposal response", async () => {
+    vi.mocked(importApi.extract)
+      .mockResolvedValueOnce({
+        proposals: [],
+        reason: null,
+        source_knowledge_id: 303,
+      })
+      .mockResolvedValueOnce({
+        proposals: initialProposals,
+        reason: null,
+        source_knowledge_id: 404,
+      })
+
+    render(<ImportSheet isOpen={true} onClose={vi.fn()} />)
+    const textarea = screen.getByPlaceholderText(/Paste your notes/i)
+    fireEvent.change(textarea, {
+      target: { value: "Initial notes without tasks" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: /extract tasks/i }))
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/couldn't find any tasks in those notes/i)
+      ).toBeInTheDocument()
+    })
+
+    // User replaces notes with completely different notes
+    const updatedTextarea = screen.getByPlaceholderText(/Paste your notes/i)
+    fireEvent.change(updatedTextarea, {
+      target: { value: "Completely different notes" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: /extract tasks/i }))
+
+    await waitFor(() => {
+      expect(importApi.extract).toHaveBeenCalledTimes(2)
+      expect(importApi.extract).toHaveBeenLastCalledWith(
+        "Completely different notes",
+        expect.objectContaining({
+          sourceKnowledgeId: null,
+        })
+      )
+    })
+  })
+
+  it("retains provenance when retrying the same notes after a zero-proposal response", async () => {
+    vi.mocked(importApi.extract)
+      .mockResolvedValueOnce({
+        proposals: [],
+        reason: null,
+        source_knowledge_id: 505,
+      })
+      .mockResolvedValueOnce({
+        proposals: initialProposals,
+        reason: null,
+        source_knowledge_id: 505,
+      })
+
+    render(<ImportSheet isOpen={true} onClose={vi.fn()} />)
+    const textarea = screen.getByPlaceholderText(/Paste your notes/i)
+    fireEvent.change(textarea, { target: { value: "Retryable notes" } })
+    fireEvent.click(screen.getByRole("button", { name: /extract tasks/i }))
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/couldn't find any tasks in those notes/i)
+      ).toBeInTheDocument()
+    })
+
+    // Re-extract with the exact same notes
+    fireEvent.click(screen.getByRole("button", { name: /extract tasks/i }))
+
+    await waitFor(() => {
+      expect(importApi.extract).toHaveBeenCalledTimes(2)
+      expect(importApi.extract).toHaveBeenLastCalledWith(
+        "Retryable notes",
+        expect.objectContaining({
+          sourceKnowledgeId: 505,
+        })
+      )
+    })
+  })
 })

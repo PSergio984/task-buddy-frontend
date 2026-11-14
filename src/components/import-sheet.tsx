@@ -85,8 +85,8 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
   const [emptyNotice, setEmptyNotice] = useState<string | null>(null)
   const [refineText, setRefineText] = useState("")
   const [focusCardNumber, setFocusCardNumber] = useState<number | null>(null)
-  const [, setSourceKnowledgeId] = useState<number | null>(null)
   const sourceKnowledgeIdRef = useRef<number | null>(null)
+  const sourceKnowledgeTextRef = useRef<string | null>(null)
   const [isCommitting, setIsCommitting] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const lastRequestRef = useRef<string | null>(null)
@@ -122,8 +122,8 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
     setEmptyNotice(null)
     setRefineText("")
     setFocusCardNumber(null)
-    setSourceKnowledgeId(null)
     sourceKnowledgeIdRef.current = null
+    sourceKnowledgeTextRef.current = null
     lastRequestRef.current = null
     lastFocusRef.current = null
     extractKeyRef.current = null
@@ -155,6 +155,13 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
         : createIdempotencyKey()
     extractKeyRef.current = { source, key }
 
+    // Clear provenance before a different non-focus import, while retaining it
+    // when retrying the same source notes or when refining focused cards.
+    if (focus === undefined && requestText !== sourceKnowledgeTextRef.current) {
+      sourceKnowledgeIdRef.current = null
+      sourceKnowledgeTextRef.current = null
+    }
+
     try {
       const response = await importApi.extract(requestText, {
         focusTaskNumber: focus?.number,
@@ -164,8 +171,8 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
       })
 
       if (response.source_knowledge_id != null) {
-        setSourceKnowledgeId(response.source_knowledge_id)
         sourceKnowledgeIdRef.current = response.source_knowledge_id
+        sourceKnowledgeTextRef.current = requestText
       }
 
       // A 2xx response is cached under this key server-side — the response
