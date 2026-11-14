@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { ImportSheet } from "./import-sheet"
-import { importApi } from "@/lib/api"
+import { importApi, tasksApi, type Task } from "@/lib/api"
 
 vi.mock("@/hooks/useToast", () => ({
   useToast: () => ({ toast: vi.fn() }),
@@ -20,7 +20,12 @@ vi.mock("@/lib/api", async () => {
   return {
     ...actual,
     importApi: {
+      ...actual.importApi,
       extract: vi.fn(),
+    },
+    tasksApi: {
+      ...actual.tasksApi,
+      create: vi.fn(),
     },
   }
 })
@@ -250,5 +255,77 @@ describe("ImportSheet per-card regenerate and refine control", () => {
 
     // Should NOT have made another extract call for #99
     expect(importApi.extract).toHaveBeenCalledTimes(1)
+  })
+
+  it("passes source_knowledge_id to tasksApi.create when committing proposals", async () => {
+    vi.mocked(importApi.extract).mockResolvedValueOnce({
+      proposals: initialProposals,
+      reason: null,
+      source_knowledge_id: 101,
+    })
+    vi.mocked(tasksApi.create).mockResolvedValue({ id: 1 } as unknown as Task)
+
+    await renderSheetAndExtractNotes()
+
+    const importBtn = screen.getByRole("button", { name: /add 2 tasks/i })
+    fireEvent.click(importBtn)
+
+    await waitFor(() => {
+      expect(tasksApi.create).toHaveBeenCalledTimes(2)
+      expect(tasksApi.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Email Sarah about venue",
+          source_knowledge_id: 101,
+        }),
+        expect.anything()
+      )
+      expect(tasksApi.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Book dentist",
+          source_knowledge_id: 101,
+        }),
+        expect.anything()
+      )
+    })
+  })
+
+  it("passes sourceKnowledgeId back to importApi.extract on regenerate", async () => {
+    vi.mocked(importApi.extract)
+      .mockResolvedValueOnce({
+        proposals: initialProposals,
+        reason: null,
+        source_knowledge_id: 202,
+      })
+      .mockResolvedValueOnce({
+        proposals: [
+          {
+            title: "Email Sarah venue contract",
+            description: null,
+            proposed_deadline: "2026-11-20",
+            priority: "HIGH" as const,
+            suggested_project_id: null,
+            subtasks: [],
+          },
+        ],
+        reason: null,
+        source_knowledge_id: 202,
+      })
+
+    await renderSheetAndExtractNotes()
+
+    const regenBtn = screen.getByRole("button", { name: "Regenerate task 1" })
+    fireEvent.click(regenBtn)
+
+    await waitFor(() => {
+      expect(importApi.extract).toHaveBeenCalledTimes(2)
+      expect(importApi.extract).toHaveBeenLastCalledWith(
+        "Email Sarah; Book dentist",
+        expect.objectContaining({
+          focusTaskNumber: 1,
+          focusTaskTitle: "Email Sarah about venue",
+          sourceKnowledgeId: 202,
+        })
+      )
+    })
   })
 })

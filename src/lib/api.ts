@@ -151,6 +151,7 @@ export interface Task {
   user_id: number
   subtasks?: Subtask[]
   tags?: Tag[]
+  source_knowledge_id?: number | null
 }
 
 export interface Subtask {
@@ -269,6 +270,7 @@ export interface TaskCreateData {
     due_date?: string
     completed?: boolean
   }>
+  source_knowledge_id?: number | null
 }
 
 export interface BreakdownSubtaskProposal {
@@ -303,6 +305,7 @@ export interface ImportTaskProposal {
 export interface ImportExtractResponse {
   proposals: ImportTaskProposal[]
   reason: string | null
+  source_knowledge_id?: number | null
 }
 
 export interface PlanTaskRow {
@@ -466,13 +469,19 @@ export const importApi = {
           focusTaskNumber?: number
           focusTaskTitle?: string
           idempotencyKey?: string
+          sourceKnowledgeId?: number | null
         }
   ) => {
     const opts =
       typeof options === "string"
         ? { idempotencyKey: options }
         : (options ?? {})
-    const { focusTaskNumber, focusTaskTitle, idempotencyKey } = opts
+    const {
+      focusTaskNumber,
+      focusTaskTitle,
+      idempotencyKey,
+      sourceKnowledgeId,
+    } = opts
     const key = idempotencyKey ?? createIdempotencyKey()
     const response = await api.post<ImportExtractResponse>(
       "/api/v1/import/extract",
@@ -482,6 +491,9 @@ export const importApi = {
           ? { focus_task_number: focusTaskNumber }
           : {}),
         ...(focusTaskTitle != null ? { focus_task_title: focusTaskTitle } : {}),
+        ...(sourceKnowledgeId != null
+          ? { source_knowledge_id: sourceKnowledgeId }
+          : {}),
       },
       {
         skipRateLimitToast: true,
