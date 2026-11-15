@@ -221,3 +221,39 @@ export function RetryFailedButton({
     </Button>
   )
 }
+
+export function RefineInput({
+  id = "proposal-refine-input",
+  value,
+  setValue,
+  placeholder = 'Refine, e.g. "split #2 more"',
+  ariaLabel = "Refine proposals",
+  disabled,
+  onSubmit,
+}: Readonly<{
+  id?: string
+  value: string
+  setValue: (value: string) => void
+  placeholder?: string
+  ariaLabel?: string
+  disabled: boolean
+  onSubmit: () => void
+}>) {
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault()
+        onSubmit()
+      }}
+    >
+      <Input
+        id={id}
+        aria-label={ariaLabel}
+        placeholder={placeholder}
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        disabled={disabled}
+      />
+    </form>
+  )
+}

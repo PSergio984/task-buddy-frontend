@@ -1,6 +1,14 @@
-import { useEffect, useRef, useState } from "react"
+import { useRef, useState } from "react"
 import type { DragEvent, RefObject } from "react"
-import { Check, FileUp, Loader2, Sparkles, Trash2, X } from "lucide-react"
+import {
+  Check,
+  FileUp,
+  Loader2,
+  RefreshCw,
+  Sparkles,
+  Trash2,
+  X,
+} from "lucide-react"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 import {
   BudgetBanner,
@@ -9,6 +17,7 @@ import {
   LoadingSkeleton,
   NumberChip,
   OfflineBanner,
+  RefineInput,
   RetryFailedButton,
   SheetHeaderBlock,
   StartOverButton,
@@ -45,7 +54,9 @@ import {
   committableCards,
   commitImportCards,
   editImportCard,
+  parseRefineTarget,
   readImportFile,
+  replaceCard,
   toImportDraftCard,
   validateImportText,
 } from "./import-cards"
@@ -72,9 +83,12 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
   const [budgetExhausted, setBudgetExhausted] = useState(false)
   const [featureDisabled, setFeatureDisabled] = useState(false)
   const [emptyNotice, setEmptyNotice] = useState<string | null>(null)
+  const [refineText, setRefineText] = useState("")
+  const [focusCardNumber, setFocusCardNumber] = useState<number | null>(null)
   const [isCommitting, setIsCommitting] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const lastRequestRef = useRef<string | null>(null)
+  const lastFocusRef = useRef<{ number: number; title: string } | null>(null)
   // Idempotency key per extract source text — a retry of the SAME notes
   // replays the backend's cached response instead of billing a second LLM
   // call; changed text mints a fresh one (same key + different body → 422).
@@ -82,10 +96,6 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
   const cardNumberRef = useRef(1)
   const dragDepthRef = useRef(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    if (isOpen) cardNumberRef.current = 1
-  }, [isOpen])
 
   // The sheet stays mounted (MainLayout), so a 429/404 flag must not
   // dead-end a reopened sheet — clear it on the closed→open transition
@@ -108,34 +118,52 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
     setBudgetExhausted(false)
     setFeatureDisabled(false)
     setEmptyNotice(null)
+    setRefineText("")
+    setFocusCardNumber(null)
     lastRequestRef.current = null
+    lastFocusRef.current = null
     extractKeyRef.current = null
     dragDepthRef.current = 0
     setIsDragging(false)
+    cardNumberRef.current = 1
   }
 
-  async function requestExtract(requestText: string) {
+  async function requestExtract(
+    requestText: string,
+    focus?: { number: number; title: string }
+  ) {
+    setFocusCardNumber(focus?.number ?? null)
     setPhase("loading")
     setError(null)
     setBudgetExhausted(false)
     setFeatureDisabled(false)
     setEmptyNotice(null)
     lastRequestRef.current = requestText
+    lastFocusRef.current = focus ?? null
 
+    const source =
+      focus === undefined
+        ? requestText
+        : `${requestText}#${focus.number}#${focus.title}`
     const key =
-      extractKeyRef.current?.source === requestText
+      extractKeyRef.current?.source === source
         ? extractKeyRef.current.key
         : createIdempotencyKey()
-    extractKeyRef.current = { source: requestText, key }
+    extractKeyRef.current = { source, key }
 
     try {
-      const response = await importApi.extract(requestText, key)
+      const response = await importApi.extract(requestText, {
+        focusTaskNumber: focus?.number,
+        focusTaskTitle: focus?.title,
+        idempotencyKey: key,
+      })
 
       // A 2xx response is cached under this key server-side — the response
       // arrived, so the key has done its job. Clear it: a later retry must
       // mint a fresh key to actually re-run extraction, not replay this
       // cached result.
       extractKeyRef.current = null
+      setFocusCardNumber(null)
       if (response.proposals.length === 0) {
         if (response.reason) {
           // Parse/infra degrade — retryable, distinct from "no tasks found".
@@ -145,16 +173,30 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
             "I couldn't find any tasks in those notes. Try pasting your to-dos."
           )
         }
+        setPhase(focus === undefined ? "input" : "review")
       } else {
-        setCards(
-          response.proposals.map((proposal) =>
-            toImportDraftCard(proposal, cardNumberRef.current++, projectId)
+        const nextNumber = () => {
+          const maxNum = Math.max(
+            cardNumberRef.current,
+            ...cards.map((c) => c.number),
+            0
           )
+          cardNumberRef.current = maxNum + 1
+          return maxNum
+        }
+        const newCards = response.proposals.map((proposal) =>
+          toImportDraftCard(proposal, nextNumber(), projectId)
+        )
+        setCards((prev) =>
+          focus === undefined
+            ? newCards
+            : replaceCard(prev, focus.number, newCards)
         )
         setPhase("review")
         return
       }
     } catch (err) {
+      setFocusCardNumber(null)
       const status = (err as { response?: { status?: number } }).response
         ?.status
       const detail = (err as { response?: { data?: { detail?: unknown } } })
@@ -194,8 +236,8 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
             : "Something went wrong. Please try again."
         )
       }
+      setPhase(focus === undefined ? "input" : "review")
     }
-    setPhase("input")
   }
 
   const handleExtractClick = () => {
@@ -205,6 +247,41 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
       return
     }
     void requestExtract(text.trim())
+  }
+
+  const handleRefineSubmit = () => {
+    const target = parseRefineTarget(refineText)
+    if (!target) return
+    const focusCard = cards.find((card) => card.number === target)
+    if (
+      !focusCard ||
+      focusCard.status === "created" ||
+      focusCard.idempotencyKey !== undefined ||
+      !lastRequestRef.current
+    ) {
+      return
+    }
+    void requestExtract(lastRequestRef.current, {
+      number: target,
+      title: focusCard.title.slice(0, 200),
+    })
+    setRefineText("")
+  }
+
+  const handleRegenerateCard = (targetNumber: number) => {
+    const focusCard = cards.find((card) => card.number === targetNumber)
+    if (
+      !focusCard ||
+      focusCard.status === "created" ||
+      focusCard.idempotencyKey !== undefined ||
+      !lastRequestRef.current
+    ) {
+      return
+    }
+    void requestExtract(lastRequestRef.current, {
+      number: targetNumber,
+      title: focusCard.title.slice(0, 200),
+    })
   }
 
   const inputDisabled = !isOnline || budgetExhausted || featureDisabled
@@ -315,8 +392,14 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
 
   const handleRetryRequest = () => {
     if (lastRequestRef.current === null) return
-    void requestExtract(lastRequestRef.current)
+    void requestExtract(
+      lastRequestRef.current,
+      lastFocusRef.current ?? undefined
+    )
   }
+
+  const canRegenerate =
+    isOnline && !budgetExhausted && !featureDisabled && !isCommitting
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -367,7 +450,13 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
           ) : null}
 
           {phase === "loading" ? (
-            <LoadingSkeleton label="Extracting tasks from your notes…" />
+            <LoadingSkeleton
+              label={
+                focusCardNumber != null
+                  ? `Regenerating task #${focusCardNumber}…`
+                  : "Extracting tasks from your notes…"
+              }
+            />
           ) : null}
 
           {phase === "review" ? (
@@ -380,8 +469,10 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
                     card={card}
                     projects={projects}
                     disabled={isCommitting}
+                    canRegenerate={canRegenerate}
                     onChange={updateCard}
                     onRemove={removeCard}
+                    onRegenerate={handleRegenerateCard}
                   />
                 ))}
               </div>
@@ -391,10 +482,17 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
 
         {phase === "review" ? (
           <div className="shrink-0 border-t border-white/5 px-6 py-4">
+            <RefineInput
+              id="import-refine-input"
+              value={refineText}
+              setValue={setRefineText}
+              disabled={!canRegenerate}
+              onSubmit={handleRefineSubmit}
+            />
             {committable.length > 0 || isCreating ? (
               <Button
                 id="import-commit-btn"
-                className="w-full"
+                className="mt-3 w-full"
                 onClick={() => void commit()}
                 disabled={
                   !isOnline ||
@@ -527,18 +625,22 @@ function ImportCardView({
   card,
   projects,
   disabled = false,
+  canRegenerate = true,
   onChange,
   onRemove,
+  onRegenerate,
 }: Readonly<{
   card: ImportDraftCard
   projects: { id: number; name: string; color?: string }[]
   /** Locks committability-changing controls while a commit runs. */
   disabled?: boolean
+  canRegenerate?: boolean
   onChange: (
     number: number,
     updater: (card: ImportDraftCard) => ImportDraftCard
   ) => void
   onRemove: (number: number) => void
+  onRegenerate: (number: number) => void
 }>) {
   if (card.status === "created") {
     return <CreatedCardRow number={card.number} title={card.title} />
@@ -640,6 +742,17 @@ function ImportCardView({
                 ))}
               </SelectContent>
             </Select>
+            <button
+              type="button"
+              aria-label={`Regenerate task ${card.number}`}
+              disabled={
+                disabled || !canRegenerate || card.idempotencyKey !== undefined
+              }
+              onClick={() => onRegenerate(card.number)}
+              className="shrink-0 text-muted-foreground/60 hover:text-foreground disabled:opacity-50"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </button>
             <button
               type="button"
               aria-label={`Remove task ${card.number}`}

@@ -8,7 +8,11 @@ import {
   TASK_DESCRIPTION_LIMIT,
   TASK_TITLE_LIMIT,
   commitProposalCards,
+  parseRefineTarget,
+  replaceCard,
 } from "./proposal-cards"
+
+export { parseRefineTarget, replaceCard }
 
 /** Client-side cap mirroring the backend's 1..10_000-char body limit. */
 export const IMPORT_TEXT_LIMIT = 10_000

@@ -29,6 +29,39 @@ export function updateSubtaskAt<
   })
 }
 
+/**
+ * Replaces the card matching targetNumber with one or more replacement cards.
+ * The first replacement inherits the target's number so references stay stable;
+ * siblings keep their assigned numbers.
+ */
+export function replaceCard<T extends { number: number }>(
+  prev: T[],
+  targetNumber: number,
+  replacements: T[]
+): T[] {
+  if (!prev.some((card) => card.number === targetNumber)) {
+    return [...prev, ...replacements]
+  }
+  return prev.flatMap((card) => {
+    if (card.number !== targetNumber) return [card]
+    return replacements.length > 0
+      ? replacements.map((replacement, index) =>
+          index === 0 ? { ...replacement, number: targetNumber } : replacement
+        )
+      : []
+  })
+}
+
+/**
+ * Extracts a target card number from user refine input, e.g. "#2 split more",
+ * "task 3", "card 1", or "2". Returns null when no number is found.
+ */
+export function parseRefineTarget(text: string): number | null {
+  const match =
+    /(?:#|task\s+|card\s+)(\d+)/i.exec(text) ?? /\b(\d+)\b/.exec(text)
+  return match ? Number(match[1]) : null
+}
+
 /** The fields a proposal card must carry for `commitProposalCards`. */
 interface CommittableCard {
   number: number

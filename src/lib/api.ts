@@ -458,10 +458,31 @@ export const breakdownApi = {
 }
 
 export const importApi = {
-  extract: async (text: string, idempotencyKey: string) => {
+  extract: async (
+    text: string,
+    options?:
+      | string
+      | {
+          focusTaskNumber?: number
+          focusTaskTitle?: string
+          idempotencyKey?: string
+        }
+  ) => {
+    const opts =
+      typeof options === "string"
+        ? { idempotencyKey: options }
+        : (options ?? {})
+    const { focusTaskNumber, focusTaskTitle, idempotencyKey } = opts
+    const key = idempotencyKey ?? createIdempotencyKey()
     const response = await api.post<ImportExtractResponse>(
       "/api/v1/import/extract",
-      { text },
+      {
+        text,
+        ...(focusTaskNumber != null
+          ? { focus_task_number: focusTaskNumber }
+          : {}),
+        ...(focusTaskTitle != null ? { focus_task_title: focusTaskTitle } : {}),
+      },
       {
         skipRateLimitToast: true,
         // Outlast the backend's 120s per-key LLM lock — a shorter timeout
@@ -470,7 +491,7 @@ export const importApi = {
         // Explicit key (the interceptor keeps a header that's already set):
         // a retry of the SAME text replays the cached response instead of
         // billing a second extraction.
-        headers: { "X-Idempotency-Key": idempotencyKey },
+        headers: { "X-Idempotency-Key": key },
       }
     )
     return response.data
