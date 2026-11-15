@@ -41,29 +41,7 @@ export function toDraftCard(
   }
 }
 
-/** Replace the card at `targetNumber` (stable chip id), regardless of title.
- *  Note: replacements arrive keyless — refining a FAILED card whose create
- *  actually landed server-side (lost response) orphans that task; a retry of
- *  the same card is the safe recovery, refine is a new proposal. */
-export function replaceCard(
-  prev: DraftCard[],
-  targetNumber: number,
-  replacements: DraftCard[]
-): DraftCard[] {
-  if (!prev.some((card) => card.number === targetNumber)) {
-    return [...prev, ...replacements]
-  }
-  // The first replacement inherits the target number so existing references
-  // stay valid; siblings get their own numbers.
-  return prev.flatMap((card) => {
-    if (card.number !== targetNumber) return [card]
-    return replacements.length > 0
-      ? replacements.map((replacement, index) =>
-          index === 0 ? { ...replacement, number: targetNumber } : replacement
-        )
-      : []
-  })
-}
+export { replaceCard } from "./proposal-cards"
 
 export function toBreakdownTaskCreateData(
   card: DraftCard,

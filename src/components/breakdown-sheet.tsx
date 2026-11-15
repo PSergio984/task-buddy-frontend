@@ -8,6 +8,7 @@ import {
   LoadingSkeleton,
   NumberChip,
   OfflineBanner,
+  RefineInput,
   RetryFailedButton,
   SheetHeaderBlock,
   StartOverButton,
@@ -15,6 +16,7 @@ import {
 } from "@/components/proposal-sheet-ui"
 import {
   classifyProposeError,
+  parseRefineTarget,
   updateSubtaskAt,
 } from "@/components/proposal-cards"
 import { Button } from "@/components/ui/button"
@@ -198,9 +200,8 @@ export function BreakdownSheet({
   }
 
   const handleRefineSubmit = () => {
-    const match = /#(\d+)/.exec(refineText)
-    if (!match) return
-    const target = Number(match[1])
+    const target = parseRefineTarget(refineText)
+    if (!target) return
     const focusCard = cards.find((card) => card.number === target)
     if (!focusCard || !originalTextRef.current) return
     // Target by stable chip number; the title only rides along as context
@@ -350,6 +351,7 @@ export function BreakdownSheet({
         {phase === "review" ? (
           <div className="shrink-0 border-t border-white/5 px-6 py-4">
             <RefineInput
+              id="breakdown-refine-input"
               value={refineText}
               setValue={setRefineText}
               disabled={!isOnline || isCommitting || budgetExhausted}
@@ -429,35 +431,6 @@ function InputSection({
         </Button>
       </div>
     </div>
-  )
-}
-
-function RefineInput({
-  value,
-  setValue,
-  disabled,
-  onSubmit,
-}: Readonly<{
-  value: string
-  setValue: (value: string) => void
-  disabled: boolean
-  onSubmit: () => void
-}>) {
-  return (
-    <form
-      onSubmit={(event) => {
-        event.preventDefault()
-        onSubmit()
-      }}
-    >
-      <Input
-        id="breakdown-refine-input"
-        placeholder='Refine, e.g. "split #2 more"'
-        value={value}
-        onChange={(event) => setValue(event.target.value)}
-        disabled={disabled}
-      />
-    </form>
   )
 }
 

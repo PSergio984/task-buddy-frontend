@@ -13,6 +13,7 @@ import {
   isAcceptedImportFile,
   isoToDateInput,
   readImportFile,
+  replaceCard,
   toImportDraftCard,
   toTaskCreateData,
   validateImportText,
@@ -419,5 +420,34 @@ describe("commitImportCards", () => {
       [1, "creating"],
       [1, "failed"],
     ])
+  })
+})
+
+describe("replaceCard with ImportDraftCard", () => {
+  const cards = [
+    toImportDraftCard(
+      proposal("First note", {
+        priority: "HIGH",
+        proposed_deadline: "2026-11-20",
+      }),
+      1
+    ),
+    toImportDraftCard(proposal("Second note", { priority: "LOW" }), 2),
+  ]
+
+  it("replaces target card in place and preserves number and other cards", () => {
+    const replacements = [
+      toImportDraftCard(
+        proposal("Refined second note", { priority: "HIGH" }),
+        99
+      ),
+    ]
+    const result = replaceCard(cards, 2, replacements)
+    expect(result.map((c) => c.number)).toEqual([1, 2])
+    expect(result[1].title).toBe("Refined second note")
+    expect(result[1].priority).toBe("HIGH")
+    expect(result[0].title).toBe("First note")
+    expect(result[0].priority).toBe("HIGH")
+    expect(result[0].deadline).toBe("2026-11-20")
   })
 })
