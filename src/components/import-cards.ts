@@ -189,12 +189,19 @@ export function commitImportCards(
     idempotencyKey: string
   ) => Promise<unknown>,
   onStatus?: (cardNumber: number, status: ImportCardStatus) => void,
-  onKeyAssigned?: (cardNumber: number, key: string) => void
+  onKeyAssigned?: (cardNumber: number, key: string) => void,
+  sourceKnowledgeId?: number | null
 ): Promise<ImportCommitResult> {
+  const mapData = (card: ImportDraftCard): TaskCreateData => ({
+    ...toTaskCreateData(card),
+    ...(sourceKnowledgeId != null
+      ? { source_knowledge_id: sourceKnowledgeId }
+      : {}),
+  })
   return commitProposalCards(
     committableCards(cards),
     createTask,
-    toTaskCreateData,
+    mapData,
     onStatus,
     onKeyAssigned
   )

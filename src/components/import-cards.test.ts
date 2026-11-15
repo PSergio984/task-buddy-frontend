@@ -421,6 +421,23 @@ describe("commitImportCards", () => {
       [1, "failed"],
     ])
   })
+
+  it("attaches source_knowledge_id to created tasks when provided", async () => {
+    const { calls, createTask } = collect()
+    const cards = [toImportDraftCard(proposal("A"), 1)]
+
+    const result = await commitImportCards(
+      cards,
+      createTask,
+      undefined,
+      undefined,
+      42
+    )
+
+    expect(result).toEqual({ created: 1, failed: 0 })
+    expect(createTask).toHaveBeenCalledTimes(1)
+    expect(calls[0].data.source_knowledge_id).toBe(42)
+  })
 })
 
 describe("replaceCard with ImportDraftCard", () => {
