@@ -227,6 +227,7 @@ export function RefineInput({
   value,
   setValue,
   placeholder = 'Refine, e.g. "split #2 more"',
+  ariaLabel = "Refine proposals",
   disabled,
   onSubmit,
 }: Readonly<{
@@ -234,6 +235,7 @@ export function RefineInput({
   value: string
   setValue: (value: string) => void
   placeholder?: string
+  ariaLabel?: string
   disabled: boolean
   onSubmit: () => void
 }>) {
@@ -246,6 +248,7 @@ export function RefineInput({
     >
       <Input
         id={id}
+        aria-label={ariaLabel}
         placeholder={placeholder}
         value={value}
         onChange={(event) => setValue(event.target.value)}

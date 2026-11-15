@@ -88,6 +88,7 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
   const [isCommitting, setIsCommitting] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const lastRequestRef = useRef<string | null>(null)
+  const lastFocusRef = useRef<{ number: number; title: string } | null>(null)
   // Idempotency key per extract source text — a retry of the SAME notes
   // replays the backend's cached response instead of billing a second LLM
   // call; changed text mints a fresh one (same key + different body → 422).
@@ -97,8 +98,11 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    if (isOpen) cardNumberRef.current = 1
-  }, [isOpen])
+    if (isOpen) {
+      cardNumberRef.current =
+        cards.length > 0 ? Math.max(...cards.map((c) => c.number)) + 1 : 1
+    }
+  }, [isOpen, cards])
 
   // The sheet stays mounted (MainLayout), so a 429/404 flag must not
   // dead-end a reopened sheet — clear it on the closed→open transition
@@ -124,6 +128,7 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
     setRefineText("")
     setFocusCardNumber(null)
     lastRequestRef.current = null
+    lastFocusRef.current = null
     extractKeyRef.current = null
     dragDepthRef.current = 0
     setIsDragging(false)
@@ -140,6 +145,7 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
     setFeatureDisabled(false)
     setEmptyNotice(null)
     lastRequestRef.current = requestText
+    lastFocusRef.current = focus ?? null
 
     const source =
       focus === undefined
@@ -175,8 +181,17 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
         }
         setPhase(focus === undefined ? "input" : "review")
       } else {
+        const nextNumber = () => {
+          const maxNum = Math.max(
+            cardNumberRef.current,
+            ...cards.map((c) => c.number),
+            0
+          )
+          cardNumberRef.current = maxNum + 1
+          return maxNum
+        }
         const newCards = response.proposals.map((proposal) =>
-          toImportDraftCard(proposal, cardNumberRef.current++, projectId)
+          toImportDraftCard(proposal, nextNumber(), projectId)
         )
         setCards((prev) =>
           focus === undefined
@@ -369,8 +384,14 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
 
   const handleRetryRequest = () => {
     if (lastRequestRef.current === null) return
-    void requestExtract(lastRequestRef.current)
+    void requestExtract(
+      lastRequestRef.current,
+      lastFocusRef.current ?? undefined
+    )
   }
+
+  const canRegenerate =
+    isOnline && !budgetExhausted && !featureDisabled && !isCommitting
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -440,6 +461,7 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
                     card={card}
                     projects={projects}
                     disabled={isCommitting}
+                    canRegenerate={canRegenerate}
                     onChange={updateCard}
                     onRemove={removeCard}
                     onRegenerate={handleRegenerateCard}
@@ -456,7 +478,7 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
               id="import-refine-input"
               value={refineText}
               setValue={setRefineText}
-              disabled={!isOnline || isCommitting || budgetExhausted}
+              disabled={!canRegenerate}
               onSubmit={handleRefineSubmit}
             />
             {committable.length > 0 || isCreating ? (
@@ -595,6 +617,7 @@ function ImportCardView({
   card,
   projects,
   disabled = false,
+  canRegenerate = true,
   onChange,
   onRemove,
   onRegenerate,
@@ -603,6 +626,7 @@ function ImportCardView({
   projects: { id: number; name: string; color?: string }[]
   /** Locks committability-changing controls while a commit runs. */
   disabled?: boolean
+  canRegenerate?: boolean
   onChange: (
     number: number,
     updater: (card: ImportDraftCard) => ImportDraftCard
@@ -713,7 +737,7 @@ function ImportCardView({
             <button
               type="button"
               aria-label={`Regenerate task ${card.number}`}
-              disabled={disabled}
+              disabled={disabled || !canRegenerate}
               onClick={() => onRegenerate(card.number)}
               className="shrink-0 text-muted-foreground/60 hover:text-foreground disabled:opacity-50"
             >
