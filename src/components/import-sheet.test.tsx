@@ -49,30 +49,39 @@ describe("ImportSheet per-card regenerate and refine control", () => {
     },
   ]
 
+  async function renderSheetAndExtractNotes(
+    notes = "Email Sarah; Book dentist"
+  ) {
+    render(<ImportSheet isOpen={true} onClose={vi.fn()} />)
+    const textarea = screen.getByPlaceholderText(/Paste your notes/i)
+    fireEvent.change(textarea, { target: { value: notes } })
+    fireEvent.click(screen.getByRole("button", { name: /extract tasks/i }))
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: "Regenerate task 1" })
+      ).toBeInTheDocument()
+    })
+  }
+
+  function submitRefineCommand(prompt: string) {
+    const input = document.getElementById(
+      "import-refine-input"
+    ) as HTMLInputElement
+    fireEvent.change(input, { target: { value: prompt } })
+    fireEvent.submit(input.closest("form")!)
+  }
+
   it("renders regenerate button on each card and refine input in review footer", async () => {
     vi.mocked(importApi.extract).mockResolvedValueOnce({
       proposals: initialProposals,
       reason: null,
     })
 
-    render(<ImportSheet isOpen={true} onClose={vi.fn()} />)
+    await renderSheetAndExtractNotes()
 
-    const textarea = screen.getByPlaceholderText(/Paste your notes/i)
-    fireEvent.change(textarea, {
-      target: { value: "Email Sarah; Book dentist" },
-    })
-
-    const extractBtn = screen.getByRole("button", { name: /extract tasks/i })
-    fireEvent.click(extractBtn)
-
-    await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: "Regenerate task 1" })
-      ).toBeInTheDocument()
-      expect(
-        screen.getByRole("button", { name: "Regenerate task 2" })
-      ).toBeInTheDocument()
-    })
+    expect(
+      screen.getByRole("button", { name: "Regenerate task 2" })
+    ).toBeInTheDocument()
 
     const refineInput = document.getElementById("import-refine-input")
     expect(refineInput).toBeInTheDocument()
@@ -102,19 +111,7 @@ describe("ImportSheet per-card regenerate and refine control", () => {
         reason: null,
       })
 
-    render(<ImportSheet isOpen={true} onClose={vi.fn()} />)
-
-    const textarea = screen.getByPlaceholderText(/Paste your notes/i)
-    fireEvent.change(textarea, {
-      target: { value: "Email Sarah; Book dentist" },
-    })
-    fireEvent.click(screen.getByRole("button", { name: /extract tasks/i }))
-
-    await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: "Regenerate task 1" })
-      ).toBeInTheDocument()
-    })
+    await renderSheetAndExtractNotes()
 
     // Click regenerate on card 1
     const regenBtn = screen.getByRole("button", { name: "Regenerate task 1" })
@@ -160,21 +157,8 @@ describe("ImportSheet per-card regenerate and refine control", () => {
         reason: null,
       })
 
-    render(<ImportSheet isOpen={true} onClose={vi.fn()} />)
-
-    const textarea = screen.getByPlaceholderText(/Paste your notes/i)
-    fireEvent.change(textarea, {
-      target: { value: "Email Sarah; Book dentist" },
-    })
-    fireEvent.click(screen.getByRole("button", { name: /extract tasks/i }))
-
-    await waitFor(() => {
-      expect(document.getElementById("import-refine-input")).toBeInTheDocument()
-    })
-
-    const refineInput = document.getElementById("import-refine-input")!
-    fireEvent.change(refineInput, { target: { value: "split #2 more" } })
-    fireEvent.submit(refineInput.closest("form")!)
+    await renderSheetAndExtractNotes()
+    submitRefineCommand("split #2 more")
 
     await waitFor(() => {
       expect(importApi.extract).toHaveBeenCalledTimes(2)
@@ -207,19 +191,7 @@ describe("ImportSheet per-card regenerate and refine control", () => {
         response: { status: 500, data: { detail: "Internal Server Error" } },
       })
 
-    render(<ImportSheet isOpen={true} onClose={vi.fn()} />)
-
-    const textarea = screen.getByPlaceholderText(/Paste your notes/i)
-    fireEvent.change(textarea, {
-      target: { value: "Email Sarah; Book dentist" },
-    })
-    fireEvent.click(screen.getByRole("button", { name: /extract tasks/i }))
-
-    await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: "Regenerate task 1" })
-      ).toBeInTheDocument()
-    })
+    await renderSheetAndExtractNotes()
 
     fireEvent.click(screen.getByRole("button", { name: "Regenerate task 1" }))
 
@@ -249,21 +221,8 @@ describe("ImportSheet per-card regenerate and refine control", () => {
         reason: null,
       })
 
-    render(<ImportSheet isOpen={true} onClose={vi.fn()} />)
-
-    const textarea = screen.getByPlaceholderText(/Paste your notes/i)
-    fireEvent.change(textarea, {
-      target: { value: "Email Sarah; Book dentist" },
-    })
-    fireEvent.click(screen.getByRole("button", { name: /extract tasks/i }))
-
-    await waitFor(() => {
-      expect(document.getElementById("import-refine-input")).toBeInTheDocument()
-    })
-
-    const refineInput = document.getElementById("import-refine-input")!
-    fireEvent.change(refineInput, { target: { value: "split #2 more" } })
-    fireEvent.submit(refineInput.closest("form")!)
+    await renderSheetAndExtractNotes()
+    submitRefineCommand("split #2 more")
 
     await waitFor(() => {
       expect(importApi.extract).toHaveBeenCalledTimes(2)
@@ -286,21 +245,8 @@ describe("ImportSheet per-card regenerate and refine control", () => {
       reason: null,
     })
 
-    render(<ImportSheet isOpen={true} onClose={vi.fn()} />)
-
-    const textarea = screen.getByPlaceholderText(/Paste your notes/i)
-    fireEvent.change(textarea, {
-      target: { value: "Email Sarah; Book dentist" },
-    })
-    fireEvent.click(screen.getByRole("button", { name: /extract tasks/i }))
-
-    await waitFor(() => {
-      expect(document.getElementById("import-refine-input")).toBeInTheDocument()
-    })
-
-    const refineInput = document.getElementById("import-refine-input")!
-    fireEvent.change(refineInput, { target: { value: "split #99 more" } })
-    fireEvent.submit(refineInput.closest("form")!)
+    await renderSheetAndExtractNotes()
+    submitRefineCommand("split #99 more")
 
     // Should NOT have made another extract call for #99
     expect(importApi.extract).toHaveBeenCalledTimes(1)
