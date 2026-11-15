@@ -279,4 +279,30 @@ describe("ImportSheet per-card regenerate and refine control", () => {
       screen.getByText(/couldn't find any tasks in those notes/i)
     ).toBeInTheDocument()
   })
+
+  it("does not trigger extract when refining non-existent or invalid card numbers", async () => {
+    vi.mocked(importApi.extract).mockResolvedValueOnce({
+      proposals: initialProposals,
+      reason: null,
+    })
+
+    render(<ImportSheet isOpen={true} onClose={vi.fn()} />)
+
+    const textarea = screen.getByPlaceholderText(/Paste your notes/i)
+    fireEvent.change(textarea, {
+      target: { value: "Email Sarah; Book dentist" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: /extract tasks/i }))
+
+    await waitFor(() => {
+      expect(document.getElementById("import-refine-input")).toBeInTheDocument()
+    })
+
+    const refineInput = document.getElementById("import-refine-input")!
+    fireEvent.change(refineInput, { target: { value: "split #99 more" } })
+    fireEvent.submit(refineInput.closest("form")!)
+
+    // Should NOT have made another extract call for #99
+    expect(importApi.extract).toHaveBeenCalledTimes(1)
+  })
 })

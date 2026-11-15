@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useRef, useState } from "react"
 import type { DragEvent, RefObject } from "react"
 import {
   Check,
@@ -97,13 +97,6 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
   const dragDepthRef = useRef(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
-    if (isOpen) {
-      cardNumberRef.current =
-        cards.length > 0 ? Math.max(...cards.map((c) => c.number)) + 1 : 1
-    }
-  }, [isOpen, cards])
-
   // The sheet stays mounted (MainLayout), so a 429/404 flag must not
   // dead-end a reopened sheet — clear it on the closed→open transition
   // (render-time reset; a fresh attempt re-checks the backend anyway).
@@ -132,6 +125,7 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
     extractKeyRef.current = null
     dragDepthRef.current = 0
     setIsDragging(false)
+    cardNumberRef.current = 1
   }
 
   async function requestExtract(
@@ -259,7 +253,14 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
     const target = parseRefineTarget(refineText)
     if (!target) return
     const focusCard = cards.find((card) => card.number === target)
-    if (!focusCard || !lastRequestRef.current) return
+    if (
+      !focusCard ||
+      focusCard.status === "created" ||
+      focusCard.idempotencyKey !== undefined ||
+      !lastRequestRef.current
+    ) {
+      return
+    }
     void requestExtract(lastRequestRef.current, {
       number: target,
       title: focusCard.title.slice(0, 200),
@@ -269,7 +270,14 @@ export function ImportSheet({ isOpen, onClose, projectId }: ImportSheetProps) {
 
   const handleRegenerateCard = (targetNumber: number) => {
     const focusCard = cards.find((card) => card.number === targetNumber)
-    if (!focusCard || !lastRequestRef.current) return
+    if (
+      !focusCard ||
+      focusCard.status === "created" ||
+      focusCard.idempotencyKey !== undefined ||
+      !lastRequestRef.current
+    ) {
+      return
+    }
     void requestExtract(lastRequestRef.current, {
       number: targetNumber,
       title: focusCard.title.slice(0, 200),
@@ -737,7 +745,9 @@ function ImportCardView({
             <button
               type="button"
               aria-label={`Regenerate task ${card.number}`}
-              disabled={disabled || !canRegenerate}
+              disabled={
+                disabled || !canRegenerate || card.idempotencyKey !== undefined
+              }
               onClick={() => onRegenerate(card.number)}
               className="shrink-0 text-muted-foreground/60 hover:text-foreground disabled:opacity-50"
             >
