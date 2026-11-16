@@ -305,9 +305,7 @@ export function TaskDetailPage() {
                     <p className="text-xs font-black tracking-tighter uppercase opacity-60">
                       Due Date
                     </p>
-                    <p className="text-xl font-bold">
-                      {vm.formattedDueDate}
-                    </p>
+                    <p className="text-xl font-bold">{vm.formattedDueDate}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
@@ -318,9 +316,7 @@ export function TaskDetailPage() {
                     <p className="text-xs font-black tracking-tighter uppercase opacity-60">
                       Created At
                     </p>
-                    <p className="text-xl font-bold">
-                      {vm.formattedCreatedAt}
-                    </p>
+                    <p className="text-xl font-bold">{vm.formattedCreatedAt}</p>
                   </div>
                 </div>
               </CardContent>

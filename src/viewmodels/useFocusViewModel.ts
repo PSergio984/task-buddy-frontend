@@ -21,7 +21,9 @@ export function useFocusViewModel() {
   const runtime = useFocusSession()
   const { session, view, isLocal, isLoading, busy, mirrored } = runtime
 
-  const [settings, setSettings] = useState<FocusSettings>(FocusModel.loadSettings)
+  const [settings, setSettings] = useState<FocusSettings>(
+    FocusModel.loadSettings
+  )
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [stopConfirmOpen, setStopConfirmOpen] = useState(false)
   const [immersive, setImmersive] = useState(false)

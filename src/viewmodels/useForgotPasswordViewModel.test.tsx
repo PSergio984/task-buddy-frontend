@@ -33,7 +33,7 @@ describe("useForgotPasswordViewModel", () => {
     expect(result.current.isButtonDisabled).toBe(false)
   })
 
-  it("submits forgot password request", async () => {
+  it("submits forgot password request and resets state on reset()", async () => {
     const { result } = renderHook(() => useForgotPasswordViewModel())
 
     act(() => {
@@ -53,5 +53,11 @@ describe("useForgotPasswordViewModel", () => {
     expect(toastMock).toHaveBeenCalledWith(
       expect.objectContaining({ title: "Reset link sent" })
     )
+
+    act(() => {
+      result.current.reset()
+    })
+    expect(result.current.isSubmitted).toBe(false)
+    expect(result.current.email).toBe("")
   })
 })

@@ -3,6 +3,7 @@
  * Encapsulates reactive queries, mutation states, idempotency generation,
  * offline gating, and action handlers for HabitsPage.
  */
+import { useMemo } from "react"
 import { useMutationState } from "@tanstack/react-query"
 import { useIsOnline } from "@/hooks/useIsOnline"
 import { createIdempotencyKey } from "@/lib/api"
@@ -69,7 +70,8 @@ export function useHabitsDailiesViewModel() {
     createDaily.isPending || updateDaily.isPending || deleteDaily.isPending
 
   // Action handlers
-  const handleCreateHabit = (input: HabitInput) => createHabit.mutateAsync(input)
+  const handleCreateHabit = (input: HabitInput) =>
+    createHabit.mutateAsync(input)
   const handleUpdateHabit = (id: number, patch: HabitPatch) =>
     updateHabit.mutateAsync({ id, patch })
   const handleDeleteHabit = (id: number) => deleteHabit.mutate(id)
@@ -84,7 +86,8 @@ export function useHabitsDailiesViewModel() {
     void habitsQuery.refetch()
   }
 
-  const handleCreateDaily = (input: DailyInput) => createDaily.mutateAsync(input)
+  const handleCreateDaily = (input: DailyInput) =>
+    createDaily.mutateAsync(input)
   const handleUpdateDaily = (id: number, patch: DailyPatch) =>
     updateDaily.mutateAsync({ id, patch })
   const handleDeleteDaily = (id: number) => deleteDaily.mutate(id)
@@ -99,20 +102,23 @@ export function useHabitsDailiesViewModel() {
     void dailiesQuery.refetch()
   }
 
+  const clickingIds = useMemo(() => new Set(pendingClickIds), [pendingClickIds])
+  const checkingIds = useMemo(() => new Set(pendingCheckIds), [pendingCheckIds])
+
   return {
     // Habits state
     habits: habitsQuery.data,
     isHabitsPending: habitsQuery.isPending,
     isHabitsError: habitsQuery.isError,
     habitsBusy,
-    clickingIds: new Set(pendingClickIds),
+    clickingIds,
 
     // Dailies state
     dailies: dailiesQuery.data,
     isDailiesPending: dailiesQuery.isPending,
     isDailiesError: dailiesQuery.isError,
     dailiesBusy,
-    checkingIds: new Set(pendingCheckIds),
+    checkingIds,
 
     // Connectivity state
     isOnline,

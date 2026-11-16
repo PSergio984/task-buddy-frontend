@@ -2,10 +2,7 @@ import { useOutletContext } from "react-router-dom"
 import { useTasks } from "@/hooks/useTasks"
 import { useStats } from "@/hooks/useStats"
 import { useFilters } from "@/contexts/FilterContext"
-import {
-  parseProjectIdFromFilter,
-  type Task,
-} from "@/models/dashboard.model"
+import { parseProjectIdFromFilter, type Task } from "@/models/dashboard.model"
 
 interface LayoutContext {
   handleEditTask: (task: Task) => void

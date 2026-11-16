@@ -39,12 +39,17 @@ export function LoginPage() {
             transition={{ delay: 0.5, duration: 0.8 }}
             className="max-w-xl space-y-8 rounded-[2.5rem] border border-white/20 bg-background/30 p-12 shadow-2xl backdrop-blur-2xl"
           >
-            <div className="inline-flex items-center gap-3 rounded-full border border-primary/30 bg-primary/20 px-6 py-2 text-primary shadow-inner backdrop-blur-md">
-              <CheckCircle2 className="h-5 w-5" />
-              <span className="text-sm font-black tracking-widest uppercase">
-                Task Buddy Workspace
-              </span>
-            </div>
+            <Link
+              to="/"
+              className="inline-block transition-transform hover:scale-105"
+            >
+              <div className="inline-flex items-center gap-3 rounded-full border border-primary/30 bg-primary/20 px-6 py-2 text-primary shadow-inner backdrop-blur-md">
+                <CheckCircle2 className="h-5 w-5" />
+                <span className="text-sm font-black tracking-widest uppercase">
+                  Task Buddy Workspace
+                </span>
+              </div>
+            </Link>
 
             <h2 className="font-heading text-5xl font-black tracking-tighter text-foreground uppercase md:text-6xl">
               Elevate your daily rhythm.

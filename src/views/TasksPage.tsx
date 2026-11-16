@@ -79,7 +79,9 @@ export function TasksPage() {
                   {vm.activeSidebarFilter === "all"
                     ? "All Tasks"
                     : vm.activeProject?.name ||
-                      vm.activeSidebarFilter.replace("project:", "").toUpperCase()}
+                      vm.activeSidebarFilter
+                        .replace("project:", "")
+                        .toUpperCase()}
                 </Badge>
                 {vm.activeTag && (
                   <Badge
@@ -158,28 +160,20 @@ export function TasksPage() {
           }
           className="w-full space-y-8"
         >
-          <div className="flex flex-col justify-between gap-6 border-b border-border/40 pb-4 sm:flex-row sm:items-center">
-            <TabsList className="h-auto gap-4 bg-transparent p-0">
+          <div className="mb-8 flex items-center justify-between">
+            <TabsList className="h-auto gap-4 bg-transparent p-0 sm:gap-8">
               {(["all", "pending", "completed"] as const).map((status) => (
                 <TabsTrigger
                   key={status}
                   value={status}
-                  className="relative rounded-none border-b-2 border-transparent px-2 py-3 text-sm font-bold tracking-wider text-muted-foreground uppercase transition-all data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary"
+                  className="relative bg-transparent p-0 text-lg font-black tracking-tighter text-foreground/30 uppercase transition-all hover:text-foreground/60 focus-visible:outline-none data-[state=active]:text-primary sm:text-xl"
                 >
-                  <span className="capitalize">{status}</span>
-                  <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[10px] font-black">
-                    {status === "all"
-                      ? vm.tasks.length
-                      : vm.tasks.filter((t) =>
-                          status === "completed" ? t.completed : !t.completed
-                        ).length}
-                  </span>
+                  {status}
                   {vm.activeStatus === status && (
                     <motion.div
                       layoutId="active-tab"
                       className="absolute -bottom-2 left-0 h-1 w-full rounded-full bg-primary"
                       transition={{
-                        type: "spring",
                         stiffness: 500,
                         damping: 30,
                       }}

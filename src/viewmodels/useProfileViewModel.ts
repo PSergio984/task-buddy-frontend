@@ -32,7 +32,9 @@ export function useProfileViewModel() {
     usernameValidation.trimmed !== user?.username &&
     usernameValidation.isValid
 
-  const handleUpdateUsername = async (e?: React.SubmitEvent<HTMLFormElement>) => {
+  const handleUpdateUsername = async (
+    e?: React.SubmitEvent<HTMLFormElement>
+  ) => {
     if (e) e.preventDefault()
     if (!usernameValidation.isValid || !hasUsernameChanged) return
 
@@ -74,7 +76,9 @@ export function useProfileViewModel() {
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
-  const handleUpdatePassword = async (e?: React.SubmitEvent<HTMLFormElement>) => {
+  const handleUpdatePassword = async (
+    e?: React.SubmitEvent<HTMLFormElement>
+  ) => {
     if (e) e.preventDefault()
     if (newPassword !== confirmPassword) {
       toast({
@@ -179,20 +183,28 @@ export function useProfileViewModel() {
           )
         }
 
-        const registration = (await Promise.race([
-          globalThis.navigator.serviceWorker.ready,
-          new Promise((_, reject) =>
-            setTimeout(
-              () =>
-                reject(
-                  new Error(
-                    "Service worker initialization timed out. Please refresh the page."
-                  )
-                ),
-              10000
+        let timeoutId: ReturnType<typeof setTimeout> | undefined
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          timeoutId = setTimeout(() => {
+            reject(
+              new Error(
+                "Service worker initialization timed out. Please refresh the page."
+              )
             )
-          ),
-        ])) as ServiceWorkerRegistration
+          }, 10000)
+        })
+
+        let registration: ServiceWorkerRegistration
+        try {
+          registration = (await Promise.race([
+            globalThis.navigator.serviceWorker.ready,
+            timeoutPromise,
+          ])) as ServiceWorkerRegistration
+        } finally {
+          if (timeoutId !== undefined) {
+            clearTimeout(timeoutId)
+          }
+        }
 
         const existingSubscription =
           await registration.pushManager.getSubscription()

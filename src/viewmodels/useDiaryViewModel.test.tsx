@@ -13,7 +13,13 @@ const refetchMock = vi.fn()
 
 vi.mock("@/hooks/useDiary", () => ({
   useDiaryEntries: (day: string, beyondHorizon: boolean) => ({
-    data: beyondHorizon ? undefined : { entries: [{ id: 1, kind: "freeform", entry_date: day, freeform: "test note" }] },
+    data: beyondHorizon
+      ? undefined
+      : {
+          entries: [
+            { id: 1, kind: "freeform", entry_date: day, freeform: "test note" },
+          ],
+        },
     isPending: false,
     isError: false,
     refetch: refetchMock,

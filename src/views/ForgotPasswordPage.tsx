@@ -52,7 +52,7 @@ export function ForgotPasswordPage() {
                 <p className="mt-6 text-sm text-muted-foreground">
                   Didn't receive the email?{" "}
                   <button
-                    onClick={() => vm.setEmail("")}
+                    onClick={vm.reset}
                     className="font-medium text-accent hover:underline"
                   >
                     Click to try again

@@ -1,3 +1,4 @@
+import { useMemo } from "react"
 import { useMutationState } from "@tanstack/react-query"
 import { useIsOnline } from "@/hooks/useIsOnline"
 import { useGameProfile } from "@/hooks/useGameProfile"
@@ -46,9 +47,9 @@ export function useGameProfileViewModel() {
     filters: { mutationKey: GEAR_EQUIP_MUTATION_KEY, status: "pending" },
     select: (m) => (m.state.variables as { key: string }).key,
   })
-  const pendingGearKeys = computePendingGearKeys(
-    pendingBuyKeys,
-    pendingEquipKeys
+  const pendingGearKeys = useMemo(
+    () => computePendingGearKeys(pendingBuyKeys, pendingEquipKeys),
+    [pendingBuyKeys, pendingEquipKeys]
   )
 
   const writesDisabled = !isOnline

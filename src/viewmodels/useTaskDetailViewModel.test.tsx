@@ -33,11 +33,13 @@ function createWrapper() {
     due_date: "2026-11-20T10:00:00Z",
     created_at: "2026-11-14T10:00:00Z",
   })
-  return function Wrapper({ children }: { readonly children: React.ReactNode }) {
+  return function Wrapper({
+    children,
+  }: {
+    readonly children: React.ReactNode
+  }) {
     return (
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     )
   }
 }

@@ -20,6 +20,11 @@ import {
   Bell,
   HelpCircle,
   AlertTriangle,
+  CheckSquare,
+  Trash2,
+  Tag,
+  XCircle,
+  type LucideIcon,
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { AvatarCard } from "@/components/avatar-picker"
@@ -31,7 +36,19 @@ import {
   useProfileViewModel,
   type ProfileViewModel,
 } from "@/viewmodels/useProfileViewModel"
-import type { PasswordRule } from "@/models/profile.model"
+import type {
+  PasswordRule,
+  ConfirmationSettingItem,
+} from "@/models/profile.model"
+
+const CONFIRMATION_ICONS: Record<ConfirmationSettingItem["key"], LucideIcon> = {
+  skipTaskCompletionConfirm: CheckSquare,
+  skipSubtaskCompletionConfirm: CheckCircle2,
+  skipTaskDeletionConfirm: Trash2,
+  skipSubtaskDeletionConfirm: Trash2,
+  skipTagDeletionConfirm: Tag,
+  skipTagDetachmentConfirm: XCircle,
+}
 
 export function ProfilePage() {
   const navigate = useNavigate()
@@ -99,7 +116,7 @@ function ConfirmationPreferencesCard({
 
       <div className="grid gap-4 md:grid-cols-2">
         {vm.settings.map((setting) => {
-          const Icon = setting.icon
+          const Icon = CONFIRMATION_ICONS[setting.key]
           const isSkip = vm.userPreferences[setting.key]
 
           return (
@@ -268,7 +285,10 @@ function UsernameCard({
             <Label htmlFor="username" className="text-sm font-semibold">
               Username
             </Label>
-            <CharacterCounter current={vm.effectiveUsername.length} limit={50} />
+            <CharacterCounter
+              current={vm.effectiveUsername.length}
+              limit={50}
+            />
           </div>
           <div className="group relative">
             <BadgeCheck className="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-accent" />
@@ -367,10 +387,7 @@ function SecurityCard({
               show={vm.showNewPassword}
               onToggleShow={() => vm.setShowNewPassword(!vm.showNewPassword)}
             />
-            <PasswordRules
-              password={vm.newPassword}
-              rules={vm.passwordRules}
-            />
+            <PasswordRules password={vm.newPassword} rules={vm.passwordRules} />
           </div>
 
           <PasswordField

@@ -5,14 +5,6 @@ import {
   sanitizePassword,
   validatePassword,
 } from "@/lib/auth"
-import {
-  CheckSquare,
-  CheckCircle2,
-  Trash2,
-  Tag,
-  XCircle,
-  type LucideIcon,
-} from "lucide-react"
 
 /**
  * Pure domain model for Profile, Account Settings, and User Preferences.
@@ -35,7 +27,9 @@ export const PASSWORD_RULES: readonly PasswordRule[] = [
   },
 ]
 
-export function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
+export function urlBase64ToUint8Array(
+  base64String: string
+): Uint8Array<ArrayBuffer> {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4)
   const base64 = (base64String + padding)
     .replaceAll("-", "+")
@@ -59,7 +53,6 @@ export interface ConfirmationSettingItem {
     | "skipTagDetachmentConfirm"
   readonly label: string
   readonly description: string
-  readonly icon: LucideIcon
   readonly destructive: boolean
 }
 
@@ -68,42 +61,36 @@ export const CONFIRMATION_SETTINGS: readonly ConfirmationSettingItem[] = [
     key: "skipTaskCompletionConfirm",
     label: "Task Completion",
     description: "Confirm before marking a major task as finished.",
-    icon: CheckSquare,
     destructive: false,
   },
   {
     key: "skipSubtaskCompletionConfirm",
     label: "Subtask Completion",
     description: "Confirm before marking subtasks as complete.",
-    icon: CheckCircle2,
     destructive: false,
   },
   {
     key: "skipTaskDeletionConfirm",
     label: "Task Deletion",
     description: "Ask for confirmation before permanently deleting a task.",
-    icon: Trash2,
     destructive: true,
   },
   {
     key: "skipSubtaskDeletionConfirm",
     label: "Subtask Deletion",
     description: "Ask for confirmation before removing a subtask.",
-    icon: Trash2,
     destructive: true,
   },
   {
     key: "skipTagDeletionConfirm",
     label: "Tag Deletion",
     description: "Confirm before deleting a tag from the system.",
-    icon: Tag,
     destructive: true,
   },
   {
     key: "skipTagDetachmentConfirm",
     label: "Tag Removal",
     description: "Confirm before removing a tag from a specific task.",
-    icon: XCircle,
     destructive: false,
   },
 ]
@@ -116,7 +103,9 @@ export interface UsernameValidationResult {
   readonly error: string | null
 }
 
-export function validateUsernameInput(username: string): UsernameValidationResult {
+export function validateUsernameInput(
+  username: string
+): UsernameValidationResult {
   const trimmed = username.trim()
   if (!username || trimmed.length === 0) {
     return {

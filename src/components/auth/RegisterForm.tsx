@@ -126,9 +126,7 @@ export function RegisterForm() {
             type={vm.showPassword ? "text" : "password"}
             placeholder="••••••••"
             value={vm.password}
-            onChange={(e) =>
-              vm.setPassword(sanitizePassword(e.target.value))
-            }
+            onChange={(e) => vm.setPassword(sanitizePassword(e.target.value))}
             maxLength={128}
             required
             className="h-14 rounded-2xl border-border bg-background/50 pr-12 pl-12 text-lg text-foreground focus-visible:ring-accent/30"

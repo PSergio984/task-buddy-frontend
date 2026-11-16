@@ -35,15 +35,38 @@ vi.mock("@/hooks/useGameCharacter", () => ({
   GEAR_BUY_MUTATION_KEY: ["gear-buy"],
   GEAR_EQUIP_MUTATION_KEY: ["gear-equip"],
   useAllocateStats: () => ({ mutate: allocateMutate, isPending: false }),
-  useUpdateCharacter: () => ({ mutate: updateCharacterMutate, isPending: false }),
+  useUpdateCharacter: () => ({
+    mutate: updateCharacterMutate,
+    isPending: false,
+  }),
   useSelectClass: () => ({ mutate: selectClassMutate, isPending: false }),
   useRespec: () => ({ mutate: respecMutate, isPending: false }),
-  useGear: () => ({ data: [], isPending: false, isError: false, refetch: vi.fn() }),
+  useGear: () => ({
+    data: [],
+    isPending: false,
+    isError: false,
+    refetch: vi.fn(),
+  }),
   useBuyGear: () => ({ mutate: buyGearMutate, isPending: false }),
   useEquipGear: () => ({ mutate: equipGearMutate, isPending: false }),
-  useAchievements: () => ({ data: [], isPending: false, isError: false, refetch: vi.fn() }),
-  useActivityGrid: () => ({ data: [], isPending: false, isError: false, refetch: vi.fn() }),
-  useActivityStats: () => ({ data: undefined, isPending: false, isError: false, refetch: vi.fn() }),
+  useAchievements: () => ({
+    data: [],
+    isPending: false,
+    isError: false,
+    refetch: vi.fn(),
+  }),
+  useActivityGrid: () => ({
+    data: [],
+    isPending: false,
+    isError: false,
+    refetch: vi.fn(),
+  }),
+  useActivityStats: () => ({
+    data: undefined,
+    isPending: false,
+    isError: false,
+    refetch: vi.fn(),
+  }),
 }))
 
 describe("useGameProfileViewModel", () => {
@@ -89,7 +112,10 @@ describe("useGameProfileViewModel", () => {
     act(() => {
       result.current.equipGear("sword_1", true)
     })
-    expect(equipGearMutate).toHaveBeenCalledWith({ key: "sword_1", equipped: true })
+    expect(equipGearMutate).toHaveBeenCalledWith({
+      key: "sword_1",
+      equipped: true,
+    })
 
     act(() => {
       result.current.refetchProfile()

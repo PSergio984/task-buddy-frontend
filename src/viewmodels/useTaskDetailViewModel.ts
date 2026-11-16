@@ -3,10 +3,7 @@ import { useParams, useNavigate } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
-import {
-  TaskModel,
-  type Task,
-} from "@/models/task.model"
+import { TaskModel, type Task } from "@/models/task.model"
 
 export function useTaskDetailViewModel() {
   const { id } = useParams<{ id: string }>()
@@ -36,6 +33,7 @@ export function useTaskDetailViewModel() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["task", taskId] })
       queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      queryClient.invalidateQueries({ queryKey: ["stats"] })
       toast({
         title: "Status Updated",
         description: `Task marked as ${task?.completed ? "pending" : "completed"}.`,
@@ -46,6 +44,8 @@ export function useTaskDetailViewModel() {
   const deleteMutation = useMutation({
     mutationFn: () => TaskModel.api.delete(taskId),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      queryClient.invalidateQueries({ queryKey: ["stats"] })
       toast({
         title: "Task Deleted",
         description: "The task has been permanently removed.",

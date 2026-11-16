@@ -45,14 +45,21 @@ export function useForgotPasswordViewModel() {
     }
   }
 
+  const handleReset = () => {
+    setIsSubmitted(false)
+    setEmail("")
+  }
+
   return {
     email,
     setEmail,
     isLoading,
     isSubmitted,
+    setIsSubmitted,
     isEmailValid,
     isButtonDisabled,
     handleSubmit,
+    reset: handleReset,
   }
 }
 
