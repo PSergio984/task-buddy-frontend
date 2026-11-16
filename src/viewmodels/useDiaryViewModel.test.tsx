@@ -30,8 +30,16 @@ vi.mock("@/hooks/useDiary", () => ({
   useUpdateRetention: () => ({ mutate: retentionMutate, isPending: false }),
 }))
 
+const refetchProfileMock = vi.fn()
+let mockProfileQueryResult = {
+  data: { retention: "90d" } as { retention?: string } | undefined,
+  isLoading: false,
+  isError: false,
+  refetch: refetchProfileMock,
+}
+
 vi.mock("@/hooks/useGameProfile", () => ({
-  useGameProfile: () => ({ data: { retention: "90d" } }),
+  useGameProfile: () => mockProfileQueryResult,
 }))
 
 vi.mock("@/hooks/useIsOnline", () => ({
@@ -43,6 +51,12 @@ describe("useDiaryViewModel", () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date("2026-11-14T12:00:00Z"))
     vi.clearAllMocks()
+    mockProfileQueryResult = {
+      data: { retention: "90d" },
+      isLoading: false,
+      isError: false,
+      refetch: refetchProfileMock,
+    }
     updateMutate.mockResolvedValue({})
   })
 
@@ -132,5 +146,25 @@ describe("useDiaryViewModel", () => {
     })
 
     expect(retentionMutate).toHaveBeenCalledWith("forever")
+  })
+
+  it("disables writes and exposes retry when game profile query fails", async () => {
+    mockProfileQueryResult = {
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      refetch: refetchProfileMock,
+    }
+    const { result } = renderHook(() => useDiaryViewModel())
+    expect(result.current.isProfileError).toBe(true)
+    expect(result.current.writesDisabled).toBe(true)
+    expect(result.current.disabledReason).toBe(
+      "Profile settings unavailable. Please retry."
+    )
+
+    await act(async () => {
+      await result.current.refetchProfile()
+    })
+    expect(refetchProfileMock).toHaveBeenCalled()
   })
 })

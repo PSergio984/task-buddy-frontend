@@ -86,12 +86,31 @@ describe("useTaskDetailViewModel", () => {
     expect(mockUpdateTask).toHaveBeenCalledWith({
       id: 101,
       updates: { completed: true },
+      silent: true,
     })
 
     await act(async () => {
       await result.current.deleteTask()
     })
-    expect(mockDeleteTask).toHaveBeenCalledWith(101)
+    expect(mockDeleteTask).toHaveBeenCalledWith({ id: 101, silent: true })
+    expect(navigateMock).toHaveBeenCalledWith("/tasks")
+  })
+
+  it("handles offline queued task deletion gracefully", async () => {
+    mockDeleteTask.mockResolvedValueOnce({ queued: true })
+    const { result } = renderHook(() => useTaskDetailViewModel(), {
+      wrapper: createWrapper(),
+    })
+
+    await act(async () => {
+      await result.current.deleteTask()
+    })
+    expect(mockDeleteTask).toHaveBeenCalledWith({ id: 101, silent: true })
+    expect(toastMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Task deleted offline",
+      })
+    )
     expect(navigateMock).toHaveBeenCalledWith("/tasks")
   })
 

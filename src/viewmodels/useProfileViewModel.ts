@@ -255,6 +255,11 @@ export function useProfileViewModel() {
           })
         } catch (mutateErr) {
           await subscription.unsubscribe().catch(() => {})
+          if (sub.endpoint) {
+            await notificationsApi
+              .unregisterPushSubscription(sub.endpoint)
+              .catch(() => {})
+          }
           throw mutateErr
         }
       } catch (err) {

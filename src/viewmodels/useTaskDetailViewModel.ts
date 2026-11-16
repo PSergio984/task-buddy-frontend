@@ -36,6 +36,7 @@ export function useTaskDetailViewModel() {
         await updateTask({
           id: taskId,
           updates: { completed: !task.completed },
+          silent: true,
         })
         toast({
           title: "Status Updated",
@@ -50,12 +51,20 @@ export function useTaskDetailViewModel() {
   const handleDeleteTask = async () => {
     setIsDeleting(true)
     try {
-      await deleteTask(taskId)
-      toast({
-        title: "Task Deleted",
-        description: "The task has been permanently removed.",
-        variant: "destructive",
-      })
+      const result = await deleteTask({ id: taskId, silent: true })
+      if (result?.queued) {
+        toast({
+          title: "Task deleted offline",
+          description:
+            "Task deletion saved locally and will sync automatically.",
+        })
+      } else {
+        toast({
+          title: "Task Deleted",
+          description: "The task has been permanently removed.",
+          variant: "destructive",
+        })
+      }
       navigate("/tasks")
     } catch (err) {
       console.error("Failed to delete task:", err)

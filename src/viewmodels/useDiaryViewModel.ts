@@ -31,7 +31,9 @@ export function useDiaryViewModel() {
 
   const profileQuery = useGameProfile()
   const profile = profileQuery.data
-  const isProfileLoading = profileQuery.isLoading || profile === undefined
+  const isProfileLoading =
+    profileQuery.isLoading || (profile === undefined && !profileQuery.isError)
+  const isProfileError = profileQuery.isError
   const retention = profile?.retention ?? "forever"
   const cutoff = retentionCutoffDay(profile?.retention, todayUtcDay())
   const beyondHorizon = cutoff !== null && day < cutoff
@@ -47,16 +49,22 @@ export function useDiaryViewModel() {
     createEntry.isPending || updateEntry.isPending || deleteEntry.isPending
 
   const writesDisabled =
-    !isOnline || isProfileLoading || beyondHorizon || futureDay
+    !isOnline ||
+    isProfileLoading ||
+    isProfileError ||
+    beyondHorizon ||
+    futureDay
   const disabledReason = isProfileLoading
     ? "Loading profile settings..."
-    : getDiaryDisabledReason({
-        isOnline,
-        beyondHorizon,
-        cutoff,
-        futureDay,
-        retention,
-      })
+    : isProfileError
+      ? "Profile settings unavailable. Please retry."
+      : getDiaryDisabledReason({
+          isOnline,
+          beyondHorizon,
+          cutoff,
+          futureDay,
+          retention,
+        })
 
   const entries: DiaryEntry[] = beyondHorizon
     ? []
@@ -104,6 +112,8 @@ export function useDiaryViewModel() {
     busy,
     writesDisabled,
     disabledReason,
+    isProfileLoading,
+    isProfileError,
     isPending: !beyondHorizon && entriesQuery.isPending,
     isError: !beyondHorizon && entriesQuery.isError,
     entries,
@@ -113,7 +123,9 @@ export function useDiaryViewModel() {
     updateEntry: handleUpdateEntry,
     deleteEntry: handleDeleteEntry,
     changeRetention: handleChangeRetention,
-    refetch: () => entriesQuery.refetch(),
+    refetchProfile: () => profileQuery.refetch(),
+    refetch: () =>
+      Promise.all([entriesQuery.refetch(), profileQuery.refetch()]),
   }
 }
 

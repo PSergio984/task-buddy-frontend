@@ -134,6 +134,11 @@ describe("useHabitsDailiesViewModel", () => {
       expect(habitsApi.click).toHaveBeenCalledTimes(2)
     })
 
+    expect(vi.mocked(habitsApi.click).mock.calls[0][0]).toBe(42)
+    expect(vi.mocked(habitsApi.click).mock.calls[0][1]).toBe("positive")
+    expect(vi.mocked(habitsApi.click).mock.calls[1][0]).toBe(42)
+    expect(vi.mocked(habitsApi.click).mock.calls[1][1]).toBe("positive")
+
     const key1 = vi.mocked(habitsApi.click).mock.calls[0][2]
     const key2 = vi.mocked(habitsApi.click).mock.calls[1][2]
     expect(key1).toMatch(/^[a-zA-Z0-9_-]+$/)
@@ -216,6 +221,11 @@ describe("useHabitsDailiesViewModel", () => {
     await waitFor(() => {
       expect(dailiesApi.check).toHaveBeenCalledTimes(2)
     })
+
+    expect(vi.mocked(dailiesApi.check).mock.calls[0][0]).toBe(99)
+    expect(vi.mocked(dailiesApi.check).mock.calls[0][1]).toEqual({ done: true })
+    expect(vi.mocked(dailiesApi.check).mock.calls[1][0]).toBe(99)
+    expect(vi.mocked(dailiesApi.check).mock.calls[1][1]).toEqual({ done: true })
 
     const key1 = vi.mocked(dailiesApi.check).mock.calls[0][2]
     const key2 = vi.mocked(dailiesApi.check).mock.calls[1][2]

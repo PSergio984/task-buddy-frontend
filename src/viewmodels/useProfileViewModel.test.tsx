@@ -30,9 +30,19 @@ vi.mock("@/hooks/use-toast", () => ({
   }),
 }))
 
+const mutateAsyncMock = vi.fn()
+const unregisterPushMock = vi.fn().mockResolvedValue({})
+
+vi.mock("@/lib/api", () => ({
+  notificationsApi: {
+    unregisterPushSubscription: (endpoint: string) =>
+      unregisterPushMock(endpoint),
+  },
+}))
+
 vi.mock("@/hooks/useNotifications", () => ({
-  useVapidKey: () => ({ data: { public_key: "test_key" }, isLoading: false }),
-  useRegisterPush: () => ({ mutateAsync: vi.fn() }),
+  useVapidKey: () => ({ data: { public_key: "AAAA" }, isLoading: false }),
+  useRegisterPush: () => ({ mutateAsync: mutateAsyncMock }),
 }))
 
 vi.mock("@/hooks/useUserPreferences", () => ({
@@ -146,6 +156,61 @@ describe("useProfileViewModel", () => {
     expect(result.current.security.newPassword).toBe("")
     expect(toastMock).toHaveBeenCalledWith(
       expect.objectContaining({ title: "Password updated" })
+    )
+  })
+
+  it("rolls back remote and local push subscription if server registration fails", async () => {
+    const unsubscribeMock = vi.fn().mockResolvedValue(true)
+    const mockSubscription = {
+      endpoint: "https://push.example.com/sub/123",
+      keys: { p256dh: "key1", auth: "auth1" },
+      toJSON: () => ({
+        endpoint: "https://push.example.com/sub/123",
+        keys: { p256dh: "key1", auth: "auth1" },
+      }),
+      unsubscribe: unsubscribeMock,
+    }
+
+    const mockRegistration = {
+      pushManager: {
+        getSubscription: vi.fn().mockResolvedValue(null),
+        subscribe: vi.fn().mockResolvedValue(mockSubscription),
+      },
+    }
+
+    Object.defineProperty(window, "Notification", {
+      writable: true,
+      configurable: true,
+      value: {
+        permission: "default",
+        requestPermission: vi.fn().mockResolvedValue("granted"),
+      },
+    })
+
+    Object.defineProperty(navigator, "serviceWorker", {
+      writable: true,
+      configurable: true,
+      value: {
+        ready: Promise.resolve(mockRegistration),
+      },
+    })
+
+    mutateAsyncMock.mockRejectedValueOnce(new Error("Network server error"))
+
+    const { result } = renderHook(() => useProfileViewModel())
+
+    await act(async () => {
+      await result.current.preferences.togglePush(true)
+    })
+
+    expect(mockSubscription.unsubscribe).toHaveBeenCalled()
+    expect(unregisterPushMock).toHaveBeenCalledWith(
+      "https://push.example.com/sub/123"
+    )
+    expect(toastMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Setup failed",
+      })
     )
   })
 })
