@@ -76,6 +76,11 @@ export function useTaskDetailViewModel() {
       navigate("/tasks")
     } catch (err) {
       console.error("Failed to delete task:", err)
+      toast({
+        title: "Action failed",
+        description: "Could not delete task. Please try again.",
+        variant: "destructive",
+      })
     } finally {
       setIsDeleting(false)
     }

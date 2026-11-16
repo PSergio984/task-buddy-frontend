@@ -324,6 +324,12 @@ export function useProfileViewModel() {
         })
       } catch (err) {
         console.error("Failed to unsubscribe from push notifications:", err)
+        toast({
+          title: "Action failed",
+          description:
+            "Could not disable push notifications. Please try again.",
+          variant: "destructive",
+        })
       } finally {
         setIsUnregisteringPush(false)
       }

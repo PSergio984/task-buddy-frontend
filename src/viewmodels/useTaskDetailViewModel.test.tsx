@@ -114,6 +114,27 @@ describe("useTaskDetailViewModel", () => {
     expect(navigateMock).toHaveBeenCalledWith("/tasks")
   })
 
+  it("shows failure toast when task deletion fails and does not navigate", async () => {
+    mockDeleteTask.mockResolvedValueOnce({
+      error: new Error("Network delete failure"),
+    })
+    const { result } = renderHook(() => useTaskDetailViewModel(), {
+      wrapper: createWrapper(),
+    })
+
+    await act(async () => {
+      await result.current.deleteTask()
+    })
+
+    expect(toastMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Action failed",
+        variant: "destructive",
+      })
+    )
+    expect(navigateMock).not.toHaveBeenCalledWith("/tasks")
+  })
+
   it("handles navigation helpers", () => {
     const { result } = renderHook(() => useTaskDetailViewModel(), {
       wrapper: createWrapper(),

@@ -260,4 +260,36 @@ describe("useProfileViewModel", () => {
       })
     )
   })
+
+  it("shows failure toast when push disable fails", async () => {
+    Object.defineProperty(window, "Notification", {
+      writable: true,
+      configurable: true,
+      value: {
+        permission: "granted",
+        requestPermission: vi.fn().mockResolvedValue("granted"),
+      },
+    })
+
+    Object.defineProperty(navigator, "serviceWorker", {
+      writable: true,
+      configurable: true,
+      value: {
+        ready: Promise.reject(new Error("Service worker error")),
+      },
+    })
+
+    const { result } = renderHook(() => useProfileViewModel())
+
+    await act(async () => {
+      await result.current.preferences.togglePush(false)
+    })
+
+    expect(toastMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Action failed",
+        variant: "destructive",
+      })
+    )
+  })
 })
