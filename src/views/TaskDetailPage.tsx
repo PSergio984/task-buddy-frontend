@@ -1,13 +1,3 @@
-import { useParams, useNavigate } from "react-router-dom"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import {
-  tasksApi,
-  api,
-  type Task,
-  type TaskPriority,
-  type Subtask,
-  type Tag,
-} from "@/lib/api"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   ArrowLeft,
@@ -27,9 +17,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { useToast } from "@/hooks/use-toast"
-import { format } from "date-fns"
-import { useState } from "react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,57 +25,15 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
+import type { Subtask, Tag } from "@/models/task.model"
+import { useTaskDetailViewModel } from "@/viewmodels/useTaskDetailViewModel"
 
 export function TaskDetailPage() {
-  const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
-  const { toast } = useToast()
-  const queryClient = useQueryClient()
-  const [isDeleting, setIsDeleting] = useState(false)
+  const vm = useTaskDetailViewModel()
 
-  const taskId = id ? Number.parseInt(id, 10) : 0
-
-  const {
-    data: task,
-    isLoading,
-    error,
-  } = useQuery<Task>({
-    queryKey: ["task", taskId],
-    queryFn: async () => {
-      const response = await api.get(`/api/v1/tasks/${taskId}`)
-      return response.data
-    },
-    enabled: taskId > 0,
-  })
-
-  const toggleMutation = useMutation({
-    mutationFn: (completed: boolean) => tasksApi.update(taskId, { completed }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["task", taskId] })
-      queryClient.invalidateQueries({ queryKey: ["tasks"] })
-      toast({
-        title: "Status Updated",
-        description: `Task marked as ${task?.completed ? "pending" : "completed"}.`,
-      })
-    },
-  })
-
-  const deleteMutation = useMutation({
-    mutationFn: () => tasksApi.delete(taskId),
-    onSuccess: () => {
-      toast({
-        title: "Task Deleted",
-        description: "The task has been permanently removed.",
-        variant: "destructive",
-      })
-      navigate("/tasks")
-    },
-  })
-
-  if (isLoading) {
+  if (vm.isLoading) {
     return (
       <div className="mx-auto max-w-5xl space-y-10 px-4 py-8 sm:px-6 lg:px-8">
-        {/* Header Skeleton */}
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
           <div className="flex items-center gap-4">
             <Skeleton className="h-10 w-10 rounded-full" />
@@ -107,7 +52,6 @@ export function TaskDetailPage() {
         </div>
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-          {/* Main Content Skeleton */}
           <div className="space-y-8 lg:col-span-2">
             <Skeleton className="h-48 w-full rounded-[2.5rem]" />
             <div className="space-y-6">
@@ -123,7 +67,6 @@ export function TaskDetailPage() {
             </div>
           </div>
 
-          {/* Sidebar Info Skeleton */}
           <div className="space-y-8">
             <Skeleton className="h-[280px] w-full rounded-[2.5rem]" />
             <Skeleton className="h-40 w-full rounded-[2.5rem]" />
@@ -133,7 +76,7 @@ export function TaskDetailPage() {
     )
   }
 
-  if (error || !task) {
+  if (vm.isError || !vm.task) {
     return (
       <div className="flex h-[80vh] flex-col items-center justify-center gap-6 px-4 text-center">
         <div className="flex h-20 w-20 items-center justify-center rounded-full bg-destructive/10">
@@ -147,7 +90,7 @@ export function TaskDetailPage() {
           </p>
         </div>
         <Button
-          onClick={() => navigate("/tasks")}
+          onClick={vm.goToTasks}
           variant="outline"
           className="h-12 rounded-2xl px-8 font-bold tracking-wider uppercase"
         >
@@ -157,13 +100,7 @@ export function TaskDetailPage() {
     )
   }
 
-  const priorityColors: Record<TaskPriority, string> = {
-    LOW: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-    MEDIUM: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
-    HIGH: "bg-destructive/10 text-destructive border-destructive/20",
-  }
-  const priorityColor =
-    priorityColors[task.priority] || "bg-muted text-muted-foreground"
+  const { task } = vm
 
   return (
     <div className="mx-auto max-w-5xl space-y-10 px-4 py-8 sm:px-6 lg:px-8">
@@ -177,7 +114,7 @@ export function TaskDetailPage() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate(-1)}
+            onClick={vm.goBack}
             className="rounded-full hover:bg-white/10"
           >
             <ArrowLeft className="h-6 w-6" />
@@ -188,7 +125,7 @@ export function TaskDetailPage() {
                 variant="outline"
                 className={cn(
                   "text-[10px] font-bold tracking-widest uppercase",
-                  priorityColor
+                  vm.priorityColor
                 )}
               >
                 {task.priority} Priority
@@ -217,7 +154,7 @@ export function TaskDetailPage() {
           <Button
             variant={task.completed ? "outline" : "default"}
             size="lg"
-            onClick={() => toggleMutation.mutate(!task.completed)}
+            onClick={vm.toggleCompleted}
             className="h-14 rounded-2xl px-8 font-black tracking-wider uppercase shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
             {task.completed ? (
@@ -250,7 +187,7 @@ export function TaskDetailPage() {
               </DropdownMenuItem>
               <Separator className="my-1 bg-white/5" />
               <DropdownMenuItem
-                onClick={() => setIsDeleting(true)}
+                onClick={() => vm.setIsDeleting(true)}
                 className="h-12 cursor-pointer gap-3 rounded-xl text-destructive focus:bg-destructive/10 focus:text-destructive"
               >
                 <Trash2 className="h-4 w-4" /> Delete Task
@@ -283,7 +220,7 @@ export function TaskDetailPage() {
             </Card>
           </motion.div>
 
-          {/* Subtasks Section placeholder */}
+          {/* Subtasks Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -369,9 +306,7 @@ export function TaskDetailPage() {
                       Due Date
                     </p>
                     <p className="text-xl font-bold">
-                      {task.due_date
-                        ? format(new Date(task.due_date), "MMM d, yyyy 'at' p")
-                        : "No deadline"}
+                      {vm.formattedDueDate}
                     </p>
                   </div>
                 </div>
@@ -384,7 +319,7 @@ export function TaskDetailPage() {
                       Created At
                     </p>
                     <p className="text-xl font-bold">
-                      {format(new Date(task.created_at), "MMM d, yyyy")}
+                      {vm.formattedCreatedAt}
                     </p>
                   </div>
                 </div>
@@ -420,9 +355,9 @@ export function TaskDetailPage() {
         </div>
       </div>
 
-      {/* Delete Confirmation Overlay placeholder */}
+      {/* Delete Confirmation Overlay */}
       <AnimatePresence>
-        {isDeleting && (
+        {vm.isDeleting && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -451,7 +386,7 @@ export function TaskDetailPage() {
                 <Button
                   variant="destructive"
                   size="lg"
-                  onClick={() => deleteMutation.mutate()}
+                  onClick={vm.deleteTask}
                   className="h-16 rounded-2xl text-lg font-black tracking-wider uppercase"
                 >
                   Yes, Delete Task
@@ -459,7 +394,7 @@ export function TaskDetailPage() {
                 <Button
                   variant="ghost"
                   size="lg"
-                  onClick={() => setIsDeleting(false)}
+                  onClick={() => vm.setIsDeleting(false)}
                   className="h-16 rounded-2xl font-black tracking-wider text-muted-foreground uppercase"
                 >
                   Cancel
