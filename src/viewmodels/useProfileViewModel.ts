@@ -135,8 +135,36 @@ export function useProfileViewModel() {
   // --- Push Preferences State ---
   const [pushEnabled, setPushEnabled] = useState(false)
   const [isRegisteringPush, setIsRegisteringPush] = useState(false)
+  const [isUnregisteringPush, setIsUnregisteringPush] = useState(false)
+  const isUpdatingPush = isRegisteringPush || isUnregisteringPush
   const { data: vapidData, isLoading: isLoadingVapid } = useVapidKey()
   const registerPush = useRegisterPush()
+
+  const getServiceWorkerRegistrationWithTimeout = async (
+    timeoutMs = 10000
+  ): Promise<ServiceWorkerRegistration> => {
+    let timeoutId: ReturnType<typeof setTimeout> | undefined
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => {
+        reject(
+          new Error(
+            "Service worker initialization timed out. Please refresh the page."
+          )
+        )
+      }, timeoutMs)
+    })
+
+    try {
+      return (await Promise.race([
+        globalThis.navigator.serviceWorker.ready,
+        timeoutPromise,
+      ])) as ServiceWorkerRegistration
+    } finally {
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId)
+      }
+    }
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -150,10 +178,15 @@ export function useProfileViewModel() {
         "serviceWorker" in globalThis.navigator
       ) {
         if (globalThis.Notification.permission === "granted") {
-          const registration = await globalThis.navigator.serviceWorker.ready
-          const subscription = await registration.pushManager.getSubscription()
-          if (!cancelled) {
-            setPushEnabled(Boolean(subscription))
+          try {
+            const registration = await getServiceWorkerRegistrationWithTimeout()
+            const subscription =
+              await registration.pushManager.getSubscription()
+            if (!cancelled) {
+              setPushEnabled(Boolean(subscription))
+            }
+          } catch {
+            if (!cancelled) setPushEnabled(false)
           }
         } else if (!cancelled) {
           setPushEnabled(false)
@@ -171,7 +204,7 @@ export function useProfileViewModel() {
   }, [user])
 
   const handleTogglePush = async (enabled: boolean) => {
-    if (isRegisteringPush) return
+    if (isUpdatingPush) return
 
     if (
       !("Notification" in globalThis) ||
@@ -185,9 +218,9 @@ export function useProfileViewModel() {
       return
     }
 
-    setIsRegisteringPush(true)
-    try {
-      if (enabled) {
+    if (enabled) {
+      setIsRegisteringPush(true)
+      try {
         const permission = await globalThis.Notification.requestPermission()
         if (permission !== "granted") {
           toast({
@@ -206,28 +239,7 @@ export function useProfileViewModel() {
           )
         }
 
-        let timeoutId: ReturnType<typeof setTimeout> | undefined
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          timeoutId = setTimeout(() => {
-            reject(
-              new Error(
-                "Service worker initialization timed out. Please refresh the page."
-              )
-            )
-          }, 10000)
-        })
-
-        let registration: ServiceWorkerRegistration
-        try {
-          registration = (await Promise.race([
-            globalThis.navigator.serviceWorker.ready,
-            timeoutPromise,
-          ])) as ServiceWorkerRegistration
-        } finally {
-          if (timeoutId !== undefined) {
-            clearTimeout(timeoutId)
-          }
-        }
+        const registration = await getServiceWorkerRegistrationWithTimeout()
 
         const existingSubscription =
           await registration.pushManager.getSubscription()
@@ -264,8 +276,31 @@ export function useProfileViewModel() {
           }
           throw mutateErr
         }
-      } else {
-        const registration = await globalThis.navigator.serviceWorker.ready
+      } catch (err) {
+        console.error("Failed to subscribe to push notifications:", err)
+        setPushEnabled(false)
+
+        let description = "Could not register for push notifications."
+        if (
+          err instanceof Error &&
+          err.message.includes("push service error")
+        ) {
+          description =
+            "Your browser's push service is unavailable. If using Brave, enable 'Use Google Services for Push Messaging' in Privacy settings."
+        }
+
+        toast({
+          title: "Setup failed",
+          description,
+          variant: "destructive",
+        })
+      } finally {
+        setIsRegisteringPush(false)
+      }
+    } else {
+      setIsUnregisteringPush(true)
+      try {
+        const registration = await getServiceWorkerRegistrationWithTimeout()
         const subscription = await registration.pushManager.getSubscription()
         if (subscription) {
           const endpoint = subscription.endpoint
@@ -287,31 +322,11 @@ export function useProfileViewModel() {
           description:
             "You will no longer receive notifications in this browser.",
         })
-      }
-    } catch (err) {
-      if (enabled) {
-        console.error("Failed to subscribe to push notifications:", err)
-        setPushEnabled(false)
-
-        let description = "Could not register for push notifications."
-        if (
-          err instanceof Error &&
-          err.message.includes("push service error")
-        ) {
-          description =
-            "Your browser's push service is unavailable. If using Brave, enable 'Use Google Services for Push Messaging' in Privacy settings."
-        }
-
-        toast({
-          title: "Setup failed",
-          description,
-          variant: "destructive",
-        })
-      } else {
+      } catch (err) {
         console.error("Failed to unsubscribe from push notifications:", err)
+      } finally {
+        setIsUnregisteringPush(false)
       }
-    } finally {
-      setIsRegisteringPush(false)
     }
   }
 
@@ -352,6 +367,8 @@ export function useProfileViewModel() {
       setTimeFormat,
       pushEnabled,
       isRegisteringPush,
+      isUnregisteringPush,
+      isUpdatingPush,
       isLoadingVapid,
       togglePush: handleTogglePush,
     },

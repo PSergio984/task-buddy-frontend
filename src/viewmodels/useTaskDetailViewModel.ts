@@ -52,6 +52,14 @@ export function useTaskDetailViewModel() {
     setIsDeleting(true)
     try {
       const result = await deleteTask({ id: taskId, silent: true })
+      if (
+        result &&
+        typeof result === "object" &&
+        "error" in result &&
+        result.error
+      ) {
+        throw result.error
+      }
       if (result?.queued) {
         toast({
           title: "Task deleted offline",

@@ -227,6 +227,15 @@ describe("useProfileViewModel", () => {
       },
     }
 
+    Object.defineProperty(window, "Notification", {
+      writable: true,
+      configurable: true,
+      value: {
+        permission: "granted",
+        requestPermission: vi.fn().mockResolvedValue("granted"),
+      },
+    })
+
     Object.defineProperty(navigator, "serviceWorker", {
       writable: true,
       configurable: true,

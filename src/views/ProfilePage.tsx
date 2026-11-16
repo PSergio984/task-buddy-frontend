@@ -231,19 +231,21 @@ function PreferencesCard({
             {([true, false] as const).map((enabled) => (
               <button
                 key={enabled ? "on" : "off"}
-                disabled={vm.isRegisteringPush || vm.isLoadingVapid}
+                disabled={vm.isUpdatingPush || vm.isLoadingVapid}
                 onClick={() => vm.togglePush(enabled)}
                 className={cn(
                   "rounded-xl px-6 py-2.5 text-sm font-bold transition-all duration-300",
                   vm.pushEnabled === enabled
                     ? "scale-100 bg-background text-foreground shadow-lg"
                     : "scale-95 text-muted-foreground hover:bg-white/5 hover:text-foreground",
-                  (vm.isRegisteringPush || vm.isLoadingVapid) &&
+                  (vm.isUpdatingPush || vm.isLoadingVapid) &&
                     "cursor-not-allowed opacity-50"
                 )}
               >
                 {(() => {
-                  if (!enabled) return "Disabled"
+                  if (!enabled) {
+                    return vm.isUnregisteringPush ? "Disabling..." : "Disabled"
+                  }
                   if (vm.isRegisteringPush) return "Enabling..."
                   if (vm.isLoadingVapid) return "Loading..."
                   return "Enabled"

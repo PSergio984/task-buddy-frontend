@@ -24,6 +24,15 @@ import { TASK_SORT_LABELS } from "@/models/task.model"
 
 const LS_KEY = "tb_sort_preference"
 
+function checkMutationResult<T>(res: T): boolean {
+  if (res && typeof res === "object" && "error" in res && res.error) {
+    throw res.error
+  }
+  return Boolean(
+    res && typeof res === "object" && "queued" in res && res.queued
+  )
+}
+
 export interface ConfirmData {
   type: "task" | "subtask" | "detach_tag" | "delete_subtask"
   id: number
@@ -114,9 +123,7 @@ export function useTasksViewModel() {
     setIsCompleting(true)
     try {
       const res = await updateTask({ id, updates: { completed }, silent: true })
-      const isQueued = Boolean(
-        res && typeof res === "object" && "queued" in res && res.queued
-      )
+      const isQueued = checkMutationResult(res)
       if (isQueued) {
         toast({
           title: "Task saved offline",
@@ -173,9 +180,7 @@ export function useTasksViewModel() {
     if (skipSubtaskDeletionConfirm) {
       try {
         const res = await deleteSubtask({ id: subtaskId, silent: true })
-        const isQueued = Boolean(
-          res && typeof res === "object" && "queued" in res && res.queued
-        )
+        const isQueued = checkMutationResult(res)
         if (!isQueued) {
           refreshTasks()
         }
@@ -221,9 +226,7 @@ export function useTasksViewModel() {
             updates: { completed: true },
             silent: true,
           })
-          const isQueued = Boolean(
-            res && typeof res === "object" && "queued" in res && res.queued
-          )
+          const isQueued = checkMutationResult(res)
           if (!isQueued) {
             refreshTasks()
           }
@@ -268,9 +271,7 @@ export function useTasksViewModel() {
         updates: { completed },
         silent: true,
       })
-      const isQueued = Boolean(
-        res && typeof res === "object" && "queued" in res && res.queued
-      )
+      const isQueued = checkMutationResult(res)
       if (!isQueued) {
         refreshTasks()
       }
@@ -345,9 +346,7 @@ export function useTasksViewModel() {
           updates: { completed: confirmData.completed ?? false },
           silent: true,
         })
-        const isQueued = Boolean(
-          res && typeof res === "object" && "queued" in res && res.queued
-        )
+        const isQueued = checkMutationResult(res)
         if (!isQueued) {
           refreshTasks()
         }
@@ -372,9 +371,7 @@ export function useTasksViewModel() {
       } else if (confirmData.type === "delete_subtask") {
         if (dontShowAgain) setPreference("skipSubtaskDeletionConfirm", true)
         const res = await deleteSubtask({ id: confirmData.id, silent: true })
-        const isQueued = Boolean(
-          res && typeof res === "object" && "queued" in res && res.queued
-        )
+        const isQueued = checkMutationResult(res)
         if (!isQueued) {
           refreshTasks()
         }
