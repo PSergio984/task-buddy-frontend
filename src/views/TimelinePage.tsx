@@ -1,4 +1,3 @@
-import { useMemo, useState } from "react"
 import { motion } from "framer-motion"
 import { RefreshCw, WifiOff } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -6,33 +5,11 @@ import { Button } from "@/components/ui/button"
 import { DayNavigator } from "@/components/day-navigator"
 import { DayTimeline } from "@/components/activity/day-timeline"
 import { DiaryDayPanel } from "@/components/diary/diary-day-panel"
-import { useGameProfile } from "@/hooks/useGameProfile"
-import { useIsOnline } from "@/hooks/useIsOnline"
-import { useTimelineDay } from "@/hooks/useDiary"
-import {
-  retentionCutoffDay,
-  todayUtcDay,
-  utcDayLabel,
-  type UtcDay,
-} from "@/lib/diary"
-import { buildDayTimeline } from "@/lib/timeline"
+import { utcDayLabel } from "@/models/diary.model"
+import { useTimelineViewModel } from "@/viewmodels/useTimelineViewModel"
 
 export function TimelinePage() {
-  const [day, setDay] = useState<UtcDay>(todayUtcDay)
-  const isOnline = useIsOnline()
-
-  const { data: profile } = useGameProfile()
-  const cutoff = retentionCutoffDay(profile?.retention, todayUtcDay())
-  const beyondHorizon = cutoff !== null && day < cutoff
-
-  const timelineQuery = useTimelineDay(day, beyondHorizon)
-  const timeline = useMemo(
-    () =>
-      !beyondHorizon && timelineQuery.data !== undefined
-        ? buildDayTimeline(timelineQuery.data)
-        : null,
-    [beyondHorizon, timelineQuery.data]
-  )
+  const vm = useTimelineViewModel()
 
   return (
     <motion.div
@@ -52,40 +29,40 @@ export function TimelinePage() {
         </h1>
       </header>
 
-      <DayNavigator day={day} onChange={setDay} />
+      <DayNavigator day={vm.day} onChange={vm.setDay} />
 
-      {beyondHorizon && cutoff !== null && (
+      {vm.beyondHorizon && vm.cutoff !== null && (
         <p
           role="status"
           className="rounded-2xl border border-amber-400/20 bg-amber-400/5 px-4 py-3 text-xs font-bold text-amber-400"
         >
-          Days before {utcDayLabel(cutoff)} are hidden by your retention
+          Days before {utcDayLabel(vm.cutoff)} are hidden by your retention
           setting.
         </p>
       )}
 
-      {!beyondHorizon && timelineQuery.isPending ? (
+      {vm.isPending ? (
         <div className="space-y-4">
           <div className="h-40 animate-pulse rounded-3xl bg-white/5" />
           <div className="h-56 animate-pulse rounded-3xl bg-white/5" />
         </div>
-      ) : !beyondHorizon && timelineQuery.isError ? (
+      ) : vm.isError ? (
         <div className="flex flex-col items-center gap-4 rounded-3xl border border-white/10 bg-white/5 p-10 text-center">
-          {!isOnline && <WifiOff className="h-8 w-8 text-amber-400" />}
+          {!vm.isOnline && <WifiOff className="h-8 w-8 text-amber-400" />}
           <p className="text-sm text-muted-foreground">
-            {isOnline
+            {vm.isOnline
               ? "Couldn't load this day's timeline."
               : "You're offline and this day isn't in the local cache."}
           </p>
           <Button
             variant="outline"
-            onClick={() => void timelineQuery.refetch()}
+            onClick={() => void vm.refetch()}
             className="h-10 gap-2 rounded-2xl border-white/15 px-5 font-bold"
           >
             <RefreshCw className="h-4 w-4" /> Retry
           </Button>
         </div>
-      ) : timeline !== null ? (
+      ) : vm.timeline !== null ? (
         <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
           <section
             aria-labelledby="timeline-axis-heading"
@@ -102,11 +79,11 @@ export function TimelinePage() {
                 UTC axis
               </span>
             </div>
-            <DayTimeline timeline={timeline} />
+            <DayTimeline timeline={vm.timeline} />
           </section>
 
           <section aria-label="Diary for this day" className="min-w-0">
-            <DiaryDayPanel entries={timelineQuery.data?.diary ?? []} readOnly />
+            <DiaryDayPanel entries={vm.diaryEntries} readOnly />
           </section>
         </div>
       ) : null}
