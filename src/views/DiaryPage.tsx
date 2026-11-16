@@ -38,7 +38,10 @@ export function DiaryPage() {
             value={vm.retention}
             onChange={(v) => vm.changeRetention(v)}
             disabled={
-              vm.retentionPending || vm.profile === undefined || !vm.isOnline
+              vm.retentionPending ||
+              vm.profile === undefined ||
+              !vm.isOnline ||
+              vm.isProfileError
             }
           />
         </div>

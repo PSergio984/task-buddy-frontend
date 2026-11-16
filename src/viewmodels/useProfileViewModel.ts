@@ -171,6 +171,8 @@ export function useProfileViewModel() {
   }, [user])
 
   const handleTogglePush = async (enabled: boolean) => {
+    if (isRegisteringPush) return
+
     if (
       !("Notification" in globalThis) ||
       !("serviceWorker" in globalThis.navigator)
@@ -183,9 +185,9 @@ export function useProfileViewModel() {
       return
     }
 
-    if (enabled) {
-      setIsRegisteringPush(true)
-      try {
+    setIsRegisteringPush(true)
+    try {
+      if (enabled) {
         const permission = await globalThis.Notification.requestPermission()
         if (permission !== "granted") {
           toast({
@@ -262,29 +264,7 @@ export function useProfileViewModel() {
           }
           throw mutateErr
         }
-      } catch (err) {
-        console.error("Failed to subscribe to push notifications:", err)
-        setPushEnabled(false)
-
-        let description = "Could not register for push notifications."
-        if (
-          err instanceof Error &&
-          err.message.includes("push service error")
-        ) {
-          description =
-            "Your browser's push service is unavailable. If using Brave, enable 'Use Google Services for Push Messaging' in Privacy settings."
-        }
-
-        toast({
-          title: "Setup failed",
-          description,
-          variant: "destructive",
-        })
-      } finally {
-        setIsRegisteringPush(false)
-      }
-    } else {
-      try {
+      } else {
         const registration = await globalThis.navigator.serviceWorker.ready
         const subscription = await registration.pushManager.getSubscription()
         if (subscription) {
@@ -307,9 +287,31 @@ export function useProfileViewModel() {
           description:
             "You will no longer receive notifications in this browser.",
         })
-      } catch (err) {
+      }
+    } catch (err) {
+      if (enabled) {
+        console.error("Failed to subscribe to push notifications:", err)
+        setPushEnabled(false)
+
+        let description = "Could not register for push notifications."
+        if (
+          err instanceof Error &&
+          err.message.includes("push service error")
+        ) {
+          description =
+            "Your browser's push service is unavailable. If using Brave, enable 'Use Google Services for Push Messaging' in Privacy settings."
+        }
+
+        toast({
+          title: "Setup failed",
+          description,
+          variant: "destructive",
+        })
+      } else {
         console.error("Failed to unsubscribe from push notifications:", err)
       }
+    } finally {
+      setIsRegisteringPush(false)
     }
   }
 

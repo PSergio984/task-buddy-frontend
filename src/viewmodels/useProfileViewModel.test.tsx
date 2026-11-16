@@ -213,4 +213,42 @@ describe("useProfileViewModel", () => {
       })
     )
   })
+
+  it("disables push notifications and calls unregister endpoint", async () => {
+    const unsubscribeMock = vi.fn().mockResolvedValue(true)
+    const mockSubscription = {
+      endpoint: "https://push.example.com/sub/999",
+      unsubscribe: unsubscribeMock,
+    }
+
+    const mockRegistration = {
+      pushManager: {
+        getSubscription: vi.fn().mockResolvedValue(mockSubscription),
+      },
+    }
+
+    Object.defineProperty(navigator, "serviceWorker", {
+      writable: true,
+      configurable: true,
+      value: {
+        ready: Promise.resolve(mockRegistration),
+      },
+    })
+
+    const { result } = renderHook(() => useProfileViewModel())
+
+    await act(async () => {
+      await result.current.preferences.togglePush(false)
+    })
+
+    expect(mockSubscription.unsubscribe).toHaveBeenCalled()
+    expect(unregisterPushMock).toHaveBeenCalledWith(
+      "https://push.example.com/sub/999"
+    )
+    expect(toastMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Push disabled",
+      })
+    )
+  })
 })

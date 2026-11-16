@@ -127,4 +127,29 @@ describe("useTasksViewModel", () => {
     })
     expect(result.current.confirmData).toBeNull()
   })
+
+  it("restores saved sort preference from localStorage without default overwrite", () => {
+    globalThis.localStorage.setItem("tb_sort_preference", "alpha")
+    const { result } = renderHook(() => useTasksViewModel(), {
+      wrapper: makeWrapper(),
+    })
+
+    expect(result.current.sortBy).toBe("alpha")
+    expect(globalThis.localStorage.getItem("tb_sort_preference")).toBe("alpha")
+  })
+
+  it("persists sort preference to localStorage when explicitly changed", () => {
+    const { result } = renderHook(() => useTasksViewModel(), {
+      wrapper: makeWrapper(),
+    })
+
+    act(() => {
+      result.current.setSortBy("due_date")
+    })
+
+    expect(result.current.sortBy).toBe("due_date")
+    expect(globalThis.localStorage.getItem("tb_sort_preference")).toBe(
+      "due_date"
+    )
+  })
 })

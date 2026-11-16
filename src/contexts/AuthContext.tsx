@@ -150,7 +150,10 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       setError(null)
       try {
         const body = new URLSearchParams()
-        body.set("username", sanitizeUsername(credentials.username))
+        const identifier = credentials.username.includes("@")
+          ? sanitizeEmail(credentials.username)
+          : sanitizeUsername(credentials.username)
+        body.set("username", identifier)
         body.set("password", sanitizePassword(credentials.password))
 
         const response = await api.post("/api/v1/users/token", body, {

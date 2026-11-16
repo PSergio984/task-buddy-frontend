@@ -3,7 +3,7 @@
  * Encapsulates task querying, filtering, sorting, confirmation flows,
  * user preferences, and optimistic mutations for TasksPage.
  */
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import axios from "axios"
 import { useAuth } from "@/contexts/AuthContext"
 import { useFilters } from "@/contexts/FilterContext"
@@ -74,19 +74,33 @@ export function useTasksViewModel() {
     selectedPriorities,
   } = useTaskFilters(tasks)
 
-  useEffect(() => {
-    const saved = globalThis.localStorage.getItem(LS_KEY)
-    if (
-      saved &&
-      (saved === "priority" || saved === "due_date" || saved === "alpha")
-    ) {
-      setSortBy(saved)
-    }
-  }, [setSortBy])
+  const handleSetSortBy = useCallback(
+    (mode: Parameters<typeof setSortBy>[0]) => {
+      setSortBy(mode)
+      try {
+        if (typeof mode === "string") {
+          globalThis.localStorage.setItem(LS_KEY, mode)
+        }
+      } catch {
+        // ignore storage errors
+      }
+    },
+    [setSortBy]
+  )
 
   useEffect(() => {
-    globalThis.localStorage.setItem(LS_KEY, sortBy)
-  }, [sortBy])
+    try {
+      const saved = globalThis.localStorage.getItem(LS_KEY)
+      if (
+        saved &&
+        (saved === "priority" || saved === "due_date" || saved === "alpha")
+      ) {
+        setSortBy(saved)
+      }
+    } catch {
+      // ignore storage errors
+    }
+  }, [setSortBy])
 
   const {
     skipTaskCompletionConfirm,
@@ -99,12 +113,22 @@ export function useTasksViewModel() {
   const performToggle = async (id: number, completed: boolean) => {
     setIsCompleting(true)
     try {
-      await updateTask({ id, updates: { completed }, silent: true })
-      toast({
-        title: completed ? "Task completed!" : "Task restored",
-        description: completed ? "Great job!" : "Task moved to pending.",
-        variant: "success",
-      })
+      const res = await updateTask({ id, updates: { completed }, silent: true })
+      const isQueued = Boolean(
+        res && typeof res === "object" && "queued" in res && res.queued
+      )
+      if (isQueued) {
+        toast({
+          title: "Task saved offline",
+          description: "Task status saved locally and will sync automatically.",
+        })
+      } else {
+        toast({
+          title: completed ? "Task completed!" : "Task restored",
+          description: completed ? "Great job!" : "Task moved to pending.",
+          variant: "success",
+        })
+      }
     } catch (err) {
       if (axios.isAxiosError(err) && err.response?.status === 401) {
         await logout()
@@ -149,18 +173,32 @@ export function useTasksViewModel() {
     if (skipSubtaskDeletionConfirm) {
       try {
         const res = await deleteSubtask({ id: subtaskId, silent: true })
-        if (
-          !(res && typeof res === "object" && "queued" in res && res.queued)
-        ) {
+        const isQueued = Boolean(
+          res && typeof res === "object" && "queued" in res && res.queued
+        )
+        if (!isQueued) {
           refreshTasks()
         }
         toast({
-          title: "Subtask deleted",
-          variant: "success",
+          title: isQueued ? "Subtask deleted offline" : "Subtask deleted",
+          description: isQueued
+            ? "Saved locally and will sync automatically."
+            : undefined,
+          variant: isQueued ? "default" : "success",
         })
         return
       } catch (err) {
+        if (axios.isAxiosError(err) && err.response?.status === 401) {
+          await logout()
+          return
+        }
         console.error("Failed to delete subtask:", err)
+        toast({
+          title: "Action failed",
+          description: "Could not delete subtask.",
+          variant: "destructive",
+        })
+        return
       }
     }
 
@@ -183,14 +221,31 @@ export function useTasksViewModel() {
             updates: { completed: true },
             silent: true,
           })
-          if (
-            !(res && typeof res === "object" && "queued" in res && res.queued)
-          ) {
+          const isQueued = Boolean(
+            res && typeof res === "object" && "queued" in res && res.queued
+          )
+          if (!isQueued) {
             refreshTasks()
+          }
+          if (isQueued) {
+            toast({
+              title: "Subtask updated offline",
+              description: "Saved locally and will sync automatically.",
+            })
           }
           return
         } catch (err) {
+          if (axios.isAxiosError(err) && err.response?.status === 401) {
+            await logout()
+            return
+          }
           console.error("Failed to update subtask:", err)
+          toast({
+            title: "Action failed",
+            description: "Could not update subtask.",
+            variant: "destructive",
+          })
+          return
         }
       }
 
@@ -213,11 +268,29 @@ export function useTasksViewModel() {
         updates: { completed },
         silent: true,
       })
-      if (!(res && typeof res === "object" && "queued" in res && res.queued)) {
+      const isQueued = Boolean(
+        res && typeof res === "object" && "queued" in res && res.queued
+      )
+      if (!isQueued) {
         refreshTasks()
       }
+      if (isQueued) {
+        toast({
+          title: "Subtask updated offline",
+          description: "Saved locally and will sync automatically.",
+        })
+      }
     } catch (err) {
+      if (axios.isAxiosError(err) && err.response?.status === 401) {
+        await logout()
+        return
+      }
       console.error("Failed to update subtask:", err)
+      toast({
+        title: "Action failed",
+        description: "Could not update subtask.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -231,7 +304,17 @@ export function useTasksViewModel() {
         })
         return
       } catch (err) {
+        if (axios.isAxiosError(err) && err.response?.status === 401) {
+          await logout()
+          return
+        }
         console.error("Failed to detach tag:", err)
+        toast({
+          title: "Action failed",
+          description: "Could not detach tag.",
+          variant: "destructive",
+        })
+        return
       }
     }
 
@@ -262,14 +345,18 @@ export function useTasksViewModel() {
           updates: { completed: confirmData.completed ?? false },
           silent: true,
         })
-        if (
-          !(res && typeof res === "object" && "queued" in res && res.queued)
-        ) {
+        const isQueued = Boolean(
+          res && typeof res === "object" && "queued" in res && res.queued
+        )
+        if (!isQueued) {
           refreshTasks()
         }
         toast({
-          title: "Subtask completed!",
-          variant: "success",
+          title: isQueued ? "Subtask updated offline" : "Subtask completed!",
+          description: isQueued
+            ? "Saved locally and will sync automatically."
+            : undefined,
+          variant: isQueued ? "default" : "success",
         })
       } else if (confirmData.type === "detach_tag" && confirmData.taskId) {
         if (dontShowAgain) setPreference("skipTagDetachmentConfirm", true)
@@ -285,14 +372,18 @@ export function useTasksViewModel() {
       } else if (confirmData.type === "delete_subtask") {
         if (dontShowAgain) setPreference("skipSubtaskDeletionConfirm", true)
         const res = await deleteSubtask({ id: confirmData.id, silent: true })
-        if (
-          !(res && typeof res === "object" && "queued" in res && res.queued)
-        ) {
+        const isQueued = Boolean(
+          res && typeof res === "object" && "queued" in res && res.queued
+        )
+        if (!isQueued) {
           refreshTasks()
         }
         toast({
-          title: "Subtask deleted",
-          variant: "success",
+          title: isQueued ? "Subtask deleted offline" : "Subtask deleted",
+          description: isQueued
+            ? "Saved locally and will sync automatically."
+            : undefined,
+          variant: isQueued ? "default" : "success",
         })
       }
       setConfirmData(null)
@@ -342,7 +433,7 @@ export function useTasksViewModel() {
     searchQuery,
     setSearchQuery,
     sortBy,
-    setSortBy,
+    setSortBy: handleSetSortBy,
     sortLabels: TASK_SORT_LABELS,
     togglePriority,
     clearAllFilters,

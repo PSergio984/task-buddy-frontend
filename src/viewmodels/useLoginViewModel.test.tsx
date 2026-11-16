@@ -124,4 +124,26 @@ describe("useLoginViewModel", () => {
       })
     )
   })
+
+  it("preserves plus tags in email addresses", async () => {
+    const { result } = renderHook(() => useLoginViewModel())
+
+    act(() => {
+      result.current.setEmail("user+tag@example.com")
+      result.current.setPassword("ValidPassword123!")
+    })
+
+    const fakeEvent = {
+      preventDefault: vi.fn(),
+    } as unknown as React.SubmitEvent<HTMLFormElement>
+
+    await act(async () => {
+      await result.current.handleSubmit(fakeEvent)
+    })
+
+    expect(loginMock).toHaveBeenCalledWith({
+      username: "user+tag@example.com",
+      password: "ValidPassword123!",
+    })
+  })
 })

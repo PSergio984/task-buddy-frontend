@@ -59,26 +59,6 @@ export function LoginPage() {
               Experience the definitive tool designed for ambitious minds.
               Organize, execute, and conquer your goals with precision.
             </p>
-
-            <div className="flex items-center gap-6 border-t border-white/20 pt-8">
-              <div>
-                <p className="text-3xl font-black tracking-tight text-foreground">
-                  99.9%
-                </p>
-                <p className="text-xs font-bold tracking-widest text-foreground uppercase">
-                  Uptime Reliability
-                </p>
-              </div>
-              <div className="h-10 w-px bg-white/20" />
-              <div>
-                <p className="text-3xl font-black tracking-tight text-foreground">
-                  100k+
-                </p>
-                <p className="text-xs font-bold tracking-widest text-foreground uppercase">
-                  Tasks Completed
-                </p>
-              </div>
-            </div>
           </motion.div>
         </div>
       </div>
