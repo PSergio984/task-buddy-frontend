@@ -1,37 +1,12 @@
-import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import {
-  useTasks,
-  useUpdateTask,
-  useUpdateSubtask,
-  useDeleteSubtask,
-  useDetachTag,
-} from "@/hooks/useTasks"
-import { useFilters } from "@/contexts/FilterContext"
 import { useOutletContext } from "react-router-dom"
-import type { Task, Tag } from "@/lib/api"
+import type { Task } from "@/models/task.model"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useToast } from "@/hooks/use-toast"
-import axios from "axios"
-import { useAuth } from "@/contexts/AuthContext"
-import { useProjects } from "@/hooks/useProjects"
-import { useTags } from "@/hooks/useTags"
 import { Badge } from "@/components/ui/badge"
 import { ConfirmationModal } from "@/components/confirmation-modal"
-import { useTaskFilters } from "@/hooks/useTaskFilters"
 import { TasksHeader } from "./tasks/TasksHeader"
 import { TaskList } from "./tasks/TaskList"
-import { useUserPreferences } from "@/hooks/useUserPreferences"
-
-type SortMode = "priority" | "due_date" | "alpha"
-
-const SORT_LABELS: Record<SortMode, string> = {
-  priority: "Priority (High–Low)",
-  due_date: "Deadline (Soonest)",
-  alpha: "Alphabetical",
-}
-
-const LS_KEY = "tb_sort_preference"
+import { useTasksViewModel } from "@/viewmodels/useTasksViewModel"
 
 interface LayoutContext {
   handleEditTask: (task: Task) => void
@@ -40,328 +15,52 @@ interface LayoutContext {
 
 export function TasksPage() {
   const { handleEditTask } = useOutletContext<LayoutContext>()
-  const { activeSidebarFilter, activeStatus, setActiveStatus, activeTagId } =
-    useFilters()
-
-  const { toast } = useToast()
-  const { user, logout } = useAuth()
-  const { data: projects = [] } = useProjects()
-  const { data: tags = [] } = useTags()
-
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
-  const [isFiltersExpanded, setIsFiltersExpanded] = useState(false)
-  const [isCompleting, setIsCompleting] = useState(false)
-  const [confirmData, setConfirmData] = useState<{
-    type: "task" | "subtask" | "detach_tag" | "delete_subtask"
-    id: number
-    title: string
-    completed?: boolean
-    taskId?: number
-  } | null>(null)
-
-  const isProjectFilter = activeSidebarFilter.startsWith("project:")
-  const filterParam = activeStatus === "all" ? undefined : activeStatus
-  const projectIdParam = isProjectFilter
-    ? Number.parseInt(activeSidebarFilter.split(":")[1], 10)
-    : undefined
-
-  const {
-    data: tasks = [],
-    isLoading: loadingTasks,
-    refetch: refreshTasks,
-  } = useTasks(filterParam, projectIdParam, activeTagId || undefined)
-
-  const { mutateAsync: updateTask } = useUpdateTask()
-  const { mutateAsync: updateSubtask } = useUpdateSubtask()
-  const { mutateAsync: deleteSubtask } = useDeleteSubtask()
-  const { mutateAsync: detachTag } = useDetachTag()
-
-  const {
-    searchQuery,
-    setSearchQuery,
-    sortBy,
-    setSortBy,
-    sortedTasks,
-    togglePriority,
-    clearAllFilters,
-    selectedPriorities,
-  } = useTaskFilters(tasks)
-
-  useEffect(() => {
-    const saved = globalThis.localStorage.getItem(LS_KEY)
-    if (
-      saved &&
-      (saved === "priority" || saved === "due_date" || saved === "alpha")
-    ) {
-      setSortBy(saved)
-    }
-  }, [setSortBy])
-
-  useEffect(() => {
-    globalThis.localStorage.setItem(LS_KEY, sortBy)
-  }, [sortBy])
-
-  const {
-    skipTaskCompletionConfirm,
-    skipSubtaskCompletionConfirm,
-    skipTagDetachmentConfirm,
-    skipSubtaskDeletionConfirm,
-    setPreference,
-  } = useUserPreferences(user?.id ?? "default")
-
-  const handleToggleComplete = async (id: number) => {
-    const task = tasks.find((t: Task) => t.id === id)
-    if (!task) return
-
-    const nextStatus = !task.completed
-
-    if (nextStatus) {
-      if (skipTaskCompletionConfirm) {
-        await performToggle(id, nextStatus)
-        return
-      }
-
-      setConfirmData({
-        type: "task",
-        id,
-        title: task.title,
-        completed: true,
-      })
-      return
-    }
-
-    await performToggle(id, nextStatus)
-  }
-
-  const handleDeleteSubtask = async (subtaskId: number) => {
-    if (skipSubtaskDeletionConfirm) {
-      try {
-        await deleteSubtask(subtaskId)
-        refreshTasks()
-        toast({
-          title: "Subtask deleted",
-          variant: "success",
-        })
-        return
-      } catch (err) {
-        console.error("Failed to delete subtask:", err)
-      }
-    }
-
-    // Find subtask to get its title
-    const subtask = tasks
-      .flatMap((t: Task) => t.subtasks || [])
-      .find((s) => s.id === subtaskId)
-    setConfirmData({
-      type: "delete_subtask",
-      id: subtaskId,
-      title: subtask?.title || "this subtask",
-    })
-  }
-
-  const handleConfirmAction = async (dontShowAgain?: boolean) => {
-    if (!confirmData) return
-
-    setIsCompleting(true)
-    try {
-      if (confirmData.type === "task") {
-        if (dontShowAgain) setPreference("skipTaskCompletionConfirm", true)
-        await performToggle(confirmData.id, confirmData.completed ?? false)
-      } else if (confirmData.type === "subtask") {
-        if (dontShowAgain) setPreference("skipSubtaskCompletionConfirm", true)
-        await updateSubtask({
-          id: confirmData.id,
-          updates: { completed: confirmData.completed ?? false },
-          silent: true,
-        })
-        refreshTasks()
-        toast({
-          title: "Subtask completed!",
-          variant: "success",
-        })
-      } else if (confirmData.type === "detach_tag" && confirmData.taskId) {
-        if (dontShowAgain) setPreference("skipTagDetachmentConfirm", true)
-        await detachTag({
-          taskId: confirmData.taskId,
-          tagId: confirmData.id,
-          silent: true,
-        })
-        refreshTasks()
-        toast({
-          title: "Tag removed",
-          variant: "success",
-        })
-      } else if (confirmData.type === "delete_subtask") {
-        if (dontShowAgain) setPreference("skipSubtaskDeletionConfirm", true)
-        await deleteSubtask({ id: confirmData.id, silent: true })
-        refreshTasks()
-        toast({
-          title: "Subtask deleted",
-          variant: "success",
-        })
-      }
-      setConfirmData(null)
-    } catch (err) {
-      if (axios.isAxiosError(err) && err.response?.status === 401) {
-        await logout()
-        return
-      }
-      console.error("Failed to complete action:", err)
-      toast({
-        title: "Action failed",
-        description: "Could not update status.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsCompleting(false)
-    }
-  }
-
-  const performToggle = async (id: number, completed: boolean) => {
-    setIsCompleting(true)
-    try {
-      // silent: the page-level toast below is the single success signal
-      // (the mutation would otherwise toast "Task updated" on top of it,
-      // and an offline-queued toggle would claim success prematurely).
-      await updateTask({ id, updates: { completed }, silent: true })
-      toast({
-        title: completed ? "Task completed!" : "Task restored",
-        description: completed ? "Great job!" : "Task moved to pending.",
-        variant: "success",
-      })
-    } catch (err) {
-      if (axios.isAxiosError(err) && err.response?.status === 401) {
-        await logout()
-        return
-      }
-      console.error("Failed to toggle task status:", err)
-      toast({
-        title: "Action failed",
-        description: "Could not update task status.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsCompleting(false)
-    }
-  }
-
-  const handleToggleSubtask = async (subtaskId: number, completed: boolean) => {
-    if (completed) {
-      if (skipSubtaskCompletionConfirm) {
-        try {
-          await updateSubtask({
-            id: subtaskId,
-            updates: { completed: true },
-            silent: true,
-          })
-          refreshTasks()
-          return
-        } catch (err) {
-          console.error("Failed to update subtask:", err)
-        }
-      }
-
-      const allSubtasks = tasks.flatMap((t) => t.subtasks || [])
-      const subtask = allSubtasks.find((s) => s.id === subtaskId)
-      if (subtask) {
-        setConfirmData({
-          type: "subtask",
-          id: subtaskId,
-          title: subtask.title,
-          completed: true,
-        })
-        return
-      }
-    }
-
-    try {
-      await updateSubtask({
-        id: subtaskId,
-        updates: { completed },
-        silent: true,
-      })
-      refreshTasks()
-    } catch (err) {
-      console.error("Failed to update subtask:", err)
-    }
-  }
-
-  const handleDetachTag = async (taskId: number, tagId: number) => {
-    if (skipTagDetachmentConfirm) {
-      try {
-        await detachTag({ taskId, tagId })
-        refreshTasks()
-        toast({
-          title: "Tag removed",
-          variant: "success",
-        })
-        return
-      } catch (err) {
-        console.error("Failed to detach tag:", err)
-      }
-    }
-
-    const task = tasks.find((t: Task) => t.id === taskId)
-    const tag = tags.find((t: Tag) => t.id === tagId)
-    if (task && tag) {
-      setConfirmData({
-        type: "detach_tag",
-        id: tagId,
-        taskId,
-        title: tag.name,
-      })
-    }
-  }
-
-  const activeProject = isProjectFilter
-    ? projects.find((p) => p.id === projectIdParam)
-    : null
-  const activeTag = activeTagId ? tags.find((t) => t.id === activeTagId) : null
+  const vm = useTasksViewModel()
 
   return (
     <>
       <ConfirmationModal
-        open={!!confirmData}
-        onOpenChange={(open) => !open && setConfirmData(null)}
-        onConfirm={handleConfirmAction}
+        open={!!vm.confirmData}
+        onOpenChange={(open) => !open && vm.closeConfirmModal()}
+        onConfirm={vm.handleConfirmAction}
         title={
-          confirmData?.type === "task"
+          vm.confirmData?.type === "task"
             ? "Mission Accomplished?"
-            : confirmData?.type === "detach_tag"
+            : vm.confirmData?.type === "detach_tag"
               ? "Remove Tag?"
-              : confirmData?.type === "delete_subtask"
+              : vm.confirmData?.type === "delete_subtask"
                 ? "Delete Subtask?"
                 : "Sub-objective Complete?"
         }
         description={
-          confirmData?.type === "detach_tag"
-            ? `Are you sure you want to remove the tag "${confirmData?.title}"?`
-            : confirmData?.type === "delete_subtask"
-              ? `Are you sure you want to delete the subtask "${confirmData?.title}"? This action cannot be undone.`
-              : `Confirm completion of: "${confirmData?.title}"`
+          vm.confirmData?.type === "detach_tag"
+            ? `Are you sure you want to remove the tag "${vm.confirmData?.title}"?`
+            : vm.confirmData?.type === "delete_subtask"
+              ? `Are you sure you want to delete the subtask "${vm.confirmData?.title}"? This action cannot be undone.`
+              : `Confirm completion of: "${vm.confirmData?.title}"`
         }
         confirmText={
-          confirmData?.type === "detach_tag"
+          vm.confirmData?.type === "detach_tag"
             ? "Remove Tag"
-            : confirmData?.type === "delete_subtask"
+            : vm.confirmData?.type === "delete_subtask"
               ? "Delete Subtask"
               : "Mark Finished"
         }
         variant={
-          confirmData?.type === "detach_tag" ||
-          confirmData?.type === "delete_subtask"
+          vm.confirmData?.type === "detach_tag" ||
+          vm.confirmData?.type === "delete_subtask"
             ? "destructive"
             : "success"
         }
         showDontShowAgain={true}
         dontShowAgainLabel={
-          confirmData?.type === "detach_tag"
+          vm.confirmData?.type === "detach_tag"
             ? "Don't ask again for tag removal"
-            : confirmData?.type === "delete_subtask"
+            : vm.confirmData?.type === "delete_subtask"
               ? "Don't ask again for subtask deletion"
               : "Don't ask again for completion"
         }
-        isLoading={isCompleting}
+        isLoading={vm.isCompleting}
       />
 
       <motion.div
@@ -377,17 +76,17 @@ export function TasksPage() {
                   variant="outline"
                   className="rounded-full border-primary/20 bg-primary/5 px-4 py-1 text-[10px] font-black tracking-widest text-primary uppercase"
                 >
-                  {activeSidebarFilter === "all"
+                  {vm.activeSidebarFilter === "all"
                     ? "All Tasks"
-                    : activeProject?.name ||
-                      activeSidebarFilter.replace("project:", "").toUpperCase()}
+                    : vm.activeProject?.name ||
+                      vm.activeSidebarFilter.replace("project:", "").toUpperCase()}
                 </Badge>
-                {activeTag && (
+                {vm.activeTag && (
                   <Badge
                     variant="secondary"
                     className="rounded-full bg-accent/10 px-4 py-1 text-[10px] font-black tracking-widest text-accent uppercase"
                   >
-                    Focus: {activeTag.name}
+                    Focus: {vm.activeTag.name}
                   </Badge>
                 )}
               </div>
@@ -398,8 +97,8 @@ export function TasksPage() {
 
             <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 p-1.5 shadow-2xl">
               <button
-                onClick={() => setViewMode("grid")}
-                className={`rounded-xl p-3 transition-all ${viewMode === "grid" ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "text-foreground/40 hover:bg-white/5 hover:text-foreground"}`}
+                onClick={() => vm.setViewMode("grid")}
+                className={`rounded-xl p-3 transition-all ${vm.viewMode === "grid" ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "text-foreground/40 hover:bg-white/5 hover:text-foreground"}`}
               >
                 <span className="sr-only">Grid View</span>
                 <svg
@@ -417,8 +116,8 @@ export function TasksPage() {
                 </svg>
               </button>
               <button
-                onClick={() => setViewMode("list")}
-                className={`rounded-xl p-3 transition-all ${viewMode === "list" ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "text-foreground/40 hover:bg-white/5 hover:text-foreground"}`}
+                onClick={() => vm.setViewMode("list")}
+                className={`rounded-xl p-3 transition-all ${vm.viewMode === "list" ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "text-foreground/40 hover:bg-white/5 hover:text-foreground"}`}
               >
                 <span className="sr-only">List View</span>
                 <svg
@@ -439,34 +138,43 @@ export function TasksPage() {
           </div>
 
           <TasksHeader
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            sortBy={sortBy}
-            setSortBy={setSortBy}
-            sortLabels={SORT_LABELS}
-            isFiltersExpanded={isFiltersExpanded}
-            setIsFiltersExpanded={setIsFiltersExpanded}
-            selectedPriorities={selectedPriorities}
-            togglePriority={togglePriority}
-            clearAllFilters={clearAllFilters}
+            searchQuery={vm.searchQuery}
+            setSearchQuery={vm.setSearchQuery}
+            isFiltersExpanded={vm.isFiltersExpanded}
+            setIsFiltersExpanded={vm.setIsFiltersExpanded}
+            selectedPriorities={vm.selectedPriorities}
+            togglePriority={vm.togglePriority}
+            clearAllFilters={vm.clearAllFilters}
+            sortBy={vm.sortBy}
+            setSortBy={vm.setSortBy}
+            sortLabels={vm.sortLabels}
           />
         </header>
 
         <Tabs
-          value={activeStatus}
-          onValueChange={setActiveStatus}
-          className="w-full"
+          value={vm.activeStatus}
+          onValueChange={(val: string) =>
+            vm.setActiveStatus(val as "all" | "pending" | "completed")
+          }
+          className="w-full space-y-8"
         >
-          <div className="mb-8 flex items-center justify-between">
-            <TabsList className="h-auto gap-4 bg-transparent p-0 sm:gap-8">
-              {["all", "pending", "completed"].map((status) => (
+          <div className="flex flex-col justify-between gap-6 border-b border-border/40 pb-4 sm:flex-row sm:items-center">
+            <TabsList className="h-auto gap-4 bg-transparent p-0">
+              {(["all", "pending", "completed"] as const).map((status) => (
                 <TabsTrigger
                   key={status}
                   value={status}
-                  className="relative bg-transparent p-0 text-lg font-black tracking-tighter text-foreground/30 uppercase transition-all hover:text-foreground/60 focus-visible:outline-none data-[state=active]:text-primary sm:text-xl"
+                  className="relative rounded-none border-b-2 border-transparent px-2 py-3 text-sm font-bold tracking-wider text-muted-foreground uppercase transition-all data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary"
                 >
-                  {status}
-                  {activeStatus === status && (
+                  <span className="capitalize">{status}</span>
+                  <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[10px] font-black">
+                    {status === "all"
+                      ? vm.tasks.length
+                      : vm.tasks.filter((t) =>
+                          status === "completed" ? t.completed : !t.completed
+                        ).length}
+                  </span>
+                  {vm.activeStatus === status && (
                     <motion.div
                       layoutId="active-tab"
                       className="absolute -bottom-2 left-0 h-1 w-full rounded-full bg-primary"
@@ -484,26 +192,26 @@ export function TasksPage() {
             <div className="hidden items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase sm:flex">
               <span>Result Set:</span>
               <span className="text-foreground">
-                {sortedTasks.length} Units
+                {vm.sortedTasks.length} Units
               </span>
             </div>
           </div>
 
-          {["all", "pending", "completed"].map((status) => (
+          {(["all", "pending", "completed"] as const).map((status) => (
             <TabsContent
               key={status}
               value={status}
               className="mt-0 outline-none"
             >
               <TaskList
-                tasks={sortedTasks}
-                loading={loadingTasks}
-                viewMode={viewMode}
-                onToggleComplete={handleToggleComplete}
+                tasks={vm.sortedTasks}
+                loading={vm.loadingTasks}
+                viewMode={vm.viewMode}
+                onToggleComplete={vm.handleToggleComplete}
                 onEdit={handleEditTask}
-                onToggleSubtask={handleToggleSubtask}
-                onDeleteSubtask={handleDeleteSubtask}
-                onDetachTag={handleDetachTag}
+                onToggleSubtask={vm.handleToggleSubtask}
+                onDeleteSubtask={vm.handleDeleteSubtask}
+                onDetachTag={vm.handleDetachTag}
               />
             </TabsContent>
           ))}
