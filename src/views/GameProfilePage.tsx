@@ -5,8 +5,10 @@ import { StatsPanel } from "@/components/character/stats-panel"
 import { EquipmentPanel } from "@/components/character/equipment-panel"
 import { AchievementsPanel } from "@/components/character/achievements-panel"
 import { ActivityPanel } from "@/components/character/activity-panel"
-import { TRIGGER_CLASS } from "@/models/gameProfile.model"
 import { useGameProfileViewModel } from "@/viewmodels/useGameProfileViewModel"
+
+const TRIGGER_CLASS =
+  "rounded-xl px-4 py-1.5 text-[10px] font-black tracking-widest uppercase transition-all data-[state=active]:bg-primary/15 data-[state=active]:text-primary"
 
 export function GameProfilePage() {
   const vm = useGameProfileViewModel()

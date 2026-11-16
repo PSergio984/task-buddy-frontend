@@ -13,53 +13,71 @@ interface LayoutContext {
   onNewTask: () => void
 }
 
+type ConfirmType = "task" | "subtask" | "detach_tag" | "delete_subtask"
+
+interface ConfirmConfig {
+  title: string
+  description: (targetTitle: string) => string
+  confirmText: string
+  variant: "destructive" | "success"
+  dontShowAgainLabel: string
+}
+
+const CONFIRM_CONFIGS: Record<ConfirmType, ConfirmConfig> = {
+  task: {
+    title: "Mission Accomplished?",
+    description: (t) => `Confirm completion of: "${t}"`,
+    confirmText: "Mark Finished",
+    variant: "success",
+    dontShowAgainLabel: "Don't ask again for completion",
+  },
+  subtask: {
+    title: "Sub-objective Complete?",
+    description: (t) => `Confirm completion of: "${t}"`,
+    confirmText: "Mark Finished",
+    variant: "success",
+    dontShowAgainLabel: "Don't ask again for completion",
+  },
+  detach_tag: {
+    title: "Remove Tag?",
+    description: (t) => `Are you sure you want to remove the tag "${t}"?`,
+    confirmText: "Remove Tag",
+    variant: "destructive",
+    dontShowAgainLabel: "Don't ask again for tag removal",
+  },
+  delete_subtask: {
+    title: "Delete Subtask?",
+    description: (t) =>
+      `Are you sure you want to delete the subtask "${t}"? This action cannot be undone.`,
+    confirmText: "Delete Subtask",
+    variant: "destructive",
+    dontShowAgainLabel: "Don't ask again for subtask deletion",
+  },
+}
+
 export function TasksPage() {
   const { handleEditTask } = useOutletContext<LayoutContext>()
   const vm = useTasksViewModel()
+  const confirmConfig = vm.confirmData
+    ? CONFIRM_CONFIGS[vm.confirmData.type]
+    : null
 
   return (
     <>
       <ConfirmationModal
-        open={!!vm.confirmData}
+        open={Boolean(vm.confirmData && confirmConfig)}
         onOpenChange={(open) => !open && vm.closeConfirmModal()}
         onConfirm={vm.handleConfirmAction}
-        title={
-          vm.confirmData?.type === "task"
-            ? "Mission Accomplished?"
-            : vm.confirmData?.type === "detach_tag"
-              ? "Remove Tag?"
-              : vm.confirmData?.type === "delete_subtask"
-                ? "Delete Subtask?"
-                : "Sub-objective Complete?"
-        }
+        title={confirmConfig?.title ?? ""}
         description={
-          vm.confirmData?.type === "detach_tag"
-            ? `Are you sure you want to remove the tag "${vm.confirmData?.title}"?`
-            : vm.confirmData?.type === "delete_subtask"
-              ? `Are you sure you want to delete the subtask "${vm.confirmData?.title}"? This action cannot be undone.`
-              : `Confirm completion of: "${vm.confirmData?.title}"`
+          confirmConfig
+            ? confirmConfig.description(vm.confirmData?.title ?? "")
+            : ""
         }
-        confirmText={
-          vm.confirmData?.type === "detach_tag"
-            ? "Remove Tag"
-            : vm.confirmData?.type === "delete_subtask"
-              ? "Delete Subtask"
-              : "Mark Finished"
-        }
-        variant={
-          vm.confirmData?.type === "detach_tag" ||
-          vm.confirmData?.type === "delete_subtask"
-            ? "destructive"
-            : "success"
-        }
+        confirmText={confirmConfig?.confirmText ?? "Confirm"}
+        variant={confirmConfig?.variant ?? "success"}
         showDontShowAgain={true}
-        dontShowAgainLabel={
-          vm.confirmData?.type === "detach_tag"
-            ? "Don't ask again for tag removal"
-            : vm.confirmData?.type === "delete_subtask"
-              ? "Don't ask again for subtask deletion"
-              : "Don't ask again for completion"
-        }
+        dontShowAgainLabel={confirmConfig?.dontShowAgainLabel ?? ""}
         isLoading={vm.isCompleting}
       />
 

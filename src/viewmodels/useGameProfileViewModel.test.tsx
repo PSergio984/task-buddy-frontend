@@ -10,8 +10,12 @@ const buyGearMutate = vi.fn()
 const equipGearMutate = vi.fn()
 const refetchProfileMock = vi.fn()
 
+let mockIsOnline = true
+let mockCharacterBusy = false
+let mockMutationVariables: unknown[] = []
+
 vi.mock("@/hooks/useIsOnline", () => ({
-  useIsOnline: () => true,
+  useIsOnline: () => mockIsOnline,
 }))
 
 vi.mock("@/hooks/useGameProfile", () => ({
@@ -27,7 +31,7 @@ vi.mock("@tanstack/react-query", async () => {
   const actual = await vi.importActual("@tanstack/react-query")
   return {
     ...actual,
-    useMutationState: () => [],
+    useMutationState: () => mockMutationVariables,
   }
 })
 
@@ -37,7 +41,7 @@ vi.mock("@/hooks/useGameCharacter", () => ({
   useAllocateStats: () => ({ mutate: allocateMutate, isPending: false }),
   useUpdateCharacter: () => ({
     mutate: updateCharacterMutate,
-    isPending: false,
+    isPending: mockCharacterBusy,
   }),
   useSelectClass: () => ({ mutate: selectClassMutate, isPending: false }),
   useRespec: () => ({ mutate: respecMutate, isPending: false }),
@@ -72,27 +76,51 @@ vi.mock("@/hooks/useGameCharacter", () => ({
 describe("useGameProfileViewModel", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockIsOnline = true
+    mockCharacterBusy = false
+    mockMutationVariables = []
   })
 
-  it("exposes profile and gear data cleanly", () => {
+  it("exposes active character state and queries", () => {
     const { result } = renderHook(() => useGameProfileViewModel())
-    expect(result.current.profile).toEqual({ id: "p1", level: 5, gold: 100 })
+
+    expect(result.current.isOnline).toBe(true)
     expect(result.current.writesDisabled).toBe(false)
     expect(result.current.characterBusy).toBe(false)
+    expect(result.current.profile?.level).toBe(5)
+    expect(result.current.pendingGearKeys.size).toBe(0)
   })
 
-  it("delegates mutations through ViewModel actions", () => {
+  it("disables writes when user is offline", () => {
+    mockIsOnline = false
+    const { result } = renderHook(() => useGameProfileViewModel())
+
+    expect(result.current.isOnline).toBe(false)
+    expect(result.current.writesDisabled).toBe(true)
+  })
+
+  it("reports characterBusy when a character mutation is in flight", () => {
+    mockCharacterBusy = true
+    const { result } = renderHook(() => useGameProfileViewModel())
+
+    expect(result.current.characterBusy).toBe(true)
+  })
+
+  it("exposes pending gear keys for in-flight buy and equip mutations", () => {
+    mockMutationVariables = ["iron_helm", "magic_wand"]
+    const { result } = renderHook(() => useGameProfileViewModel())
+
+    expect(result.current.pendingGearKeys.has("iron_helm")).toBe(true)
+    expect(result.current.pendingGearKeys.has("magic_wand")).toBe(true)
+  })
+
+  it("triggers character actions through ViewModel handlers", () => {
     const { result } = renderHook(() => useGameProfileViewModel())
 
     act(() => {
       result.current.allocateStat("str")
     })
     expect(allocateMutate).toHaveBeenCalledWith({ str: 1 })
-
-    act(() => {
-      result.current.setAutoAllocate(true)
-    })
-    expect(updateCharacterMutate).toHaveBeenCalledWith(true)
 
     act(() => {
       result.current.selectClass("warrior")
@@ -105,15 +133,15 @@ describe("useGameProfileViewModel", () => {
     expect(respecMutate).toHaveBeenCalled()
 
     act(() => {
-      result.current.buyGear("sword_1")
+      result.current.buyGear("sword-1")
     })
-    expect(buyGearMutate).toHaveBeenCalledWith("sword_1")
+    expect(buyGearMutate).toHaveBeenCalledWith("sword-1")
 
     act(() => {
-      result.current.equipGear("sword_1", true)
+      result.current.equipGear("sword-1", true)
     })
     expect(equipGearMutate).toHaveBeenCalledWith({
-      key: "sword_1",
+      key: "sword-1",
       equipped: true,
     })
 

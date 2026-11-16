@@ -4,6 +4,7 @@ import {
   sanitizeUsername,
   sanitizePassword,
   validatePassword,
+  validateUsername,
 } from "@/lib/auth"
 
 /**
@@ -126,14 +127,14 @@ export function validateUsernameInput(
       error: "Username must be at least 3 characters",
     }
   }
-  const isFormatValid = /^[A-Za-z0-9._@\- ]+$/.test(username)
-  if (!isFormatValid) {
+  const authErr = validateUsername(trimmed)
+  if (authErr) {
     return {
       trimmed,
       isLongEnough: true,
       isFormatValid: false,
       isValid: false,
-      error: "Invalid characters in username",
+      error: authErr,
     }
   }
   return {
@@ -166,4 +167,9 @@ export const profileApi = {
   },
 }
 
-export { sanitizeUsername, sanitizePassword, validatePassword }
+export {
+  sanitizeUsername,
+  sanitizePassword,
+  validatePassword,
+  validateUsername,
+}

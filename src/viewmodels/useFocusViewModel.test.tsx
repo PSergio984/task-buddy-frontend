@@ -18,9 +18,12 @@ vi.mock("@/hooks/useTags", () => ({
   useTags: () => ({ data: [{ id: 20, name: "code" }] }),
 }))
 
+const primeAlertAudioMock = vi.fn()
+const requestAlertPermissionMock = vi.fn()
+
 vi.mock("@/lib/focus-audio", () => ({
-  primeAlertAudio: vi.fn(),
-  requestAlertPermission: vi.fn(),
+  primeAlertAudio: () => primeAlertAudioMock(),
+  requestAlertPermission: () => requestAlertPermissionMock(),
   alertPhaseBoundary: vi.fn(),
 }))
 
@@ -79,6 +82,8 @@ describe("useFocusViewModel", () => {
     })
 
     expect(mockRuntime.start).toHaveBeenCalled()
+    expect(primeAlertAudioMock).toHaveBeenCalled()
+    expect(requestAlertPermissionMock).toHaveBeenCalled()
   })
 
   it("derives speedrun session state and stop modal properties", async () => {

@@ -17,17 +17,19 @@ import {
  */
 
 export function validateEmailFormat(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+  return validateEmail(email) === null
 }
 
 export const authApi = {
   forgotPassword: async (email: string) => {
-    return api.post("/api/v1/users/forgot-password/", { email })
+    return api.post("/api/v1/users/forgot-password/", {
+      email: sanitizeEmail(email),
+    })
   },
   resetPassword: async (token: string, newPassword: string) => {
     return api.post("/api/v1/users/reset-password", {
       token,
-      new_password: newPassword,
+      new_password: sanitizePassword(newPassword),
     })
   },
 }

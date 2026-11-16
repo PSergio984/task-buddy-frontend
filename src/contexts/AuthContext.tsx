@@ -37,7 +37,7 @@ interface AuthContextType {
     password: string
   }) => Promise<void>
   logout: () => Promise<void>
-  refreshUser: () => Promise<void>
+  refreshUser: () => Promise<AuthUser | null>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -86,7 +86,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     // refreshUser would loop refreshUser -> setUser -> re-render forever.
   }, [userId])
 
-  const refreshUser = useCallback(async () => {
+  const refreshUser = useCallback(async (): Promise<AuthUser | null> => {
     await Promise.resolve()
     try {
       const response = await api.get("/api/v1/users/me")
@@ -96,6 +96,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         safeLocalStorageSet(USER_STORAGE_KEY, JSON.stringify(nextUser))
       }
       setError(null)
+      return nextUser
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         if (err.response?.status === 401) {
@@ -111,6 +112,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       } else {
         setError("Failed to refresh user profile")
       }
+      return null
     } finally {
       setLoading(false)
     }

@@ -27,18 +27,6 @@ const { mockTasks } = vi.hoisted(() => ({
   ],
 }))
 
-vi.mock("@/lib/api", async (importOriginal) => {
-  const mod = await importOriginal<typeof import("@/lib/api")>()
-  return {
-    ...mod,
-    tasksApi: {
-      ...mod.tasksApi,
-      list: vi.fn().mockResolvedValue(mockTasks),
-      update: vi.fn().mockResolvedValue(mockTasks[0]),
-    },
-  }
-})
-
 vi.mock("@/contexts/AuthContext", () => ({
   useAuth: () => ({ user: { id: "user-123" }, logout: vi.fn() }),
 }))

@@ -68,4 +68,60 @@ describe("useLoginViewModel", () => {
     })
     expect(navigateMock).toHaveBeenCalledWith("/dashboard")
   })
+
+  it("redirects to /verify-email on unconfirmed email without error toast", async () => {
+    const unconfirmedErr = {
+      isAxiosError: true,
+      response: {
+        status: 401,
+        data: { detail: "Email not confirmed" },
+      },
+    }
+    loginMock.mockRejectedValueOnce(unconfirmedErr)
+
+    const { result } = renderHook(() => useLoginViewModel())
+
+    act(() => {
+      result.current.setEmail("unverified@example.com")
+      result.current.setPassword("ValidPassword123!")
+    })
+
+    const fakeEvent = {
+      preventDefault: vi.fn(),
+    } as unknown as React.SubmitEvent<HTMLFormElement>
+
+    await act(async () => {
+      await result.current.handleSubmit(fakeEvent)
+    })
+
+    expect(navigateMock).toHaveBeenCalledWith("/verify-email")
+    expect(toastMock).not.toHaveBeenCalled()
+  })
+
+  it("handles general authentication failure with error toast and no navigation", async () => {
+    loginMock.mockRejectedValueOnce(new Error("Invalid credentials"))
+
+    const { result } = renderHook(() => useLoginViewModel())
+
+    act(() => {
+      result.current.setEmail("user@example.com")
+      result.current.setPassword("ValidPassword123!")
+    })
+
+    const fakeEvent = {
+      preventDefault: vi.fn(),
+    } as unknown as React.SubmitEvent<HTMLFormElement>
+
+    await act(async () => {
+      await result.current.handleSubmit(fakeEvent)
+    })
+
+    expect(navigateMock).not.toHaveBeenCalled()
+    expect(toastMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Authentication failed",
+        variant: "destructive",
+      })
+    )
+  })
 })

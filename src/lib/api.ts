@@ -1382,6 +1382,11 @@ export const notificationsApi = {
   }) => {
     await api.post("/api/v1/notifications/push-subscription", subscription)
   },
+  unregisterPushSubscription: async (endpoint: string) => {
+    await api.delete("/api/v1/notifications/push-subscription", {
+      params: { endpoint },
+    })
+  },
   // Expo/mobile push tokens (#68) — no web UI; here for client completeness.
   registerDeviceToken: async (input: { platform: string; token: string }) => {
     await api.post("/api/v1/game/device-tokens", input)

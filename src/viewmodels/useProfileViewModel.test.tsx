@@ -59,6 +59,10 @@ describe("useProfileViewModel", () => {
   })
 
   it("handles username draft changes and valid update", async () => {
+    refreshUserMock.mockResolvedValueOnce({
+      id: "u1",
+      username: "new_cool_name",
+    })
     const { result } = renderHook(() => useProfileViewModel())
 
     act(() => {
@@ -76,6 +80,31 @@ describe("useProfileViewModel", () => {
     expect(profileApi.updateUsername).toHaveBeenCalledWith("new_cool_name")
     expect(refreshUserMock).toHaveBeenCalled()
     expect(result.current.username.draft).toBeNull()
+  })
+
+  it("retains username draft if refresh confirmation fails", async () => {
+    refreshUserMock.mockResolvedValueOnce({
+      id: "u1",
+      username: "original_name",
+    })
+    const { result } = renderHook(() => useProfileViewModel())
+
+    act(() => {
+      result.current.username.setDraft("new_cool_name")
+    })
+
+    await act(async () => {
+      await result.current.username.update()
+    })
+
+    expect(profileApi.updateUsername).toHaveBeenCalledWith("new_cool_name")
+    expect(result.current.username.draft).toBe("new_cool_name")
+    expect(toastMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Update failed",
+        description: "Failed to confirm username update",
+      })
+    )
   })
 
   it("prevents password mismatch submissions", async () => {

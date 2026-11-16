@@ -5,6 +5,7 @@ import {
   authApi,
   getAuthErrorMessage,
   getPasswordStrength,
+  sanitizePassword,
 } from "@/models/auth.model"
 
 export function useResetPasswordViewModel() {
@@ -16,6 +17,7 @@ export function useResetPasswordViewModel() {
   const [confirmPassword, setConfirmPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const passwordStrength = getPasswordStrength(newPassword)
   const isPasswordStrong = passwordStrength.score >= 4
@@ -23,23 +25,52 @@ export function useResetPasswordViewModel() {
   const passwordsMatch = newPassword === confirmPassword && newPassword !== ""
   const hasPasswordMismatch = !passwordsMatch
 
+  const handleSetNewPassword = (val: string) => {
+    setError(null)
+    setNewPassword(val)
+  }
+
+  const handleSetConfirmPassword = (val: string) => {
+    setError(null)
+    setConfirmPassword(val)
+  }
+
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
+    setError(null)
 
-    if (newPassword !== confirmPassword) {
+    const cleanPassword = sanitizePassword(newPassword)
+    const cleanConfirm = sanitizePassword(confirmPassword)
+
+    if (cleanPassword !== cleanConfirm) {
+      const msg = "The new password and confirmation password do not match."
+      setError(msg)
       toast({
         variant: "destructive",
         title: "Passwords mismatch",
-        description: "The new password and confirmation password do not match.",
+        description: msg,
       })
       return
     }
 
-    if (newPassword.length < 8) {
+    if (cleanPassword.length < 8) {
+      const msg = "Password must be at least 8 characters long."
+      setError(msg)
       toast({
         variant: "destructive",
         title: "Password too short",
-        description: "Password must be at least 8 characters long.",
+        description: msg,
+      })
+      return
+    }
+
+    if (isPasswordWeak) {
+      const msg = "Choose a password that meets all strength rules."
+      setError(msg)
+      toast({
+        variant: "destructive",
+        title: "Password too weak",
+        description: msg,
       })
       return
     }
@@ -47,18 +78,19 @@ export function useResetPasswordViewModel() {
     setIsLoading(true)
 
     try {
-      await authApi.resetPassword(token || "", newPassword)
+      await authApi.resetPassword(token || "", cleanPassword)
       toast({
         title: "Password reset successful",
         description: "You can now log in with your new password.",
         variant: "success",
       })
       navigate("/login")
-    } catch (error: unknown) {
+    } catch (err: unknown) {
       const detail = getAuthErrorMessage(
-        error,
+        err,
         "Failed to reset password. The link may have expired or is invalid."
       )
+      setError(detail)
       toast({
         variant: "destructive",
         title: "Reset Failed",
@@ -72,9 +104,9 @@ export function useResetPasswordViewModel() {
   return {
     token,
     newPassword,
-    setNewPassword,
+    setNewPassword: handleSetNewPassword,
     confirmPassword,
-    setConfirmPassword,
+    setConfirmPassword: handleSetConfirmPassword,
     isLoading,
     showPassword,
     setShowPassword,
@@ -83,6 +115,7 @@ export function useResetPasswordViewModel() {
     isPasswordWeak,
     passwordsMatch,
     hasPasswordMismatch,
+    error,
     handleSubmit,
   }
 }

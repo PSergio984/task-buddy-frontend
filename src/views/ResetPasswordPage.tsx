@@ -98,6 +98,12 @@ export function ResetPasswordPage() {
               </div>
             </div>
 
+            {vm.error && (
+              <p className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-center text-xs font-bold text-destructive">
+                {vm.error}
+              </p>
+            )}
+
             <Button
               type="submit"
               className="h-12 w-full rounded-xl text-lg font-semibold shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"

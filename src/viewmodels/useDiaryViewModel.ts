@@ -29,7 +29,9 @@ export function useDiaryViewModel() {
   const [day, setDay] = useState<UtcDay>(todayUtcDay)
   const isOnline = useIsOnline()
 
-  const { data: profile } = useGameProfile()
+  const profileQuery = useGameProfile()
+  const profile = profileQuery.data
+  const isProfileLoading = profileQuery.isLoading || profile === undefined
   const retention = profile?.retention ?? "forever"
   const cutoff = retentionCutoffDay(profile?.retention, todayUtcDay())
   const beyondHorizon = cutoff !== null && day < cutoff
@@ -44,14 +46,17 @@ export function useDiaryViewModel() {
   const busy =
     createEntry.isPending || updateEntry.isPending || deleteEntry.isPending
 
-  const writesDisabled = !isOnline || beyondHorizon || futureDay
-  const disabledReason = getDiaryDisabledReason({
-    isOnline,
-    beyondHorizon,
-    cutoff,
-    futureDay,
-    retention,
-  })
+  const writesDisabled =
+    !isOnline || isProfileLoading || beyondHorizon || futureDay
+  const disabledReason = isProfileLoading
+    ? "Loading profile settings..."
+    : getDiaryDisabledReason({
+        isOnline,
+        beyondHorizon,
+        cutoff,
+        futureDay,
+        retention,
+      })
 
   const entries: DiaryEntry[] = beyondHorizon
     ? []

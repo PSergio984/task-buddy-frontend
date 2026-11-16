@@ -60,6 +60,10 @@ function SessionControls({
   view,
   busy,
   compact,
+  isStopwatch,
+  isSpeedrun,
+  isAbandon,
+  stopLabel,
   onPause,
   onResume,
   onAdvance,
@@ -69,6 +73,10 @@ function SessionControls({
   view: SessionView
   busy: boolean
   compact?: boolean
+  isStopwatch: boolean
+  isSpeedrun: boolean
+  isAbandon: boolean
+  stopLabel: string
   onPause: () => void
   onResume: () => void
   onAdvance: () => void
@@ -76,14 +84,6 @@ function SessionControls({
   onDone: () => void
 }>) {
   const live = view.live
-  const isStopwatch = live?.kind === "stopwatch"
-  const isSpeedrun = live?.kind === "speedrun"
-  const isAbandon = isSpeedrun || (!isStopwatch && view.focusDone === 0)
-  const stopLabel = isSpeedrun
-    ? "Give up (−HP)"
-    : isAbandon
-      ? "Stop → abandon (−HP)"
-      : "End session"
   const stopButton = (
     <Button
       variant="outline"
@@ -332,6 +332,10 @@ export function FocusPage() {
       <SessionControls
         view={vm.view}
         busy={vm.busy !== null || vm.mirrored}
+        isStopwatch={vm.isStopwatch}
+        isSpeedrun={vm.isSpeedrun}
+        isAbandon={vm.isAbandon}
+        stopLabel={vm.stopLabel}
         onPause={() => void vm.pause()}
         onResume={() => void vm.resume()}
         onAdvance={() => void vm.advance()}
@@ -373,6 +377,10 @@ export function FocusPage() {
               view={vm.view}
               busy={vm.busy !== null || vm.mirrored}
               compact
+              isStopwatch={vm.isStopwatch}
+              isSpeedrun={vm.isSpeedrun}
+              isAbandon={vm.isAbandon}
+              stopLabel={vm.stopLabel}
               onPause={() => void vm.pause()}
               onResume={() => void vm.resume()}
               onAdvance={() => void vm.advance()}

@@ -1,7 +1,10 @@
 import React, { useState } from "react"
-import axios from "axios"
 import { useToast } from "@/hooks/use-toast"
-import { authApi, validateEmailFormat } from "@/models/auth.model"
+import {
+  authApi,
+  validateEmailFormat,
+  getAuthErrorMessage,
+} from "@/models/auth.model"
 
 export function useForgotPasswordViewModel() {
   const [email, setEmail] = useState("")
@@ -29,16 +32,10 @@ export function useForgotPasswordViewModel() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: (() => {
-          if (axios.isAxiosError(error)) {
-            return (
-              (error.response?.data as { detail?: string })?.detail ||
-              error.message
-            )
-          }
-          if (error instanceof Error) return error.message
-          return "Something went wrong. Please try again."
-        })(),
+        description: getAuthErrorMessage(
+          error,
+          "Something went wrong. Please try again."
+        ),
       })
     } finally {
       setIsLoading(false)

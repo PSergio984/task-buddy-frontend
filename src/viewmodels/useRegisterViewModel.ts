@@ -1,6 +1,5 @@
 import React, { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import axios from "axios"
 import { useAuth } from "@/contexts/AuthContext"
 import { useToast } from "@/hooks/use-toast"
 import {
@@ -12,6 +11,7 @@ import {
   validatePasswordConfirmation,
   validateUsername,
   getPasswordStrength,
+  getAuthErrorMessage,
 } from "@/models/auth.model"
 
 export function useRegisterViewModel() {
@@ -63,13 +63,10 @@ export function useRegisterViewModel() {
       })
       navigate("/verify-email")
     } catch (err: unknown) {
-      let detail = "Could not complete registration. Please try again."
-
-      if (axios.isAxiosError(err) && err.response?.data?.detail) {
-        detail = err.response.data.detail
-      } else if (err instanceof Error) {
-        detail = err.message
-      }
+      const detail = getAuthErrorMessage(
+        err,
+        "Could not complete registration. Please try again."
+      )
 
       toast({
         title: "Registration failed",

@@ -1,9 +1,9 @@
 import { renderHook, act } from "@testing-library/react"
-import { describe, it, expect, vi, beforeEach } from "vitest"
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { useDiaryViewModel } from "./useDiaryViewModel"
-import { todayUtcDay, addUtcDays } from "@/models/diary.model"
+import { addUtcDays } from "@/models/diary.model"
 
-const TODAY = todayUtcDay()
+const FROZEN_DATE = "2026-11-14"
 
 const updateMutate = vi.fn()
 const createMutate = vi.fn()
@@ -40,13 +40,19 @@ vi.mock("@/hooks/useIsOnline", () => ({
 
 describe("useDiaryViewModel", () => {
   beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-11-14T12:00:00Z"))
     vi.clearAllMocks()
     updateMutate.mockResolvedValue({})
   })
 
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it("initializes with today and exposes entries", () => {
     const { result } = renderHook(() => useDiaryViewModel())
-    expect(result.current.day).toBe(TODAY)
+    expect(result.current.day).toBe(FROZEN_DATE)
     expect(result.current.entries).toHaveLength(1)
     expect(result.current.retention).toBe("90d")
     expect(result.current.writesDisabled).toBe(false)
@@ -54,7 +60,7 @@ describe("useDiaryViewModel", () => {
 
   it("navigating day updates day and beyondHorizon appropriately", () => {
     const { result } = renderHook(() => useDiaryViewModel())
-    const yesterday = addUtcDays(TODAY, -1)
+    const yesterday = addUtcDays(FROZEN_DATE, -1)
 
     act(() => {
       result.current.setDay(yesterday)
@@ -66,7 +72,7 @@ describe("useDiaryViewModel", () => {
 
   it("disables writes for future days with an informative message", () => {
     const { result } = renderHook(() => useDiaryViewModel())
-    const tomorrow = addUtcDays(TODAY, 1)
+    const tomorrow = addUtcDays(FROZEN_DATE, 1)
 
     act(() => {
       result.current.setDay(tomorrow)
@@ -90,7 +96,7 @@ describe("useDiaryViewModel", () => {
 
     expect(createMutate).toHaveBeenCalledWith({
       kind: "standup",
-      entry_date: TODAY,
+      entry_date: FROZEN_DATE,
       good: "Good things",
       bad: "Bad things",
       next: "Next things",
@@ -102,7 +108,7 @@ describe("useDiaryViewModel", () => {
 
     expect(createMutate).toHaveBeenCalledWith({
       kind: "freeform",
-      entry_date: TODAY,
+      entry_date: FROZEN_DATE,
       freeform: "free note",
     })
 

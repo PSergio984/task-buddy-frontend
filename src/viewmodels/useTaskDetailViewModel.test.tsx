@@ -3,11 +3,12 @@ import { renderHook, act } from "@testing-library/react"
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { useTaskDetailViewModel } from "./useTaskDetailViewModel"
-import { TaskModel } from "@/models/task.model"
 import { api } from "@/lib/api"
 
 const navigateMock = vi.fn()
 const toastMock = vi.fn()
+const mockUpdateTask = vi.fn().mockResolvedValue({})
+const mockDeleteTask = vi.fn().mockResolvedValue({})
 
 vi.mock("react-router-dom", () => ({
   useParams: () => ({ id: "101" }),
@@ -16,6 +17,11 @@ vi.mock("react-router-dom", () => ({
 
 vi.mock("@/hooks/use-toast", () => ({
   useToast: () => ({ toast: toastMock }),
+}))
+
+vi.mock("@/hooks/useTasks", () => ({
+  useUpdateTask: () => ({ mutateAsync: mockUpdateTask, isPending: false }),
+  useDeleteTask: () => ({ mutateAsync: mockDeleteTask, isPending: false }),
 }))
 
 function createWrapper() {
@@ -57,8 +63,6 @@ describe("useTaskDetailViewModel", () => {
         created_at: "2026-11-14T10:00:00Z",
       },
     })
-    vi.spyOn(TaskModel.api, "update").mockResolvedValue({} as never)
-    vi.spyOn(TaskModel.api, "delete").mockResolvedValue(undefined as never)
   })
 
   it("parses task ID and provides formatted dates and priority styling", () => {
@@ -77,14 +81,18 @@ describe("useTaskDetailViewModel", () => {
     })
 
     await act(async () => {
-      result.current.toggleCompleted()
+      await result.current.toggleCompleted()
     })
-    expect(TaskModel.api.update).toHaveBeenCalledWith(101, { completed: true })
+    expect(mockUpdateTask).toHaveBeenCalledWith({
+      id: 101,
+      updates: { completed: true },
+    })
 
     await act(async () => {
-      result.current.deleteTask()
+      await result.current.deleteTask()
     })
-    expect(TaskModel.api.delete).toHaveBeenCalledWith(101)
+    expect(mockDeleteTask).toHaveBeenCalledWith(101)
+    expect(navigateMock).toHaveBeenCalledWith("/tasks")
   })
 
   it("handles navigation helpers", () => {

@@ -1,21 +1,11 @@
 import { motion } from "framer-motion"
 import { getPasswordStrength } from "@/lib/auth"
 import { CheckCircle2, Circle } from "lucide-react"
+import { PASSWORD_RULES } from "@/models/profile.model"
 
 interface PasswordStrengthMeterProps {
   password: string
 }
-
-const PASSWORD_RULES = [
-  { label: "At least 8 characters", test: (pw: string) => pw.length >= 8 },
-  { label: "One uppercase letter", test: (pw: string) => /[A-Z]/.test(pw) },
-  { label: "One lowercase letter", test: (pw: string) => /[a-z]/.test(pw) },
-  { label: "One number", test: (pw: string) => /\d/.test(pw) },
-  {
-    label: "One special character",
-    test: (pw: string) => /[^A-Za-z0-9]/.test(pw),
-  },
-]
 
 export function PasswordStrengthMeter({
   password,

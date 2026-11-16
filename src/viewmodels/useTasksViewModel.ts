@@ -148,8 +148,12 @@ export function useTasksViewModel() {
   const handleDeleteSubtask = async (subtaskId: number) => {
     if (skipSubtaskDeletionConfirm) {
       try {
-        await deleteSubtask({ id: subtaskId, silent: true })
-        refreshTasks()
+        const res = await deleteSubtask({ id: subtaskId, silent: true })
+        if (
+          !(res && typeof res === "object" && "queued" in res && res.queued)
+        ) {
+          refreshTasks()
+        }
         toast({
           title: "Subtask deleted",
           variant: "success",
@@ -174,12 +178,16 @@ export function useTasksViewModel() {
     if (completed) {
       if (skipSubtaskCompletionConfirm) {
         try {
-          await updateSubtask({
+          const res = await updateSubtask({
             id: subtaskId,
             updates: { completed: true },
             silent: true,
           })
-          refreshTasks()
+          if (
+            !(res && typeof res === "object" && "queued" in res && res.queued)
+          ) {
+            refreshTasks()
+          }
           return
         } catch (err) {
           console.error("Failed to update subtask:", err)
@@ -200,12 +208,14 @@ export function useTasksViewModel() {
     }
 
     try {
-      await updateSubtask({
+      const res = await updateSubtask({
         id: subtaskId,
         updates: { completed },
         silent: true,
       })
-      refreshTasks()
+      if (!(res && typeof res === "object" && "queued" in res && res.queued)) {
+        refreshTasks()
+      }
     } catch (err) {
       console.error("Failed to update subtask:", err)
     }
@@ -214,8 +224,7 @@ export function useTasksViewModel() {
   const handleDetachTag = async (taskId: number, tagId: number) => {
     if (skipTagDetachmentConfirm) {
       try {
-        await detachTag({ taskId, tagId })
-        refreshTasks()
+        await detachTag({ taskId, tagId, silent: true })
         toast({
           title: "Tag removed",
           variant: "success",
@@ -248,12 +257,16 @@ export function useTasksViewModel() {
         await performToggle(confirmData.id, confirmData.completed ?? false)
       } else if (confirmData.type === "subtask") {
         if (dontShowAgain) setPreference("skipSubtaskCompletionConfirm", true)
-        await updateSubtask({
+        const res = await updateSubtask({
           id: confirmData.id,
           updates: { completed: confirmData.completed ?? false },
           silent: true,
         })
-        refreshTasks()
+        if (
+          !(res && typeof res === "object" && "queued" in res && res.queued)
+        ) {
+          refreshTasks()
+        }
         toast({
           title: "Subtask completed!",
           variant: "success",
@@ -265,15 +278,18 @@ export function useTasksViewModel() {
           tagId: confirmData.id,
           silent: true,
         })
-        refreshTasks()
         toast({
           title: "Tag removed",
           variant: "success",
         })
       } else if (confirmData.type === "delete_subtask") {
         if (dontShowAgain) setPreference("skipSubtaskDeletionConfirm", true)
-        await deleteSubtask({ id: confirmData.id, silent: true })
-        refreshTasks()
+        const res = await deleteSubtask({ id: confirmData.id, silent: true })
+        if (
+          !(res && typeof res === "object" && "queued" in res && res.queued)
+        ) {
+          refreshTasks()
+        }
         toast({
           title: "Subtask deleted",
           variant: "success",

@@ -60,8 +60,54 @@ describe("useHabitsDailiesViewModel", () => {
     expect(typeof result.current.handleCheckDaily).toBe("function")
   })
 
-  it("triggers click mutation with generated idempotency key", async () => {
-    vi.mocked(habitsApi.click).mockResolvedValue({
+  it("triggers click mutation with unique idempotency keys and tracks in-flight state", async () => {
+    let resolveClick!: (value: unknown) => void
+    const pendingPromise = new Promise((resolve) => {
+      resolveClick = resolve
+    })
+
+    vi.mocked(habitsApi.click).mockReturnValueOnce(
+      pendingPromise as unknown as ReturnType<typeof habitsApi.click>
+    )
+
+    const { result } = renderHook(() => useHabitsDailiesViewModel(), {
+      wrapper: makeWrapper(queryClient),
+    })
+
+    act(() => {
+      result.current.handleClickHabit(42, "positive")
+    })
+
+    await waitFor(() => {
+      expect(result.current.clickingIds.has(42)).toBe(true)
+    })
+
+    act(() => {
+      resolveClick({
+        habit: {
+          id: 42,
+          title: "Test Habit",
+          notes: null,
+          direction: "positive",
+          difficulty: "easy",
+          value: 1,
+          counter: 1,
+          bind_focus: false,
+          reminder_times: [],
+          created_at: "2026-11-01T10:00:00Z",
+          updated_at: "2026-11-01T10:00:00Z",
+        },
+        profile,
+        status: "applied",
+        server_time: SERVER_TIME,
+      })
+    })
+
+    await waitFor(() => {
+      expect(result.current.clickingIds.has(42)).toBe(false)
+    })
+
+    vi.mocked(habitsApi.click).mockResolvedValueOnce({
       habit: {
         id: 42,
         title: "Test Habit",
@@ -80,26 +126,70 @@ describe("useHabitsDailiesViewModel", () => {
       server_time: SERVER_TIME,
     })
 
-    const { result } = renderHook(() => useHabitsDailiesViewModel(), {
-      wrapper: makeWrapper(queryClient),
-    })
-
     act(() => {
       result.current.handleClickHabit(42, "positive")
     })
 
     await waitFor(() => {
-      expect(habitsApi.click).toHaveBeenCalledTimes(1)
+      expect(habitsApi.click).toHaveBeenCalledTimes(2)
     })
-    expect(habitsApi.click).toHaveBeenCalledWith(
-      42,
-      "positive",
-      expect.stringMatching(/^[a-zA-Z0-9_-]+$/)
-    )
+
+    const key1 = vi.mocked(habitsApi.click).mock.calls[0][2]
+    const key2 = vi.mocked(habitsApi.click).mock.calls[1][2]
+    expect(key1).toMatch(/^[a-zA-Z0-9_-]+$/)
+    expect(key2).toMatch(/^[a-zA-Z0-9_-]+$/)
+    expect(key1).not.toBe(key2)
   })
 
-  it("triggers check mutation with generated idempotency key", async () => {
-    vi.mocked(dailiesApi.check).mockResolvedValue({
+  it("triggers check mutation with unique idempotency keys and tracks in-flight state", async () => {
+    let resolveCheck!: (value: unknown) => void
+    const pendingPromise = new Promise((resolve) => {
+      resolveCheck = resolve
+    })
+
+    vi.mocked(dailiesApi.check).mockReturnValueOnce(
+      pendingPromise as unknown as ReturnType<typeof dailiesApi.check>
+    )
+
+    const { result } = renderHook(() => useHabitsDailiesViewModel(), {
+      wrapper: makeWrapper(queryClient),
+    })
+
+    act(() => {
+      result.current.handleCheckDaily(99, { done: true })
+    })
+
+    await waitFor(() => {
+      expect(result.current.checkingIds.has(99)).toBe(true)
+    })
+
+    act(() => {
+      resolveCheck({
+        daily: {
+          id: 99,
+          title: "Test Daily",
+          notes: null,
+          difficulty: "easy",
+          recurrence: { kind: "daily" },
+          streak: 1,
+          active: true,
+          reminder_times: [],
+          items: [],
+          completed_today: true,
+          created_at: "2026-11-01T10:00:00Z",
+          updated_at: "2026-11-01T10:00:00Z",
+        },
+        profile,
+        status: "applied",
+        server_time: SERVER_TIME,
+      })
+    })
+
+    await waitFor(() => {
+      expect(result.current.checkingIds.has(99)).toBe(false)
+    })
+
+    vi.mocked(dailiesApi.check).mockResolvedValueOnce({
       daily: {
         id: 99,
         title: "Test Daily",
@@ -119,21 +209,18 @@ describe("useHabitsDailiesViewModel", () => {
       server_time: SERVER_TIME,
     })
 
-    const { result } = renderHook(() => useHabitsDailiesViewModel(), {
-      wrapper: makeWrapper(queryClient),
-    })
-
     act(() => {
       result.current.handleCheckDaily(99, { done: true })
     })
 
     await waitFor(() => {
-      expect(dailiesApi.check).toHaveBeenCalledTimes(1)
+      expect(dailiesApi.check).toHaveBeenCalledTimes(2)
     })
-    expect(dailiesApi.check).toHaveBeenCalledWith(
-      99,
-      { done: true },
-      expect.stringMatching(/^[a-zA-Z0-9_-]+$/)
-    )
+
+    const key1 = vi.mocked(dailiesApi.check).mock.calls[0][2]
+    const key2 = vi.mocked(dailiesApi.check).mock.calls[1][2]
+    expect(key1).toMatch(/^[a-zA-Z0-9_-]+$/)
+    expect(key2).toMatch(/^[a-zA-Z0-9_-]+$/)
+    expect(key1).not.toBe(key2)
   })
 })

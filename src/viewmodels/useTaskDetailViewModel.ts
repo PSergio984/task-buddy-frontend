@@ -1,15 +1,15 @@
 import { useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { api } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
+import { useUpdateTask, useDeleteTask } from "@/hooks/useTasks"
 import { TaskModel, type Task } from "@/models/task.model"
 
 export function useTaskDetailViewModel() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { toast } = useToast()
-  const queryClient = useQueryClient()
   const [isDeleting, setIsDeleting] = useState(false)
 
   const taskId = id ? Number.parseInt(id, 10) : 0
@@ -27,42 +27,41 @@ export function useTaskDetailViewModel() {
     enabled: taskId > 0,
   })
 
-  const toggleMutation = useMutation({
-    mutationFn: (completed: boolean) =>
-      TaskModel.api.update(taskId, { completed }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["task", taskId] })
-      queryClient.invalidateQueries({ queryKey: ["tasks"] })
-      queryClient.invalidateQueries({ queryKey: ["stats"] })
-      toast({
-        title: "Status Updated",
-        description: `Task marked as ${task?.completed ? "pending" : "completed"}.`,
-      })
-    },
-  })
+  const { mutateAsync: updateTask, isPending: isUpdating } = useUpdateTask()
+  const { mutateAsync: deleteTask } = useDeleteTask()
 
-  const deleteMutation = useMutation({
-    mutationFn: () => TaskModel.api.delete(taskId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] })
-      queryClient.invalidateQueries({ queryKey: ["stats"] })
+  const handleToggleCompleted = async () => {
+    if (task) {
+      try {
+        await updateTask({
+          id: taskId,
+          updates: { completed: !task.completed },
+        })
+        toast({
+          title: "Status Updated",
+          description: `Task marked as ${task.completed ? "pending" : "completed"}.`,
+        })
+      } catch (err) {
+        console.error("Failed to toggle task completion:", err)
+      }
+    }
+  }
+
+  const handleDeleteTask = async () => {
+    setIsDeleting(true)
+    try {
+      await deleteTask(taskId)
       toast({
         title: "Task Deleted",
         description: "The task has been permanently removed.",
         variant: "destructive",
       })
       navigate("/tasks")
-    },
-  })
-
-  const handleToggleCompleted = () => {
-    if (task) {
-      toggleMutation.mutate(!task.completed)
+    } catch (err) {
+      console.error("Failed to delete task:", err)
+    } finally {
+      setIsDeleting(false)
     }
-  }
-
-  const handleDeleteTask = () => {
-    deleteMutation.mutate()
   }
 
   const priorityColor = task
@@ -76,10 +75,11 @@ export function useTaskDetailViewModel() {
     taskId,
     task,
     isLoading,
-    isError: Boolean(error) || !task,
+    isError: Boolean(error),
+    error,
+    isUpdating,
     isDeleting,
     setIsDeleting,
-    isToggling: toggleMutation.isPending,
     priorityColor,
     formattedDueDate,
     formattedCreatedAt,

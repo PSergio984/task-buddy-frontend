@@ -36,13 +36,17 @@ export function getPriorityBadgeClass(priority: TaskPriority): string {
 }
 
 export function formatTaskDueDate(dueDate: string | null | undefined): string {
-  return dueDate
-    ? format(new Date(dueDate), "MMM d, yyyy 'at' p")
-    : "No deadline"
+  if (!dueDate) return "No deadline"
+  const parsed = new Date(dueDate)
+  if (Number.isNaN(parsed.getTime())) return "No deadline"
+  return format(parsed, "MMM d, yyyy 'at' p")
 }
 
 export function formatTaskCreatedAt(createdAt: string | undefined): string {
-  return createdAt ? format(new Date(createdAt), "MMM d, yyyy") : ""
+  if (!createdAt) return ""
+  const parsed = new Date(createdAt)
+  if (Number.isNaN(parsed.getTime())) return "Unknown date"
+  return format(parsed, "MMM d, yyyy")
 }
 
 export type {
