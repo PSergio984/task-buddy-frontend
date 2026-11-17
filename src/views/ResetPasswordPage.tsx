@@ -1,79 +1,13 @@
-import React, { useState } from "react"
 import { motion } from "framer-motion"
-import { Link, useParams, useNavigate } from "react-router-dom"
+import { Link } from "react-router-dom"
 import { CheckCircle2, Lock, Loader2, Save, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useToast } from "@/hooks/use-toast"
-import { api } from "@/lib/api"
-import { getAuthErrorMessage, getPasswordStrength } from "@/lib/auth"
 import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter"
+import { useResetPasswordViewModel } from "@/viewmodels/useResetPasswordViewModel"
 
 export function ResetPasswordPage() {
-  const { token } = useParams<{ token: string }>()
-  const navigate = useNavigate()
-  const { toast } = useToast()
-
-  const [newPassword, setNewPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-
-  const passwordStrength = getPasswordStrength(newPassword)
-  const isPasswordStrong = passwordStrength.score >= 4
-  const isPasswordWeak = !isPasswordStrong
-  const passwordsMatch = newPassword === confirmPassword && newPassword !== ""
-  const hasPasswordMismatch = !passwordsMatch
-
-  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
-    e.preventDefault()
-
-    if (newPassword !== confirmPassword) {
-      toast({
-        variant: "destructive",
-        title: "Passwords mismatch",
-        description: "The new password and confirmation password do not match.",
-      })
-      return
-    }
-
-    if (newPassword.length < 8) {
-      toast({
-        variant: "destructive",
-        title: "Password too short",
-        description: "Password must be at least 8 characters long.",
-      })
-      return
-    }
-
-    setIsLoading(true)
-
-    try {
-      await api.post("/api/v1/users/reset-password", {
-        token,
-        new_password: newPassword,
-      })
-
-      toast({
-        title: "Password reset successful",
-        description: "You can now log in with your new password.",
-        variant: "success",
-      })
-
-      navigate("/login")
-    } catch (error: unknown) {
-      toast({
-        variant: "destructive",
-        title: "Reset Failed",
-        description: getAuthErrorMessage(
-          error,
-          "Something went wrong. Please try again."
-        ),
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  const vm = useResetPasswordViewModel()
 
   return (
     <div className="relative flex min-h-svh items-center justify-center overflow-hidden bg-background px-4 py-12 sm:px-6 lg:px-8">
@@ -105,7 +39,7 @@ export function ResetPasswordPage() {
           </div>
 
           <form
-            onSubmit={handleSubmit}
+            onSubmit={vm.handleSubmit}
             className="w-full space-y-6 rounded-[2rem] border bg-background p-8 shadow-xl shadow-primary/5"
           >
             <div className="space-y-4">
@@ -120,26 +54,26 @@ export function ResetPasswordPage() {
                   <Lock className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="newPassword"
-                    type={showPassword ? "text" : "password"}
+                    type={vm.showPassword ? "text" : "password"}
                     placeholder="••••••••"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
+                    value={vm.newPassword}
+                    onChange={(e) => vm.setNewPassword(e.target.value)}
                     required
                     className="h-12 rounded-xl pr-10 pl-10"
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
+                    onClick={() => vm.setShowPassword(!vm.showPassword)}
                     className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
-                    {showPassword ? (
+                    {vm.showPassword ? (
                       <EyeOff className="h-5 w-5" />
                     ) : (
                       <Eye className="h-5 w-5" />
                     )}
                   </button>
                 </div>
-                <PasswordStrengthMeter password={newPassword} />
+                <PasswordStrengthMeter password={vm.newPassword} />
               </div>
 
               <div className="space-y-2">
@@ -153,10 +87,10 @@ export function ResetPasswordPage() {
                   <Lock className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="confirmPassword"
-                    type={showPassword ? "text" : "password"}
+                    type={vm.showPassword ? "text" : "password"}
                     placeholder="••••••••"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    value={vm.confirmPassword}
+                    onChange={(e) => vm.setConfirmPassword(e.target.value)}
                     required
                     className="h-12 rounded-xl pl-10"
                   />
@@ -164,16 +98,24 @@ export function ResetPasswordPage() {
               </div>
             </div>
 
+            {vm.error && (
+              <p className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-center text-xs font-bold text-destructive">
+                {vm.error}
+              </p>
+            )}
+
             <Button
               type="submit"
               className="h-12 w-full rounded-xl text-lg font-semibold shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-              disabled={isLoading || isPasswordWeak || hasPasswordMismatch}
+              disabled={
+                vm.isLoading || vm.isPasswordWeak || vm.hasPasswordMismatch
+              }
             >
-              {isLoading ? (
+              {vm.isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
-              ) : isPasswordWeak ? (
+              ) : vm.isPasswordWeak ? (
                 "Password too weak"
-              ) : hasPasswordMismatch ? (
+              ) : vm.hasPasswordMismatch ? (
                 "Passwords mismatch"
               ) : (
                 <span className="flex items-center gap-2">

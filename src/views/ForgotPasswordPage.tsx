@@ -1,57 +1,12 @@
-import React, { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Link } from "react-router-dom"
 import { CheckCircle2, ArrowLeft, Mail, Loader2, Send } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useToast } from "@/hooks/use-toast"
-import { api } from "@/lib/api"
-import axios from "axios"
+import { useForgotPasswordViewModel } from "@/viewmodels/useForgotPasswordViewModel"
 
 export function ForgotPasswordPage() {
-  const [email, setEmail] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [isSubmitted, setIsSubmitted] = useState(false)
-  const { toast } = useToast()
-
-  const isValidEmail = (email: string) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-  }
-
-  const isButtonDisabled = isLoading || !email || !isValidEmail(email)
-
-  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setIsLoading(true)
-
-    try {
-      await api.post("/api/v1/users/forgot-password/", { email })
-      setIsSubmitted(true)
-      toast({
-        title: "Reset link sent",
-        description:
-          "Check your email for instructions to reset your password.",
-        variant: "success",
-      })
-    } catch (error: unknown) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: (() => {
-          if (axios.isAxiosError(error)) {
-            return (
-              (error.response?.data as { detail?: string })?.detail ||
-              error.message
-            )
-          }
-          if (error instanceof Error) return error.message
-          return "Something went wrong. Please try again."
-        })(),
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  const vm = useForgotPasswordViewModel()
 
   return (
     <div className="relative flex min-h-svh items-center justify-center overflow-hidden bg-background px-4 py-12 sm:px-6 lg:px-8">
@@ -74,7 +29,7 @@ export function ForgotPasswordPage() {
           </Link>
 
           <AnimatePresence mode="wait">
-            {isSubmitted ? (
+            {vm.isSubmitted ? (
               <motion.div
                 key="success"
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -87,7 +42,7 @@ export function ForgotPasswordPage() {
                 <h2 className="mb-4 text-2xl font-bold">Check your email</h2>
                 <p className="mb-8 text-muted-foreground">
                   We've sent a password reset link to <br />
-                  <span className="font-semibold text-primary">{email}</span>
+                  <span className="font-semibold text-primary">{vm.email}</span>
                 </p>
                 <Link to="/login" className="w-full">
                   <Button variant="outline" className="h-12 w-full rounded-xl">
@@ -97,7 +52,7 @@ export function ForgotPasswordPage() {
                 <p className="mt-6 text-sm text-muted-foreground">
                   Didn't receive the email?{" "}
                   <button
-                    onClick={() => setIsSubmitted(false)}
+                    onClick={vm.reset}
                     className="font-medium text-accent hover:underline"
                   >
                     Click to try again
@@ -122,7 +77,7 @@ export function ForgotPasswordPage() {
                 </div>
 
                 <form
-                  onSubmit={handleSubmit}
+                  onSubmit={vm.handleSubmit}
                   className="space-y-6 rounded-[2rem] border bg-background p-8 shadow-xl shadow-primary/5"
                 >
                   <div className="space-y-2">
@@ -138,8 +93,8 @@ export function ForgotPasswordPage() {
                         id="email"
                         type="email"
                         placeholder="name@example.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        value={vm.email}
+                        onChange={(e) => vm.setEmail(e.target.value)}
                         required
                         className="h-12 rounded-xl pl-10"
                       />
@@ -149,9 +104,9 @@ export function ForgotPasswordPage() {
                   <Button
                     type="submit"
                     className="h-12 w-full rounded-xl text-lg font-semibold shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                    disabled={isButtonDisabled}
+                    disabled={vm.isButtonDisabled}
                   >
-                    {isLoading ? (
+                    {vm.isLoading ? (
                       <Loader2 className="h-5 w-5 animate-spin" />
                     ) : (
                       <span className="flex items-center gap-2">
@@ -164,7 +119,7 @@ export function ForgotPasswordPage() {
             )}
           </AnimatePresence>
 
-          {!isSubmitted && (
+          {!vm.isSubmitted && (
             <Link
               to="/login"
               className="mt-8 flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"

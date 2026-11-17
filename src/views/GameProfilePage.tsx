@@ -1,68 +1,17 @@
 import { motion } from "framer-motion"
-import { useMutationState } from "@tanstack/react-query"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { StatsPanel } from "@/components/character/stats-panel"
 import { EquipmentPanel } from "@/components/character/equipment-panel"
 import { AchievementsPanel } from "@/components/character/achievements-panel"
 import { ActivityPanel } from "@/components/character/activity-panel"
-import { useIsOnline } from "@/hooks/useIsOnline"
-import { useGameProfile } from "@/hooks/useGameProfile"
-import {
-  GEAR_BUY_MUTATION_KEY,
-  GEAR_EQUIP_MUTATION_KEY,
-  useAchievements,
-  useActivityGrid,
-  useActivityStats,
-  useAllocateStats,
-  useBuyGear,
-  useEquipGear,
-  useGear,
-  useRespec,
-  useSelectClass,
-  useUpdateCharacter,
-} from "@/hooks/useGameCharacter"
+import { useGameProfileViewModel } from "@/viewmodels/useGameProfileViewModel"
 
-const triggerClass =
+const TRIGGER_CLASS =
   "rounded-xl px-4 py-1.5 text-[10px] font-black tracking-widest uppercase transition-all data-[state=active]:bg-primary/15 data-[state=active]:text-primary"
 
 export function GameProfilePage() {
-  const isOnline = useIsOnline()
-
-  const profileQuery = useGameProfile()
-  const allocate = useAllocateStats()
-  const updateCharacter = useUpdateCharacter()
-  const selectClass = useSelectClass()
-  const respec = useRespec()
-
-  const gearQuery = useGear()
-  const buyGear = useBuyGear()
-  const equipGear = useEquipGear()
-
-  const achievementsQuery = useAchievements()
-  const activityGridQuery = useActivityGrid()
-  const activityStatsQuery = useActivityStats()
-
-  // Pending buy/equip item keys as a SET — mutation.variables tracks only
-  // the latest call (same double-submit guard as the habit click set).
-  const pendingBuyKeys = useMutationState({
-    filters: { mutationKey: GEAR_BUY_MUTATION_KEY, status: "pending" },
-    select: (m) => m.state.variables as string,
-  })
-  const pendingEquipKeys = useMutationState({
-    filters: { mutationKey: GEAR_EQUIP_MUTATION_KEY, status: "pending" },
-    select: (m) => (m.state.variables as { key: string }).key,
-  })
-  const pendingGearKeys = new Set([...pendingBuyKeys, ...pendingEquipKeys])
-
-  // No offline write-queue for character writes: gold/stat arithmetic is
-  // server-side (same convention as habits/dailies and the diary domain).
-  const writesDisabled = !isOnline
-  const characterBusy =
-    allocate.isPending ||
-    updateCharacter.isPending ||
-    selectClass.isPending ||
-    respec.isPending
+  const vm = useGameProfileViewModel()
 
   return (
     <motion.div
@@ -82,7 +31,7 @@ export function GameProfilePage() {
         </h1>
       </header>
 
-      {writesDisabled && (
+      {vm.writesDisabled && (
         <p
           role="status"
           className="rounded-2xl border border-amber-400/20 bg-amber-400/5 px-4 py-3 text-xs font-bold text-amber-400"
@@ -93,72 +42,72 @@ export function GameProfilePage() {
 
       <Tabs defaultValue="stats" className="w-full">
         <TabsList className="h-auto gap-1 rounded-2xl border border-white/10 bg-white/5 p-1">
-          <TabsTrigger value="stats" className={triggerClass}>
+          <TabsTrigger value="stats" className={TRIGGER_CLASS}>
             Stats
           </TabsTrigger>
-          <TabsTrigger value="equipment" className={triggerClass}>
+          <TabsTrigger value="equipment" className={TRIGGER_CLASS}>
             Equipment
           </TabsTrigger>
-          <TabsTrigger value="achievements" className={triggerClass}>
+          <TabsTrigger value="achievements" className={TRIGGER_CLASS}>
             Achievements
           </TabsTrigger>
-          <TabsTrigger value="activity" className={triggerClass}>
+          <TabsTrigger value="activity" className={TRIGGER_CLASS}>
             Activity
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="stats" className="mt-6">
           <StatsPanel
-            profile={profileQuery.data}
-            isPending={profileQuery.isPending}
-            isError={profileQuery.isError}
-            isOnline={isOnline}
-            writesDisabled={writesDisabled}
-            busy={characterBusy}
-            onRetry={() => void profileQuery.refetch()}
-            onAllocate={(stat) => allocate.mutate({ [stat]: 1 })}
-            onAutoAllocateChange={(enabled) => updateCharacter.mutate(enabled)}
-            onSelectClass={(gameClass) => selectClass.mutate(gameClass)}
-            onRespec={() => respec.mutate()}
+            profile={vm.profile}
+            isPending={vm.profileIsPending}
+            isError={vm.profileIsError}
+            isOnline={vm.isOnline}
+            writesDisabled={vm.writesDisabled}
+            busy={vm.characterBusy}
+            onRetry={vm.refetchProfile}
+            onAllocate={vm.allocateStat}
+            onAutoAllocateChange={vm.setAutoAllocate}
+            onSelectClass={vm.selectClass}
+            onRespec={vm.respecStats}
           />
         </TabsContent>
 
         <TabsContent value="equipment" className="mt-6">
           <EquipmentPanel
-            items={gearQuery.data}
-            profile={profileQuery.data}
-            isPending={gearQuery.isPending}
-            isError={gearQuery.isError}
-            isOnline={isOnline}
-            writesDisabled={writesDisabled}
-            pendingKeys={pendingGearKeys}
-            onRetry={() => void gearQuery.refetch()}
-            onBuy={(key) => buyGear.mutate(key)}
-            onEquip={(key, equipped) => equipGear.mutate({ key, equipped })}
+            items={vm.gear}
+            profile={vm.profile}
+            isPending={vm.gearIsPending}
+            isError={vm.gearIsError}
+            isOnline={vm.isOnline}
+            writesDisabled={vm.writesDisabled}
+            pendingKeys={vm.pendingGearKeys}
+            onRetry={vm.refetchGear}
+            onBuy={vm.buyGear}
+            onEquip={vm.equipGear}
           />
         </TabsContent>
 
         <TabsContent value="achievements" className="mt-6">
           <AchievementsPanel
-            achievements={achievementsQuery.data}
-            isPending={achievementsQuery.isPending}
-            isError={achievementsQuery.isError}
-            isOnline={isOnline}
-            onRetry={() => void achievementsQuery.refetch()}
+            achievements={vm.achievements}
+            isPending={vm.achievementsIsPending}
+            isError={vm.achievementsIsError}
+            isOnline={vm.isOnline}
+            onRetry={vm.refetchAchievements}
           />
         </TabsContent>
 
         <TabsContent value="activity" className="mt-6">
           <ActivityPanel
-            grid={activityGridQuery.data}
-            stats={activityStatsQuery.data}
-            gridIsPending={activityGridQuery.isPending}
-            gridIsError={activityGridQuery.isError}
-            statsIsPending={activityStatsQuery.isPending}
-            statsIsError={activityStatsQuery.isError}
-            isOnline={isOnline}
-            onGridRetry={() => void activityGridQuery.refetch()}
-            onStatsRetry={() => void activityStatsQuery.refetch()}
+            grid={vm.activityGrid}
+            stats={vm.activityStats}
+            gridIsPending={vm.activityGridIsPending}
+            gridIsError={vm.activityGridIsError}
+            statsIsPending={vm.activityStatsIsPending}
+            statsIsError={vm.activityStatsIsError}
+            isOnline={vm.isOnline}
+            onGridRetry={vm.refetchActivityGrid}
+            onStatsRetry={vm.refetchActivityStats}
           />
         </TabsContent>
       </Tabs>

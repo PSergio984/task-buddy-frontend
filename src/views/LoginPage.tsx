@@ -1,7 +1,5 @@
-import React, { useState } from "react"
-import { useNavigate, Link } from "react-router-dom"
+import { Link } from "react-router-dom"
 import { motion } from "framer-motion"
-import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -14,68 +12,11 @@ import {
   Mail,
   ArrowRight,
 } from "lucide-react"
-import {
-  sanitizeEmail,
-  sanitizePassword,
-  validateEmail,
-  validatePassword,
-  getAuthErrorMessage,
-} from "@/lib/auth"
-import { useToast } from "@/hooks/use-toast"
+import { sanitizeEmail, sanitizePassword } from "@/models/auth.model"
+import { useLoginViewModel } from "@/viewmodels/useLoginViewModel"
 
 export function LoginPage() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
-  const [submitAttempted, setSubmitAttempted] = useState(false)
-  const { login, loading } = useAuth()
-  const { toast } = useToast()
-  const navigate = useNavigate()
-
-  const emailError = validateEmail(email)
-  const passwordError = validatePassword(password)
-  const isFormValid = !emailError && !passwordError
-
-  const showEmailError = submitAttempted || email.length > 0
-  const showPasswordError = submitAttempted || password.length > 0
-
-  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setSubmitAttempted(true)
-
-    if (!isFormValid) {
-      return
-    }
-
-    try {
-      await login({
-        username: sanitizeEmail(email),
-        password: sanitizePassword(password),
-      })
-      toast({
-        title: "Welcome back!",
-        description: "Successfully signed in to your dashboard.",
-        variant: "success",
-      })
-      navigate("/dashboard")
-    } catch (err: unknown) {
-      const detail = getAuthErrorMessage(
-        err,
-        "Invalid credentials. Please try again."
-      )
-
-      if (detail === "EMAIL_NOT_CONFIRMED") {
-        navigate("/verify-email")
-        return
-      }
-
-      toast({
-        title: "Authentication failed",
-        description: detail,
-        variant: "destructive",
-      })
-    }
-  }
+  const vm = useLoginViewModel()
 
   return (
     <div className="flex min-h-svh overflow-hidden bg-background">
@@ -100,24 +41,23 @@ export function LoginPage() {
           >
             <Link
               to="/"
-              className="flex w-fit items-center gap-3 transition-opacity hover:opacity-80"
+              className="inline-block transition-transform hover:scale-105"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-2xl shadow-primary/40">
-                <CheckCircle2 className="h-7 w-7" />
+              <div className="inline-flex items-center gap-3 rounded-full border border-primary/30 bg-primary/20 px-6 py-2 text-primary shadow-inner backdrop-blur-md">
+                <CheckCircle2 className="h-5 w-5" />
+                <span className="text-sm font-black tracking-widest uppercase">
+                  Task Buddy Workspace
+                </span>
               </div>
-              <span className="text-3xl font-bold tracking-tighter text-foreground">
-                Task Buddy
-              </span>
             </Link>
-            <h2 className="text-6xl leading-[0.9] font-black tracking-tighter text-foreground uppercase">
-              ELEVATE YOUR <br />
-              <span className="text-accent underline decoration-accent/20 underline-offset-8">
-                DAILY FLOW.
-              </span>
+
+            <h2 className="font-heading text-5xl font-black tracking-tighter text-foreground uppercase md:text-6xl">
+              Elevate your daily rhythm.
             </h2>
-            <p className="max-w-sm text-xl leading-relaxed font-black text-foreground">
-              The intelligent assistant designed for high-performance teams and
-              focused individuals.
+
+            <p className="text-xl leading-relaxed font-bold text-foreground">
+              Experience the definitive tool designed for ambitious minds.
+              Organize, execute, and conquer your goals with precision.
             </p>
           </motion.div>
         </div>
@@ -163,7 +103,7 @@ export function LoginPage() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={vm.handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label
                 htmlFor="email"
@@ -177,15 +117,15 @@ export function LoginPage() {
                   id="email"
                   type="email"
                   placeholder="name@company.com"
-                  value={email}
-                  onChange={(e) => setEmail(sanitizeEmail(e.target.value))}
+                  value={vm.email}
+                  onChange={(e) => vm.setEmail(sanitizeEmail(e.target.value))}
                   required
                   className="h-14 rounded-2xl border-border bg-background/50 pl-12 text-lg font-medium focus-visible:ring-accent/30"
                 />
               </div>
-              {showEmailError && emailError && (
+              {vm.showEmailError && vm.emailError && (
                 <p className="mt-1.5 ml-1 text-xs text-destructive">
-                  {emailError}
+                  {vm.emailError}
                 </p>
               )}
             </div>
@@ -210,61 +150,62 @@ export function LoginPage() {
                 <KeyRound className="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-foreground/90 transition-colors group-focus-within:text-accent" />
                 <Input
                   id="password"
-                  type={showPassword ? "text" : "password"}
+                  type={vm.showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  value={password}
+                  value={vm.password}
                   onChange={(e) =>
-                    setPassword(sanitizePassword(e.target.value))
+                    vm.setPassword(sanitizePassword(e.target.value))
                   }
                   required
                   className="h-14 rounded-2xl border-border bg-background/50 pr-12 pl-12 text-lg focus-visible:ring-accent/30"
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword((v) => !v)}
+                  onClick={() => vm.setShowPassword(!vm.showPassword)}
                   className="absolute top-1/2 right-4 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
                 >
-                  {showPassword ? (
+                  {vm.showPassword ? (
                     <EyeOff className="h-5 w-5" />
                   ) : (
                     <Eye className="h-5 w-5" />
                   )}
                 </button>
               </div>
-              {showPasswordError && passwordError && (
+              {vm.showPasswordError && vm.passwordError && (
                 <p className="mt-1.5 ml-1 text-xs text-destructive">
-                  {passwordError}
+                  {vm.passwordError}
                 </p>
               )}
             </div>
 
             <Button
               type="submit"
-              disabled={loading || !isFormValid}
+              disabled={vm.loading || !vm.isFormValid}
               className="h-14 w-full rounded-2xl text-lg font-bold shadow-xl shadow-primary/10 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
             >
-              {loading ? (
+              {vm.loading ? (
                 <motion.div
                   animate={{ rotate: 360 }}
                   transition={{ repeat: Infinity, duration: 1 }}
                   className="h-6 w-6 rounded-full border-2 border-primary-foreground border-t-transparent"
                 />
               ) : (
-                <span className="flex items-center gap-2">
-                  Sign In <LogIn className="h-5 w-5" />
-                </span>
+                <>
+                  <LogIn className="mr-2 h-5 w-5" />
+                  Sign In to Workspace
+                </>
               )}
             </Button>
           </form>
 
           <div className="mt-12 border-t pt-8 text-center lg:text-left">
-            <p className="font-medium text-foreground">
+            <p className="font-medium text-foreground/80">
               Don't have an account?{" "}
               <Link
                 to="/register"
                 className="font-bold text-foreground underline decoration-accent/30 underline-offset-4 transition-colors hover:text-accent"
               >
-                Start for free
+                Create an account
               </Link>
             </p>
           </div>

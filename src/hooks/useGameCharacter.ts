@@ -19,9 +19,13 @@ import { setGameProfileCache } from "@/hooks/useGameProfile"
 import { useUtcDayRollover } from "@/hooks/useUtcDayRollover"
 import { getErrorMessage } from "@/lib/errors"
 
-/** Lets `useMutationState` find in-flight buys/equips for pending-key sets. */
-export const GEAR_BUY_MUTATION_KEY = ["gear-buy"] as const
-export const GEAR_EQUIP_MUTATION_KEY = ["gear-equip"] as const
+import {
+  GEAR_BUY_MUTATION_KEY,
+  GEAR_EQUIP_MUTATION_KEY,
+} from "@/models/gameProfile.model"
+
+/** Mutation keys declared in pure gameProfile.model layer */
+export { GEAR_BUY_MUTATION_KEY, GEAR_EQUIP_MUTATION_KEY }
 /** Same convention — no pending-key consumer yet, kept for consistency. */
 export const GEAR_COSTUME_MUTATION_KEY = ["gear-costume"] as const
 

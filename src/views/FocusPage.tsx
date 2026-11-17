@@ -1,4 +1,3 @@
-import { useEffect, useMemo, useRef, useState } from "react"
 import { motion } from "framer-motion"
 import {
   CheckCircle2,
@@ -19,32 +18,10 @@ import { TimerRing } from "@/components/focus/timer-ring"
 import { SessionSetup } from "@/components/focus/session-setup"
 import { SessionSettingsSheet } from "@/components/focus/session-settings-sheet"
 import { SessionNotePrompt } from "@/components/focus/session-note-prompt"
-import { useFocusSession } from "@/contexts/FocusSessionContext"
-import { useTasks } from "@/hooks/useTasks"
-import { useTags } from "@/hooks/useTags"
-import { primeAlertAudio, requestAlertPermission } from "@/lib/focus-audio"
-import type { FocusSession } from "@/lib/api"
-import {
-  formatClock,
-  sessionStartFromSettings,
-  speedrunVerdictCopy,
-  type FocusSettings,
-  type SessionView,
-} from "@/lib/focus-session"
-import { FOCUS_SETTINGS_KEY, loadFocusSettings } from "@/lib/focus-settings"
+import { useFocusViewModel } from "@/viewmodels/useFocusViewModel"
+import { formatClock, type SessionView } from "@/models/focus.model"
+import type { FocusSession } from "@/models/focus.model"
 import { cn } from "@/lib/utils"
-
-function ringTone(view: SessionView): "focus" | "break" | "stopwatch" | "idle" {
-  const phase = view.live ?? view.pending
-  if (phase === null) return "idle"
-  if (phase.kind === "break") return "break"
-  if (phase.kind === "stopwatch") return "stopwatch"
-  // Speedrun: time-boxed counts down like a timer; beat-best is an open clock.
-  if (phase.kind === "speedrun") {
-    return phase.planned_seconds > 0 ? "focus" : "stopwatch"
-  }
-  return "focus"
-}
 
 function CycleDots({ session }: Readonly<{ session: FocusSession }>) {
   const focusPhases = session.phases.filter((p) => p.kind === "focus")
@@ -79,55 +56,14 @@ function CycleDots({ session }: Readonly<{ session: FocusSession }>) {
   )
 }
 
-/**
- * Result-keyed copy for a finished speedrun (#69) — null for normal modes.
- * Titles and the default bodies come from speedrunVerdictCopy (shared with
- * the boundary alert); this wrapper only upgrades the description where the
- * judged blob carries the figures the page has room to show.
- */
-function speedrunEndCopy(session: FocusSession): {
-  ok: boolean
-  title: string
-  description: string
-} | null {
-  const run = session.speedrun
-  if (session.mode !== "speedrun") return null
-  const leg = session.phases.find((p) => p.kind === "speedrun")
-  const { ok, title, body } = speedrunVerdictCopy(run, leg?.planned_seconds)
-  const clock = (v: number | null | undefined) =>
-    typeof v === "number" ? formatClock(v) : null
-  let description = body
-  if (run?.result === "win") {
-    // margin_seconds is the judged spare; backends without it derive the
-    // same number off the leg's budget minus the run's elapsed.
-    const spare =
-      run.margin_seconds ??
-      (typeof run.elapsed_seconds === "number" && leg !== undefined
-        ? Math.max(0, leg.planned_seconds - run.elapsed_seconds)
-        : null)
-    const margin = clock(spare)
-    if (margin !== null) description = `Done with ${margin} to spare.`
-  } else if (run?.result === "record") {
-    // old_record_seconds lands once judged; the start-time target_seconds
-    // is the same record snapshot on backends that omit it.
-    const oldBest = clock(run.old_record_seconds ?? run.target_seconds)
-    const newBest = clock(run.elapsed_seconds)
-    if (oldBest !== null && newBest !== null) {
-      description = `${oldBest} → ${newBest} for this activity.`
-    }
-  } else if (run?.result === "finished") {
-    const record = clock(run.old_record_seconds ?? run.target_seconds)
-    if (record !== null) {
-      description = `Time logged — the record stands at ${record}.`
-    }
-  }
-  return { ok, title, description }
-}
-
 function SessionControls({
   view,
   busy,
   compact,
+  isStopwatch,
+  isSpeedrun,
+  isAbandon,
+  stopLabel,
   onPause,
   onResume,
   onAdvance,
@@ -137,6 +73,10 @@ function SessionControls({
   view: SessionView
   busy: boolean
   compact?: boolean
+  isStopwatch: boolean
+  isSpeedrun: boolean
+  isAbandon: boolean
+  stopLabel: string
   onPause: () => void
   onResume: () => void
   onAdvance: () => void
@@ -144,17 +84,6 @@ function SessionControls({
   onDone: () => void
 }>) {
   const live = view.live
-  const isStopwatch = live?.kind === "stopwatch"
-  const isSpeedrun = live?.kind === "speedrun"
-  // A stopwatch stop never owes HP — only a timer with zero completed focus
-  // phases abandons, and gets the destructive copy/variant. A speedrun stop
-  // is ALWAYS the abandon path (#69: give up → HP loss).
-  const isAbandon = isSpeedrun || (!isStopwatch && view.focusDone === 0)
-  const stopLabel = isSpeedrun
-    ? "Give up (−HP)"
-    : isAbandon
-      ? "Stop → abandon (−HP)"
-      : "End session"
   const stopButton = (
     <Button
       variant="outline"
@@ -198,8 +127,6 @@ function SessionControls({
 
   if (view.status !== "running" && view.status !== "paused") return null
 
-  // Speedrun (#69): Done is the win/finish path, give-up abandons for HP
-  // loss, and pauses never bank time — the clock keeps counting.
   if (isSpeedrun) {
     return (
       <div className="flex flex-col items-center gap-2">
@@ -289,111 +216,17 @@ function SessionControls({
 }
 
 export function FocusPage() {
-  const runtime = useFocusSession()
-  const { session, view, isLocal, isLoading, busy, mirrored } = runtime
-  const [settings, setSettings] = useState<FocusSettings>(loadFocusSettings)
-  const [settingsOpen, setSettingsOpen] = useState(false)
-  const [stopConfirmOpen, setStopConfirmOpen] = useState(false)
-  const [immersive, setImmersive] = useState(false)
-  const immersiveEnteredFor = useRef<string | null>(null)
+  const vm = useFocusViewModel()
 
-  const { data: tasks = [] } = useTasks()
-  const { data: tags = [] } = useTags()
-
-  const linkedTask = useMemo(
-    () => tasks.find((t) => t.id === session?.task_id) ?? null,
-    [tasks, session?.task_id]
-  )
-  const linkedTag = useMemo(
-    () => tags.find((t) => t.id === session?.preset?.tag_id) ?? null,
-    [tags, session?.preset?.tag_id]
-  )
-
-  // Persist settings (task/tag links are per-run, never persisted). Storage
-  // can be blocked or full — a rejected write must not break the page.
-  useEffect(() => {
-    try {
-      const { taskId: _t, tagId: _g, ...persistable } = settings
-      globalThis.localStorage.setItem(
-        FOCUS_SETTINGS_KEY,
-        JSON.stringify(persistable)
-      )
-    } catch {
-      // Settings persistence is best-effort.
-    }
-  }, [settings])
-
-  // Auto-enter immersive for a fresh session when the setting is on. A
-  // session already live when the probe settles is a remount/restore —
-  // don't auto-immerse unprompted on reload.
-  const restoredRef = useRef(false)
-  useEffect(() => {
-    if (!restoredRef.current && !isLoading) {
-      restoredRef.current = true
-      if (session !== null) {
-        immersiveEnteredFor.current = session.started_at
-      }
-    }
-    if (
-      session?.status === "active" &&
-      settings.immersive &&
-      immersiveEnteredFor.current !== session.started_at
-    ) {
-      immersiveEnteredFor.current = session.started_at
-      void Promise.resolve().then(() => setImmersive(true))
-      void document.documentElement.requestFullscreen?.().catch(() => {})
-    }
-    if (session === null) immersiveEnteredFor.current = null
-    if (view?.status === "ended" || view?.status === "abandoned") {
-      void Promise.resolve().then(() => setImmersive(false))
-      void document.exitFullscreen?.().catch(() => {})
-    }
-  }, [session, settings.immersive, view?.status, isLoading])
-
-  // Phase-boundary alert effects live in FocusSessionProvider — they must
-  // fire while the user is on another route, not only on /focus.
-
-  const exitImmersive = () => {
-    setImmersive(false)
-    void document.exitFullscreen?.().catch(() => {})
-  }
-
-  const handleStart = async () => {
-    // User gesture — the one moment notification permission may be requested
-    // and the AudioContext can be resumed (autoplay policy).
-    if (settings.alerts) {
-      requestAlertPermission()
-      primeAlertAudio()
-    }
-    await runtime.start(sessionStartFromSettings(settings))
-  }
-
-  const handleStop = async () => {
-    setStopConfirmOpen(false)
-    await runtime.stop()
-  }
-
-  // Mirror alert prefs into the shared runtime — the provider's boundary
-  // alert must follow the LIVE state even if the persist below fails.
-  const handleSettingsChange = (next: FocusSettings) => {
-    setSettings(next)
-    runtime.setAlertSettings({
-      alerts: next.alerts,
-      alertVolume: next.alertVolume,
-    })
-  }
-
-  const running = session !== null && view !== null
-
-  const ringBlock = running && (
+  const ringBlock = vm.running && vm.view && (
     <div className="flex flex-col items-center gap-3">
       <TimerRing
-        progress={view.progress}
-        clockText={formatClock(view.clockSeconds)}
-        subLabel={view.kindLabel}
-        tone={ringTone(view)}
+        progress={vm.view.progress}
+        clockText={formatClock(vm.view.clockSeconds)}
+        subLabel={vm.view.kindLabel}
+        tone={vm.ringTone}
       />
-      {isLocal && (
+      {vm.isLocal && (
         <Badge
           variant="outline"
           className="gap-1 rounded-full border-amber-400/30 bg-amber-400/10 px-3 py-1 text-[10px] font-black tracking-widest text-amber-400 uppercase"
@@ -401,7 +234,7 @@ export function FocusPage() {
           <WifiOff className="h-3 w-3" /> Offline · syncs later
         </Badge>
       )}
-      {mirrored && (
+      {vm.mirrored && (
         <Badge
           variant="outline"
           className="gap-1 rounded-full border-sky-400/30 bg-sky-400/10 px-3 py-1 text-[10px] font-black tracking-widest text-sky-400 uppercase"
@@ -413,49 +246,47 @@ export function FocusPage() {
     </div>
   )
 
-  const chipsBlock = running && (linkedTask !== null || linkedTag !== null) && (
-    <div className="flex flex-wrap items-center justify-center gap-2">
-      {linkedTask && (
-        <Badge className="rounded-full bg-primary/15 px-4 py-1 text-xs font-bold text-primary">
-          📌 {linkedTask.title}
-        </Badge>
-      )}
-      {linkedTag && (
-        <Badge
-          variant="secondary"
-          className="rounded-full bg-accent/15 px-4 py-1 text-xs font-bold text-accent"
-        >
-          #{linkedTag.name}
-        </Badge>
-      )}
-    </div>
-  )
+  const chipsBlock = vm.running &&
+    (vm.linkedTask !== null || vm.linkedTag !== null) && (
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        {vm.linkedTask && (
+          <Badge className="rounded-full bg-primary/15 px-4 py-1 text-xs font-bold text-primary">
+            📌 {vm.linkedTask.title}
+          </Badge>
+        )}
+        {vm.linkedTag && (
+          <Badge
+            variant="secondary"
+            className="rounded-full bg-accent/15 px-4 py-1 text-xs font-bold text-accent"
+          >
+            #{vm.linkedTag.name}
+          </Badge>
+        )}
+      </div>
+    )
 
-  const speedrunEnd =
-    running && (view.status === "ended" || view.status === "abandoned")
-      ? speedrunEndCopy(session)
-      : null
-
-  const endedBlock = running &&
-    (view.status === "ended" || view.status === "abandoned") && (
+  const endedBlock = vm.running &&
+    vm.session &&
+    vm.view &&
+    (vm.view.status === "ended" || vm.view.status === "abandoned") && (
       <div className="flex flex-col items-center gap-4 rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
-        {speedrunEnd !== null ? (
+        {vm.speedrunEnd !== null ? (
           <>
-            {speedrunEnd.ok ? (
+            {vm.speedrunEnd.ok ? (
               <CheckCircle2 className="h-10 w-10 text-emerald-400" />
             ) : (
               <XCircle className="h-10 w-10 text-destructive" />
             )}
             <div>
               <p className="text-lg font-black tracking-tight">
-                {speedrunEnd.title}
+                {vm.speedrunEnd.title}
               </p>
               <p className="text-sm text-muted-foreground">
-                {speedrunEnd.description}
+                {vm.speedrunEnd.description}
               </p>
             </div>
           </>
-        ) : view.status === "ended" ? (
+        ) : vm.view.status === "ended" ? (
           <>
             <CheckCircle2 className="h-10 w-10 text-emerald-400" />
             <div>
@@ -480,106 +311,84 @@ export function FocusPage() {
             </div>
           </>
         )}
-        {/* Skippable end-of-session note (issue #67) — only a real
-            server session can carry one; local runs have no row.
-            Keyed on the id so the next ended run re-opens it. */}
-        {view.status === "ended" && session.id !== 0 && (
-          <SessionNotePrompt key={session.id} sessionId={session.id} />
+        {/* Skippable end-of-session note (issue #67) */}
+        {vm.view.status === "ended" && vm.session.id !== 0 && (
+          <SessionNotePrompt key={vm.session.id} sessionId={vm.session.id} />
         )}
         <Button
-          onClick={() => void runtime.dismissEnded()}
-          disabled={mirrored}
+          onClick={() => void vm.dismissEnded()}
+          disabled={vm.mirrored}
           className="h-11 rounded-2xl bg-primary px-8 font-bold text-primary-foreground"
         >
-          {mirrored ? "Reconnect to dismiss" : "Close"}
+          {vm.mirrored ? "Reconnect to dismiss" : "Close"}
         </Button>
       </div>
     )
 
-  const controlsBlock = running &&
-    view.status !== "ended" &&
-    view.status !== "abandoned" && (
+  const controlsBlock = vm.running &&
+    vm.view &&
+    vm.view.status !== "ended" &&
+    vm.view.status !== "abandoned" && (
       <SessionControls
-        view={view}
-        busy={busy !== null || mirrored}
-        onPause={() => void runtime.pause()}
-        onResume={() => void runtime.resume()}
-        onAdvance={() => void runtime.advance()}
-        onStop={() => setStopConfirmOpen(true)}
-        onDone={() => void runtime.done()}
+        view={vm.view}
+        busy={vm.busy !== null || vm.mirrored}
+        isStopwatch={vm.isStopwatch}
+        isSpeedrun={vm.isSpeedrun}
+        isAbandon={vm.isAbandon}
+        stopLabel={vm.stopLabel}
+        onPause={() => void vm.pause()}
+        onResume={() => void vm.resume()}
+        onAdvance={() => void vm.advance()}
+        onStop={vm.openStopConfirm}
+        onDone={() => void vm.done()}
       />
     )
 
   return (
     <>
       <ConfirmationModal
-        open={stopConfirmOpen}
-        onOpenChange={setStopConfirmOpen}
-        onConfirm={handleStop}
-        title={
-          session?.mode === "speedrun"
-            ? "Give up the run?"
-            : view && view.focusDone === 0 && session?.mode !== "stopwatch"
-              ? "Abandon session?"
-              : "End session?"
-        }
-        description={
-          session?.mode === "speedrun"
-            ? // Only a beat-best run chases a record — time-boxed has none.
-              session.speedrun?.type === "beat_best"
-              ? "Giving up counts as an abandon — HP is lost and the record stands."
-              : "Giving up counts as an abandon — HP is lost."
-            : view && view.focusDone === 0 && session?.mode !== "stopwatch"
-              ? "No focus phase completed yet — stopping now costs HP."
-              : session?.mode === "stopwatch"
-                ? "The stopwatch ends here — no HP cost."
-                : "Completed focus phases keep their earned XP and gold."
-        }
-        confirmText={
-          session?.mode === "speedrun"
-            ? "Give up (−HP)"
-            : view && view.focusDone === 0 && session?.mode !== "stopwatch"
-              ? "Abandon (−HP)"
-              : "End session"
-        }
-        variant={
-          session?.mode === "speedrun" ||
-          (view !== null &&
-            view.focusDone === 0 &&
-            session?.mode !== "stopwatch")
-            ? "destructive"
-            : "default"
-        }
-        isLoading={busy !== null}
-        contentClassName={immersive ? "z-[120]" : undefined}
+        open={vm.stopConfirmOpen}
+        onOpenChange={vm.setStopConfirmOpen}
+        onConfirm={vm.stop}
+        title={vm.stopModalTitle}
+        description={vm.stopModalDescription}
+        confirmText={vm.stopModalConfirmText}
+        variant={vm.stopModalVariant}
+        isLoading={vm.busy !== null}
+        contentClassName={vm.immersive ? "z-[120]" : undefined}
       />
 
       <SessionSettingsSheet
-        open={settingsOpen}
-        onOpenChange={setSettingsOpen}
-        settings={settings}
-        onChange={handleSettingsChange}
+        open={vm.settingsOpen}
+        onOpenChange={vm.setSettingsOpen}
+        settings={vm.settings}
+        onChange={vm.onSettingsChange}
       />
 
       {/* Immersive mode — distraction-free overlay */}
-      {immersive &&
-        running &&
-        view.status !== "ended" &&
-        view.status !== "abandoned" && (
+      {vm.immersive &&
+        vm.running &&
+        vm.view &&
+        vm.view.status !== "ended" &&
+        vm.view.status !== "abandoned" && (
           <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-8 bg-background">
             {ringBlock}
             <SessionControls
-              view={view}
-              busy={busy !== null || mirrored}
+              view={vm.view}
+              busy={vm.busy !== null || vm.mirrored}
               compact
-              onPause={() => void runtime.pause()}
-              onResume={() => void runtime.resume()}
-              onAdvance={() => void runtime.advance()}
-              onStop={() => setStopConfirmOpen(true)}
-              onDone={() => void runtime.done()}
+              isStopwatch={vm.isStopwatch}
+              isSpeedrun={vm.isSpeedrun}
+              isAbandon={vm.isAbandon}
+              stopLabel={vm.stopLabel}
+              onPause={() => void vm.pause()}
+              onResume={() => void vm.resume()}
+              onAdvance={() => void vm.advance()}
+              onStop={vm.openStopConfirm}
+              onDone={() => void vm.done()}
             />
             <button
-              onClick={exitImmersive}
+              onClick={vm.exitImmersive}
               className="absolute top-6 right-6 flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-muted-foreground transition-all hover:bg-white/10 hover:text-foreground"
             >
               <Minimize2 className="h-4 w-4" /> Exit immersive
@@ -597,40 +406,36 @@ export function FocusPage() {
             variant="outline"
             className="rounded-full border-primary/20 bg-primary/5 px-4 py-1 text-[10px] font-black tracking-widest text-primary uppercase"
           >
-            {isLocal ? "Local run" : "Gamified focus"}
+            {vm.isLocal ? "Local run" : "Gamified focus"}
           </Badge>
           <h1 className="font-heading text-4xl leading-none font-black tracking-tighter text-foreground uppercase md:text-6xl">
             Focus
           </h1>
         </header>
 
-        {isLoading ? (
+        {vm.isLoading ? (
           <div className="flex flex-1 items-center justify-center py-24">
             <div className="h-72 w-72 animate-pulse rounded-full bg-white/5" />
           </div>
-        ) : !running ? (
+        ) : !vm.running ? (
           <div className="flex flex-1 items-start justify-center pt-8">
             <SessionSetup
-              settings={settings}
-              onChange={handleSettingsChange}
-              onStart={() => void handleStart()}
-              onOpenSettings={() => setSettingsOpen(true)}
-              busy={busy === "start"}
+              settings={vm.settings}
+              onChange={vm.onSettingsChange}
+              onStart={() => void vm.start()}
+              onOpenSettings={vm.openSettings}
+              busy={vm.busy === "start"}
             />
           </div>
         ) : (
           <div className="flex flex-1 flex-col items-center gap-8 lg:flex-row lg:items-start lg:justify-center lg:gap-16">
             <div className="flex flex-col items-center gap-5">
               {ringBlock}
-              <CycleDots session={session} />
-              {view.status === "running" || view.status === "paused" ? (
+              {vm.session && <CycleDots session={vm.session} />}
+              {vm.view &&
+              (vm.view.status === "running" || vm.view.status === "paused") ? (
                 <button
-                  onClick={() => {
-                    setImmersive(true)
-                    void document.documentElement
-                      .requestFullscreen?.()
-                      .catch(() => {})
-                  }}
+                  onClick={vm.enterImmersive}
                   className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-muted-foreground transition-all hover:bg-white/10 hover:text-foreground"
                 >
                   <Maximize2 className="h-4 w-4" /> Immersive

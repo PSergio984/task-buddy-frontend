@@ -1,0 +1,65 @@
+import React, { useState } from "react"
+import { useToast } from "@/hooks/use-toast"
+import {
+  authApi,
+  validateEmailFormat,
+  getAuthErrorMessage,
+} from "@/models/auth.model"
+
+export function useForgotPasswordViewModel() {
+  const [email, setEmail] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSubmitted, setIsSubmitted] = useState(false)
+  const { toast } = useToast()
+
+  const isEmailValid = validateEmailFormat(email)
+  const isButtonDisabled = isLoading || !email || !isEmailValid
+
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setIsLoading(true)
+
+    try {
+      await authApi.forgotPassword(email)
+      setIsSubmitted(true)
+      toast({
+        title: "Reset link sent",
+        description:
+          "Check your email for instructions to reset your password.",
+        variant: "success",
+      })
+    } catch (error: unknown) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: getAuthErrorMessage(
+          error,
+          "Something went wrong. Please try again."
+        ),
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleReset = () => {
+    setIsSubmitted(false)
+    setEmail("")
+  }
+
+  return {
+    email,
+    setEmail,
+    isLoading,
+    isSubmitted,
+    setIsSubmitted,
+    isEmailValid,
+    isButtonDisabled,
+    handleSubmit,
+    reset: handleReset,
+  }
+}
+
+export type ForgotPasswordViewModel = ReturnType<
+  typeof useForgotPasswordViewModel
+>

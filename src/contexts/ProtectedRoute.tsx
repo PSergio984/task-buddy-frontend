@@ -94,7 +94,7 @@ export function PublicRoute({ children }: Readonly<ProtectedRouteProps>) {
     return <LoadingScreen />
   }
 
-  if (user && user.email_confirmed !== false) {
+  if (user && user.email_confirmed === true) {
     return <Navigate to="/dashboard" />
   }
 
