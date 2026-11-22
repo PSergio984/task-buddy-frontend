@@ -3,8 +3,9 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Plus Jakarta Sans", "sans-serif"],
-        heading: ["Plus Jakarta Sans", "sans-serif"],
+        sans: ["var(--font-body)", "Geist", "sans-serif"],
+        mono: ["var(--font-mono)", "Geist Mono", "monospace"],
+        heading: ["var(--font-body)", "Geist", "sans-serif"],
       },
       borderRadius: {
         lg: "1rem",
@@ -12,6 +13,10 @@ export default {
         sm: "calc(1rem - 4px)",
       },
       colors: {
+        bg: "var(--bg)",
+        ink: "var(--ink)",
+        coral: "var(--coral-accent)",
+
         // Brand Color Palette
         "brand-bg": "#F1F5F9", // Primary Background
         "brand-card": "#FFFFFF", // Card/Surface
