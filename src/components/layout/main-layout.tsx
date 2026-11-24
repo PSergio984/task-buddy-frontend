@@ -11,6 +11,7 @@ import { MobileDrawer } from "./mobile-drawer"
 import { FocusMiniBar } from "./focus-mini-bar"
 import type { Task } from "@/lib/api"
 import { useStats } from "@/hooks/useStats"
+import { useAuth } from "@/contexts/AuthContext"
 import { useFilters } from "@/contexts/FilterContext"
 import { useToast } from "@/hooks/use-toast"
 import { Plus } from "lucide-react"
@@ -30,8 +31,8 @@ export function MainLayout() {
   const navigate = useNavigate()
   const { theme, setTheme } = useTheme()
 
-  const currentView =
-    location.pathname.replace(/^\//, "").split("/")[0] || "tasks"
+  const rawView = location.pathname.replace(/^\//, "").split("/")[0] || "tasks"
+  const currentView = rawView === "dashboard" || !rawView ? "tasks" : rawView
 
   const handleSelectView = (viewId: string) => {
     navigate(`/${viewId}`)
@@ -49,6 +50,7 @@ export function MainLayout() {
   // Mobile Workspace Drawer state
   const [isMobileWorkspaceOpen, setIsMobileWorkspaceOpen] = useState(false)
 
+  const { user } = useAuth()
   const { data: stats } = useStats()
   const { toast } = useToast()
   const taskCount = stats?.task_stats?.total_tasks ?? 0
@@ -86,7 +88,7 @@ export function MainLayout() {
   return (
     <div className="flex h-svh overflow-hidden bg-[var(--bg)] text-[var(--ink)]">
       {/* Persistent Desktop Floating Sidebar */}
-      {!isCollapsed && (
+      {!isCollapsed ? (
         <div className="hidden h-full shrink-0 p-3 pr-0 md:flex">
           <FloatingSidebar
             activeView={currentView}
@@ -94,7 +96,20 @@ export function MainLayout() {
             theme={theme === "light" ? "light" : "dark"}
             onToggleTheme={handleToggleTheme}
             onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
+            taskCount={taskCount}
+            userName={user?.username ?? user?.email ?? "User"}
           />
+        </div>
+      ) : (
+        <div className="hidden h-full shrink-0 items-start p-3 pr-0 md:flex">
+          <button
+            type="button"
+            onClick={() => setIsCollapsed(false)}
+            aria-label="Expand Sidebar"
+            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-[10px] border border-[var(--gray-200)] border-gray-200 bg-[var(--bg)] text-[var(--gray-400)] shadow-xs transition-colors hover:bg-[var(--gray-50)] hover:text-[var(--ink)]"
+          >
+            ◫
+          </button>
         </div>
       )}
 

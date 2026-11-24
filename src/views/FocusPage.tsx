@@ -247,13 +247,32 @@ export function FocusPage() {
     </div>
   )
 
+  const isBreak = vm.view?.live?.kind === "break"
+  const isAwaiting = vm.view?.status === "awaiting"
+  const isPaused = vm.view?.status === "paused"
+  const isRunning = vm.view?.status === "running"
+  const isPauseDisabled =
+    vm.busy !== null || vm.mirrored || (isRunning && vm.view?.pausesLeft === 0)
+
+  const hudPlayLabel = isBreak
+    ? "SKIP BREAK"
+    : isAwaiting
+      ? "ADVANCE"
+      : isPaused
+        ? "RESUME"
+        : "PAUSE"
+
   const hudBlock = vm.running &&
     vm.view &&
     vm.view.status !== "ended" &&
     vm.view.status !== "abandoned" && (
       <FocusStageHud
         timeRemaining={formatClock(vm.view.clockSeconds)}
-        isPlaying={vm.view.status === "running"}
+        isPlaying={isRunning}
+        playLabel={hudPlayLabel}
+        disabled={
+          vm.busy !== null || vm.mirrored || (isRunning && isPauseDisabled)
+        }
         sessionLabel={vm.view.kindLabel}
         metaLabel={
           vm.linkedTask?.title
@@ -262,10 +281,14 @@ export function FocusPage() {
               ? `TAG // ${vm.linkedTag.name}`
               : undefined
         }
+        stopLabel="RESET"
         onTogglePlay={() => {
-          if (vm.view?.status === "running") {
+          if (vm.busy !== null || vm.mirrored) return
+          if (isBreak || isAwaiting) {
+            void vm.advance()
+          } else if (isRunning) {
             void vm.pause()
-          } else if (vm.view?.status === "paused") {
+          } else if (isPaused) {
             void vm.resume()
           }
         }}

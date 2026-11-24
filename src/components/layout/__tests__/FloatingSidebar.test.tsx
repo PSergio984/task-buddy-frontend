@@ -64,9 +64,13 @@ describe("FloatingSidebar", () => {
   })
 
   it("renders daily target mini-widget with progress indicator", () => {
-    render(<FloatingSidebar activeView="focus" />)
+    const { container } = render(<FloatingSidebar activeView="focus" />)
     expect(screen.getByText(/DAILY TARGET/i)).toBeInTheDocument()
     expect(screen.getByText("3/4 SESSIONS")).toBeInTheDocument()
+    const segments = container.querySelectorAll(".target-bar-seg")
+    expect(segments).toHaveLength(4)
+    const filledSegments = container.querySelectorAll(".target-bar-seg.filled")
+    expect(filledSegments).toHaveLength(3)
   })
 
   it("renders theme row with LIGHT and DARK options and triggers onToggleTheme", () => {
@@ -80,17 +84,24 @@ describe("FloatingSidebar", () => {
     )
 
     expect(screen.getByText("Theme")).toBeInTheDocument()
-    expect(screen.getByText("LIGHT")).toBeInTheDocument()
-    expect(screen.getByText("DARK")).toBeInTheDocument()
+    const darkSeg = screen.getByText("DARK")
+    expect(darkSeg).toBeInTheDocument()
+    expect(darkSeg).toHaveClass("active")
+    const lightSeg = screen.getByText("LIGHT")
+    expect(lightSeg).toBeInTheDocument()
+    expect(lightSeg).not.toHaveClass("active")
 
     fireEvent.click(screen.getByText("Theme"))
     expect(handleToggleTheme).toHaveBeenCalledTimes(1)
   })
 
   it("renders audio row with animated bars and LO-FI badge", () => {
-    render(<FloatingSidebar activeView="focus" />)
+    const { container } = render(<FloatingSidebar activeView="focus" />)
     expect(screen.getByText("Audio")).toBeInTheDocument()
     expect(screen.getByText("LO-FI")).toBeInTheDocument()
+    const waveBars = container.querySelector(".wave-bars")
+    expect(waveBars).toBeInTheDocument()
+    expect(waveBars?.querySelectorAll("span")).toHaveLength(3)
   })
 
   it("renders settings row with shortcut chip", () => {
@@ -109,7 +120,7 @@ describe("FloatingSidebar", () => {
 
 describe("FocusStageHud", () => {
   it("renders default session label, 50:00 time, and meta context", () => {
-    render(<FocusStageHud />)
+    render(<FocusStageHud metaLabel="ENGINEERING // TASK_BUDDY_L2" />)
     expect(screen.getByText("01 — CURRENT SESSION · 1/4")).toBeInTheDocument()
     expect(screen.getByText("50:00")).toBeInTheDocument()
     expect(screen.getByText("ENGINEERING // TASK_BUDDY_L2")).toBeInTheDocument()

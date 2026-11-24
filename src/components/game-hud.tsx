@@ -52,7 +52,7 @@ export function GameHud({ isCollapsed = false }: GameHudProps) {
   // The gear overlay renders for pixel-art only — another resolved style
   // would discard the rows, so the catalog fetch waits for a profile that
   // uses them (absent style means the pixel-art default, same as below).
-  const avatarStyle = profile?.avatar_config.style
+  const avatarStyle = profile?.avatar_config?.style
   const { data: gear } = useGear(
     profile !== undefined &&
       (typeof avatarStyle === "string" ? avatarStyle : DEFAULT_AVATAR_STYLE) ===

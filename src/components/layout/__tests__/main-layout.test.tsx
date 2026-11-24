@@ -95,5 +95,6 @@ describe("MainLayout Integration with FloatingSidebar", () => {
     const focusBtn = screen.getByRole("button", { name: /Focus/i })
     expect(focusBtn).toBeInTheDocument()
     fireEvent.click(focusBtn)
+    expect(document.querySelector(".main-island")).toBeInTheDocument()
   })
 })

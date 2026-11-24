@@ -71,7 +71,8 @@ describe("FocusPage speedrun (#69)", () => {
       })
     )
     render(<FocusPage />)
-    expect(screen.getAllByText(/Speedrun · beat 5:00/)[0]).toBeInTheDocument()
+    const hud = screen.getByTestId("focus-stage-hud")
+    expect(within(hud).getByText(/Speedrun · beat 5:00/)).toBeInTheDocument()
   })
 
   it("give-up routes through the stop flow with speedrun copy", async () => {

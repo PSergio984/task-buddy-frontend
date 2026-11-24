@@ -1,5 +1,4 @@
 @import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700&display=swap');
 @import "./styles/tokens.css";
 @import "tailwindcss";
 @import "tw-animate-css";
@@ -12,6 +11,7 @@
   --font-mono: var(--font-mono), "Geist Mono", monospace;
   --font-heading: var(--font-body), "Geist", sans-serif;
   --color-canvas: var(--bg);
+  --color-bg: var(--bg);
   --color-ink: var(--ink);
   --color-coral: var(--coral-accent);
   --color-coral-tint: var(--coral-tint);
