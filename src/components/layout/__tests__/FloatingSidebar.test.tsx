@@ -8,7 +8,9 @@ describe("FloatingSidebar", () => {
     render(<FloatingSidebar activeView="focus" />)
     expect(screen.getByText("TASK BUDDY")).toBeInTheDocument()
     expect(screen.getByText("PRO")).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Toggle Sidebar" })).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "Toggle Sidebar" })
+    ).toBeInTheDocument()
   })
 
   it("renders quick jump search bar", () => {
@@ -33,7 +35,9 @@ describe("FloatingSidebar", () => {
 
   it("calls onSelectView when clicking a view item", () => {
     const handleSelectView = vi.fn()
-    render(<FloatingSidebar activeView="focus" onSelectView={handleSelectView} />)
+    render(
+      <FloatingSidebar activeView="focus" onSelectView={handleSelectView} />
+    )
 
     fireEvent.click(screen.getByText("Tasks"))
     expect(handleSelectView).toHaveBeenCalledWith("tasks")
@@ -67,7 +71,13 @@ describe("FloatingSidebar", () => {
 
   it("renders theme row with LIGHT and DARK options and triggers onToggleTheme", () => {
     const handleToggleTheme = vi.fn()
-    render(<FloatingSidebar activeView="focus" theme="dark" onToggleTheme={handleToggleTheme} />)
+    render(
+      <FloatingSidebar
+        activeView="focus"
+        theme="dark"
+        onToggleTheme={handleToggleTheme}
+      />
+    )
 
     expect(screen.getByText("Theme")).toBeInTheDocument()
     expect(screen.getByText("LIGHT")).toBeInTheDocument()

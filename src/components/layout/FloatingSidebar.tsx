@@ -62,29 +62,43 @@ export function FloatingSidebar({
   return (
     <aside
       className={cn(
-        "left-island flex flex-col gap-3 w-[240px] h-full overflow-hidden select-none",
+        "left-island flex h-full w-[240px] flex-col gap-3 overflow-hidden select-none",
         className
       )}
       data-testid="floating-sidebar"
     >
       {/* Top Nav Card */}
-      <div className="nav-island-card flex-1 rounded-[16px] border border-gray-200 border-[var(--gray-200)] bg-bg bg-[var(--bg)] p-3.5 shadow-sm flex flex-col overflow-y-auto">
+      <div className="nav-island-card bg-bg flex flex-1 flex-col overflow-y-auto rounded-[16px] border border-[var(--gray-200)] border-gray-200 bg-[var(--bg)] p-3.5 shadow-sm">
         {/* Brand Cluster */}
-        <div className="brand-cluster flex items-center justify-between mb-3 px-1 py-0.5">
-          <div className="brand-title-wrap flex items-center gap-2 font-bold text-[13px] tracking-[-0.02em] text-[var(--ink)]">
+        <div className="brand-cluster mb-3 flex items-center justify-between px-1 py-0.5">
+          <div className="brand-title-wrap flex items-center gap-2 text-[13px] font-bold tracking-[-0.02em] text-[var(--ink)]">
             <svg
-              className="brand-logo-glyph w-[18px] h-[18px] text-[#FF5A36] text-[var(--coral-accent)] shrink-0"
+              className="brand-logo-glyph h-[18px] w-[18px] shrink-0 text-[#FF5A36] text-[var(--coral-accent)]"
               viewBox="0 0 24 24"
               fill="currentColor"
               aria-hidden="true"
             >
               <rect x="3" y="3" width="8" height="8" rx="2.5" />
-              <rect x="13" y="3" width="8" height="8" rx="2.5" fillOpacity="0.4" />
-              <rect x="3" y="13" width="8" height="8" rx="2.5" fillOpacity="0.4" />
+              <rect
+                x="13"
+                y="3"
+                width="8"
+                height="8"
+                rx="2.5"
+                fillOpacity="0.4"
+              />
+              <rect
+                x="3"
+                y="13"
+                width="8"
+                height="8"
+                rx="2.5"
+                fillOpacity="0.4"
+              />
               <rect x="13" y="13" width="8" height="8" rx="2.5" />
             </svg>
             <span className="font-bold">TASK BUDDY</span>
-            <span className="brand-plan-chip font-mono text-[9px] font-semibold text-[var(--gray-400)] border border-gray-200 border-[var(--gray-200)] px-1.5 py-0.5 rounded tracking-[0.04em]">
+            <span className="brand-plan-chip rounded border border-[var(--gray-200)] border-gray-200 px-1.5 py-0.5 font-mono text-[9px] font-semibold tracking-[0.04em] text-[var(--gray-400)]">
               PRO
             </span>
           </div>
@@ -92,7 +106,7 @@ export function FloatingSidebar({
             type="button"
             onClick={onToggleCollapse}
             aria-label="Toggle Sidebar"
-            className="collapse-btn text-[var(--gray-400)] hover:text-[var(--ink)] hover:bg-[var(--gray-100)] flex items-center justify-center w-6 h-6 rounded-[6px] transition-colors cursor-pointer"
+            className="collapse-btn flex h-6 w-6 cursor-pointer items-center justify-center rounded-[6px] text-[var(--gray-400)] transition-colors hover:bg-[var(--gray-100)] hover:text-[var(--ink)]"
           >
             ◫
           </button>
@@ -103,19 +117,19 @@ export function FloatingSidebar({
           role="button"
           tabIndex={0}
           aria-label="Quick jump search"
-          className="sidebar-search h-8 px-2.5 rounded-[6px] border border-gray-200 border-[var(--gray-200)] bg-[#141418] bg-[var(--gray-50)] text-[var(--gray-400)] hover:text-[var(--ink)] hover:border-[var(--gray-300)] flex items-center justify-between mb-3.5 text-xs transition-all cursor-pointer"
+          className="sidebar-search mb-3.5 flex h-8 cursor-pointer items-center justify-between rounded-[6px] border border-[var(--gray-200)] border-gray-200 bg-[#141418] bg-[var(--gray-50)] px-2.5 text-xs text-[var(--gray-400)] transition-all hover:border-[var(--gray-300)] hover:text-[var(--ink)]"
         >
           <div className="search-left flex items-center gap-2">
-            <Search className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+            <Search className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <span>Quick jump...</span>
           </div>
-          <span className="search-kbd font-mono text-[10px] bg-[var(--bg)] border border-gray-200 border-[var(--gray-200)] px-1.5 py-0.5 rounded text-[var(--gray-500)]">
+          <span className="search-kbd rounded border border-[var(--gray-200)] border-gray-200 bg-[var(--bg)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--gray-500)]">
             ⌘K
           </span>
         </div>
 
         {/* Section 01 — Views */}
-        <div className="nav-section-label flex items-center justify-between font-mono text-[9.5px] font-semibold uppercase tracking-[0.08em] text-[var(--gray-400)] px-1.5 mb-1.5">
+        <div className="nav-section-label mb-1.5 flex items-center justify-between px-1.5 font-mono text-[9.5px] font-semibold tracking-[0.08em] text-[var(--gray-400)] uppercase">
           <span>01 — Views</span>
         </div>
 
@@ -132,20 +146,20 @@ export function FloatingSidebar({
                 type="button"
                 onClick={() => onSelectView?.(view.id)}
                 className={cn(
-                  "nav-pill-item h-[34px] flex items-center justify-between px-2.5 rounded-[6px] text-[13px] font-medium transition-all cursor-pointer border text-left",
+                  "nav-pill-item flex h-[34px] cursor-pointer items-center justify-between rounded-[6px] border px-2.5 text-left text-[13px] font-medium transition-all",
                   isActive
-                    ? "active bg-[var(--gray-100)] text-[var(--ink)] font-semibold border-gray-200 border-[var(--gray-200)] shadow-xs"
-                    : "text-[var(--gray-500)] hover:bg-[var(--gray-50)] hover:text-[var(--ink)] border-transparent"
+                    ? "active border-[var(--gray-200)] border-gray-200 bg-[var(--gray-100)] font-semibold text-[var(--ink)] shadow-xs"
+                    : "border-transparent text-[var(--gray-500)] hover:bg-[var(--gray-50)] hover:text-[var(--ink)]"
                 )}
               >
                 <div className="nav-item-left flex items-center gap-2.5">
-                  <Icon className="w-4 h-4 shrink-0 stroke-[1.8]" />
+                  <Icon className="h-4 w-4 shrink-0 stroke-[1.8]" />
                   <span>{view.label}</span>
                 </div>
 
                 {/* Right State indicator */}
                 {view.id === "focus" && isActive ? (
-                  <span className="mono-badge-active font-mono text-[9.5px] font-bold text-[#7F1D1D] bg-[#FFD8D2] border border-[#FFABA0] rounded px-1.5 py-0.5 tracking-wider">
+                  <span className="mono-badge-active rounded border border-[#FFABA0] bg-[#FFD8D2] px-1.5 py-0.5 font-mono text-[9.5px] font-bold tracking-wider text-[#7F1D1D]">
                     NOW
                   </span>
                 ) : null}
@@ -157,8 +171,8 @@ export function FloatingSidebar({
                 ) : null}
 
                 {view.isLive ? (
-                  <span className="badge-live font-mono text-[10px] text-[#10B981] flex items-center gap-1.5">
-                    <span className="dot-live w-1.5 h-1.5 rounded-full bg-[#10B981] shadow-[0_0_6px_#10B981]" />
+                  <span className="badge-live flex items-center gap-1.5 font-mono text-[10px] text-[#10B981]">
+                    <span className="dot-live h-1.5 w-1.5 rounded-full bg-[#10B981] shadow-[0_0_6px_#10B981]" />
                     <span>● 3 LIVE</span>
                   </span>
                 ) : null}
@@ -168,12 +182,12 @@ export function FloatingSidebar({
         </nav>
 
         {/* Section 02 — Streams */}
-        <div className="nav-section-label flex items-center justify-between font-mono text-[9.5px] font-semibold uppercase tracking-[0.08em] text-[var(--gray-400)] px-1.5 mt-3 mb-1.5">
+        <div className="nav-section-label mt-3 mb-1.5 flex items-center justify-between px-1.5 font-mono text-[9.5px] font-semibold tracking-[0.08em] text-[var(--gray-400)] uppercase">
           <span>02 — Streams</span>
           <button
             type="button"
             aria-label="Add Stream"
-            className="text-xs text-[var(--gray-400)] hover:text-[var(--ink)] cursor-pointer"
+            className="cursor-pointer text-xs text-[var(--gray-400)] hover:text-[var(--ink)]"
           >
             +
           </button>
@@ -183,11 +197,11 @@ export function FloatingSidebar({
           {STREAMS.map((stream) => (
             <div
               key={stream.id}
-              className="nav-pill-item h-[34px] flex items-center justify-between px-2.5 rounded-[6px] text-[13px] font-medium text-[var(--gray-500)] hover:bg-[var(--gray-50)] hover:text-[var(--ink)] transition-all cursor-pointer"
+              className="nav-pill-item flex h-[34px] cursor-pointer items-center justify-between rounded-[6px] px-2.5 text-[13px] font-medium text-[var(--gray-500)] transition-all hover:bg-[var(--gray-50)] hover:text-[var(--ink)]"
             >
               <div className="nav-item-left flex items-center gap-2.5">
                 <span
-                  className="w-[7px] h-[7px] rounded-full shrink-0"
+                  className="h-[7px] w-[7px] shrink-0 rounded-full"
                   style={{ backgroundColor: stream.color }}
                 />
                 <span>{stream.name}</span>
@@ -200,22 +214,24 @@ export function FloatingSidebar({
         </div>
 
         {/* Daily Target Mini-Widget */}
-        <div className="sidebar-target-card mt-auto pt-3.5 border-t border-gray-200 border-[var(--gray-200)]">
-          <div className="target-meta-row flex justify-between items-center font-mono text-[9.5px] uppercase tracking-[0.06em] text-[var(--gray-400)] mb-1.5">
+        <div className="sidebar-target-card mt-auto border-t border-[var(--gray-200)] border-gray-200 pt-3.5">
+          <div className="target-meta-row mb-1.5 flex items-center justify-between font-mono text-[9.5px] tracking-[0.06em] text-[var(--gray-400)] uppercase">
             <span>DAILY TARGET:</span>
-            <span className="text-[var(--ink)] font-semibold">3/4 SESSIONS</span>
+            <span className="font-semibold text-[var(--ink)]">
+              3/4 SESSIONS
+            </span>
           </div>
-          <div className="target-bars-row grid grid-cols-4 gap-1 h-1">
-            <div className="target-bar-seg filled bg-[#FF5A36] bg-[var(--coral-accent)] rounded-[2px]" />
-            <div className="target-bar-seg filled bg-[#FF5A36] bg-[var(--coral-accent)] rounded-[2px]" />
-            <div className="target-bar-seg filled bg-[#FF5A36] bg-[var(--coral-accent)] rounded-[2px]" />
-            <div className="target-bar-seg bg-[var(--gray-200)] rounded-[2px]" />
+          <div className="target-bars-row grid h-1 grid-cols-4 gap-1">
+            <div className="target-bar-seg filled rounded-[2px] bg-[#FF5A36] bg-[var(--coral-accent)]" />
+            <div className="target-bar-seg filled rounded-[2px] bg-[#FF5A36] bg-[var(--coral-accent)]" />
+            <div className="target-bar-seg filled rounded-[2px] bg-[#FF5A36] bg-[var(--coral-accent)]" />
+            <div className="target-bar-seg rounded-[2px] bg-[var(--gray-200)]" />
           </div>
         </div>
       </div>
 
       {/* Bottom Dock Card */}
-      <div className="dock-island-card rounded-[16px] border border-gray-200 border-[var(--gray-200)] bg-bg bg-[var(--bg)] p-1.5 shadow-sm flex flex-col gap-0.5 shrink-0">
+      <div className="dock-island-card bg-bg flex shrink-0 flex-col gap-0.5 rounded-[16px] border border-[var(--gray-200)] border-gray-200 bg-[var(--bg)] p-1.5 shadow-sm">
         {/* Theme Row */}
         <div
           role="button"
@@ -224,20 +240,20 @@ export function FloatingSidebar({
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") onToggleTheme?.()
           }}
-          className="dock-row-item h-[34px] px-2.5 rounded-[6px] flex items-center justify-between text-[12.5px] font-medium text-[var(--gray-500)] hover:bg-[var(--gray-50)] hover:text-[var(--ink)] transition-colors cursor-pointer"
+          className="dock-row-item flex h-[34px] cursor-pointer items-center justify-between rounded-[6px] px-2.5 text-[12.5px] font-medium text-[var(--gray-500)] transition-colors hover:bg-[var(--gray-50)] hover:text-[var(--ink)]"
         >
           <div className="dock-row-left flex items-center gap-2.5">
             {isDark ? (
-              <Moon className="w-4 h-4 shrink-0 stroke-[1.8]" />
+              <Moon className="h-4 w-4 shrink-0 stroke-[1.8]" />
             ) : (
-              <Sun className="w-4 h-4 shrink-0 stroke-[1.8]" />
+              <Sun className="h-4 w-4 shrink-0 stroke-[1.8]" />
             )}
             <span>Theme</span>
           </div>
-          <div className="theme-segmented-pill flex bg-[var(--gray-100)] border border-gray-200 border-[var(--gray-200)] rounded-full p-0.5 gap-0.5">
+          <div className="theme-segmented-pill flex gap-0.5 rounded-full border border-[var(--gray-200)] border-gray-200 bg-[var(--gray-100)] p-0.5">
             <span
               className={cn(
-                "seg-opt font-mono text-[9.5px] font-semibold px-2 py-0.5 rounded-full transition-all",
+                "seg-opt rounded-full px-2 py-0.5 font-mono text-[9.5px] font-semibold transition-all",
                 !isDark
                   ? "active bg-[var(--bg)] text-[var(--ink)] shadow-xs"
                   : "text-[var(--gray-400)]"
@@ -247,7 +263,7 @@ export function FloatingSidebar({
             </span>
             <span
               className={cn(
-                "seg-opt font-mono text-[9.5px] font-semibold px-2 py-0.5 rounded-full transition-all",
+                "seg-opt rounded-full px-2 py-0.5 font-mono text-[9.5px] font-semibold transition-all",
                 isDark
                   ? "active bg-[var(--bg)] text-[var(--ink)] shadow-xs"
                   : "text-[var(--gray-400)]"
@@ -259,40 +275,40 @@ export function FloatingSidebar({
         </div>
 
         {/* Audio Row */}
-        <div className="dock-row-item h-[34px] px-2.5 rounded-[6px] flex items-center justify-between text-[12.5px] font-medium text-[var(--gray-500)] hover:bg-[var(--gray-50)] hover:text-[var(--ink)] transition-colors cursor-pointer">
+        <div className="dock-row-item flex h-[34px] cursor-pointer items-center justify-between rounded-[6px] px-2.5 text-[12.5px] font-medium text-[var(--gray-500)] transition-colors hover:bg-[var(--gray-50)] hover:text-[var(--ink)]">
           <div className="dock-row-left flex items-center gap-2.5">
-            <Headphones className="w-4 h-4 shrink-0 stroke-[1.8]" />
+            <Headphones className="h-4 w-4 shrink-0 stroke-[1.8]" />
             <span>Audio</span>
           </div>
-          <span className="audio-pill font-mono text-[10px] text-[var(--gray-400)] flex items-center gap-1.5">
-            <span className="wave-bars inline-flex items-end gap-[2px] h-[9px]">
-              <span className="w-[2px] h-1 bg-[#FF5A36] bg-[var(--coral-accent)] rounded-[1px] animate-pulse" />
-              <span className="w-[2px] h-2 bg-[#FF5A36] bg-[var(--coral-accent)] rounded-[1px] animate-pulse" />
-              <span className="w-[2px] h-1.5 bg-[#FF5A36] bg-[var(--coral-accent)] rounded-[1px] animate-pulse" />
+          <span className="audio-pill flex items-center gap-1.5 font-mono text-[10px] text-[var(--gray-400)]">
+            <span className="wave-bars inline-flex h-[9px] items-end gap-[2px]">
+              <span className="h-1 w-[2px] animate-pulse rounded-[1px] bg-[#FF5A36] bg-[var(--coral-accent)]" />
+              <span className="h-2 w-[2px] animate-pulse rounded-[1px] bg-[#FF5A36] bg-[var(--coral-accent)]" />
+              <span className="h-1.5 w-[2px] animate-pulse rounded-[1px] bg-[#FF5A36] bg-[var(--coral-accent)]" />
             </span>
             <span>LO-FI</span>
           </span>
         </div>
 
         {/* Settings Row */}
-        <div className="dock-row-item h-[34px] px-2.5 rounded-[6px] flex items-center justify-between text-[12.5px] font-medium text-[var(--gray-500)] hover:bg-[var(--gray-50)] hover:text-[var(--ink)] transition-colors cursor-pointer">
+        <div className="dock-row-item flex h-[34px] cursor-pointer items-center justify-between rounded-[6px] px-2.5 text-[12.5px] font-medium text-[var(--gray-500)] transition-colors hover:bg-[var(--gray-50)] hover:text-[var(--ink)]">
           <div className="dock-row-left flex items-center gap-2.5">
-            <Settings className="w-4 h-4 shrink-0 stroke-[1.8]" />
+            <Settings className="h-4 w-4 shrink-0 stroke-[1.8]" />
             <span>Settings</span>
           </div>
-          <span className="search-kbd font-mono text-[10px] bg-[var(--bg)] border border-gray-200 border-[var(--gray-200)] px-1.5 py-0.5 rounded text-[var(--gray-500)]">
+          <span className="search-kbd rounded border border-[var(--gray-200)] border-gray-200 bg-[var(--bg)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--gray-500)]">
             ⌘,
           </span>
         </div>
 
         {/* Profile Row */}
-        <div className="dock-row-item profile-row h-[42px] px-2 pt-1 mt-0.5 border-t border-gray-200 border-[var(--gray-200)] rounded-[6px] flex items-center justify-between text-[12.5px] hover:bg-[var(--gray-50)] transition-colors cursor-pointer">
+        <div className="dock-row-item profile-row mt-0.5 flex h-[42px] cursor-pointer items-center justify-between rounded-[6px] border-t border-[var(--gray-200)] border-gray-200 px-2 pt-1 text-[12.5px] transition-colors hover:bg-[var(--gray-50)]">
           <div className="dock-row-left flex items-center gap-2.5">
-            <div className="user-avatar-wrap relative w-6 h-6 shrink-0">
-              <div className="user-avatar-circle w-6 h-6 rounded-full bg-[#FF5A36] bg-[var(--coral-accent)] text-white flex items-center justify-center text-[9.5px] font-bold">
+            <div className="user-avatar-wrap relative h-6 w-6 shrink-0">
+              <div className="user-avatar-circle flex h-6 w-6 items-center justify-center rounded-full bg-[#FF5A36] bg-[var(--coral-accent)] text-[9.5px] font-bold text-white">
                 PS
               </div>
-              <span className="avatar-status-dot absolute -bottom-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-[#10B981] ring-1 ring-[var(--bg)]" />
+              <span className="avatar-status-dot absolute -right-0.5 -bottom-0.5 h-1.5 w-1.5 rounded-full bg-[#10B981] ring-1 ring-[var(--bg)]" />
             </div>
             <div className="user-text-wrap flex flex-col text-left leading-[1.15]">
               <span className="user-name-title text-xs font-semibold text-[var(--ink)]">
@@ -303,7 +319,9 @@ export function FloatingSidebar({
               </span>
             </div>
           </div>
-          <span className="text-[var(--gray-400)] text-sm tracking-widest">···</span>
+          <span className="text-sm tracking-widest text-[var(--gray-400)]">
+            ···
+          </span>
         </div>
       </div>
     </aside>

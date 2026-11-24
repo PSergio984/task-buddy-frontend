@@ -61,7 +61,7 @@ const Toast = React.forwardRef<
             variant === "success" &&
               "bg-emerald-500/20 text-emerald-600 ring-1 ring-emerald-500/30 dark:text-emerald-400",
             variant === "destructive" &&
-              "bg-[#FFD8D2] text-[#7F1D1D] ring-1 ring-[#FFD8D2]/50 font-bold dark:bg-[#FFD8D2] dark:text-[#7F1D1D]",
+              "bg-[#FFD8D2] font-bold text-[#7F1D1D] ring-1 ring-[#FFD8D2]/50 dark:bg-[#FFD8D2] dark:text-[#7F1D1D]",
             variant === "warning" &&
               "bg-amber-500/20 text-amber-600 ring-1 ring-amber-500/30 dark:text-amber-400",
             variant === "info" &&

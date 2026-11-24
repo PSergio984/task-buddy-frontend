@@ -30,7 +30,8 @@ export function MainLayout() {
   const navigate = useNavigate()
   const { theme, setTheme } = useTheme()
 
-  const currentView = location.pathname.replace(/^\//, "").split("/")[0] || "tasks"
+  const currentView =
+    location.pathname.replace(/^\//, "").split("/")[0] || "tasks"
 
   const handleSelectView = (viewId: string) => {
     navigate(`/${viewId}`)
@@ -86,7 +87,7 @@ export function MainLayout() {
     <div className="flex h-svh overflow-hidden bg-[var(--bg)] text-[var(--ink)]">
       {/* Persistent Desktop Floating Sidebar */}
       {!isCollapsed && (
-        <div className="hidden md:flex p-3 pr-0 h-full shrink-0">
+        <div className="hidden h-full shrink-0 p-3 pr-0 md:flex">
           <FloatingSidebar
             activeView={currentView}
             onSelectView={handleSelectView}
@@ -98,8 +99,8 @@ export function MainLayout() {
       )}
 
       {/* Main Content Wrapper (Dual Island) */}
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden pb-24 md:pb-0 md:p-3">
-        <main className="main-island flex-1 rounded-[16px] border border-gray-200 border-[var(--gray-200)] bg-[var(--bg)] shadow-xs flex flex-col overflow-hidden relative">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden pb-24 md:p-3 md:pb-0">
+        <main className="main-island relative flex flex-1 flex-col overflow-hidden rounded-[16px] border border-[var(--gray-200)] border-gray-200 bg-[var(--bg)] shadow-xs">
           {/* Top Navigation */}
           <TopNav
             onNewTask={handleOpenNewTask}

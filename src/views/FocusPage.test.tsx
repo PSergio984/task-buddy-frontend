@@ -71,9 +71,7 @@ describe("FocusPage speedrun (#69)", () => {
       })
     )
     render(<FocusPage />)
-    expect(
-      screen.getAllByText(/Speedrun · beat 5:00/)[0]
-    ).toBeInTheDocument()
+    expect(screen.getAllByText(/Speedrun · beat 5:00/)[0]).toBeInTheDocument()
   })
 
   it("give-up routes through the stop flow with speedrun copy", async () => {
