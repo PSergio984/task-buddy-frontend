@@ -152,4 +152,20 @@ describe("FocusStageHud", () => {
     fireEvent.click(screen.getByRole("button", { name: /reset timer/i }))
     expect(onReset).toHaveBeenCalledTimes(1)
   })
+
+  it("supports independent disabledPlay and disabledReset props", () => {
+    const { rerender } = render(
+      <FocusStageHud disabledPlay={true} disabledReset={false} />
+    )
+    expect(screen.getByRole("button", { name: /start focus/i })).toBeDisabled()
+    expect(
+      screen.getByRole("button", { name: /reset timer/i })
+    ).not.toBeDisabled()
+
+    rerender(<FocusStageHud disabledPlay={false} disabledReset={true} />)
+    expect(
+      screen.getByRole("button", { name: /start focus/i })
+    ).not.toBeDisabled()
+    expect(screen.getByRole("button", { name: /reset timer/i })).toBeDisabled()
+  })
 })
