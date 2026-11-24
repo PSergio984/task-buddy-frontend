@@ -1,6 +1,7 @@
 import { useState } from "react"
-import { Outlet } from "react-router-dom"
-import { Sidebar } from "@/components/sidebar"
+import { Outlet, useLocation, useNavigate } from "react-router-dom"
+import { FloatingSidebar } from "./FloatingSidebar"
+import { useTheme } from "@/components/theme-provider"
 import { TopNav } from "@/components/topnav"
 import { TaskDetailDrawer } from "@/components/task-detail-drawer"
 import { BreakdownSheet } from "@/components/breakdown-sheet"
@@ -10,6 +11,7 @@ import { MobileDrawer } from "./mobile-drawer"
 import { FocusMiniBar } from "./focus-mini-bar"
 import type { Task } from "@/lib/api"
 import { useStats } from "@/hooks/useStats"
+import { useAuth } from "@/contexts/AuthContext"
 import { useFilters } from "@/contexts/FilterContext"
 import { useToast } from "@/hooks/use-toast"
 import { Plus } from "lucide-react"
@@ -25,6 +27,20 @@ export function MainLayout() {
   const [breakdownContextTask, setBreakdownContextTask] = useState<Task | null>(
     null
   )
+  const location = useLocation()
+  const navigate = useNavigate()
+  const { theme, setTheme } = useTheme()
+
+  const rawView = location.pathname.replace(/^\//, "").split("/")[0] || "tasks"
+  const currentView = rawView === "dashboard" || !rawView ? "tasks" : rawView
+
+  const handleSelectView = (viewId: string) => {
+    navigate(`/${viewId}`)
+  }
+
+  const handleToggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark")
+  }
   // Current UI project context (sidebar "project:<id>" filter) for commits.
   const { activeSidebarFilter } = useFilters()
   const activeProjectId = activeSidebarFilter.startsWith("project:")
@@ -34,6 +50,7 @@ export function MainLayout() {
   // Mobile Workspace Drawer state
   const [isMobileWorkspaceOpen, setIsMobileWorkspaceOpen] = useState(false)
 
+  const { user } = useAuth()
   const { data: stats } = useStats()
   const { toast } = useToast()
   const taskCount = stats?.task_stats?.total_tasks ?? 0
@@ -69,26 +86,48 @@ export function MainLayout() {
   }
 
   return (
-    <div className="flex h-svh overflow-hidden bg-background">
-      {/* Persistent Sidebar */}
-      <Sidebar
-        isCollapsed={isCollapsed}
-        onToggle={() => setIsCollapsed(!isCollapsed)}
-      />
+    <div className="flex h-svh overflow-hidden bg-[var(--bg)] text-[var(--ink)]">
+      {/* Persistent Desktop Floating Sidebar */}
+      {!isCollapsed ? (
+        <div className="hidden h-full shrink-0 p-3 pr-0 md:flex">
+          <FloatingSidebar
+            activeView={currentView}
+            onSelectView={handleSelectView}
+            theme={theme === "light" ? "light" : "dark"}
+            onToggleTheme={handleToggleTheme}
+            onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
+            taskCount={taskCount}
+            userName={user?.username ?? user?.email ?? "User"}
+          />
+        </div>
+      ) : (
+        <div className="hidden h-full shrink-0 items-start p-3 pr-0 md:flex">
+          <button
+            type="button"
+            onClick={() => setIsCollapsed(false)}
+            aria-label="Expand Sidebar"
+            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-[10px] border border-[var(--gray-200)] border-gray-200 bg-[var(--bg)] text-[var(--gray-400)] shadow-xs transition-colors hover:bg-[var(--gray-50)] hover:text-[var(--ink)]"
+          >
+            ◫
+          </button>
+        </div>
+      )}
 
-      {/* Main Content Wrapper */}
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden pb-24 md:pb-0">
-        {/* Persistent Top Navigation */}
-        <TopNav
-          onNewTask={handleOpenNewTask}
-          onBreakdown={() => handleOpenBreakdown()}
-          onImport={() => setIsImportOpen(true)}
-        />
+      {/* Main Content Wrapper (Dual Island) */}
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden pb-24 md:p-3 md:pb-0">
+        <main className="main-island relative flex flex-1 flex-col overflow-hidden rounded-[16px] border border-[var(--gray-200)] border-gray-200 bg-[var(--bg)] shadow-xs">
+          {/* Top Navigation */}
+          <TopNav
+            onNewTask={handleOpenNewTask}
+            onBreakdown={() => handleOpenBreakdown()}
+            onImport={() => setIsImportOpen(true)}
+          />
 
-        {/* Scrollable Main Content */}
-        <main className="flex-1 overflow-y-auto">
-          <div className="w-full">
-            <Outlet context={{ handleEditTask }} />
+          {/* Scrollable Main Content */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="w-full">
+              <Outlet context={{ handleEditTask }} />
+            </div>
           </div>
         </main>
 

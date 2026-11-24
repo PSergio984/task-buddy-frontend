@@ -18,6 +18,7 @@ import { TimerRing } from "@/components/focus/timer-ring"
 import { SessionSetup } from "@/components/focus/session-setup"
 import { SessionSettingsSheet } from "@/components/focus/session-settings-sheet"
 import { SessionNotePrompt } from "@/components/focus/session-note-prompt"
+import { FocusStageHud } from "@/components/layout/FocusStageHud"
 import { useFocusViewModel } from "@/viewmodels/useFocusViewModel"
 import { formatClock, type SessionView } from "@/models/focus.model"
 import type { FocusSession } from "@/models/focus.model"
@@ -246,6 +247,56 @@ export function FocusPage() {
     </div>
   )
 
+  const isBreak = vm.view?.live?.kind === "break"
+  const isAwaiting = vm.view?.status === "awaiting"
+  const isPaused = vm.view?.status === "paused"
+  const isRunning = vm.view?.status === "running"
+  const isPauseDisabled =
+    vm.busy !== null || vm.mirrored || (isRunning && vm.view?.pausesLeft === 0)
+
+  const hudPlayLabel = isBreak
+    ? "SKIP BREAK"
+    : isAwaiting
+      ? "ADVANCE"
+      : isPaused
+        ? "RESUME"
+        : "PAUSE"
+
+  const hudBlock = vm.running &&
+    vm.view &&
+    vm.view.status !== "ended" &&
+    vm.view.status !== "abandoned" && (
+      <FocusStageHud
+        timeRemaining={formatClock(vm.view.clockSeconds)}
+        isPlaying={isRunning}
+        playLabel={hudPlayLabel}
+        disabledPlay={
+          vm.busy !== null || vm.mirrored || (isRunning && isPauseDisabled)
+        }
+        disabledReset={vm.busy !== null || vm.mirrored}
+        sessionLabel={vm.view.kindLabel}
+        metaLabel={
+          vm.linkedTask?.title
+            ? `TASK // ${vm.linkedTask.title}`
+            : vm.linkedTag
+              ? `TAG // ${vm.linkedTag.name}`
+              : undefined
+        }
+        stopLabel="RESET"
+        onTogglePlay={() => {
+          if (vm.busy !== null || vm.mirrored) return
+          if (isBreak || isAwaiting) {
+            void vm.advance()
+          } else if (isRunning) {
+            void vm.pause()
+          } else if (isPaused) {
+            void vm.resume()
+          }
+        }}
+        onReset={vm.openStopConfirm}
+      />
+    )
+
   const chipsBlock = vm.running &&
     (vm.linkedTask !== null || vm.linkedTag !== null) && (
       <div className="flex flex-wrap items-center justify-center gap-2">
@@ -430,6 +481,7 @@ export function FocusPage() {
         ) : (
           <div className="flex flex-1 flex-col items-center gap-8 lg:flex-row lg:items-start lg:justify-center lg:gap-16">
             <div className="flex flex-col items-center gap-5">
+              {hudBlock}
               {ringBlock}
               {vm.session && <CycleDots session={vm.session} />}
               {vm.view &&
