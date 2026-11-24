@@ -270,9 +270,10 @@ export function FocusPage() {
         timeRemaining={formatClock(vm.view.clockSeconds)}
         isPlaying={isRunning}
         playLabel={hudPlayLabel}
-        disabled={
+        disabledPlay={
           vm.busy !== null || vm.mirrored || (isRunning && isPauseDisabled)
         }
+        disabledReset={vm.busy !== null || vm.mirrored}
         sessionLabel={vm.view.kindLabel}
         metaLabel={
           vm.linkedTask?.title

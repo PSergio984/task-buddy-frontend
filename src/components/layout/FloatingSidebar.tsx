@@ -49,6 +49,18 @@ const DEFAULT_STREAMS: StreamItem[] = [
   { id: "tauri", name: "Tauri Desktop", color: "#10B981", priority: "P3" },
 ]
 
+function getInitials(name?: string): string {
+  if (!name || !name.trim()) return "?"
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return "?"
+  const initials = parts
+    .slice(0, 2)
+    .map((p) => p[0])
+    .join("")
+    .toUpperCase()
+  return initials || "?"
+}
+
 export function FloatingSidebar({
   activeView = "focus",
   onSelectView,
@@ -127,10 +139,7 @@ export function FloatingSidebar({
         </div>
 
         {/* Quick Jump Search */}
-        <div
-          aria-label="Quick jump search"
-          className="sidebar-search mb-3.5 flex h-8 items-center justify-between rounded-[6px] border border-[var(--gray-200)] border-gray-200 bg-[#141418] bg-[var(--gray-50)] px-2.5 text-xs text-[var(--gray-400)] transition-all"
-        >
+        <div className="sidebar-search mb-3.5 flex h-8 items-center justify-between rounded-[6px] border border-[var(--gray-200)] border-gray-200 bg-[#141418] bg-[var(--gray-50)] px-2.5 text-xs text-[var(--gray-400)] transition-all">
           <div className="search-left flex items-center gap-2">
             <Search className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <span>Quick jump...</span>
@@ -228,7 +237,12 @@ export function FloatingSidebar({
               {targetCompleted}/{targetTotal} SESSIONS
             </span>
           </div>
-          <div className="target-bars-row grid h-1 grid-cols-4 gap-1">
+          <div
+            className="target-bars-row grid h-1 gap-1"
+            style={{
+              gridTemplateColumns: `repeat(${Math.max(1, targetTotal)}, minmax(0, 1fr))`,
+            }}
+          >
             {Array.from({ length: targetTotal }).map((_, i) => (
               <div
                 key={i}
@@ -320,13 +334,7 @@ export function FloatingSidebar({
           <div className="dock-row-left flex items-center gap-2.5">
             <div className="user-avatar-wrap relative h-6 w-6 shrink-0">
               <div className="user-avatar-circle flex h-6 w-6 items-center justify-center rounded-full bg-[#FF5A36] bg-[var(--coral-accent)] text-[9.5px] font-bold text-white">
-                {userName
-                  .split(/\s+/)
-                  .filter(Boolean)
-                  .map((p) => p[0])
-                  .slice(0, 2)
-                  .join("")
-                  .toUpperCase() || userName.slice(0, 2).toUpperCase()}
+                {getInitials(userName)}
               </div>
               <span className="avatar-status-dot absolute -right-0.5 -bottom-0.5 h-1.5 w-1.5 rounded-full bg-[#10B981] ring-1 ring-[var(--bg)]" />
             </div>

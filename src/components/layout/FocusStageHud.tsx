@@ -10,6 +10,8 @@ export interface FocusStageHudProps {
   sessionLabel?: string
   metaLabel?: string
   disabled?: boolean
+  disabledPlay?: boolean
+  disabledReset?: boolean
   stopLabel?: string
   className?: string
 }
@@ -23,6 +25,8 @@ export function FocusStageHud({
   sessionLabel = "01 — CURRENT SESSION · 1/4",
   metaLabel,
   disabled = false,
+  disabledPlay,
+  disabledReset,
   stopLabel = "RESET",
   className,
 }: FocusStageHudProps) {
@@ -62,7 +66,7 @@ export function FocusStageHud({
         <button
           type="button"
           onClick={onTogglePlay}
-          disabled={disabled}
+          disabled={disabledPlay ?? disabled}
           className="btn-primary-pill flex cursor-pointer items-center gap-2 rounded-full bg-[var(--ink)] bg-ink px-5 py-2 font-sans text-[13px] font-semibold text-[var(--bg)] text-bg shadow-xs transition-all hover:opacity-90 active:scale-95 disabled:pointer-events-none disabled:opacity-50"
           aria-label={resolvedPlayLabel}
         >
@@ -73,7 +77,7 @@ export function FocusStageHud({
         <button
           type="button"
           onClick={onReset}
-          disabled={disabled}
+          disabled={disabledReset ?? disabled}
           className="btn-secondary-pill cursor-pointer rounded-full border border-[var(--gray-200)] border-gray-200 bg-[var(--gray-50)] px-3 py-1.5 font-mono text-xs text-[var(--gray-500)] transition-all hover:border-[var(--gray-300)] hover:text-[var(--ink)] disabled:pointer-events-none disabled:opacity-50"
           aria-label="Reset Timer"
         >

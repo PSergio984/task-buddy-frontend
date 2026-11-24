@@ -15,10 +15,12 @@
     "format:check": "prettier --check \"**/*.{ts,tsx}\"",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest",
-    "test:ci": "vitest run",
+    "test:ci": "npm run test:tokens && vitest run",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "build:tokens": "node tools/tokens/build-tokens.js",
+    "test:tokens": "node tools/tokens/test-tokens.js"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

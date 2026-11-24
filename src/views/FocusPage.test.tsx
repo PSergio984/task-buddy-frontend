@@ -37,10 +37,13 @@ describe("FocusPage speedrun (#69)", () => {
     expect(screen.getByText(/Pauses don't stop the clock/)).toBeInTheDocument()
   })
 
-  it("renders FocusStageHud with session clock and controls", () => {
+  it("renders FocusStageHud for a live run", () => {
     runtime = makeRuntime(speedrunSession())
     render(<FocusPage />)
-    expect(screen.getByTestId("focus-stage-hud")).toBeInTheDocument()
+    const hud = screen.getByTestId("focus-stage-hud")
+    expect(hud).toBeInTheDocument()
+    expect(hud).toHaveTextContent("10:00")
+    expect(screen.getByRole("button", { name: /Reset Timer|RESET/i })).toBeInTheDocument()
   })
 
   it("Done fires the server verb", () => {
