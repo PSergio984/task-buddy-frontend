@@ -125,63 +125,14 @@ assert.ok(
 )
 
 // 2. Pure unit compiler test with isolated fixture
-const unitFixture = {
-  colors: {
-    dark: {
-      bg: "#111111",
-      ink: "#EEEEEE",
-      gray50: "#181818",
-      gray100: "#222222",
-      gray200: "#333333",
-      gray300: "#444444",
-      gray400: "#777777",
-      gray500: "#AAAAAA",
-      coralAccent: "#FF1100",
-      coralTint: "rgba(255, 17, 0, 0.1)",
-      statusLive: "#00FF00",
-      streamMobile: "#0000FF",
-      streamTauri: "#00FF00",
-    },
-    light: {
-      bg: "#FFFFFF",
-      ink: "#000000",
-      gray50: "#FAFAFA",
-      gray100: "#F0F0F0",
-      gray200: "#E0E0E0",
-      gray300: "#CCCCCC",
-      gray400: "#888888",
-      gray500: "#555555",
-      coralAccent: "#CC1100",
-      coralTint: "rgba(204, 17, 0, 0.1)",
-      statusLive: "#00CC00",
-      streamMobile: "#0000CC",
-      streamTauri: "#00CC00",
-    },
-  },
-  typography: {
-    fontBody: "sans-serif",
-    fontMono: "monospace",
-  },
-  radii: {
-    sm: "4px",
-    md: "8px",
-    lg: "12px",
-    pill: "999px",
-  },
-  shadows: {
-    cardDark: "none",
-    cardLight: "none",
-  },
-  textures: {
-    halftoneDark: "none",
-    halftoneLight: "none",
-  },
-}
+const unitFixture = structuredClone(realTokens)
+unitFixture.colors.light.bg = "#F0F0F0"
+unitFixture.colors.dark.bg = "#111111"
 
 const unitResult = compileTokens(unitFixture)
 assert.ok(
-  unitResult.cssOutput.includes("--bg: #FFFFFF;"),
-  "Unit test: root bg should be light"
+  unitResult.cssOutput.includes("--bg: #F0F0F0;"),
+  "Unit test: root bg should match light token"
 )
 assert.ok(
   unitResult.cssOutput.includes("--bg: #111111;"),
