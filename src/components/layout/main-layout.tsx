@@ -1,6 +1,7 @@
 import { useState } from "react"
-import { Outlet } from "react-router-dom"
-import { Sidebar } from "@/components/sidebar"
+import { Outlet, useLocation, useNavigate } from "react-router-dom"
+import { FloatingSidebar } from "./FloatingSidebar"
+import { useTheme } from "@/components/theme-provider"
 import { TopNav } from "@/components/topnav"
 import { TaskDetailDrawer } from "@/components/task-detail-drawer"
 import { BreakdownSheet } from "@/components/breakdown-sheet"
@@ -25,6 +26,19 @@ export function MainLayout() {
   const [breakdownContextTask, setBreakdownContextTask] = useState<Task | null>(
     null
   )
+  const location = useLocation()
+  const navigate = useNavigate()
+  const { theme, setTheme } = useTheme()
+
+  const currentView = location.pathname.replace(/^\//, "").split("/")[0] || "tasks"
+
+  const handleSelectView = (viewId: string) => {
+    navigate(`/${viewId}`)
+  }
+
+  const handleToggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark")
+  }
   // Current UI project context (sidebar "project:<id>" filter) for commits.
   const { activeSidebarFilter } = useFilters()
   const activeProjectId = activeSidebarFilter.startsWith("project:")
@@ -69,26 +83,35 @@ export function MainLayout() {
   }
 
   return (
-    <div className="flex h-svh overflow-hidden bg-background">
-      {/* Persistent Sidebar */}
-      <Sidebar
-        isCollapsed={isCollapsed}
-        onToggle={() => setIsCollapsed(!isCollapsed)}
-      />
+    <div className="flex h-svh overflow-hidden bg-[var(--bg)] text-[var(--ink)]">
+      {/* Persistent Desktop Floating Sidebar */}
+      {!isCollapsed && (
+        <div className="hidden md:flex p-3 pr-0 h-full shrink-0">
+          <FloatingSidebar
+            activeView={currentView}
+            onSelectView={handleSelectView}
+            theme={theme === "light" ? "light" : "dark"}
+            onToggleTheme={handleToggleTheme}
+            onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
+          />
+        </div>
+      )}
 
-      {/* Main Content Wrapper */}
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden pb-24 md:pb-0">
-        {/* Persistent Top Navigation */}
-        <TopNav
-          onNewTask={handleOpenNewTask}
-          onBreakdown={() => handleOpenBreakdown()}
-          onImport={() => setIsImportOpen(true)}
-        />
+      {/* Main Content Wrapper (Dual Island) */}
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden pb-24 md:pb-0 md:p-3">
+        <main className="main-island flex-1 rounded-[16px] border border-gray-200 border-[var(--gray-200)] bg-[var(--bg)] shadow-xs flex flex-col overflow-hidden relative">
+          {/* Top Navigation */}
+          <TopNav
+            onNewTask={handleOpenNewTask}
+            onBreakdown={() => handleOpenBreakdown()}
+            onImport={() => setIsImportOpen(true)}
+          />
 
-        {/* Scrollable Main Content */}
-        <main className="flex-1 overflow-y-auto">
-          <div className="w-full">
-            <Outlet context={{ handleEditTask }} />
+          {/* Scrollable Main Content */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="w-full">
+              <Outlet context={{ handleEditTask }} />
+            </div>
           </div>
         </main>
 

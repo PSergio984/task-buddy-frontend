@@ -23,18 +23,18 @@ const ToastViewport = React.forwardRef<
 ToastViewport.displayName = ToastPrimitives.Viewport.displayName
 
 const toastVariants = cva(
-  "group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-[1.25rem] border p-4 pr-10 shadow-2xl backdrop-blur-xl transition-all data-[state=closed]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:animate-in data-[state=open]:slide-in-from-top-full data-[swipe=end]:animate-out",
+  "group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-[16px] border p-4 pr-10 shadow-lg backdrop-blur-xl transition-all data-[state=closed]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:animate-in data-[state=open]:slide-in-from-top-full data-[swipe=end]:animate-out",
   {
     variants: {
       variant: {
-        default: "border-border bg-card/80 text-foreground",
+        default: "border-[var(--gray-200)] bg-[var(--bg)] text-[var(--ink)]",
         destructive:
-          "destructive group border-toast-destructive-border bg-toast-destructive-bg/90 text-toast-destructive-text",
+          "destructive group border-[var(--gray-200)] bg-[var(--bg)] text-[var(--ink)]",
         success:
-          "success group border-toast-success-border bg-toast-success-bg/90 text-toast-success-text",
+          "success group border-[var(--gray-200)] bg-[var(--bg)] text-[var(--ink)]",
         warning:
-          "warning group border-toast-warning-border bg-toast-warning-bg/90 text-toast-warning-text",
-        info: "info group border-toast-info-border bg-toast-info-bg/90 text-toast-info-text",
+          "warning group border-[var(--gray-200)] bg-[var(--bg)] text-[var(--ink)]",
+        info: "info group border-[var(--gray-200)] bg-[var(--bg)] text-[var(--ink)]",
       },
     },
     defaultVariants: {
@@ -61,7 +61,7 @@ const Toast = React.forwardRef<
             variant === "success" &&
               "bg-emerald-500/20 text-emerald-600 ring-1 ring-emerald-500/30 dark:text-emerald-400",
             variant === "destructive" &&
-              "bg-rose-500/20 text-rose-600 ring-1 ring-rose-500/30 dark:text-rose-400",
+              "bg-[#FFD8D2] text-[#7F1D1D] ring-1 ring-[#FFD8D2]/50 font-bold dark:bg-[#FFD8D2] dark:text-[#7F1D1D]",
             variant === "warning" &&
               "bg-amber-500/20 text-amber-600 ring-1 ring-amber-500/30 dark:text-amber-400",
             variant === "info" &&

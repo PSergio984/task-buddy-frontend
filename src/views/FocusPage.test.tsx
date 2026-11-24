@@ -37,6 +37,12 @@ describe("FocusPage speedrun (#69)", () => {
     expect(screen.getByText(/Pauses don't stop the clock/)).toBeInTheDocument()
   })
 
+  it("renders FocusStageHud with session clock and controls", () => {
+    runtime = makeRuntime(speedrunSession())
+    render(<FocusPage />)
+    expect(screen.getByTestId("focus-stage-hud")).toBeInTheDocument()
+  })
+
   it("Done fires the server verb", () => {
     runtime = makeRuntime(speedrunSession())
     render(<FocusPage />)
@@ -65,7 +71,9 @@ describe("FocusPage speedrun (#69)", () => {
       })
     )
     render(<FocusPage />)
-    expect(screen.getByText(/Speedrun · beat 5:00/)).toBeInTheDocument()
+    expect(
+      screen.getAllByText(/Speedrun · beat 5:00/)[0]
+    ).toBeInTheDocument()
   })
 
   it("give-up routes through the stop flow with speedrun copy", async () => {
