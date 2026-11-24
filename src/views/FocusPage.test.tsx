@@ -43,7 +43,9 @@ describe("FocusPage speedrun (#69)", () => {
     const hud = screen.getByTestId("focus-stage-hud")
     expect(hud).toBeInTheDocument()
     expect(hud).toHaveTextContent("10:00")
-    expect(screen.getByRole("button", { name: /Reset Timer|RESET/i })).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: /Reset Timer|RESET/i })
+    ).toBeInTheDocument()
   })
 
   it("Done fires the server verb", () => {
