@@ -16,6 +16,9 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   skipTrailingSlashRedirect: true,
   output: "standalone",
+  experimental: {
+    agentUpgrade: "security",
+  },
 }
 
 export default withSerwist(nextConfig)
